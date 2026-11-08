@@ -6,8 +6,8 @@ android {
         applicationId 'com.bilal.takiptemizleme'
         minSdk 24
         targetSdk 35
-        versionCode 5
-        versionName '5.0'
+        versionCode 6
+        versionName '6.0'
     }
     // Aynı imza = güncellemeler eskisinin üzerine kurulur, kullanıcının verisi silinmez.
     signingConfigs {

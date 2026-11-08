@@ -51,6 +51,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ValueCallback<Uri[]> fileCallback;
     private final List<JSONObject> sharedFiles = new ArrayList<>();
+    private volatile boolean pageReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +101,11 @@ public class MainActivity extends Activity {
                 openExternal(uri);
                 return true;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                pageReady = true;
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -130,12 +136,15 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (handleShareIntent(intent)) webView.evaluateJavascript("window.__onShared && window.__onShared()", null);
+        handleShareIntent(intent);
     }
 
-    /** "Paylaş" veya "Birlikte aç" ile gelen ZIP/JSON dosyalarından takip dosyalarını çıkarır. */
-    private boolean handleShareIntent(Intent intent) {
-        if (intent == null) return false;
+    /**
+     * "Paylaş" veya "Birlikte aç" ile gelen ZIP/JSON dosyalarından takip dosyalarını çıkarır.
+     * Okuma arka planda yapılır: tüm medyayla indirilmiş yüzlerce MB'lık ZIP ekranı dondurmasın.
+     */
+    private void handleShareIntent(Intent intent) {
+        if (intent == null) return;
         List<Uri> uris = new ArrayList<>();
         String action = intent.getAction();
         if (Intent.ACTION_VIEW.equals(action) && intent.getData() != null) uris.add(intent.getData());
@@ -146,14 +155,22 @@ public class MainActivity extends Activity {
             ArrayList<Uri> list = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
             if (list != null) uris.addAll(list);
         }
-        if (uris.isEmpty()) return false;
+        if (uris.isEmpty()) return;
         intent.setAction(Intent.ACTION_MAIN); // döndürünce tekrar işlenmesin
-        int found = 0;
-        for (Uri u : uris) {
-            try { found += extract(u); } catch (Exception ignored) { }
-        }
-        if (found == 0) Toast.makeText(this, "Dosyada takip bilgisi bulunamadı", Toast.LENGTH_LONG).show();
-        return found > 0;
+        Toast.makeText(this, "Dosya okunuyor…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            int found = 0;
+            for (Uri u : uris) {
+                try { found += extract(u); } catch (Exception ignored) { }
+            }
+            final int n = found;
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (n == 0) Toast.makeText(this, "Dosyada takip bilgisi bulunamadı", Toast.LENGTH_LONG).show();
+                // Sayfa hazır değilse açılışta kendisi alır (takeSharedFiles).
+                else if (pageReady) webView.evaluateJavascript("window.__onShared && window.__onShared()", null);
+            });
+        }, "share-reader").start();
     }
 
     private int extract(Uri uri) throws Exception {
@@ -300,6 +317,16 @@ public class MainActivity extends Activity {
             ReminderReceiver.save(MainActivity.this, on, h, m, title, body);
             ReminderReceiver.ensureChannel(MainActivity.this);
             ReminderReceiver.schedule(MainActivity.this);
+        }
+
+        @JavascriptInterface
+        public void updateWidget(boolean has, String day, int today, int limit, int left, int pct) {
+            ProgressWidget.save(MainActivity.this, has, day, today, limit, left, pct);
+        }
+
+        @JavascriptInterface
+        public boolean pinWidget() {
+            try { return ProgressWidget.requestPin(MainActivity.this); } catch (Exception e) { return false; }
         }
 
         @JavascriptInterface
