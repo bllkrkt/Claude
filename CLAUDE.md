@@ -67,7 +67,7 @@ Gereken: JDK 17+, Android SDK (platform 35, build-tools 35). `local.properties` 
 ./gradlew assembleDebug
 # çıktı: app/build/outputs/apk/debug/app-debug.apk → kullanıcıya TakipTemizleme-vN.apk adıyla ver
 ```
-- Her sürümde `app/build.gradle` içindeki `versionCode`'u 1 artır, `versionName`'i güncelle (şu an 4 / "4.0").
+- Her sürümde `app/build.gradle` içindeki `versionCode`'u 1 artır, `versionName`'i güncelle (şu an 5 / "5.0").
 - **İmza:** APK `app/keystore/debug.keystore` ile imzalanır (SHA-256 `50b4d264…6b86`). Kullanıcının telefonundaki sürüm bu anahtarla imzalı. Anahtar değişirse güncelleme kurulmaz ve kullanıcı uygulamayı silmek zorunda kalır → **tüm verisi gider**. Asla değiştirme.
 - Emülatör yoksa APK'nın içinde sınıfların olduğunu doğrula (geçmişte Java dosyası yanlış klasöre yazıldığı için açılmayan bir APK gönderildi):
   `dexdump app/build/outputs/apk/debug/app-debug.apk | grep "Class descriptor" | grep bilal`
@@ -85,9 +85,11 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 - **v2**: Baştan yazım — odak modu, geri takip etmeyenler, ZIP, limit, geri al, istatistik.
 - **v3**: Kapalı hesap durumu, "beni takip ediyor" düzeltmesi, eksik dosya uyarıları.
 - **v4**: Profesyonel yeniden tasarım — kart destesi + kaydırma, tanıtım, tema, takipten çıkanlar, hayranlar, toplu seçim, rozet/konfeti, hatırlatıcı bildirim, paylaşım, geçmiş, yeni ikon.
+- **v5**: Haftalık otomatik yedek (Android; açılışta son yedek 7 günden eskiyse İndirilenler'e yazar, Ayarlar → Yedek → "Otomatik yedek" ile kapatılabilir, `settings.autoBackup`, varsayılan açık). Kullanıcı v4'ü gerçek telefonda denedi.
 
 ## Sıradaki fikirler (kullanıcı onaylamadı, öneri olarak sun)
 - Ana ekran widget'ı (bugünkü ilerleme)
 - Kişilere not/etiket (arkadaş, ünlü, marka)
-- Gerçek telefonda kullanıcıdan gelecek geri bildirimle düzeltmeler (henüz gerçek cihazda test edilmedi)
+- Kart yukarı kaydırınca "Koru" dokunmatikte çalışmıyor (`.pcard` `touch-action:pan-y`); kullanıcı önemsiz buldu
+- "Paylaş" ile gelen büyük ZIP ana thread'de okunuyor (donma riski); kullanıcı önemsiz buldu
 - Release imzalı / küçültülmüş (R8) APK

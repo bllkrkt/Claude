@@ -295,7 +295,7 @@ canvas#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:non
 
 <script>
 "use strict";
-/* Takip Temizleme 4.0 */
+/* Takip Temizleme 5.0 */
 const KEY = "takip-temizleme-v2", OLD_KEY = "bilal-sade-final-v1";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -355,7 +355,7 @@ function defaultState() {
     people: {}, requests: {}, fans: [],
     hasFollowers: false, base: null, extraDone: 0, log: {},
     settings: {dailyLimit: 45, cooldown: 15, target: null, queue: "auto", sort: "oldest", profileFollowing: null, profileFollowers: null,
-               theme: "system", skipRecentDays: 7, burstGuard: true, reminder: {on: false, h: 20, m: 0}},
+               theme: "system", skipRecentDays: 7, burstGuard: true, autoBackup: true, reminder: {on: false, h: 20, m: 0}},
     importInfo: null, followerSnap: null, changes: [], history: [], badges: {}, milestones: {},
     lastBackupAt: 0, onboarded: false, seenSwipeHint: false, seenChangesAt: 0, startFollowing: null, dismissed: {},
   };
@@ -1011,16 +1011,17 @@ function renderSettings() {
     item("sIntro", I.info(), "c6", "Tanıtımı tekrar göster", "", "", true) + '</div>';
   h += '<div class="section-title">Yedek</div><div class="group">' +
     item("sExport", I.download(), "c3", "Yedekle", S.lastBackupAt ? "Son yedek: " + dateTR(S.lastBackupAt) : "Hiç yedek alınmadı", backupOld ? '<span class="tag warn">Önerilir</span>' : "", true) +
+    (isAndroid ? switchItem("autoBackup", I.clock(), "c2", "Otomatik yedek", st.autoBackup ? "Haftada bir İndirilenler'e kaydeder" : "Kapalı", st.autoBackup) : "") +
     item("sRestore", I.upload(), "c4", "Yedeği yükle", "Daha önce aldığın .json yedeği", "", true) + '</div>';
   h += '<div class="section-title">Diğer</div><div class="group">' +
     item("sAbout", I.lock(), "c3", "Gizlilik ve güvenlik", "Şifre istemez, hiçbir şeyi otomatik yapmaz", "", true) +
     item("sWipe", I.trash(), "c1", "Tüm verileri sil", "Liste, sayaçlar ve ayarlar", "", true) + '</div>' +
-    '<div class="center tiny faint mt20">Takip Temizleme 4.0 · Verilerin sadece bu telefonda</div>';
+    '<div class="center tiny faint mt20">Takip Temizleme 5.0 · Verilerin sadece bu telefonda</div>';
   el.innerHTML = h;
   bindHelp(el);
   const on = (id, fn) => { const x = $("#" + id); if (x) x.onclick = fn; };
   on("sImport", () => $("#fileIg").click()); on("sHelp", helpSheet); on("sProfile", profileSheet); on("sTarget", targetSheet);
-  on("sTheme", themeSheet); on("sIntro", () => onboarding(true)); on("sExport", exportBackup); on("sRestore", () => $("#fileBackup").click()); on("sRemTime", timeSheet);
+  on("sTheme", themeSheet); on("sIntro", () => onboarding(true)); on("sExport", () => exportBackup()); on("sRestore", () => $("#fileBackup").click()); on("sRemTime", timeSheet);
   on("sAbout", () => openSheet('<h2>Gizlilik ve güvenlik</h2><div class="bullets" style="max-width:none">' +
     ["Instagram şifreni asla istemez.", "Hiçbir takipten çıkarma işlemini otomatik yapmaz; her işlemi sen Instagram'da kendin yaparsın. Bu yüzden hesabın için güvenlidir.", "Verilerin sadece bu telefonda saklanır, hiçbir sunucuya gönderilmez.", "Günlük limit, bekleme süresi ve ani hız uyarısı Instagram'ın işlem engeline takılmaman için var."].map(x => '<div>' + I.check(16) + '<span>' + x + '</span></div>').join("") + '</div>'));
   on("sWipe", () => confirmSheet("Tüm veriler silinsin mi?", "Liste, işaretlemeler, istatistikler ve ayarlar silinir. Bu işlem geri alınamaz; istersen önce yedek al.", "Hepsini sil", () => {
@@ -1268,10 +1269,15 @@ $("#fileIg").onchange = async e => {
 };
 
 /* ---------- yedek ---------- */
-function exportBackup() {
-  const data = JSON.stringify({app: "takip-temizleme-v4", exportedAt: new Date().toISOString(), ...S});
+function exportBackup(auto) {
+  const data = JSON.stringify({app: "takip-temizleme-v5", exportedAt: new Date().toISOString(), ...S});
   const name = "takip-temizleme-yedek-" + dayKey() + ".json";
-  if (B) { const r = B.saveFile(name, data); if (r) { S.lastBackupAt = now(); save(); renderView(); snack("Kaydedildi: " + r); } else snack("Yedek kaydedilemedi"); return; }
+  if (B) {
+    const r = B.saveFile(name, data);
+    if (r) { S.lastBackupAt = now(); save(); if (!(auto && cur === "home")) renderView(); snack((auto ? "Haftalık otomatik yedek alındı: " : "Kaydedildi: ") + r); }
+    else snack(auto ? "Otomatik yedek alınamadı; Ayarlar'dan elle yedekle" : "Yedek kaydedilemedi");
+    return;
+  }
   const url = URL.createObjectURL(new Blob([data], {type: "application/json"}));
   const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   S.lastBackupAt = now(); save(); renderView(); snack("Yedek indirildi");
@@ -1344,6 +1350,15 @@ $$("#nav button").forEach(b => b.onclick = () => { vibrate(6); tab(b.dataset.tab
 function renderView() { ({home: renderHome, list: renderList, stats: renderStats, settings: renderSettings})[cur](); }
 function renderAll() { renderTop(); renderView(); }
 
+/* Haftada bir, uygulama açılınca sessizce yedek alır (sadece Android; başarısız olursa bu oturumda tekrar denemez). */
+let autoFailed = false;
+function autoBackup() {
+  if (!isAndroid || autoFailed || !S.settings.autoBackup || !people().length) return;
+  if (now() - (S.lastBackupAt || 0) < 7 * DAY) return;
+  try { exportBackup(true); } catch (e) {}
+  if (now() - (S.lastBackupAt || 0) >= 7 * DAY) autoFailed = true;
+}
+
 /* ---------- Android köprüsü ---------- */
 window.__onShared = () => {
   try { const raw = B && B.takeSharedFiles(); const items = raw ? JSON.parse(raw) : []; if (items.length) importTexts(items); }
@@ -1358,7 +1373,7 @@ window.__onBack = () => {
 };
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
-  renderTop();
+  renderTop(); setTimeout(autoBackup, 1500);
   if (cur === "home" && !sheetOpen()) { renderHome(); const b = $("#aDone"); if (b && openedUser) { b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); } }
 });
 setInterval(renderTop, 60000);
@@ -1370,6 +1385,7 @@ onboarding();
 if (S.migrated && people().length) setTimeout(() => snack("Eski listen taşındı. Instagram verini yüklersen çok daha akıllı çalışırım."), 700);
 if (isAndroid) setTimeout(window.__onShared, 300);
 syncReminder(true);
+setTimeout(autoBackup, 4000);
 </script>
 </body>
 </html>
