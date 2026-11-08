@@ -1,0 +1,24 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.bilal.takiptemizleme'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.bilal.takiptemizleme'
+        minSdk 24
+        targetSdk 35
+        versionCode 4
+        versionName '4.0'
+    }
+    // Aynı imza = güncellemeler eskisinin üzerine kurulur, kullanıcının verisi silinmez.
+    signingConfigs {
+        debug {
+            storeFile file('keystore/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes { debug { signingConfig signingConfigs.debug } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }

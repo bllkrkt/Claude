@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Takip Temizleme</title>
+<style>
+@font-face{font-family:Jakarta;font-weight:400 800;font-display:swap;src:url(fonts/jakarta-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:Jakarta;font-weight:400 800;font-display:swap;src:url(fonts/jakarta-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{
+  --bg:#0a0b0f;--surface:#13151b;--surface-2:#1a1d25;--surface-3:#232733;--line:rgba(255,255,255,.07);--line-2:rgba(255,255,255,.12);
+  --text:#f5f6f8;--muted:#9097a3;--faint:#5d6370;
+  --accent:#ff3d7f;--accent-ink:#fff;--accent-soft:rgba(255,61,127,.14);--accent-text:#ff7aa6;
+  --grad:linear-gradient(135deg,#ff6a3d 0%,#ff3d7f 45%,#a24dff 100%);
+  --ok:#3ddc97;--ok-soft:rgba(61,220,151,.13);--warn:#ffc35a;--warn-soft:rgba(255,195,90,.12);--keep:#6ea8ff;--keep-soft:rgba(110,168,255,.14);
+  --shadow:0 10px 30px rgba(0,0,0,.35);--shadow-sm:0 2px 10px rgba(0,0,0,.25);
+  --r:22px;
+  color-scheme:dark;
+}
+:root[data-theme=light]{
+  --bg:#f4f5f8;--surface:#fff;--surface-2:#f0f1f5;--surface-3:#e4e6ec;--line:rgba(17,20,28,.07);--line-2:rgba(17,20,28,.12);
+  --text:#12141a;--muted:#6a7180;--faint:#a2a8b4;
+  --accent:#e8266a;--accent-soft:rgba(232,38,106,.1);--accent-text:#d01f5c;
+  --ok:#0f9d64;--ok-soft:rgba(15,157,100,.1);--warn:#a86b00;--warn-soft:rgba(240,170,40,.16);--keep:#2f6fe0;--keep-soft:rgba(47,111,224,.1);
+  --shadow:0 10px 30px rgba(20,24,40,.08);--shadow-sm:0 2px 8px rgba(20,24,40,.06);
+  color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);overscroll-behavior-y:none}
+body{font-family:Jakarta,"Segoe UI",Roboto,system-ui,sans-serif;font-size:15px;line-height:1.45;min-width:300px;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+input{user-select:text;-webkit-user-select:text}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+a{color:inherit;text-decoration:none}
+svg{flex-shrink:0}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(104px + env(safe-area-inset-bottom))}
+.muted{color:var(--muted)}.faint{color:var(--faint)}.small{font-size:13px}.tiny{font-size:12px}.b{font-weight:800}
+.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}.grow{flex:1;min-width:0}.center{text-align:center}
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}
+.hidden{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+h1,h2,h3{margin:0;letter-spacing:-.02em}
+h2{font-size:18px;font-weight:800}
+h3{font-size:15px;font-weight:800}
+.section-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin:24px 4px 10px}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 2px 14px}
+.hello{font-size:13px;color:var(--muted);font-weight:600}
+.title{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-top:1px}
+.today-chip{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-weight:800;font-size:13px;font-variant-numeric:tabular-nums}
+.today-chip .mini{width:28px;height:28px;display:block}
+.today-chip .mini svg{transform:rotate(-90deg)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow-sm)}
+.hero{position:relative;overflow:hidden;padding:20px}
+.hero::before{content:"";position:absolute;right:-70px;top:-90px;width:260px;height:260px;background:radial-gradient(closest-side,rgba(255,61,127,.22),transparent);pointer-events:none}
+.hero::after{content:"";position:absolute;left:-80px;bottom:-110px;width:240px;height:240px;background:radial-gradient(closest-side,rgba(139,92,246,.18),transparent);pointer-events:none}
+.hero-in{position:relative;display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:112px;height:112px;flex-shrink:0}
+.ring svg{transform:rotate(-90deg)}
+.ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .pct{font-size:27px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.ring .lbl{font-size:11px;color:var(--muted);font-weight:700;margin-top:4px}
+.ring circle{transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:12px 12px;flex:1;min-width:0}
+.kv .k{font-size:12px;color:var(--muted);font-weight:700}
+.kv .v{font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.15}
+.kv .v.acc{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-foot{position:relative;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px}
+.streak{display:inline-flex;align-items:center;gap:6px;font-weight:800;white-space:nowrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 18px;border-radius:16px;font-weight:800;background:var(--surface-2);border:1px solid var(--line);transition:transform .1s,opacity .2s,background .2s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--grad);border:0;color:#fff;box-shadow:0 8px 20px rgba(255,61,127,.28)}
+.btn.danger{background:var(--accent-soft);border-color:transparent;color:var(--accent-text)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.block{width:100%}
+.btn.lg{min-height:56px;font-size:16px;border-radius:18px}
+.btn.sm{min-height:40px;padding:0 14px;border-radius:12px;font-size:13px}
+.btn[disabled]{opacity:.5;pointer-events:none;box-shadow:none}
+.linkbtn{font-weight:800;color:var(--accent-text);font-size:13px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+
+.seg{display:flex;background:var(--surface-2);border-radius:14px;padding:4px;gap:4px}
+.seg button{flex:1;padding:9px 6px;border-radius:10px;font-size:13px;font-weight:800;color:var(--muted);transition:.2s;white-space:nowrap}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+:root[data-theme=dark] .seg button.on{background:var(--surface-3)}
+.seg button .n{opacity:.6;margin-left:4px}
+
+.deck{position:relative;height:330px;margin-top:14px}
+.pcard{position:absolute;inset:0;border-radius:28px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;touch-action:pan-y;will-change:transform}
+.pcard.back{transform:translateY(14px) scale(.94);opacity:.6;pointer-events:none}
+.pcard.back2{transform:translateY(26px) scale(.88);opacity:.3;pointer-events:none}
+.pcard.anim{transition:transform .3s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.pcard .stamp{position:absolute;top:22px;padding:5px 12px;border-radius:10px;font-weight:800;font-size:15px;letter-spacing:.06em;border:2.5px solid;opacity:0;text-transform:uppercase;pointer-events:none}
+.stamp.s-done{left:20px;color:var(--ok);transform:rotate(-12deg)}
+.stamp.s-skip{right:20px;color:var(--muted);transform:rotate(12deg)}
+.stamp.s-keep{left:50%;top:auto;bottom:20px;transform:translateX(-50%);color:var(--keep)}
+.avatar{border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex-shrink:0;text-shadow:0 1px 2px rgba(0,0,0,.15)}
+.avatar.xl{width:92px;height:92px;font-size:36px;box-shadow:0 0 0 4px var(--surface),0 0 0 6px var(--line-2)}
+.avatar.md{width:44px;height:44px;font-size:18px}
+.pname{font-size:23px;font-weight:800;margin-top:16px;letter-spacing:-.02em;word-break:break-all;line-height:1.15}
+.tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px}
+.tag{display:inline-flex;align-items:center;gap:5px;border-radius:99px;padding:5px 10px;font-size:12px;font-weight:800;background:var(--surface-2);color:var(--muted)}
+.tag.acc{background:var(--accent-soft);color:var(--accent-text)}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.pcard .open{margin-top:20px;min-width:230px}
+.swipe-hint{font-size:12px;color:var(--faint);margin-top:12px;font-weight:600;min-height:16px}
+.actions{display:flex;justify-content:center;align-items:flex-start;gap:22px;margin-top:22px}
+.fab{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-sm);transition:transform .12s}
+.fab:active{transform:scale(.9)}
+.fab.big{width:76px;height:76px;background:var(--ok);color:#05140d;border:0;box-shadow:0 10px 24px rgba(61,220,151,.3)}
+:root[data-theme=light] .fab.big{color:#fff}
+.fab.keep{color:var(--keep)}.fab.skip{color:var(--muted)}
+.fab-lbl{font-size:11px;font-weight:800;color:var(--muted);margin-top:7px;text-align:center}
+.fab-wrap{display:flex;flex-direction:column;align-items:center}
+.pulse{animation:pulse 1.3s ease-in-out 3}
+@keyframes pulse{50%{box-shadow:0 0 0 12px rgba(61,220,151,.2)}}
+.sub-actions{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+.sub-actions button{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:12px;font-size:13px;font-weight:800;color:var(--muted);background:var(--surface-2)}
+.next-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px}
+.next-row .avs{display:flex}
+.next-row .avatar{width:26px;height:26px;font-size:11px;margin-left:-8px;box-shadow:0 0 0 2px var(--bg)}
+.next-row .avatar:first-child{margin-left:0}
+
+.banner{display:flex;gap:10px;align-items:flex-start;border-radius:16px;padding:12px 14px;font-size:13px;font-weight:600;margin-top:12px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.banner a{text-decoration:underline;font-weight:800}
+
+.sticky{position:sticky;top:0;z-index:5;background:var(--bg);margin:0 -16px;padding:6px 16px 8px}
+.search{display:flex;align-items:center;gap:10px;height:48px;border-radius:16px;background:var(--surface);border:1px solid var(--line);padding:0 14px;color:var(--muted)}
+.search input{flex:1;background:transparent;border:0;outline:0;min-width:0;height:100%;color:var(--text)}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:10px 16px 2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:8px 13px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:800;color:var(--muted);white-space:nowrap;transition:.15s}
+.chip.on{background:var(--text);color:var(--bg);border-color:transparent}
+.chip .n{opacity:.65;margin-left:5px}
+.list-tools{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:13px}
+.list-tools button{display:inline-flex;align-items:center;gap:6px;font-weight:800;color:var(--muted);padding:6px 6px}
+ul.list{list-style:none;margin:6px 0 0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+ul.list li{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-top:1px solid var(--line);min-height:68px;transition:background .15s}
+ul.list li:first-child{border-top:0}
+ul.list li:active{background:var(--surface-2)}
+ul.list li.dim .avatar,ul.list li.dim .nm{opacity:.5}
+ul.list li.sel{background:var(--accent-soft)}
+ul.list .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+ul.list .meta{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qa{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:var(--surface-2);color:var(--muted);flex-shrink:0}
+.qa.ok{background:var(--ok-soft);color:var(--ok)}
+.check{width:24px;height:24px;border-radius:8px;border:2px solid var(--line-2);display:grid;place-items:center;flex-shrink:0;color:transparent}
+.sel .check{background:var(--accent);border-color:var(--accent);color:#fff}
+.empty-li{justify-content:center;color:var(--muted);font-weight:600}
+.bulkbar{position:fixed;left:12px;right:12px;bottom:calc(88px + env(safe-area-inset-bottom));max-width:616px;margin:0 auto;background:var(--text);color:var(--bg);border-radius:20px;padding:8px;display:flex;align-items:center;gap:2px;z-index:25;box-shadow:var(--shadow);transform:translateY(20px);opacity:0;pointer-events:none;transition:.2s}
+.bulkbar.show{transform:none;opacity:1;pointer-events:auto}
+.bulkbar .cnt{font-weight:800;padding:0 6px;flex:1;font-size:13px;white-space:nowrap}
+.bulkbar button{padding:6px 7px;border-radius:12px;font-weight:800;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:44px}
+.bulkbar button:active{background:rgba(128,128,128,.25)}
+.bulkbar button[disabled]{opacity:.35}
+
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px 16px}
+.tile .k{font-size:12px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
+.tile .v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:4px;font-variant-numeric:tabular-nums}
+.chart{display:flex;align-items:flex-end;height:140px;margin-top:16px}
+.chart .c{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0}
+.chart .bwrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.chart .b{width:100%;max-width:30px;border-radius:8px 8px 4px 4px;background:var(--grad);min-height:4px}
+.chart .b.zero{background:var(--surface-3)}
+.chart .b.over{background:var(--warn)}
+.chart .n{font-size:11px;font-weight:800;height:14px}
+.chart .d{font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;height:13px}
+.dist{display:flex;height:14px;border-radius:99px;overflow:hidden;background:var(--surface-2);margin-top:4px}
+.dist i{display:block;height:100%}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:9px 14px;margin-top:16px}
+.legend div{display:flex;align-items:center;gap:8px;font-size:13px}
+.legend b{margin-left:auto;font-variant-numeric:tabular-nums}
+.sw{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 8px}
+.badge{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:11px;font-weight:800;color:var(--faint);line-height:1.2}
+.badge .ic{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;font-size:25px;background:var(--surface-2);filter:grayscale(1);opacity:.45}
+.badge.on .ic{filter:none;opacity:1;background:var(--accent-soft)}
+.badge.on{color:var(--text)}
+.change-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.uchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:99px;background:var(--surface-2);font-size:13px;font-weight:700}
+.uchip .avatar{width:22px;height:22px;font-size:10px}
+.uchip.flag{background:var(--accent-soft);color:var(--accent-text)}
+
+.group{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.item{display:flex;align-items:center;gap:14px;padding:13px 16px;border-top:1px solid var(--line);min-height:62px;width:100%;text-align:left}
+.item:first-child{border-top:0}
+button.item:active{background:var(--surface-2)}
+.ic{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}
+.item .t{font-weight:700}
+.item .s{font-size:12px;color:var(--muted);margin-top:1px}
+.item .val{color:var(--muted);font-weight:700;font-size:14px;white-space:nowrap}
+.stepper{display:flex;align-items:center;gap:2px;background:var(--surface-2);border-radius:12px;padding:3px}
+.stepper button{width:32px;height:32px;border-radius:9px;font-size:18px;font-weight:800;display:grid;place-items:center}
+.stepper button:active{background:var(--surface-3)}
+.stepper span{min-width:32px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums}
+.switch{width:50px;height:30px;border-radius:99px;background:var(--surface-3);position:relative;flex-shrink:0;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.switch.on{background:var(--ok)}
+.switch.on::after{left:23px}
+.c1{background:var(--accent-soft);color:var(--accent-text)}
+.c2{background:rgba(139,92,246,.15);color:#a98bff}
+.c3{background:var(--ok-soft);color:var(--ok)}
+.c4{background:var(--keep-soft);color:var(--keep)}
+.c5{background:var(--warn-soft);color:var(--warn)}
+.c6{background:var(--surface-3);color:var(--muted)}
+:root[data-theme=light] .c2{color:#7a4fe0}
+.upload-card{background:var(--grad);color:#fff;border-radius:var(--r);padding:20px;position:relative;overflow:hidden;box-shadow:0 12px 28px rgba(255,61,127,.25)}
+.upload-card::after{content:"";position:absolute;right:-40px;top:-50px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.12);pointer-events:none}
+.upload-card p{margin:6px 0 0;font-size:13px;opacity:.93;position:relative}
+.upload-card .btn{background:#fff;color:#12141a;border:0;position:relative;margin-top:16px}
+.upload-card .meta{display:inline-block;margin-top:10px;font-size:12px;font-weight:800;background:rgba(255,255,255,.2);padding:5px 10px;border-radius:99px;position:relative}
+
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:0 12px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
+.nav .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border:1px solid var(--line-2);border-radius:24px;padding:6px;box-shadow:var(--shadow);pointer-events:auto;position:relative}
+.nav .ind{position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 12px)/4);border-radius:18px;background:var(--accent-soft);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.nav button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 2px;font-size:11px;font-weight:800;color:var(--muted);transition:color .2s}
+.nav button.on{color:var(--accent-text)}
+.nav .dot{position:absolute;top:4px;left:calc(50% + 7px);min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:#fff;font-size:10px;display:grid;place-items:center;padding:0 4px}
+
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+.scrim.show{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:640px;margin:0 auto;background:var(--surface);border-radius:28px 28px 0 0;padding:10px 18px calc(22px + env(safe-area-inset-bottom));z-index:41;transform:translateY(105%);transition:transform .3s cubic-bezier(.2,.8,.2,1);max-height:88vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.3)}
+.sheet.show{transform:none}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line-2);margin:0 auto 14px}
+.opt{display:flex;align-items:center;gap:14px;width:100%;padding:11px 4px;border-radius:14px;font-weight:700;text-align:left}
+.opt:active{background:var(--surface-2)}
+.opt .ic{width:38px;height:38px;border-radius:12px}
+.opt.on{color:var(--accent-text)}
+.opt .tick{margin-left:auto;color:var(--accent-text)}
+ol.steps{margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;display:flex;gap:12px;padding:8px 0;font-size:14px}
+ol.steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);font-weight:800;font-size:13px;display:grid;place-items:center;flex-shrink:0}
+.num-in{width:110px;text-align:right;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-weight:800;outline:none}
+.num-in:focus{border-color:var(--accent)}
+
+.onb{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom));transition:opacity .3s}
+.onb .slides{flex:1;display:flex;overflow:hidden;position:relative}
+.onb .slide{min-width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:transform .4s cubic-bezier(.2,.8,.2,1);padding:0 8px}
+.onb .art{width:148px;height:148px;border-radius:44px;background:var(--grad);display:grid;place-items:center;color:#fff;box-shadow:0 20px 50px rgba(255,61,127,.35);margin-bottom:34px}
+.onb h1{font-size:28px;font-weight:800;line-height:1.15}
+.onb p{color:var(--muted);font-size:15px;max-width:340px;margin:12px auto 0}
+.onb .dots{display:flex;justify-content:center;gap:6px;margin:18px 0}
+.onb .dots i{width:7px;height:7px;border-radius:4px;background:var(--line-2);transition:.3s}
+.onb .dots i.on{width:24px;background:var(--accent)}
+.onb .skip{position:absolute;top:calc(18px + env(safe-area-inset-top));right:20px;font-weight:800;color:var(--muted);font-size:14px;padding:8px;z-index:2}
+.bullets{text-align:left;margin:18px auto 0;max-width:320px}
+.bullets div{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:14px;color:var(--muted)}
+.bullets svg{color:var(--ok);margin-top:2px}
+
+.snack{position:fixed;left:50%;bottom:calc(94px + env(safe-area-inset-bottom));transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--text);color:var(--bg);border-radius:16px;padding:12px 8px 12px 16px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;z-index:50;transition:.25s cubic-bezier(.2,.8,.2,1);width:max-content;max-width:calc(100% - 24px);box-shadow:var(--shadow)}
+.snack.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.snack button{color:#ff7aa6;font-weight:800;padding:6px 10px;white-space:nowrap}
+:root[data-theme=light] .snack button{color:#ff8fb4}
+.snack.up{bottom:calc(164px + env(safe-area-inset-bottom))}
+
+.empty{text-align:center;padding:34px 20px}
+.empty .art{width:84px;height:84px;border-radius:26px;margin:0 auto 18px;display:grid;place-items:center;background:var(--grad);color:#fff;box-shadow:0 14px 30px rgba(255,61,127,.3)}
+.empty p{color:var(--muted);font-size:14px;max-width:340px;margin:8px auto 18px}
+.view{animation:fade .25s ease-out}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+canvas#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:70}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <div><div class="hello" id="hello">Merhaba</div><div class="title" id="pageTitle">Takip Temizleme</div></div>
+    <button class="today-chip" id="todayChip" aria-label="Bugünkü ilerleme"></button>
+  </header>
+  <main id="view"></main>
+</div>
+
+<nav class="nav"><div class="in" id="nav">
+  <span class="ind" id="navInd"></span>
+  <button data-tab="home" class="on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="4"/><path d="M9 17h6"/><circle cx="12" cy="10" r="3"/></svg>Odak</button>
+  <button data-tab="list"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Kişiler</button>
+  <button data-tab="stats"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 4 4 5-6"/></svg>Analiz<span class="dot hidden" id="navDot"></span></button>
+  <button data-tab="settings"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ayarlar</button>
+</div></nav>
+
+<div class="bulkbar" id="bulkbar"></div>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="snack" id="snack" role="status" aria-live="polite"><span id="snackText"></span><button id="snackBtn" class="hidden">Geri al</button></div>
+<canvas id="confetti" class="hidden"></canvas>
+<input type="file" id="fileIg" class="sr" multiple accept=".json,.zip,application/json,application/zip">
+<input type="file" id="fileBackup" class="sr" accept=".json,application/json">
+
+<script>
+"use strict";
+/* Takip Temizleme 4.0 */
+const KEY = "takip-temizleme-v2", OLD_KEY = "bilal-sade-final-v1";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const B = window.AndroidBridge || null;
+const isAndroid = !!B;
+const now = () => Date.now();
+const DAY = 864e5;
+const dayKey = (t = now()) => { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const fmt = n => Number(n || 0).toLocaleString("tr-TR");
+const dateTR = t => new Date(t).toLocaleDateString("tr-TR", {day: "numeric", month: "short", year: "numeric"});
+const pad = n => String(n).padStart(2, "0");
+function vibrate(p) { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} }
+
+/* ---------- ikonlar ---------- */
+const sv = (d, w, sw = 2) => '<svg width="' + w + '" height="' + w + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+const I = {
+  ig: (w = 20) => sv('<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/>', w),
+  check: (w = 20) => sv('<path d="M20 6 9 17l-5-5"/>', w, 2.6),
+  x: (w = 20) => sv('<path d="M18 6 6 18M6 6l12 12"/>', w),
+  shield: (w = 20) => sv('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>', w),
+  skip: (w = 20) => sv('<path d="m5 4 10 8-10 8V4zM19 5v14"/>', w),
+  undo: (w = 18) => sv('<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/>', w),
+  search: (w = 20) => sv('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>', w),
+  upload: (w = 20) => sv('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5M12 3v12"/>', w),
+  download: (w = 20) => sv('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/>', w),
+  alert: (w = 18) => sv('<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', w),
+  ban: (w = 18) => sv('<circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/>', w),
+  userCheck: (w = 18) => sv('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>', w),
+  userMinus: (w = 18) => sv('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/>', w),
+  flame: (w = 16) => sv('<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.3.3 1.9 1.5 2.8 2.5 2.8z"/>', w),
+  sort: (w = 16) => sv('<path d="m3 16 4 4 4-4M7 20V4M21 8l-4-4-4 4M17 4v16"/>', w),
+  select: (w = 16) => sv('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="m8 12 3 3 5-6"/>', w),
+  share: (w = 18) => sv('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>', w),
+  bell: (w = 18) => sv('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>', w),
+  moon: (w = 18) => sv('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>', w),
+  gauge: (w = 18) => sv('<path d="m12 14 4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/>', w),
+  timer: (w = 18) => sv('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>', w),
+  target: (w = 18) => sv('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>', w),
+  hash: (w = 18) => sv('<path d="M4 9h16M4 15h16M10 3 8 21M16 3l-2 18"/>', w),
+  calendar: (w = 18) => sv('<rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>', w),
+  zap: (w = 18) => sv('<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>', w),
+  info: (w = 18) => sv('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>', w),
+  trash: (w = 18) => sv('<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', w),
+  chev: (w = 18) => sv('<path d="m9 18 6-6-6-6"/>', w),
+  lock: (w = 18) => sv('<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>', w),
+  clock: (w = 18) => sv('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', w),
+  broom: (w = 64) => sv('<path d="m13 11 8-8"/><path d="M8.5 11.5 12.5 15.5"/><path d="M5 13c-1.5 2-2 5-2 8 3 0 6-.5 8-2l3-3-6-6z"/>', w, 1.8),
+  file: (w = 64) => sv('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/>', w, 1.8),
+  shieldBig: (w = 64) => sv('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>', w, 1.8),
+};
+
+/* ---------- durum ---------- */
+function defaultState() {
+  return {
+    version: 2,
+    people: {}, requests: {}, fans: [],
+    hasFollowers: false, base: null, extraDone: 0, log: {},
+    settings: {dailyLimit: 45, cooldown: 15, target: null, queue: "auto", sort: "oldest", profileFollowing: null, profileFollowers: null,
+               theme: "system", skipRecentDays: 7, burstGuard: true, reminder: {on: false, h: 20, m: 0}},
+    importInfo: null, followerSnap: null, changes: [], history: [], badges: {}, milestones: {},
+    lastBackupAt: 0, onboarded: false, seenSwipeHint: false, seenChangesAt: 0, startFollowing: null, dismissed: {},
+  };
+}
+let S = load();
+function load() {
+  const d = defaultState();
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      const out = {...d, ...s, settings: {...d.settings, ...(s.settings || {})}};
+      out.settings.reminder = {...d.settings.reminder, ...(out.settings.reminder || {})};
+      if (Object.keys(out.people).length) out.onboarded = true;
+      return out;
+    }
+  } catch (e) {}
+  try {
+    const old = JSON.parse(localStorage.getItem(OLD_KEY) || "null");
+    if (old) {
+      const list = Array.isArray(old) ? old : (old.people || old.usernames || []);
+      for (const p of list) { const u = norm(typeof p === "string" ? p : p && p.username); if (u) d.people[u] = {u, at: null, followsMe: null, status: "pending"}; }
+      d.extraDone = Math.max(0, Math.floor(old.removedCount || 0));
+      d.base = {following: 860, followers: 640, at: 0}; d.startFollowing = 860;
+      Object.assign(d.settings, {target: 639, profileFollowing: 860, profileFollowers: 640});
+      d.migrated = true; d.onboarded = true;
+    }
+  } catch (e) {}
+  return d;
+}
+let saveT = null;
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { snack("Kaydedilemedi: depolama dolu olabilir"); }
+  clearTimeout(saveT); saveT = setTimeout(() => syncReminder(), 400);
+}
+
+/* ---------- hesaplar ---------- */
+function norm(v) {
+  if (!v) return "";
+  let t = String(v).trim().replace(/^@+/, "");
+  t = t.replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^instagram\.com\//i, "").replace(/^_u\//, "");
+  t = (t.split(/[/?#\s,;]+/)[0] || "").toLowerCase();
+  return /^[a-z0-9._]{1,30}$/.test(t) ? t : "";
+}
+const people = () => Object.values(S.people);
+function hue(u) { let h = 0; for (let i = 0; i < u.length; i++) h = (h * 31 + u.charCodeAt(i)) >>> 0; return h % 360; }
+function avatar(u, cls = "md") {
+  const h = hue(u);
+  return '<span class="avatar ' + cls + '" style="background:linear-gradient(135deg,hsl(' + h + ' 78% 62%),hsl(' + ((h + 50) % 360) + ' 72% 46%))">' + esc((u.replace(/[._0-9]/g, "")[0] || u[0] || "?").toUpperCase()) + '</span>';
+}
+function since(fn) { const at = S.base ? S.base.at : 0; let n = 0; for (const p of people()) if (fn(p) > at) n++; return n; }
+function totals() {
+  const active = people().filter(p => p.status !== "done" && p.status !== "closed").length;
+  const following = S.base ? Math.max(0, S.base.following - since(p => p.status === "done" ? (p.doneAt || 0) : 0) - since(p => p.status === "closed" ? (p.closedAt || 0) : 0) - S.extraDone) : active;
+  const followers = S.base ? S.base.followers : null;
+  const target = S.settings.target != null ? S.settings.target : followers;
+  const start = Math.max(S.startFollowing || 0, S.base ? S.base.following : following);
+  const left = target != null ? Math.max(0, following - target) : null;
+  const pct = target == null ? 0 : start <= target ? 100 : Math.min(100, Math.max(0, Math.round((start - following) / (start - target) * 100)));
+  return {following, followers, target, left, pct};
+}
+const today = () => S.log[dayKey()] || 0;
+function isRecent(p) { return S.settings.skipRecentDays > 0 && p.at && p.at > now() / 1000 - S.settings.skipRecentDays * 86400; }
+function counts() {
+  const c = {nofb: 0, pending: 0, keep: 0, done: 0, mutual: 0, again: 0, req: 0, closed: 0, lost: 0, recent: 0, fans: (S.fans || []).length};
+  for (const p of people()) {
+    if (p.status === "pending") { c.pending++; if (p.followsMe === false) c.nofb++; if (p.followsMe === true) c.mutual++; if (p.again) c.again++; if (p.lostAt) c.lost++; if (isRecent(p)) c.recent++; }
+    else if (p.status === "keep") c.keep++;
+    else if (p.status === "closed") c.closed++;
+    else c.done++;
+  }
+  for (const r of Object.values(S.requests)) if (r.status !== "done") c.req++;
+  return c;
+}
+function streakDays() { let st = 0; for (let i = 0; i < 400; i++) { const n = S.log[dayKey(now() - i * DAY)] || 0; if (n > 0) st++; else if (i > 0) break; } return st; }
+function sorter(mode) {
+  return ({
+    oldest: (a, b) => (a.at ?? 9e15) - (b.at ?? 9e15) || a.u.localeCompare(b.u),
+    newest: (a, b) => (b.at ?? -1) - (a.at ?? -1) || a.u.localeCompare(b.u),
+    az: (a, b) => a.u.localeCompare(b.u),
+    za: (a, b) => b.u.localeCompare(a.u),
+    random: (a, b) => hue(a.u + dayKey()) - hue(b.u + dayKey()),
+  })[mode] || (() => 0);
+}
+function ago(sec) {
+  if (!sec) return "";
+  const d = Math.floor((now() / 1000 - sec) / 86400);
+  if (d < 1) return "bugün takip ettin";
+  if (d < 30) return d + " gün önce takip ettin";
+  if (d < 365) return Math.floor(d / 30) + " ay önce takip ettin";
+  const y = Math.floor(d / 365), m = Math.floor((d % 365) / 30);
+  return y + " yıl" + (m ? " " + m + " ay" : "") + " önce takip ettin";
+}
+function burst() { const t = now() - 6e5; let n = 0; for (const p of people()) if (p.status === "done" && p.doneAt > t) n++; return n; }
+function totalDone() { return Object.values(S.log).reduce((a, b) => a + Math.max(0, b), 0) + S.extraDone; }
+
+/* ---------- kuyruk ---------- */
+const skipped = new Map();
+const queueMode = () => S.settings.queue === "auto" ? (S.hasFollowers ? "nofb" : "pending") : S.settings.queue;
+function queue() {
+  const mode = queueMode();
+  let list = people().filter(p => p.status === "pending" && !isRecent(p));
+  if (mode === "nofb") list = list.filter(p => p.followsMe === false);
+  if (mode === "lost") list = list.filter(p => p.lostAt);
+  list.sort(sorter(S.settings.sort));
+  const prio = p => (p.again ? 2 : 0) + (p.lostAt ? 1 : 0);
+  list.sort((a, b) => prio(b) - prio(a));
+  const fresh = list.filter(p => !skipped.has(p.u));
+  const sk = list.filter(p => skipped.has(p.u)).sort((a, b) => skipped.get(a.u) - skipped.get(b.u));
+  return fresh.concat(sk);
+}
+
+/* ---------- işlemler ---------- */
+let lastOpenAt = 0, openedUser = null, cdTimer = null;
+const profileUrl = (u, app) => app && isAndroid ? "instagram://user?username=" + u : "https://www.instagram.com/" + u + "/";
+function openProfile(u) {
+  lastOpenAt = now(); openedUser = u;
+  const a = document.createElement("a");
+  a.href = profileUrl(u, true); a.rel = "noopener"; if (!isAndroid) a.target = "_blank";
+  document.body.appendChild(a); a.click(); a.remove();
+  if (cur === "home") setTimeout(renderHome, 60);
+}
+function hist(u, a) { S.history.unshift({u, a, t: now()}); if (S.history.length > 300) S.history.length = 300; }
+function setStatus(u, status, opts = {}) {
+  const p = S.people[u]; if (!p || p.status === status) return;
+  const prev = {status: p.status, doneAt: p.doneAt, again: p.again, closedAt: p.closedAt};
+  const prevLog = {...S.log};
+  if (p.status === "done") { const k = dayKey(p.doneAt); if (S.log[k]) S.log[k]--; p.doneAt = null; }
+  if (status === "done") { p.doneAt = now(); S.log[dayKey()] = today() + 1; p.again = false; }
+  p.closedAt = status === "closed" ? now() : null;
+  if (status === "closed") p.again = false;
+  p.status = status; skipped.delete(u);
+  hist(u, status);
+  if (opts.bulk) return;
+  save();
+  vibrate(status === "done" ? [12, 40, 18] : 12);
+  renderAll();
+  const msg = {done: "@" + u + " bırakıldı", keep: "@" + u + " korunuyor", closed: "@" + u + " kapalı hesap olarak çıkarıldı", pending: "@" + u + " bekleyenlere alındı"}[status];
+  snack(msg, () => { Object.assign(p, prev); S.log = prevLog; S.history.shift(); save(); renderAll(); });
+  if (status === "done") afterDone();
+}
+function markFollows(u, opts = {}) {
+  const p = S.people[u]; if (!p) return;
+  const prev = {followsMe: p.followsMe, manualFollows: p.manualFollows};
+  p.followsMe = true; p.manualFollows = true; skipped.delete(u); hist(u, "follows");
+  if (opts.bulk) return;
+  save(); vibrate(12); renderAll();
+  snack("@" + u + " seni takip ediyor olarak işaretlendi", () => { Object.assign(p, prev); S.history.shift(); save(); renderAll(); });
+}
+function afterDone() {
+  const t = today(), L = S.settings.dailyLimit;
+  if (L > 0 && t === L) setTimeout(() => snack("Günlük hedefe ulaştın 🎯 Yarın devam etmek daha güvenli"), 2400);
+  checkBadges();
+}
+
+/* ---------- rozetler ---------- */
+const BADGES = [
+  {k: "first", e: "🌱", t: "İlk adım", d: "İlk kişiyi bırak", ok: () => totalDone() >= 1},
+  {k: "ten", e: "✨", t: "Isınma", d: "10 kişi bırak", ok: () => totalDone() >= 10},
+  {k: "fifty", e: "🔥", t: "Hız kazandın", d: "50 kişi bırak", ok: () => totalDone() >= 50},
+  {k: "hundred", e: "💯", t: "Yüzlük", d: "100 kişi bırak", ok: () => totalDone() >= 100},
+  {k: "twohundred", e: "🚀", t: "Temizlikçi", d: "200 kişi bırak", ok: () => totalDone() >= 200},
+  {k: "streak3", e: "📅", t: "İstikrar", d: "3 gün üst üste", ok: () => streakDays() >= 3},
+  {k: "streak7", e: "🏅", t: "Bir hafta", d: "7 gün üst üste", ok: () => streakDays() >= 7},
+  {k: "safe", e: "🛡️", t: "Dikkatli", d: "Limiti aşmadan 5 gün", ok: () => Object.values(S.log).filter(n => n > 0 && n <= (S.settings.dailyLimit || 1e9)).length >= 5},
+  {k: "keeper", e: "💙", t: "Seçici", d: "10 hesabı koru", ok: () => counts().keep >= 10},
+  {k: "detective", e: "🕵️", t: "Dedektif", d: "Seni takipten çıkanları bul", ok: () => (S.changes || []).some(c => c.lost.length)},
+  {k: "clean", e: "🧹", t: "Tertemiz", d: "Geri takip etmeyen kalmasın", ok: () => S.hasFollowers && counts().nofb === 0 && totalDone() > 0},
+  {k: "goal", e: "🏆", t: "Hedef", d: "Hedef sayıya ulaş", ok: () => { const t = totals(); return t.target != null && t.left === 0 && totalDone() > 0; }},
+];
+function checkBadges(silent) {
+  let fresh = null;
+  for (const b of BADGES) if (!S.badges[b.k] && b.ok()) { S.badges[b.k] = now(); fresh = b; }
+  const pct = totals().pct;
+  for (const m of [25, 50, 75, 100]) if (pct >= m && !S.milestones[m] && totalDone() > 0) { S.milestones[m] = now(); fresh = fresh || {e: m === 100 ? "🏆" : "🎉", t: "Hedefin %" + m + "'i tamamlandı"}; }
+  if (fresh) { save(); if (!silent) setTimeout(() => { confetti(); snack(fresh.e + " " + fresh.t + (fresh.d ? " rozetini kazandın!" : "!")); }, 700); }
+}
+
+/* ---------- snack ---------- */
+let snackT = null, snackUndo = null;
+function snack(text, undo) {
+  $("#snackText").textContent = text;
+  snackUndo = undo || null;
+  $("#snackBtn").classList.toggle("hidden", !undo);
+  $("#snack").classList.toggle("up", $("#bulkbar").classList.contains("show"));
+  $("#snack").classList.add("show");
+  clearTimeout(snackT); snackT = setTimeout(() => $("#snack").classList.remove("show"), undo ? 5000 : 3400);
+}
+$("#snackBtn").onclick = () => { if (snackUndo) snackUndo(); snackUndo = null; $("#snack").classList.remove("show"); };
+
+/* ---------- alt sayfa ---------- */
+function openSheet(html, bind) {
+  $("#sheetBody").innerHTML = html;
+  $("#scrim").classList.add("show"); $("#sheet").classList.add("show"); $("#sheet").scrollTop = 0;
+  if (bind) bind($("#sheetBody"));
+}
+function closeSheet() { $("#scrim").classList.remove("show"); $("#sheet").classList.remove("show"); }
+const sheetOpen = () => $("#sheet").classList.contains("show");
+$("#scrim").onclick = closeSheet;
+(function sheetDrag() {
+  let y0 = null, dy = 0; const sh = $("#sheet");
+  sh.addEventListener("touchstart", e => { if (sh.scrollTop <= 0 && !e.target.closest("input")) { y0 = e.touches[0].clientY; dy = 0; } }, {passive: true});
+  sh.addEventListener("touchmove", e => { if (y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); if (dy > 4) { sh.style.transition = "none"; sh.style.transform = "translateY(" + dy + "px)"; } }, {passive: true});
+  sh.addEventListener("touchend", () => { if (y0 == null) return; sh.style.transition = ""; sh.style.transform = ""; if (dy > 110) closeSheet(); y0 = null; });
+})();
+function confirmSheet(title, text, okLabel, onOk, danger) {
+  openSheet('<h2>' + title + '</h2><p class="muted small" style="margin:6px 0 18px">' + text + '</p><div class="grid2"><button class="btn" data-x>Vazgeç</button><button class="btn ' + (danger ? "danger" : "primary") + '" data-ok>' + okLabel + '</button></div>',
+    el => { $("[data-x]", el).onclick = closeSheet; $("[data-ok]", el).onclick = () => { closeSheet(); onOk(); }; });
+}
+
+/* ---------- konfeti ---------- */
+function confetti() {
+  const c = $("#confetti"), x = c.getContext("2d"), dp = devicePixelRatio || 1; c.classList.remove("hidden");
+  const W = c.width = innerWidth * dp, H = c.height = innerHeight * dp;
+  const cols = ["#ff3d7f", "#ff6a3d", "#a24dff", "#3ddc97", "#ffc35a", "#6ea8ff"];
+  const ps = Array.from({length: 150}, () => ({x: W / 2, y: H * .42, vx: (Math.random() - .5) * 28 * dp, vy: (-Math.random() * 22 - 6) * dp, s: (5 + Math.random() * 6) * dp, r: Math.random() * 6, vr: (Math.random() - .5) * .4, c: cols[Math.random() * cols.length | 0]}));
+  let f = 0;
+  (function tick() {
+    x.clearRect(0, 0, W, H);
+    for (const p of ps) { p.vy += .7 * dp; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr; x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); x.restore(); }
+    if (++f < 150) requestAnimationFrame(tick); else c.classList.add("hidden");
+  })();
+  vibrate([20, 60, 20, 60, 40]);
+}
+
+/* ---------- tema ---------- */
+const mq = matchMedia("(prefers-color-scheme: light)");
+function applyTheme() {
+  const t = S.settings.theme === "system" ? (mq.matches ? "light" : "dark") : S.settings.theme;
+  document.documentElement.dataset.theme = t;
+  try { B && B.setBars && B.setBars(t === "light" ? "#f4f5f8" : "#0a0b0f", t === "light"); } catch (e) {}
+}
+if (mq.addEventListener) mq.addEventListener("change", () => { applyTheme(); renderAll(); });
+
+/* ---------- üst kısım ---------- */
+function ringSvg(pct, size, stroke) {
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r, id = "rg" + size;
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6a3d"/><stop offset=".5" stop-color="#ff3d7f"/><stop offset="1" stop-color="#a24dff"/></linearGradient></defs>' +
+    '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="var(--surface-3)" stroke-width="' + stroke + '"/>' +
+    (pct > 0 ? '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="url(#' + id + ')" stroke-width="' + stroke + '" stroke-linecap="round" stroke-dasharray="' + c + '" stroke-dashoffset="' + (c * (1 - Math.min(1, pct / 100))) + '"/>' : "") + '</svg>';
+}
+function renderTop() {
+  const h = new Date().getHours();
+  $("#hello").textContent = h < 6 ? "İyi geceler" : h < 12 ? "Günaydın" : h < 18 ? "İyi günler" : "İyi akşamlar";
+  $("#pageTitle").textContent = {home: "Takip Temizleme", list: "Kişiler", stats: "Analiz", settings: "Ayarlar"}[cur];
+  const L = S.settings.dailyLimit, td = today();
+  $("#todayChip").innerHTML = '<span class="mini">' + ringSvg(L > 0 ? td / L * 100 : (td ? 100 : 0), 28, 4) + '</span>' + (L > 0 ? td + " / " + L : td + " bugün");
+  $("#todayChip").style.color = L > 0 && td >= L ? "var(--warn)" : "";
+  const nl = (S.changes || []).filter(c => c.at > (S.seenChangesAt || 0)).reduce((a, c) => a + c.lost.length, 0);
+  $("#navDot").textContent = nl; $("#navDot").classList.toggle("hidden", !nl);
+}
+$("#todayChip").onclick = () => tab("stats");
+
+/* ---------- uyarılar ---------- */
+function dataWarnings() {
+  const w = [], ii = S.importInfo, pf = S.settings.profileFollowers, pg = S.settings.profileFollowing;
+  if (!ii) return w;
+  const yearAgo = now() / 1000 - 400 * 86400;
+  const hint = " Veri indirirken <b>Tarih aralığı: Tüm zamanlar</b> seçilmemiş olabilir; öyleyse seni takip edenler de “takip etmiyor” görünür.";
+  if (ii.followers != null && pf && ii.followers < pf * 0.92)
+    w.push("Takipçi dosyanda <b>" + fmt(ii.followers) + "</b> kişi var ama profilinde <b>" + fmt(pf) + "</b> takipçin var." + hint);
+  else if (ii.followers > 50 && ii.oldestFollower && ii.oldestFollower > yearAgo && (!ii.oldestFollowing || ii.oldestFollowing < yearAgo))
+    w.push("Dosyadaki en eski takipçin " + dateTR(ii.oldestFollower * 1000) + " tarihli; dosya sadece son bir yılı kapsıyor olabilir." + hint);
+  if (ii.following != null && pg && ii.following < pg * 0.92)
+    w.push("Takip dosyanda <b>" + fmt(ii.following) + "</b> kişi var ama profilinde <b>" + fmt(pg) + "</b> takip görünüyor. Dosya eksik olabilir.");
+  else if (ii.following != null && pg && ii.following - pg - counts().closed > 5)
+    w.push("Dosyanda <b>" + fmt(ii.following) + "</b> hesap var, profilinde <b>" + fmt(pg) + "</b>: yaklaşık <b>" + fmt(ii.following - pg - counts().closed) + "</b> hesap kapalı ya da silinmiş olabilir. Karşına gelince <b>Hesap kapalı</b>'ya bas.");
+  return w;
+}
+function wkey(t) { let h = 0; for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0; return h.toString(36); }
+const warnHtml = () => dataWarnings().filter(t => !(S.dismissed || {})[wkey(t)]).map(t => '<div class="banner warn">' + I.alert() + '<span class="grow">' + t + ' <a href="#" data-help>Nasıl düzeltirim?</a></span><button data-dismiss="' + wkey(t) + '" aria-label="Uyarıyı kapat" style="color:inherit;opacity:.7;margin:-2px -4px 0 0">' + I.x(18) + '</button></div>').join("");
+function bindHelp(el) {
+  $$("[data-help]", el).forEach(a => a.onclick = e => { e.preventDefault(); helpSheet(); });
+  $$("[data-dismiss]", el).forEach(b => b.onclick = () => { S.dismissed = S.dismissed || {}; S.dismissed[b.dataset.dismiss] = now(); save(); const bn = b.closest(".banner"); bn.style.transition = ".2s"; bn.style.opacity = 0; setTimeout(renderView, 200); snack("Uyarı gizlendi. Yeni veri yüklersen tekrar kontrol ederim."); });
+}
+
+/* ================= ODAK ================= */
+function renderHome() {
+  const el = $("#view");
+  clearInterval(cdTimer);
+  if (!people().length) { el.innerHTML = emptyState(); bindEmpty(el); return; }
+  const t = totals(), c = counts(), L = S.settings.dailyLimit, td = today(), q = queue(), mode = queueMode(), st = streakDays();
+  let eta;
+  if (t.target == null) eta = "Hedef için takipçi sayın gerekli";
+  else if (t.left === 0) eta = "Hedefe ulaştın 🎉";
+  else if (L > 0) { const rest = Math.max(0, L - td); eta = t.left <= rest ? "Bugün bitirebilirsin" : "≈ " + ((rest > 0 ? 1 : 0) + Math.ceil((t.left - rest) / L)) + " günde biter"; }
+  else eta = fmt(t.left) + " kişi kaldı";
+  let h = '<section class="card hero"><div class="hero-in">' +
+    '<div class="ring">' + ringSvg(t.pct, 112, 11) + '<div class="ctr"><div class="pct">%' + t.pct + '</div><div class="lbl">tamamlandı</div></div></div>' +
+    '<div class="kv">' +
+      '<div><div class="k">Takip</div><div class="v">' + fmt(t.following) + '</div></div>' +
+      '<div><div class="k">Takipçi</div><div class="v">' + (t.followers != null ? fmt(t.followers) : "–") + '</div></div>' +
+      '<div><div class="k">Hedef</div><div class="v">' + (t.target != null ? fmt(t.target) : "–") + '</div></div>' +
+      '<div><div class="k">Kalan</div><div class="v acc">' + (t.left != null ? fmt(t.left) : "–") + '</div></div>' +
+    '</div></div>' +
+    '<div class="hero-foot"><span class="muted b">' + eta + '</span><span class="streak" style="color:' + (st ? "var(--warn)" : "var(--faint)") + '">' + I.flame() + st + ' gün seri</span></div></section>';
+  h += warnHtml();
+  const bu = burst();
+  if (S.settings.burstGuard && bu >= 12) h += '<div class="banner warn">' + I.zap() + '<span>Son 10 dakikada ' + bu + ' kişiyi bıraktın. Instagram ani hızı sevmez; birkaç dakika mola ver.</span></div>';
+  if (L > 0 && td >= L) h += '<div class="banner warn">' + I.alert() + '<span>Bugünkü limitine (' + L + ') ulaştın. Devam edebilirsin ama yarına bırakmak hesabın için daha güvenli.</span></div>';
+  const segs = [];
+  if (S.hasFollowers) segs.push(["nofb", "Takip etmeyen", c.nofb]);
+  if (c.lost) segs.push(["lost", "Seni bırakan", c.lost]);
+  segs.push(["pending", "Hepsi", c.pending]);
+  h += '<div class="seg mt16">' + segs.map(s => '<button data-q="' + s[0] + '" class="' + (mode === s[0] ? "on" : "") + '">' + s[1] + '<span class="n">' + fmt(s[2]) + '</span></button>').join("") + '</div>';
+  if (!q.length) {
+    h += '<div class="card empty mt16"><div class="art">' + I.check(40) + '</div><h2>' + (mode === "nofb" ? "Seni takip etmeyen kalmadı" : mode === "lost" ? "Hepsini hallettin" : "Sıra boş") + '</h2><p>' +
+      (c.recent ? fmt(c.recent) + " kişiyi son " + S.settings.skipRecentDays + " günde takip ettiğin için şimdilik atlıyorum. " : "") +
+      (mode !== "pending" && c.pending ? "İstersen tüm bekleyenlere geçebilirsin." : "Harika iş çıkardın.") + '</p>' +
+      (mode !== "pending" && c.pending ? '<button class="btn primary" data-q="pending">Tüm bekleyenler (' + fmt(c.pending) + ')</button>' : "") + '</div>';
+    el.innerHTML = h; bindHome(el, null); return;
+  }
+  const p = q[0];
+  h += '<div class="deck">' + (q[2] ? '<div class="pcard back2"></div>' : "") +
+    (q[1] ? '<div class="pcard back">' + avatar(q[1].u, "xl") + '<div class="pname">@' + esc(q[1].u) + '</div></div>' : "") + cardHtml(p) + '</div>';
+  h += '<div class="actions">' +
+    '<div class="fab-wrap"><button class="fab skip" id="aSkip" aria-label="Atla">' + I.skip(24) + '</button><div class="fab-lbl">Atla</div></div>' +
+    '<div class="fab-wrap"><button class="fab big ' + (openedUser === p.u ? "pulse" : "") + '" id="aDone" aria-label="Takibi bıraktım">' + I.check(34) + '</button><div class="fab-lbl">Bıraktım</div></div>' +
+    '<div class="fab-wrap"><button class="fab keep" id="aKeep" aria-label="Koru">' + I.shield(24) + '</button><div class="fab-lbl">Koru</div></div></div>';
+  h += '<div class="sub-actions"><button id="aClosed">' + I.ban(16) + ' Hesap kapalı</button>' + (p.followsMe === false ? '<button id="aFollows">' + I.userCheck(16) + ' Beni takip ediyor</button>' : "") + '</div>';
+  if (q.length > 1) h += '<div class="next-row"><span class="avs">' + q.slice(1, 5).map(x => avatar(x.u)).join("") + '</span><span class="tiny muted b">Sırada ' + fmt(q.length) + ' kişi</span></div>';
+  el.innerHTML = h;
+  bindHome(el, p);
+}
+function cardHtml(p) {
+  const cd = S.settings.cooldown * 1000 - (now() - lastOpenAt), waiting = cd > 0 && openedUser !== p.u, opened = openedUser === p.u;
+  let tags = "";
+  if (p.again) tags += '<span class="tag warn">' + I.alert(13) + ' Hâlâ takiptesin</span>';
+  if (p.lostAt) tags += '<span class="tag acc">' + I.userMinus(13) + ' Seni takipten çıktı</span>';
+  else if (p.followsMe === false) tags += '<span class="tag acc">Seni takip etmiyor</span>';
+  if (p.followsMe === true) tags += '<span class="tag ok">Seni takip ediyor</span>';
+  if (p.at) tags += '<span class="tag">' + I.clock(13) + ' ' + ago(p.at) + '</span>';
+  return '<div class="pcard" id="topcard">' +
+    '<span class="stamp s-done">Bıraktım</span><span class="stamp s-skip">Atla</span><span class="stamp s-keep">Koru</span>' +
+    avatar(p.u, "xl") + '<div class="pname">@' + esc(p.u) + '</div><div class="tags">' + tags + '</div>' +
+    '<button class="btn primary lg open" id="aOpen" ' + (waiting ? "disabled" : "") + '>' + I.ig(20) + '<span id="aOpenTxt">' + (waiting ? "Bekle " + Math.ceil(cd / 1000) + " sn" : opened ? "Tekrar aç" : "Instagram'da aç") + '</span></button>' +
+    '<div class="swipe-hint">' + (opened ? "Bıraktıysan sağa kaydır ya da ✓'e bas" : S.seenSwipeHint ? "" : "Sağa kaydır: bıraktım · Sola: atla · Yukarı: koru") + '</div></div>';
+}
+function bindHome(el, p) {
+  bindHelp(el);
+  $$("[data-q]", el).forEach(b => b.onclick = () => { S.settings.queue = b.dataset.q; save(); vibrate(8); renderHome(); });
+  if (!p) return;
+  const done = () => { openedUser = null; S.seenSwipeHint = true; setStatus(p.u, "done"); };
+  const skip = () => { skipped.set(p.u, now()); if (openedUser === p.u) openedUser = null; S.seenSwipeHint = true; save(); vibrate(8); renderHome(); };
+  const keep = () => { S.seenSwipeHint = true; setStatus(p.u, "keep"); };
+  $("#aOpen").onclick = e => { e.stopPropagation(); openProfile(p.u); };
+  $("#aDone").onclick = () => fly("right", done);
+  $("#aSkip").onclick = () => fly("left", skip);
+  $("#aKeep").onclick = () => fly("up", keep);
+  $("#aClosed").onclick = () => { if (openedUser === p.u) openedUser = null; fly("down", () => setStatus(p.u, "closed")); };
+  if ($("#aFollows")) $("#aFollows").onclick = () => fly("up", () => markFollows(p.u));
+  swipe($("#topcard"), {right: done, left: skip, up: keep});
+  if (S.settings.cooldown * 1000 - (now() - lastOpenAt) > 0 && openedUser !== p.u) cdTimer = setInterval(() => {
+    const r = S.settings.cooldown * 1000 - (now() - lastOpenAt), b = $("#aOpen");
+    if (!b) return clearInterval(cdTimer);
+    if (r <= 0) { clearInterval(cdTimer); b.disabled = false; $("#aOpenTxt").textContent = "Instagram'da aç"; }
+    else $("#aOpenTxt").textContent = "Bekle " + Math.ceil(r / 1000) + " sn";
+  }, 250);
+}
+let flying = false;
+function fly(dir, cb) {
+  const c = $("#topcard"); if (!c) return cb();
+  if (flying) return; flying = true;
+  const W = innerWidth;
+  const tr = {right: "translate(" + W + "px,40px) rotate(22deg)", left: "translate(" + -W + "px,40px) rotate(-22deg)", up: "translate(0," + -innerHeight + "px)", down: "translate(0,50px) scale(.85)"}[dir];
+  const st = {right: ".s-done", left: ".s-skip", up: ".s-keep"}[dir];
+  if (st) $(st, c).style.opacity = 1;
+  c.classList.add("anim"); c.style.transform = tr; if (dir === "down") c.style.opacity = 0;
+  const back = $(".pcard.back"); if (back) { back.classList.add("anim"); back.style.transform = "none"; back.style.opacity = 1; }
+  setTimeout(() => { flying = false; cb(); }, 220);
+}
+function swipe(card, h) {
+  if (!card) return;
+  let x0, y0, dx = 0, dy = 0, drag = false, id = null;
+  const sr = $(".s-done", card), sl = $(".s-skip", card), su = $(".s-keep", card);
+  card.addEventListener("pointerdown", e => { if (e.target.closest("button")) return; id = e.pointerId; x0 = e.clientX; y0 = e.clientY; dx = dy = 0; drag = false; card.classList.remove("anim"); });
+  card.addEventListener("pointermove", e => {
+    if (id !== e.pointerId) return;
+    dx = e.clientX - x0; dy = e.clientY - y0;
+    if (!drag && Math.hypot(dx, dy) > 8) { drag = true; try { card.setPointerCapture(id); } catch (er) {} }
+    if (!drag) return;
+    card.style.transform = "translate(" + dx + "px," + Math.min(dy, 40) + "px) rotate(" + dx / 18 + "deg)";
+    sr.style.opacity = Math.max(0, Math.min(1, dx / 90));
+    sl.style.opacity = Math.max(0, Math.min(1, -dx / 90));
+    su.style.opacity = Math.abs(dx) < 50 ? Math.max(0, Math.min(1, -dy / 90)) : 0;
+  });
+  const end = e => {
+    if (id !== e.pointerId) return; id = null;
+    if (!drag) return;
+    if (dx > 110) { vibrate(10); fly("right", h.right); }
+    else if (dx < -110) fly("left", h.left);
+    else if (dy < -110 && Math.abs(dx) < 70) fly("up", h.up);
+    else { card.classList.add("anim"); card.style.transform = ""; [sr, sl, su].forEach(s => s.style.opacity = 0); }
+  };
+  card.addEventListener("pointerup", end); card.addEventListener("pointercancel", end);
+}
+function emptyState() {
+  return '<div class="card empty mt12"><div class="art">' + I.file(40) + '</div><h2>Başlamak için verini yükle</h2>' +
+    '<p>Instagram\'dan indirdiğin ZIP\'i seç. Kimin seni geri takip etmediğini bulup tek tek önüne getireyim.</p>' +
+    '<button class="btn primary lg" data-e="import">' + I.upload() + ' Dosya seç</button>' +
+    '<div class="mt16"><button class="linkbtn" data-e="help">Dosyayı Instagram\'dan nasıl alırım?</button></div></div>';
+}
+function bindEmpty(el) { $$("[data-e]", el).forEach(b => b.onclick = () => b.dataset.e === "import" ? $("#fileIg").click() : helpSheet()); }
+
+/* ================= KİŞİLER ================= */
+const LF = {filter: null, q: "", limit: 60, sel: null};
+const FILTERS = [
+  ["nofb", "Takip etmeyen", c => c.nofb, () => S.hasFollowers],
+  ["lost", "Seni bırakan", c => c.lost, c => c.lost > 0],
+  ["pending", "Bekleyen", c => c.pending, () => true],
+  ["mutual", "Karşılıklı", c => c.mutual, () => S.hasFollowers],
+  ["keep", "Korunan", c => c.keep, () => true],
+  ["done", "Bırakılan", c => c.done, () => true],
+  ["closed", "Kapalı", c => c.closed, c => c.closed > 0],
+  ["again", "Hâlâ takipte", c => c.again, c => c.again > 0],
+  ["fans", "Hayranların", c => c.fans, c => c.fans > 0],
+  ["req", "İstekler", c => c.req, () => Object.keys(S.requests).length > 0],
+  ["hist", "Geçmiş", () => null, () => S.history.length > 0],
+];
+const NOSEL = ["fans", "req", "hist"];
+function renderList() {
+  const el = $("#view");
+  if (!people().length && !Object.keys(S.requests).length) { el.innerHTML = emptyState(); bindEmpty(el); return; }
+  const c = counts();
+  if (!LF.filter || !FILTERS.find(f => f[0] === LF.filter && f[3](c))) LF.filter = S.hasFollowers ? "nofb" : "pending";
+  const f = LF.filter;
+  el.innerHTML = warnHtml() +
+    '<div class="sticky"><div class="search">' + I.search() + '<input id="lq" placeholder="Kullanıcı ara" value="' + esc(LF.q) + '" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="' + (LF.q ? "" : "hidden") + '" id="lclear" aria-label="Temizle">' + I.x(18) + '</button></div>' +
+    '<div class="chips">' + FILTERS.filter(x => x[3](c)).map(x => { const n = x[2](c); return '<button class="chip ' + (f === x[0] ? "on" : "") + '" data-f="' + x[0] + '">' + x[1] + (n != null ? '<span class="n">' + fmt(n) + '</span>' : "") + '</button>'; }).join("") + '</div>' +
+    '<div class="list-tools"><span class="muted b" id="lcount"></span><span class="row" style="gap:2px">' +
+      (NOSEL.includes(f) ? "" : '<button id="lsel">' + I.select() + (LF.sel ? "Bitti" : "Seç") + '</button>') +
+      (["fans", "req", "hist", "done", "closed"].includes(f) ? "" : '<button id="lsort">' + I.sort() + sortLabel() + '</button>') +
+      (["nofb", "lost", "fans"].includes(f) ? '<button id="lshare" aria-label="Listeyi paylaş">' + I.share(16) + '</button>' : "") +
+    '</span></div></div>' +
+    '<ul class="list" id="lul"></ul><div class="center mt12"><button class="btn sm hidden" id="lmore">Daha fazla göster</button></div>';
+  bindHelp(el);
+  const qi = $("#lq");
+  qi.oninput = () => { LF.q = qi.value; LF.limit = 60; $("#lclear").classList.toggle("hidden", !LF.q); renderItems(); };
+  $("#lclear").onclick = () => { LF.q = ""; qi.value = ""; $("#lclear").classList.add("hidden"); renderItems(); };
+  $$("[data-f]", el).forEach(b => b.onclick = () => { LF.filter = b.dataset.f; LF.limit = 60; LF.sel = null; vibrate(6); renderList(); renderBulk(); });
+  if ($("#lsort")) $("#lsort").onclick = sortSheet;
+  if ($("#lsel")) $("#lsel").onclick = () => { LF.sel = LF.sel ? null : new Set(); renderList(); renderBulk(); };
+  if ($("#lshare")) $("#lshare").onclick = () => shareList(f);
+  $("#lmore").onclick = () => { LF.limit += 150; renderItems(); };
+  renderItems();
+}
+const sortLabel = () => ({oldest: "En eski", newest: "En yeni", az: "A-Z", za: "Z-A", random: "Karışık"})[S.settings.sort] || "Sırala";
+function filtered() {
+  const f = LF.filter, q = LF.q.trim().toLowerCase().replace(/^@/, "");
+  let items;
+  if (f === "req") items = Object.values(S.requests).sort((a, b) => (a.status === "done") - (b.status === "done") || (a.at || 0) - (b.at || 0));
+  else if (f === "fans") items = (S.fans || []).slice().sort((a, b) => (b.at || 0) - (a.at || 0));
+  else if (f === "hist") items = S.history.slice();
+  else {
+    items = people().filter(p =>
+      f === "nofb" ? p.status === "pending" && p.followsMe === false :
+      f === "mutual" ? p.status === "pending" && p.followsMe === true :
+      f === "again" ? p.status === "pending" && p.again :
+      f === "lost" ? p.status === "pending" && p.lostAt :
+      p.status === f);
+    if (f === "done") items.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+    else if (f === "closed") items.sort((a, b) => (b.closedAt || 0) - (a.closedAt || 0));
+    else items.sort(sorter(S.settings.sort));
+  }
+  if (q) items = items.filter(p => p.u.includes(q));
+  return items;
+}
+function renderItems() {
+  const ul = $("#lul"); if (!ul) return;
+  const f = LF.filter, items = filtered();
+  $("#lcount").textContent = f === "hist" ? "Son " + fmt(items.length) + " işlem" : fmt(items.length) + " kişi";
+  if (!items.length) { ul.innerHTML = '<li class="empty-li">' + (LF.q ? "Sonuç bulunamadı" : "Bu bölüm boş") + '</li>'; $("#lmore").classList.add("hidden"); return; }
+  ul.innerHTML = items.slice(0, LF.limit).map(x => f === "req" ? reqItem(x) : f === "fans" ? fanItem(x) : f === "hist" ? histItem(x) : personItem(x)).join("");
+  $("#lmore").classList.toggle("hidden", items.length <= LF.limit);
+  $$("li[data-u]", ul).forEach(li => {
+    const u = li.dataset.u;
+    let lp = null;
+    li.addEventListener("pointerdown", e => {
+      if (LF.sel || NOSEL.includes(f) || e.target.closest("[data-qa]")) return;
+      lp = setTimeout(() => { lp = null; li.dataset.lp = "1"; LF.sel = new Set([u]); vibrate(25); renderList(); renderBulk(); }, 480);
+    });
+    ["pointermove", "pointerup", "pointercancel"].forEach(ev => li.addEventListener(ev, () => { clearTimeout(lp); lp = null; }));
+    li.onclick = e => {
+      if (e.target.closest("[data-qa]")) return;
+      if (LF.sel) { LF.sel.has(u) ? LF.sel.delete(u) : LF.sel.add(u); li.classList.toggle("sel"); renderBulk(); vibrate(6); return; }
+      if (f === "fans" || f === "req") openProfile(u);
+      else if (S.people[u]) personSheet(u);
+    };
+  });
+  $$("[data-qa]", ul).forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const u = b.dataset.u, a = b.dataset.qa;
+    if (a === "done") setStatus(u, "done");
+    else if (a === "undo") setStatus(u, "pending");
+    else if (a === "open") openProfile(u);
+    else if (a === "rdone" || a === "rundo") { const r = S.requests[u], prev = r.status; r.status = a === "rdone" ? "done" : "pending"; save(); renderAll(); snack(a === "rdone" ? "İstek iptal edildi olarak işaretlendi" : "Geri alındı", () => { r.status = prev; save(); renderAll(); }); }
+  });
+}
+function metaFor(p) {
+  const m = [];
+  if (p.status === "done") m.push("Bırakıldı · " + dateTR(p.doneAt || now()));
+  else if (p.status === "closed") m.push("Kapalı hesap");
+  else {
+    if (p.again) m.push('<span style="color:var(--warn)">Hâlâ takiptesin</span>');
+    if (p.lostAt) m.push('<span style="color:var(--accent-text)">Seni takipten çıktı</span>');
+    else if (p.followsMe === false) m.push('<span style="color:var(--accent-text)">Seni takip etmiyor</span>');
+    else if (p.followsMe === true) m.push('<span style="color:var(--ok)">Seni takip ediyor</span>');
+    if (p.status === "keep") m.push('<span style="color:var(--keep)">Korunuyor</span>');
+    if (p.at) m.push(ago(p.at));
+  }
+  return m.join(" · ");
+}
+function personItem(p) {
+  const sel = LF.sel && LF.sel.has(p.u), u = esc(p.u), dim = p.status === "done" || p.status === "closed";
+  const qa = LF.sel ? '<span class="check">' + I.check(14) + '</span>' :
+    dim ? '<button class="qa" data-qa="undo" data-u="' + u + '" aria-label="Geri al">' + I.undo() + '</button>' :
+    p.status === "keep" ? '<span class="qa c4">' + I.shield(18) + '</span>' :
+    '<button class="qa ok" data-qa="done" data-u="' + u + '" aria-label="Bıraktım">' + I.check(18) + '</button>';
+  return '<li data-u="' + u + '" class="' + (dim ? "dim " : "") + (sel ? "sel" : "") + '">' + avatar(p.u) + '<div class="grow"><span class="nm">@' + u + '</span><div class="meta">' + metaFor(p) + '</div></div>' + qa + '</li>';
+}
+function reqItem(r) {
+  const u = esc(r.u), d = r.status === "done";
+  return '<li data-u="' + u + '" class="' + (d ? "dim" : "") + '">' + avatar(r.u) + '<div class="grow"><span class="nm">@' + u + '</span><div class="meta">' + (d ? "İptal edildi" : "İsteğini kabul etmedi" + (r.at ? " · " + dateTR(r.at * 1000) : "")) + '</div></div>' +
+    (d ? '<button class="qa" data-qa="rundo" data-u="' + u + '">' + I.undo() + '</button>' : '<button class="qa ok" data-qa="rdone" data-u="' + u + '" aria-label="İptal ettim">' + I.check(18) + '</button>') + '</li>';
+}
+function fanItem(x) {
+  const u = esc(x.u);
+  return '<li data-u="' + u + '">' + avatar(x.u) + '<div class="grow"><span class="nm">@' + u + '</span><div class="meta">Seni takip ediyor, sen etmiyorsun' + (x.at ? " · " + dateTR(x.at * 1000) : "") + '</div></div><button class="qa" data-qa="open" data-u="' + u + '" aria-label="Profili aç">' + I.ig(18) + '</button></li>';
+}
+function histItem(h) {
+  const L = {done: ["Takibi bıraktın", "var(--ok)"], keep: ["Korumaya aldın", "var(--keep)"], closed: ["Kapalı olarak işaretledin", "var(--muted)"], pending: ["Bekleyenlere aldın", "var(--muted)"], follows: ["“Takip ediyor” dedin", "var(--ok)"]}[h.a] || ["İşlem", "var(--muted)"];
+  const u = esc(h.u);
+  return '<li data-u="' + u + '">' + avatar(h.u) + '<div class="grow"><span class="nm">@' + u + '</span><div class="meta" style="color:' + L[1] + '">' + L[0] + '</div></div><span class="tiny muted b">' + (dayKey(h.t) === dayKey() ? new Date(h.t).toLocaleTimeString("tr-TR", {hour: "2-digit", minute: "2-digit"}) : dateTR(h.t)) + '</span></li>';
+}
+function renderBulk() {
+  const bar = $("#bulkbar");
+  if (!LF.sel || cur !== "list") { bar.classList.remove("show"); $("#snack").classList.remove("up"); return; }
+  const n = LF.sel.size, dis = n ? "" : "disabled";
+  bar.innerHTML = '<span class="cnt">' + n + ' seçili</span>' +
+    '<button data-b="all">' + I.select(18) + 'Tümü</button>' +
+    '<button data-b="keep" ' + dis + '>' + I.shield(18) + 'Koru</button>' +
+    '<button data-b="follows" ' + dis + '>' + I.userCheck(18) + 'Takipçi</button>' +
+    '<button data-b="closed" ' + dis + '>' + I.ban(18) + 'Kapalı</button>' +
+    '<button data-b="pending" ' + dis + '>' + I.undo(18) + 'Beklet</button>' +
+    '<button data-b="x">' + I.x(18) + 'Kapat</button>';
+  bar.classList.add("show");
+  $("#snack").classList.add("up");
+  $$("[data-b]", bar).forEach(b => b.onclick = () => {
+    const a = b.dataset.b;
+    if (a === "x") { LF.sel = null; renderList(); renderBulk(); return; }
+    if (a === "all") { const all = filtered().map(p => p.u); LF.sel = LF.sel.size === all.length ? new Set() : new Set(all); renderItems(); renderBulk(); return; }
+    if (!LF.sel.size) return;
+    const snap = JSON.stringify({people: S.people, log: S.log, history: S.history});
+    const list = [...LF.sel];
+    for (const u of list) a === "follows" ? markFollows(u, {bulk: true}) : setStatus(u, a, {bulk: true});
+    LF.sel = null; save(); vibrate(20); renderAll(); renderBulk();
+    snack(list.length + " kişi güncellendi", () => { Object.assign(S, JSON.parse(snap)); save(); renderAll(); });
+  });
+}
+function personSheet(u) {
+  const p = S.people[u], o = [];
+  o.push(["open", I.ig(20), "Instagram'da aç", "c1"]);
+  if (p.status === "pending" || p.status === "keep") o.push(["done", I.check(20), "Takibi bıraktım", "c3"]);
+  if (p.status !== "keep" && p.status !== "done") o.push(["keep", I.shield(20), "Koru (bir daha gösterme)", "c4"]);
+  if (p.status !== "pending") o.push(["pending", I.undo(20), "Bekleyenlere geri al", "c6"]);
+  if (p.followsMe === false && p.status !== "done") o.push(["follows", I.userCheck(20), "Beni takip ediyor (yanlış işaret)", "c3"]);
+  if (p.status !== "closed" && p.status !== "done") o.push(["closed", I.ban(20), "Hesap kapalı / silinmiş", "c6"]);
+  openSheet('<div class="row" style="gap:14px;margin-bottom:10px">' + avatar(u) + '<div class="grow"><h2 style="word-break:break-all">@' + esc(u) + '</h2><div class="small muted">' + metaFor(p) + '</div></div></div>' +
+    o.map(x => '<button class="opt" data-o="' + x[0] + '"><span class="ic ' + x[3] + '">' + x[1] + '</span>' + x[2] + '</button>').join(""),
+    el => $$("[data-o]", el).forEach(b => b.onclick = () => { const a = b.dataset.o; closeSheet(); if (a === "open") openProfile(u); else if (a === "follows") markFollows(u); else setStatus(u, a); }));
+}
+function sortSheet() {
+  const o = [["oldest", "En eski takip edilen önce", I.clock(20)], ["newest", "En yeni takip edilen önce", I.calendar(20)], ["az", "A → Z", I.sort(20)], ["za", "Z → A", I.sort(20)], ["random", "Karışık (her gün farklı)", I.zap(20)]];
+  openSheet('<h2>Sıralama</h2><p class="small muted" style="margin:4px 0 8px">Odak ekranındaki sıra da buna göre olur.</p>' +
+    o.map(x => '<button class="opt ' + (S.settings.sort === x[0] ? "on" : "") + '" data-s="' + x[0] + '"><span class="ic c6">' + x[2] + '</span>' + x[1] + (S.settings.sort === x[0] ? '<span class="tick">' + I.check(18) + '</span>' : "") + '</button>').join(""),
+    el => $$("[data-s]", el).forEach(b => b.onclick = () => { S.settings.sort = b.dataset.s; save(); closeSheet(); renderView(); }));
+}
+function shareList(f) {
+  const items = filtered();
+  const title = {nofb: "Beni geri takip etmeyenler", lost: "Beni takipten çıkanlar", fans: "Takip etmediğim takipçilerim"}[f] || "Liste";
+  const text = title + " (" + items.length + ")\n\n" + items.map(p => "@" + p.u).join("\n");
+  if (B && B.shareText) { B.shareText(title, text); return; }
+  if (navigator.share) navigator.share({title, text}).catch(() => {});
+  else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => snack("Liste panoya kopyalandı"));
+}
+
+/* ================= ANALİZ ================= */
+let chartRange = 7;
+function renderStats() {
+  const el = $("#view"), c = counts(), t = totals(), L = S.settings.dailyLimit;
+  if (!people().length) { el.innerHTML = emptyState(); bindEmpty(el); return; }
+  const days = []; for (let i = chartRange - 1; i >= 0; i--) { const tt = now() - i * DAY; days.push({k: dayKey(tt), d: new Date(tt)}); }
+  const vals = days.map(x => Math.max(0, S.log[x.k] || 0));
+  const max = Math.max(L || 1, ...vals), sum = vals.reduce((a, b) => a + b, 0), active = vals.filter(v => v > 0).length;
+  const best = Object.values(S.log).reduce((a, b) => Math.max(a, b), 0);
+  const wd = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+  const ratio = t.followers ? t.following / t.followers : null;
+  let h = '<div class="card"><div class="row between"><div><h2>Aktivite</h2><div class="small muted">' + fmt(sum) + ' kişi · ' + active + ' aktif gün</div></div>' +
+    '<div class="seg" style="width:140px"><button data-r="7" class="' + (chartRange === 7 ? "on" : "") + '">7 gün</button><button data-r="30" class="' + (chartRange === 30 ? "on" : "") + '">30 gün</button></div></div>' +
+    '<div class="chart" style="gap:' + (chartRange === 7 ? 10 : 3) + 'px">' + days.map((x, i) => { const n = vals[i]; return '<div class="c"><span class="n">' + (chartRange === 7 && n ? n : "") + '</span><div class="bwrap"><div class="b ' + (n === 0 ? "zero" : L > 0 && n > L ? "over" : "") + '" style="height:' + Math.max(3, n / max * 100) + '%"></div></div><span class="d">' + (chartRange === 7 ? (x.k === dayKey() ? "Bugün" : wd[x.d.getDay()]) : (i % 5 === 4 ? x.d.getDate() : "")) + '</span></div>'; }).join("") + '</div>' +
+    (L > 0 ? '<div class="tiny muted mt12">Sarı çubuklar günlük limiti (' + L + ') aştığın günler.</div>' : "") + '</div>';
+  h += '<div class="tiles mt12">' + tile(I.check(14), "Toplam bırakılan", fmt(totalDone())) + tile(I.flame(14), "Seri", streakDays() + " gün") +
+    tile(I.zap(14), "En iyi gün", fmt(best)) + tile(I.gauge(14), "Takip / takipçi", ratio ? ratio.toFixed(2) : "–") + '</div>';
+  const ch = (S.changes || []).slice(0, 5);
+  h += '<div class="section-title">Takipçi değişimleri</div><div class="card">';
+  if (!ch.length) h += '<div class="row" style="align-items:flex-start;gap:14px"><span class="ic c2">' + I.userMinus(20) + '</span><div class="grow"><h3>Seni takipten çıkanları bul</h3><div class="small muted mt8">Birkaç gün sonra yeni veri indirip yüklediğinde, bu arada seni takipten çıkanları ve yeni takipçilerini burada gösteririm. Takipten çıkanlar sıranın en başına gelir.</div></div></div>';
+  else h += ch.map((x, i) => '<div ' + (i ? 'style="border-top:1px solid var(--line);margin-top:14px;padding-top:14px"' : "") + '><div class="row between"><h3>' + dateTR(x.at) + '</h3>' + (x.prevAt ? '<span class="tiny muted b">' + dateTR(x.prevAt) + ' ile karşılaştırma</span>' : "") + '</div>' +
+    '<div class="small mt8"><b style="color:var(--accent-text)">−' + x.lost.length + '</b> seni takipten çıktı · <b style="color:var(--ok)">+' + x.gained.length + '</b> yeni takipçi</div>' +
+    (x.lost.length ? '<div class="change-list">' + x.lost.slice(0, 40).map(u => { const p = S.people[u]; return '<button class="uchip ' + (p && p.status === "pending" ? "flag" : "") + '" data-pu="' + esc(u) + '">' + avatar(u) + '@' + esc(u) + '</button>'; }).join("") + (x.lost.length > 40 ? '<span class="tiny muted">+' + (x.lost.length - 40) + '</span>' : "") + '</div>' : "") +
+    (x.gained.length ? '<div class="change-list">' + x.gained.slice(0, 20).map(u => '<span class="uchip">' + avatar(u) + '@' + esc(u) + '</span>').join("") + (x.gained.length > 20 ? '<span class="tiny muted">+' + (x.gained.length - 20) + '</span>' : "") + '</div>' : "") + '</div>').join("") +
+    (c.lost ? '<button class="btn primary block mt16" data-golost>' + I.userMinus() + ' Seni bırakan ' + c.lost + ' kişiyi sıraya al</button>' : "");
+  h += '</div>';
+  const parts = S.hasFollowers
+    ? [["Takip etmeyen", c.nofb, "var(--accent)"], ["Karşılıklı", c.mutual, "var(--ok)"], ["Korunan", c.keep, "var(--keep)"], ["Bırakılan", c.done, "var(--faint)"], ["Kapalı", c.closed, "var(--surface-3)"], ["Hayranların", c.fans, "#a24dff"]]
+    : [["Bekleyen", c.pending, "var(--accent)"], ["Korunan", c.keep, "var(--keep)"], ["Bırakılan", c.done, "var(--faint)"], ["Kapalı", c.closed, "var(--surface-3)"]];
+  const tot = Math.max(1, parts.reduce((a, p) => a + p[1], 0));
+  h += '<div class="section-title">Hesap dağılımı</div><div class="card"><div class="dist">' + parts.map(p => '<i style="width:' + (p[1] / tot * 100) + '%;background:' + p[2] + '"></i>').join("") + '</div>' +
+    '<div class="legend">' + parts.map(p => '<div><span class="sw" style="background:' + p[2] + '"></span>' + p[0] + '<b>' + fmt(p[1]) + '</b></div>').join("") + '</div>' +
+    (c.req ? '<div class="small muted mt12">' + c.req + ' gizli hesaba gönderdiğin istek hâlâ kabul edilmedi (Kişiler → İstekler).</div>' : "") + '</div>';
+  const got = BADGES.filter(b => S.badges[b.k]).length;
+  h += '<div class="section-title">Rozetler · ' + got + '/' + BADGES.length + '</div><div class="card"><div class="badges">' +
+    BADGES.map(b => '<button class="badge ' + (S.badges[b.k] ? "on" : "") + '" data-badge="' + b.k + '"><span class="ic">' + b.e + '</span>' + b.t + '</button>').join("") + '</div></div>';
+  el.innerHTML = h;
+  $$("[data-r]", el).forEach(b => b.onclick = () => { chartRange = +b.dataset.r; renderStats(); });
+  $$("[data-pu]", el).forEach(b => b.onclick = () => { const u = b.dataset.pu; S.people[u] ? personSheet(u) : openProfile(u); });
+  $$("[data-badge]", el).forEach(b => b.onclick = () => { const x = BADGES.find(y => y.k === b.dataset.badge); snack(x.e + " " + x.t + ": " + x.d + (S.badges[x.k] ? " ✓" : "")); });
+  if ($("[data-golost]", el)) $("[data-golost]", el).onclick = () => { S.settings.queue = "lost"; save(); tab("home"); };
+  if ((S.changes || []).some(x => x.at > (S.seenChangesAt || 0))) { S.seenChangesAt = now(); save(); renderTop(); }
+}
+const tile = (ic, k, v) => '<div class="tile"><div class="k">' + ic + k + '</div><div class="v">' + v + '</div></div>';
+
+/* ================= AYARLAR ================= */
+function renderSettings() {
+  const el = $("#view"), st = S.settings, ii = S.importInfo, t = totals();
+  const backupOld = !S.lastBackupAt || now() - S.lastBackupAt > 3 * DAY;
+  let h = warnHtml();
+  h += '<div class="upload-card mt12"><h2>Instagram verini yükle</h2><p>ZIP\'i direkt seç. Yeni dosya yükleyince işaretlediklerin korunur, ayrıca seni takipten çıkanları bulurum.</p>' +
+    (ii ? '<span class="meta">Son yükleme: ' + dateTR(ii.at) + (ii.following != null ? " · " + fmt(ii.following) + " takip" : "") + (ii.followers != null ? " · " + fmt(ii.followers) + " takipçi" : "") + '</span>' : "") +
+    '<button class="btn block" id="sImport">' + I.upload() + ' ZIP veya JSON seç</button>' +
+    '<div class="center mt12" style="position:relative"><button class="b small" style="color:#fff;text-decoration:underline" id="sHelp">Dosyayı nasıl alırım?</button></div></div>';
+  h += '<div class="section-title">Hesabın</div><div class="group">' +
+    item("sProfile", I.hash(), "c2", "Profilindeki sayılar", (S.base ? fmt(t.following) : "–") + " takip · " + (t.followers != null ? fmt(t.followers) : "–") + " takipçi", "", true) +
+    item("sTarget", I.target(), "c1", "Hedef takip sayısı", st.target != null ? "Elle ayarlandı" : "Takipçi sayın kadar", st.target != null ? fmt(st.target) : "Otomatik", true) + '</div>';
+  h += '<div class="section-title">Güvenlik</div><div class="group">' +
+    stepItem("dailyLimit", I.gauge(), "c5", "Günlük limit", "Ulaşınca uyarırım", st.dailyLimit, 5) +
+    stepItem("cooldown", I.timer(), "c4", "Bekleme süresi", "İki profil arası saniye", st.cooldown, 5) +
+    stepItem("skipRecentDays", I.calendar(), "c2", "Yeni takipleri atla", "Son kaç günde takip ettiklerin", st.skipRecentDays, 1) +
+    switchItem("burstGuard", I.zap(), "c3", "Ani hız uyarısı", "10 dakikada 12'den fazlasında uyar", st.burstGuard) + '</div>';
+  h += '<div class="section-title">Uygulama</div><div class="group">' +
+    (isAndroid ? switchItem("reminder", I.bell(), "c1", "Günlük hatırlatıcı", st.reminder.on ? "Her gün " + pad(st.reminder.h) + ":" + pad(st.reminder.m) : "Kapalı", st.reminder.on) +
+      (st.reminder.on ? item("sRemTime", I.clock(), "c6", "Hatırlatma saati", "", pad(st.reminder.h) + ":" + pad(st.reminder.m), true) : "") : "") +
+    item("sTheme", I.moon(), "c2", "Tema", "", {system: "Sistem", dark: "Koyu", light: "Açık"}[st.theme], true) +
+    item("sIntro", I.info(), "c6", "Tanıtımı tekrar göster", "", "", true) + '</div>';
+  h += '<div class="section-title">Yedek</div><div class="group">' +
+    item("sExport", I.download(), "c3", "Yedekle", S.lastBackupAt ? "Son yedek: " + dateTR(S.lastBackupAt) : "Hiç yedek alınmadı", backupOld ? '<span class="tag warn">Önerilir</span>' : "", true) +
+    item("sRestore", I.upload(), "c4", "Yedeği yükle", "Daha önce aldığın .json yedeği", "", true) + '</div>';
+  h += '<div class="section-title">Diğer</div><div class="group">' +
+    item("sAbout", I.lock(), "c3", "Gizlilik ve güvenlik", "Şifre istemez, hiçbir şeyi otomatik yapmaz", "", true) +
+    item("sWipe", I.trash(), "c1", "Tüm verileri sil", "Liste, sayaçlar ve ayarlar", "", true) + '</div>' +
+    '<div class="center tiny faint mt20">Takip Temizleme 4.0 · Verilerin sadece bu telefonda</div>';
+  el.innerHTML = h;
+  bindHelp(el);
+  const on = (id, fn) => { const x = $("#" + id); if (x) x.onclick = fn; };
+  on("sImport", () => $("#fileIg").click()); on("sHelp", helpSheet); on("sProfile", profileSheet); on("sTarget", targetSheet);
+  on("sTheme", themeSheet); on("sIntro", () => onboarding(true)); on("sExport", exportBackup); on("sRestore", () => $("#fileBackup").click()); on("sRemTime", timeSheet);
+  on("sAbout", () => openSheet('<h2>Gizlilik ve güvenlik</h2><div class="bullets" style="max-width:none">' +
+    ["Instagram şifreni asla istemez.", "Hiçbir takipten çıkarma işlemini otomatik yapmaz; her işlemi sen Instagram'da kendin yaparsın. Bu yüzden hesabın için güvenlidir.", "Verilerin sadece bu telefonda saklanır, hiçbir sunucuya gönderilmez.", "Günlük limit, bekleme süresi ve ani hız uyarısı Instagram'ın işlem engeline takılmaman için var."].map(x => '<div>' + I.check(16) + '<span>' + x + '</span></div>').join("") + '</div>'));
+  on("sWipe", () => confirmSheet("Tüm veriler silinsin mi?", "Liste, işaretlemeler, istatistikler ve ayarlar silinir. Bu işlem geri alınamaz; istersen önce yedek al.", "Hepsini sil", () => {
+    S = defaultState(); S.onboarded = true; try { localStorage.removeItem(OLD_KEY); } catch (e) {} save(); applyTheme(); renderAll(); snack("Tüm veriler silindi");
+  }, true));
+  const LIM = {dailyLimit: [0, 200], cooldown: [0, 120], skipRecentDays: [0, 60]};
+  $$("[data-step]", el).forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const k = b.dataset.step;
+    st[k] = Math.max(LIM[k][0], Math.min(LIM[k][1], st[k] + +b.dataset.d)); save(); vibrate(5);
+    b.parentElement.querySelector("span").textContent = st[k];
+    renderTop();
+  });
+  $$("[data-sw]", el).forEach(b => b.onclick = () => { const k = b.dataset.sw; if (k === "reminder") return toggleReminder(); st[k] = !st[k]; save(); renderSettings(); });
+}
+function item(id, ic, cls, t, s, val, chev) {
+  return '<button class="item" id="' + id + '"><span class="ic ' + cls + '">' + ic + '</span><div class="grow"><div class="t">' + t + '</div>' + (s ? '<div class="s">' + s + '</div>' : "") + '</div>' + (val ? '<span class="val">' + val + '</span>' : "") + (chev ? '<span class="faint">' + I.chev() + '</span>' : "") + '</button>';
+}
+function stepItem(k, ic, cls, t, s, v, step) {
+  return '<div class="item"><span class="ic ' + cls + '">' + ic + '</span><div class="grow"><div class="t">' + t + '</div><div class="s">' + s + '</div></div><div class="stepper"><button data-step="' + k + '" data-d="' + -step + '" aria-label="Azalt">−</button><span>' + v + '</span><button data-step="' + k + '" data-d="' + step + '" aria-label="Artır">+</button></div></div>';
+}
+function switchItem(k, ic, cls, t, s, on) {
+  return '<button class="item" data-sw="' + k + '"><span class="ic ' + cls + '">' + ic + '</span><div class="grow"><div class="t">' + t + '</div><div class="s">' + s + '</div></div><span class="switch ' + (on ? "on" : "") + '"></span></button>';
+}
+function numSheet(title, text, fields, onSave) {
+  openSheet('<h2>' + title + '</h2><p class="small muted" style="margin:4px 0 10px">' + text + '</p>' +
+    fields.map(f => '<label class="item" style="padding:12px 0"><div class="grow"><div class="t">' + f.label + '</div></div><input class="num-in" type="number" inputmode="numeric" min="0" data-k="' + f.k + '" value="' + esc(f.v ?? "") + '" placeholder="' + (f.ph || "") + '"></label>').join("") +
+    '<button class="btn primary block mt16" data-save>Kaydet</button>',
+    el => { $("[data-save]", el).onclick = () => { const v = {}; $$("[data-k]", el).forEach(i => v[i.dataset.k] = i.value.trim()); if (onSave(v) !== false) closeSheet(); }; });
+}
+function profileSheet() {
+  const t = totals();
+  numSheet("Profilindeki sayılar", "Instagram profilinde görünen güncel sayıları gir. Sayaç bu sayılardan devam eder, dosyan eksikse de uyarırım.",
+    [{k: "f", label: "Takip", v: S.base ? t.following : (S.settings.profileFollowing ?? "")}, {k: "g", label: "Takipçi", v: t.followers ?? (S.settings.profileFollowers ?? "")}],
+    v => {
+      const f = parseInt(v.f), g = parseInt(v.g);
+      if (!(f >= 0)) { snack("Takip sayısını gir"); return false; }
+      S.base = {following: f, followers: g >= 0 ? g : (S.base ? S.base.followers : null), at: now()};
+      if (S.startFollowing == null || f > S.startFollowing) S.startFollowing = f;
+      S.settings.profileFollowing = f; if (g >= 0) S.settings.profileFollowers = g;
+      S.extraDone = 0; save(); renderAll(); snack("Sayılar güncellendi");
+    });
+}
+function targetSheet() {
+  numSheet("Hedef takip sayısı", "Takip sayını kaça indirmek istiyorsun? Boş bırakırsan takipçi sayın kadar olur.", [{k: "t", label: "Hedef", v: S.settings.target ?? "", ph: "Otomatik"}],
+    v => { S.settings.target = v.t === "" ? null : Math.max(0, parseInt(v.t) || 0); save(); renderAll(); snack("Hedef kaydedildi"); });
+}
+function themeSheet() {
+  const o = [["system", "Sistem ayarını kullan"], ["dark", "Koyu"], ["light", "Açık"]];
+  openSheet('<h2>Tema</h2><div class="mt8">' + o.map(x => '<button class="opt ' + (S.settings.theme === x[0] ? "on" : "") + '" data-t="' + x[0] + '"><span class="ic c2">' + I.moon(20) + '</span>' + x[1] + (S.settings.theme === x[0] ? '<span class="tick">' + I.check(18) + '</span>' : "") + '</button>').join("") + '</div>',
+    el => $$("[data-t]", el).forEach(b => b.onclick = () => { S.settings.theme = b.dataset.t; save(); applyTheme(); closeSheet(); renderAll(); }));
+}
+function timeSheet() {
+  const r = S.settings.reminder;
+  openSheet('<h2>Hatırlatma saati</h2><p class="small muted" style="margin:4px 0 14px">Her gün bu saatte kaç kişi kaldığını hatırlatırım.</p>' +
+    '<input type="time" id="tm" value="' + pad(r.h) + ':' + pad(r.m) + '" style="width:100%;font-size:28px;font-weight:800;text-align:center;background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:14px;outline:none">' +
+    '<div class="grid3 mt12">' + ["09:00", "13:00", "20:00"].map(x => '<button class="btn sm" data-tm="' + x + '">' + x + '</button>').join("") + '</div>' +
+    '<button class="btn primary block mt16" data-save>Kaydet</button>',
+    el => {
+      $$("[data-tm]", el).forEach(b => b.onclick = () => $("#tm").value = b.dataset.tm);
+      $("[data-save]", el).onclick = () => { const [hh, mm] = ($("#tm").value || "20:00").split(":").map(Number); r.h = hh || 0; r.m = mm || 0; save(); syncReminder(true); closeSheet(); renderSettings(); snack("Hatırlatıcı " + pad(r.h) + ":" + pad(r.m) + " olarak ayarlandı"); };
+    });
+}
+function helpSheet() {
+  openSheet('<h2>Instagram verini indir</h2><p class="small muted" style="margin:4px 0 0">Yaklaşık 2 dakika sürer. Dosya hazır olunca Instagram bildirim ve e-posta gönderir.</p><ol class="steps">' +
+    '<li><span>Instagram → Profil → ☰ menü → <b>Hesaplar Merkezi</b></span></li>' +
+    '<li><span><b>Bilgilerin ve izinlerin</b> → <b>Bilgilerini dışa aktar</b></span></li>' +
+    '<li><span><b>Dışa aktarım oluştur</b> → Instagram hesabını seç → <b>Cihaza aktar</b></span></li>' +
+    '<li><span><b>Bilgileri özelleştir</b>: sadece <b>Takipçiler ve takip edilenler</b> kalsın</span></li>' +
+    '<li><span><b>Tarih aralığı: Tüm zamanlar</b> <span class="tag warn">Çok önemli</span><br><span class="small muted">Varsayılan “Son 1 yıl” gelir; o zaman eski takipçilerin eksik kalır.</span></span></li>' +
+    '<li><span><b>Biçim: JSON</b> → <b>Dışa aktarmayı başlat</b></span></li>' +
+    '<li><span>Hazır olunca ZIP\'i indir ve buradan seç. Dosya yöneticisinde <b>Paylaş → Takip Temizleme</b> de olur.</span></li></ol>' +
+    '<button class="btn primary block mt16" data-x>' + I.upload() + ' Dosyam hazır, seç</button>',
+    el => $("[data-x]", el).onclick = () => { closeSheet(); $("#fileIg").click(); });
+}
+
+/* ---------- hatırlatıcı ---------- */
+function toggleReminder() {
+  const r = S.settings.reminder;
+  if (!r.on && B && B.ensureNotifications && !B.ensureNotifications()) { snack("Bildirim izni gerekiyor; izin verip tekrar dene"); return; }
+  r.on = !r.on; save(); syncReminder(true); renderSettings();
+  snack(r.on ? "Her gün " + pad(r.h) + ":" + pad(r.m) + "'de hatırlatacağım" : "Hatırlatıcı kapatıldı");
+}
+let lastRem = "";
+function syncReminder(force) {
+  if (!B || !B.setReminder) return;
+  const r = S.settings.reminder, t = totals(), left = t.left != null ? t.left : counts().pending, L = S.settings.dailyLimit;
+  const body = left > 0 ? "Hedefe " + fmt(left) + " kişi kaldı." + (L > 0 ? " Bugün " + Math.min(L, left) + " kişiyle devam et." : "") : "Hedefe ulaştın! Yeni veri yükleyip seni takipten çıkanları kontrol edebilirsin.";
+  const sig = [r.on, r.h, r.m, body].join("|");
+  if (!force && sig === lastRem) return;
+  lastRem = sig;
+  try { B.setReminder(!!r.on, r.h, r.m, "Takip temizliği zamanı 🧹", body); } catch (e) {}
+}
+
+/* ================= VERİ İÇE AKTARMA ================= */
+function entriesOf(json, keys) {
+  if (Array.isArray(json)) return json;
+  if (json && typeof json === "object") { for (const k of keys) if (Array.isArray(json[k])) return json[k]; for (const v of Object.values(json)) if (Array.isArray(v)) return v; }
+  return [];
+}
+function parseEntries(arr) {
+  const out = [];
+  for (const e of arr) {
+    if (typeof e === "string") { const u = norm(e); if (u) out.push({u, at: null}); continue; }
+    if (!e || typeof e !== "object") continue;
+    const sd = Array.isArray(e.string_list_data) && e.string_list_data[0] || {};
+    const u = norm(sd.value) || norm(e.title) || norm(sd.href) || norm(e.username) || norm(e.href) || norm(e.value);
+    if (u) out.push({u, at: sd.timestamp || e.timestamp || null});
+  }
+  return out;
+}
+function classify(name, json) {
+  const n = (name || "").toLowerCase().split("/").pop();
+  if (json && !Array.isArray(json)) {
+    if (json.relationships_following) return "following";
+    if (json.relationships_follow_requests_sent) return "requests";
+    if (json.relationships_followers) return "followers";
+    if ((json.app && String(json.app).startsWith("takip-temizleme")) || json.version === 2 || json.removedCount != null) return "backup";
+  }
+  if (/^following(_\d+)?\.json$/.test(n)) return "following";
+  if (/^followers(_\d+)?\.json$/.test(n)) return "followers";
+  if (/pending_follow_requests/.test(n)) return "requests";
+  return null;
+}
+async function readZip(file) {
+  const size = file.size, tailLen = Math.min(size, 65557 + 22);
+  const tail = new DataView(await file.slice(size - tailLen).arrayBuffer());
+  let eocd = -1;
+  for (let i = tail.byteLength - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error("ZIP okunamadı");
+  const cdSize = tail.getUint32(eocd + 12, true), cdOff = tail.getUint32(eocd + 16, true), n = tail.getUint16(eocd + 10, true);
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+  const out = [], dec = new TextDecoder();
+  let p = 0, sawHtml = false;
+  for (let i = 0; i < n && p < cd.byteLength; i++) {
+    if (cd.getUint32(p, true) !== 0x02014b50) break;
+    const method = cd.getUint16(p + 10, true), csize = cd.getUint32(p + 20, true);
+    const nl = cd.getUint16(p + 28, true), xl = cd.getUint16(p + 30, true), cl = cd.getUint16(p + 32, true), lho = cd.getUint32(p + 42, true);
+    const name = dec.decode(new Uint8Array(cd.buffer, p + 46, nl));
+    p += 46 + nl + xl + cl;
+    const base = name.toLowerCase().split("/").pop();
+    if (/^(following|followers_\d+)\.html$/.test(base)) sawHtml = true;
+    if (!/^(following(_\d+)?|followers(_\d+)?|pending_follow_requests)\.json$/.test(base)) continue;
+    const lh = new DataView(await file.slice(lho, lho + 30).arrayBuffer());
+    const start = lho + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+    const blob = file.slice(start, start + csize);
+    let text;
+    if (method === 0) text = await blob.text();
+    else if (method === 8) text = await new Response(blob.stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+    else continue;
+    out.push({name, text});
+  }
+  if (!out.length && sawHtml) throw new Error("Bu ZIP HTML biçiminde. Veriyi indirirken Biçim: JSON seçmelisin.");
+  return out;
+}
+async function filesToTexts(list) {
+  const out = [];
+  for (const f of list) {
+    if (/\.zip$/i.test(f.name) || /zip/.test(f.type)) out.push(...await readZip(f));
+    else out.push({name: f.name, text: await f.text()});
+  }
+  return out;
+}
+function minTs(list) { let m = null; for (const e of list) if (e.at && (m == null || e.at < m)) m = e.at; return m; }
+function importTexts(items) {
+  let following = null, followers = null, requests = null, backup = null;
+  for (const it of items) {
+    let json; try { json = JSON.parse(it.text); } catch (e) { continue; }
+    const kind = classify(it.name, json);
+    if (kind === "backup") { backup = json; continue; }
+    if (kind === "following") (following ||= []).push(...parseEntries(entriesOf(json, ["relationships_following"])));
+    else if (kind === "followers") (followers ||= []).push(...parseEntries(entriesOf(json, ["relationships_followers"])));
+    else if (kind === "requests") (requests ||= []).push(...parseEntries(entriesOf(json, ["relationships_follow_requests_sent"])));
+    else { const e = parseEntries(entriesOf(json, [])); if (e.length && items.length === 1) (following ||= []).push(...e); }
+  }
+  if (backup) return restoreBackup(backup);
+  if (!following && !followers && !requests) {
+    snack(items.length ? "Dosyada takip bilgisi bulunamadı. Biçimi JSON seçtiğinden emin ol." : "ZIP'te takip dosyası yok. “Takipçiler ve takip edilenler” seçili olmalı.");
+    return;
+  }
+  const prevSnapshot = JSON.stringify(S);
+  const msgs = []; let changeMsg = "";
+  if (following) {
+    const seen = new Map(); for (const e of following) if (!seen.has(e.u)) seen.set(e.u, e);
+    const next = {}; let again = 0;
+    for (const [u, e] of seen) {
+      const old = S.people[u];
+      if (old) {
+        const p = {...old, at: e.at || old.at};
+        if (p.status === "done") { p.status = "pending"; p.again = true; p.doneAt = null; again++; }
+        next[u] = p;
+      } else next[u] = {u, at: e.at, followsMe: null, status: "pending"};
+    }
+    for (const p of people()) if (p.status === "done" && !seen.has(p.u)) next[p.u] = {...p, again: false};
+    S.people = next;
+    let closedIn = 0; for (const u of seen.keys()) if (next[u].status === "closed") closedIn++;
+    if (S.startFollowing == null) S.startFollowing = seen.size - closedIn;
+    S.base = {following: seen.size - closedIn, followers: S.base ? S.base.followers : null, at: now()};
+    S.extraDone = 0;
+    if (S.migrated && S.settings.target === 639) S.settings.target = null;
+    S.migrated = false;
+    S.importInfo = {...(S.importInfo || {}), following: seen.size, oldestFollowing: minTs(following), at: now()};
+    msgs.push(fmt(seen.size) + " takip");
+    if (again) msgs.push(again + " kişi hâlâ takipte");
+  }
+  if (followers) {
+    const set = new Set(followers.map(e => e.u));
+    const prev = S.followerSnap;
+    if (prev && prev.list && prev.list.length && set.size >= prev.list.length * 0.85) {
+      const prevSet = new Set(prev.list);
+      const lost = prev.list.filter(u => !set.has(u)), gained = [...set].filter(u => !prevSet.has(u));
+      if (lost.length || gained.length) {
+        S.changes = [{at: now(), prevAt: prev.at, lost, gained}, ...(S.changes || [])].slice(0, 12);
+        for (const u of lost) if (S.people[u] && S.people[u].status === "pending") S.people[u].lostAt = now();
+        if (lost.length) changeMsg = lost.length + " kişi seni takipten çıkmış";
+      }
+    }
+    S.followerSnap = {at: now(), list: [...set]};
+    for (const p of people()) { p.followsMe = set.has(p.u) || !!p.manualFollows; if (set.has(p.u)) p.lostAt = null; }
+    const mine = new Set(people().filter(p => p.status !== "done" && p.status !== "closed").map(p => p.u));
+    const seenF = new Set(); S.fans = [];
+    for (const e of followers) if (!mine.has(e.u) && !seenF.has(e.u)) { seenF.add(e.u); S.fans.push(e); }
+    S.hasFollowers = true;
+    if (S.base) S.base.followers = set.size; else S.base = {following: mine.size, followers: set.size, at: now()};
+    S.importInfo = {...(S.importInfo || {}), followers: set.size, oldestFollower: minTs(followers), at: now()};
+    msgs.push(fmt(set.size) + " takipçi");
+  }
+  if (requests) {
+    const r = {}; for (const e of requests) r[e.u] = {u: e.u, at: e.at, status: (S.requests[e.u] && S.requests[e.u].status) || "pending"};
+    S.requests = r; msgs.push(fmt(requests.length) + " istek");
+  }
+  S.settings.queue = "auto"; S.onboarded = true; S.dismissed = {};
+  LF.filter = null; skipped.clear();
+  checkBadges(true); save(); closeOnb(); closeSheet();
+  if (cur !== "home") tab("home"); else renderAll();
+  snack("✓ " + msgs.join(", ") + (S.hasFollowers ? ". " + fmt(counts().nofb) + " kişi seni geri takip etmiyor" : "") + (changeMsg ? ". " + changeMsg : ""), () => { S = JSON.parse(prevSnapshot); save(); renderAll(); });
+  if (following && !S.hasFollowers) setTimeout(() => snack("Takipçi dosyası da gelirse geri takip etmeyenleri ayırırım"), 5400);
+  else setTimeout(() => { if (warnHtml()) snack("Dosyan eksik olabilir, sarı uyarıya bak"); }, 5400);
+}
+$("#fileIg").onchange = async e => {
+  const files = [...e.target.files]; e.target.value = "";
+  if (!files.length) return;
+  snack("Dosya okunuyor…");
+  try { importTexts(await filesToTexts(files)); } catch (err) { snack(err.message || "Dosya okunamadı"); }
+};
+
+/* ---------- yedek ---------- */
+function exportBackup() {
+  const data = JSON.stringify({app: "takip-temizleme-v4", exportedAt: new Date().toISOString(), ...S});
+  const name = "takip-temizleme-yedek-" + dayKey() + ".json";
+  if (B) { const r = B.saveFile(name, data); if (r) { S.lastBackupAt = now(); save(); renderView(); snack("Kaydedildi: " + r); } else snack("Yedek kaydedilemedi"); return; }
+  const url = URL.createObjectURL(new Blob([data], {type: "application/json"}));
+  const a = document.createElement("a"); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  S.lastBackupAt = now(); save(); renderView(); snack("Yedek indirildi");
+}
+function restoreBackup(b) {
+  const prev = JSON.stringify(S);
+  if (b.version === 2 && b.people && !Array.isArray(b.people)) {
+    const d = defaultState();
+    S = {...d, ...b, settings: {...d.settings, ...(b.settings || {})}}; S.settings.reminder = {...d.settings.reminder, ...(S.settings.reminder || {})};
+    delete S.app; delete S.exportedAt; S.onboarded = true;
+  } else {
+    const list = b.people || b.usernames || (Array.isArray(b) ? b : []);
+    for (const p of list) { const u = norm(typeof p === "string" ? p : p && p.username); if (u && !S.people[u]) S.people[u] = {u, at: null, followsMe: null, status: "pending"}; }
+    if (b.removedCount) S.extraDone = Math.max(S.extraDone, Math.floor(b.removedCount));
+    if (!S.base) { S.base = {following: 860, followers: 640, at: 0}; if (S.settings.target == null) S.settings.target = 639; }
+    S.onboarded = true;
+  }
+  save(); applyTheme(); closeOnb(); renderAll(); snack("Yedek yüklendi", () => { S = JSON.parse(prev); save(); applyTheme(); renderAll(); });
+}
+$("#fileBackup").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try { const j = JSON.parse(await f.text()); if (classify(f.name, j) === "backup" || j.people || j.usernames) restoreBackup(j); else importTexts([{name: f.name, text: JSON.stringify(j)}]); }
+  catch (err) { snack("Yedek okunamadı"); }
+};
+
+/* ================= TANITIM ================= */
+function onboarding(force) {
+  if (!force && (S.onboarded || people().length)) return;
+  if ($("#onb")) return;
+  const slides = [
+    {art: I.broom(70), t: "Takip listeni<br>temizle", p: "Seni geri takip etmeyenleri bulur, tek tek önüne getirir. Sen sadece kaydırırsın."},
+    {art: I.file(70), t: "Verini Instagram'dan al", p: "Hesaplar Merkezi'nden “Takipçiler ve takip edilenler” verisini indir, ZIP'i buraya yükle.", extra: '<div class="bullets"><div>' + I.check(16) + '<span>Tarih aralığı: <b>Tüm zamanlar</b></span></div><div>' + I.check(16) + '<span>Biçim: <b>JSON</b></span></div></div>'},
+    {art: I.shieldBig(70), t: "Güvenli ve gizli", p: "Şifreni istemez, hiçbir şeyi otomatik yapmaz. Verilerin sadece bu telefonda kalır.", extra: '<div class="bullets"><div>' + I.check(16) + '<span>Günlük limit ve bekleme süresiyle engellenmezsin</span></div><div>' + I.check(16) + '<span>Seni takipten çıkanları da bulur</span></div></div>'},
+  ];
+  let i = 0;
+  const o = document.createElement("div"); o.className = "onb"; o.id = "onb";
+  o.innerHTML = '<button class="skip">Geç</button><div class="slides">' + slides.map(s => '<div class="slide"><div class="art">' + s.art + '</div><h1>' + s.t + '</h1><p>' + s.p + '</p>' + (s.extra || "") + '</div>').join("") + '</div>' +
+    '<div class="dots">' + slides.map(() => "<i></i>").join("") + '</div><button class="btn primary lg block" id="onbNext"></button><button class="btn ghost block mt8" id="onbAlt">Nasıl indiririm?</button>';
+  document.body.appendChild(o);
+  const show = () => {
+    $$(".slide", o).forEach(s => s.style.transform = "translateX(" + (-i * 100) + "%)");
+    $$(".dots i", o).forEach((d, k) => d.classList.toggle("on", k === i));
+    const last = i === slides.length - 1;
+    $("#onbNext").innerHTML = last ? I.upload() + " Dosyamı seç" : "Devam";
+    $("#onbAlt").style.visibility = last ? "visible" : "hidden";
+  };
+  const finish = () => { S.onboarded = true; save(); closeOnb(); };
+  $("#onbNext").onclick = () => { if (i < slides.length - 1) { i++; show(); vibrate(6); } else $("#fileIg").click(); };
+  $("#onbAlt").onclick = () => { finish(); helpSheet(); };
+  $(".skip", o).onclick = finish;
+  let x0 = null;
+  o.addEventListener("touchstart", e => x0 = e.touches[0].clientX, {passive: true});
+  o.addEventListener("touchend", e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (dx < -50 && i < slides.length - 1) i++; else if (dx > 50 && i > 0) i--; show(); x0 = null; });
+  show();
+}
+function closeOnb() { const o = $("#onb"); if (o) { o.style.opacity = 0; setTimeout(() => o.remove(), 300); } }
+
+/* ================= SEKMELER ================= */
+let cur = "home";
+const TABS = ["home", "list", "stats", "settings"];
+function tab(t) {
+  if (t !== cur) LF.sel = null;
+  cur = t;
+  $$("#nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  $("#navInd").style.transform = "translateX(" + (TABS.indexOf(t) * 100) + "%)";
+  renderBulk(); renderAll(); window.scrollTo({top: 0});
+  const v = $("#view"); v.classList.remove("view"); void v.offsetWidth; v.classList.add("view");
+}
+$$("#nav button").forEach(b => b.onclick = () => { vibrate(6); tab(b.dataset.tab); });
+function renderView() { ({home: renderHome, list: renderList, stats: renderStats, settings: renderSettings})[cur](); }
+function renderAll() { renderTop(); renderView(); }
+
+/* ---------- Android köprüsü ---------- */
+window.__onShared = () => {
+  try { const raw = B && B.takeSharedFiles(); const items = raw ? JSON.parse(raw) : []; if (items.length) importTexts(items); }
+  catch (e) { snack("Paylaşılan dosya okunamadı"); }
+};
+window.__onBack = () => {
+  if (sheetOpen()) { closeSheet(); return true; }
+  if ($("#onb")) { S.onboarded = true; save(); closeOnb(); return true; }
+  if (LF.sel) { LF.sel = null; renderList(); renderBulk(); return true; }
+  if (cur !== "home") { tab("home"); return true; }
+  return false;
+};
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  renderTop();
+  if (cur === "home" && !sheetOpen()) { renderHome(); const b = $("#aDone"); if (b && openedUser) { b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); } }
+});
+setInterval(renderTop, 60000);
+
+applyTheme();
+checkBadges(true);
+renderAll();
+onboarding();
+if (S.migrated && people().length) setTimeout(() => snack("Eski listen taşındı. Instagram verini yüklersen çok daha akıllı çalışırım."), 700);
+if (isAndroid) setTimeout(window.__onShared, 300);
+syncReminder(true);
+</script>
+</body>
+</html>

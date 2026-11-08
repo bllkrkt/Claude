@@ -1,0 +1,13 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+tests/*.zip
+tests/*.png
+node_modules/
+.idea/
+*.iml
+
+# İmza anahtarı public repoya konmaz; derlemeden önce app/keystore/debug.keystore elle eklenir
+app/keystore/
