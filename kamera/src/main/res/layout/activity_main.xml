@@ -111,6 +111,16 @@
         android:textStyle="bold"
         android:visibility="gone" />
 
+    <!-- Kayıtta ses seviyesi -->
+    <View
+        android:id="@+id/audioLevel"
+        android:layout_width="60dp"
+        android:layout_height="3dp"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="92dp"
+        android:background="#E6FFFFFF"
+        android:visibility="gone" />
+
     <!-- Geri sayım -->
     <TextView
         android:id="@+id/countdown"
@@ -309,6 +319,16 @@
                 android:layout_height="80dp"
                 android:layout_gravity="center"
                 android:contentDescription="Çek" />
+            <ImageButton
+                android:id="@+id/btnSnap"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical|end"
+                android:layout_marginEnd="36dp"
+                android:background="@drawable/bg_round"
+                android:contentDescription="Video sırasında fotoğraf"
+                android:src="@drawable/ic_camera"
+                android:visibility="gone" />
             <ImageButton
                 android:id="@+id/btnFlip"
                 android:layout_width="52dp"

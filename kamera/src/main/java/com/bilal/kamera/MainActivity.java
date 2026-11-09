@@ -129,12 +129,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @SuppressLint({"UnsafeOptInUsageError", "SetTextI18n", "ClickableViewAccessibility"})
-@androidx.annotation.OptIn(markerClass = ExperimentalCamera2Interop.class)
+@androidx.annotation.OptIn(markerClass = {ExperimentalCamera2Interop.class, androidx.camera.video.ExperimentalHighSpeedVideo.class, androidx.camera.core.ExperimentalSessionConfig.class})
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     // Modlar
-    static final int M_PRO = 0, M_NIGHT = 1, M_PORTRAIT = 2, M_PHOTO = 3, M_VIDEO = 4;
-    static final String[] MODE_NAMES = {"PRO", "GECE", "PORTRE", "FOTOĞRAF", "VİDEO"};
+    static final int M_PRO = 0, M_NIGHT = 1, M_PORTRAIT = 2, M_PHOTO = 3, M_VIDEO = 4, M_SLOWMO = 5;
+    static final String[] MODE_NAMES = {"PRO", "GECE", "PORTRE", "FOTOĞRAF", "VİDEO", "AĞIR ÇEKİM"};
     // Flaş: 0 kapalı, 1 oto, 2 açık, 3 fener
     static final int FL_OFF = 0, FL_AUTO = 1, FL_ON = 2, FL_TORCH = 3;
     // En-boy: 0 = 4:3, 1 = 16:9, 2 = 1:1, 3 = tam ekran
@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     static final int[] TIMERS = {0, 3, 5, 10};
 
     // Kaydırıcı türleri
-    static final int S_NONE = 0, S_EV = 1, S_ISO = 2, S_SHUTTER = 3, S_FOCUS = 4, S_WB = 5, S_ZOOM = 6;
+    static final int S_NONE = 0, S_EV = 1, S_ISO = 2, S_SHUTTER = 3, S_FOCUS = 4, S_WB = 5, S_ZOOM = 6, S_PEAK = 7, S_ZEBRA = 8;
 
     static final int[] ISO_STOPS = {50, 64, 80, 100, 125, 160, 200, 250, 320, 400, 500, 640, 800, 1000, 1250, 1600, 2000, 2500,
             3200, 4000, 5000, 6400, 8000, 10000, 12800, 16000, 25600, 51200};
@@ -213,6 +213,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private final LocationListener locListener = l -> lastLocation = l;
     private final ExecutorService postExec = Executors.newSingleThreadExecutor();
 
+    // v3
+    private ImageButton btnSnap;
+    private View audioLevel;
+    private boolean noSnapshot, secureMode;
+    private boolean intervalActive;
+    private int intervalSec, intervalTotal, intervalDone;
+    private final Runnable intervalTick = new Runnable() {
+        @Override public void run() {
+            if (!intervalActive) return;
+            if (!capturing && imageCapture != null) { intervalDone++; takePhoto(false); }
+            showHint("Aralıklı çekim: " + intervalDone + (intervalTotal > 0 ? " / " + intervalTotal : "") + "\nDurdurmak için deklanşöre bas", intervalSec * 1000L + 1500);
+            if (intervalTotal > 0 && intervalDone >= intervalTotal) { stopInterval(); return; }
+            ui.postDelayed(this, intervalSec * 1000L);
+        }
+    };
+    private volatile boolean soundRun;
+    private Thread soundThread;
+    private long lastSoundShot;
+    private boolean peaking, zebra;
+    private List<Integer> slowCache;
+    private boolean slowCacheFront;
+
     // Pro
     private int proIso = -1, proWb = 0;
     private long proExp = -1;
@@ -273,17 +295,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         try { sound = new MediaActionSound(); sound.load(MediaActionSound.SHUTTER_CLICK); } catch (Exception ignored) {}
         try { tone = new ToneGenerator(AudioManager.STREAM_SYSTEM, 60); } catch (Exception ignored) {}
 
-        if (getIntent() != null && MediaStore.INTENT_ACTION_VIDEO_CAMERA.equals(getIntent().getAction())) mode = M_VIDEO;
+        applyLaunchIntent(getIntent(), true);
 
         if (hasCameraPermission()) startCamera();
         else requestPerms();
-        loadLastThumb();
+        if (!secureMode) loadLastThumb();
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (MediaStore.INTENT_ACTION_VIDEO_CAMERA.equals(intent.getAction()) && mode != M_VIDEO && recording == null) setMode(M_VIDEO);
+        if (recording == null) applyLaunchIntent(intent, false);
     }
 
     @Override
@@ -295,6 +317,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (g == null) g = sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (g != null) sensors.registerListener(this, g, SensorManager.SENSOR_DELAY_UI);
         startLocation();
+        updateSoundTrigger();
         // Ayarlardan dönünce yeniden kur (çözünürlük vb. değişmiş olabilir)
         if (settingsOpened && provider != null && recording == null) bindCamera();
         settingsOpened = false;
@@ -313,6 +336,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         orientationListener.disable();
         sensors.unregisterListener(this);
         stopLocation();
+        stopSoundTrigger();
+        stopInterval();
         burst = false;
         cancelTimer();
         if (recording != null) stopRecording();
@@ -357,6 +382,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         filterChips = findViewById(R.id.filterChips);
         qrChip = findViewById(R.id.qrChip);
         burstCount = findViewById(R.id.burstCount);
+        btnSnap = findViewById(R.id.btnSnap);
+        audioLevel = findViewById(R.id.audioLevel);
         btnPause = findViewById(R.id.btnPause);
         btnTimer = findViewById(R.id.btnTimer);
         btnTimerBox = findViewById(R.id.btnTimerBox);
@@ -382,7 +409,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         front = sp.getBoolean(P.ST_FRONT, false);
         filterIdx = sp.getInt(P.ST_FILTER, 0);
         if (filterIdx < 0 || filterIdx >= Filters.count()) filterIdx = 0;
-        if (mode < 0 || mode > M_VIDEO) mode = M_PHOTO;
+        if (mode < 0 || mode > M_SLOWMO) mode = M_PHOTO;
         if (aspect < 0 || aspect > 3) aspect = 0;
         if (timerIdx < 0 || timerIdx >= TIMERS.length) timerIdx = 0;
     }
@@ -426,7 +453,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         int w = root.getWidth(), h = root.getHeight();
         if (w == 0 || h == 0) return;
         int ph, top;
-        int a = mode == M_VIDEO ? 1 : aspect;
+        int a = isVideoMode() ? 1 : aspect;
         if (a == 3) { ph = h; top = 0; }
         else {
             float r = a == 0 ? 4f / 3f : a == 1 ? 16f / 9f : 1f;
@@ -446,7 +473,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private Rational viewPortRatio() {
-        int a = mode == M_VIDEO ? 1 : aspect;
+        int a = isVideoMode() ? 1 : aspect;
         switch (a) {
             case 1: return new Rational(9, 16);
             case 2: return new Rational(1, 1);
@@ -463,7 +490,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         shutter.setOnClickListener(v -> onShutter());
         shutter.setOnHold(this::burstStart, this::burstEnd);
         btnFlip.setOnClickListener(v -> flipCamera());
-        thumb.setOnClickListener(v -> { galleryOpened = true; startActivity(new Intent(this, GalleryActivity.class)); });
+        thumb.setOnClickListener(v -> unlockThen(() -> { galleryOpened = true; startActivity(new Intent(this, GalleryActivity.class)); }));
         thumb.setOnLongClickListener(v -> { openLast(); return true; });
         btnFilter.setOnClickListener(v -> {
             boolean show = filterRow.getVisibility() != View.VISIBLE;
@@ -471,6 +498,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (show) buildFilterChips();
         });
         qrChip.setOnClickListener(v -> onQrClick());
+        btnSnap.setOnClickListener(v -> { if (recording != null && imageCapture != null && !capturing) takePhoto(false); });
+        btnTimerBox.setOnLongClickListener(v -> { showIntervalDialog(); return true; });
         btnPause.setOnClickListener(v -> togglePause());
         btnFlash.setOnClickListener(v -> cycleFlash());
         btnHdr.setOnClickListener(v -> {
@@ -497,7 +526,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             applyGeneralSettings();
             showHint(gridMode == 0 ? "Izgara kapalı" : gridMode == -1 ? "Izgara: altın oran" : "Izgara: " + gridMode + "×" + gridMode);
         });
-        btnSettings.setOnClickListener(v -> { settingsOpened = true; startActivity(new Intent(this, SettingsActivity.class)); });
+        btnSettings.setOnClickListener(v -> unlockThen(() -> { settingsOpened = true; startActivity(new Intent(this, SettingsActivity.class)); }));
         findViewById(R.id.btnPerm).setOnClickListener(v -> {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CAMERA)) requestPerms();
             else startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null)));
@@ -618,6 +647,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (extAvailable(ExtensionMode.BOKEH)) modes.add(M_PORTRAIT);
         modes.add(M_PHOTO);
         modes.add(M_VIDEO);
+        if (!slowFps().isEmpty()) modes.add(M_SLOWMO);
         if (!modes.contains(mode)) mode = M_PHOTO;
         modeRow.removeAllViews();
         int side = getResources().getDisplayMetrics().widthPixels / 2 - dp(40);
@@ -657,6 +687,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         layoutPreview();
         showHint(MODE_NAMES[m].charAt(0) + MODE_NAMES[m].substring(1).toLowerCase(new Locale("tr")));
         bindCamera();
+        updateSoundTrigger();
     }
 
     private void flipCamera() {
@@ -697,9 +728,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         CameraInfo info;
         try { info = provider.getCameraInfo(base); } catch (Exception e) { showHint("Kamera bulunamadı"); return; }
         readProRanges(info);
+        if (mode == M_SLOWMO) { bindSlowMo(info, base); return; }
 
         Preview.Builder pb = new Preview.Builder();
-        boolean video = mode == M_VIDEO;
+        boolean video = isVideoMode();
         int ratio = (video || aspect == 1 || aspect == 3) ? AspectRatio_16_9 : AspectRatio_4_3;
         pb.setResolutionSelector(new ResolutionSelector.Builder()
                 .setAspectRatioStrategy(ratioStrategy(ratio)).build());
@@ -741,6 +773,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (!safe && fps == 60 && supportsFps(info, 60)) vb.setTargetFrameRate(new Range<>(60, 60));
             else if (!safe && supportsFps(info, 30)) vb.setTargetFrameRate(new Range<>(30, 30));
             videoCapture = vb.build();
+            if (!safe && !noSnapshot && sp.getBoolean(P.VIDEO_SNAPSHOT, true)) {
+                imageCapture = new ImageCapture.Builder()
+                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                        .setJpegQuality(Math.max(50, Math.min(100, P.i(sp, P.JPEG_QUALITY, 95))))
+                        .setTargetRotation(deviceRotation)
+                        .setResolutionSelector(new ResolutionSelector.Builder().setAspectRatioStrategy(ratioStrategy(AspectRatio_16_9))
+                                .setResolutionStrategy(ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY).build())
+                        .build();
+            }
         } else {
             imageCapture = buildImageCapture(info, safe, extMode >= 0);
         }
@@ -748,11 +789,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Preview preview = pb.build();
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
         group.addUseCase(preview);
-        if (video) group.addUseCase(videoCapture);
+        if (video) { group.addUseCase(videoCapture); if (imageCapture != null) group.addUseCase(imageCapture); }
         else group.addUseCase(imageCapture);
 
         ImageAnalysis analysis = null;
-        boolean wantHist = mode == M_PRO && sp.getBoolean(P.HISTOGRAM, true);
+        boolean wantHist = mode == M_PRO; // histogram + tepe noktası/zebra
         boolean wantQr = mode == M_PHOTO && extMode < 0 && sp.getBoolean(P.QR, true);
         if (!safe && !noAnalysis && (wantHist || wantQr)) {
             analysis = new ImageAnalysis.Builder()
@@ -768,6 +809,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         try {
             camera = provider.bindToLifecycle(this, sel, group.build());
         } catch (Exception e) {
+            if (!safe && video && imageCapture != null && !noSnapshot) {
+                // Video + fotoğraf birlikte açılamadı: fotoğraf düğmesiz dene
+                noSnapshot = true;
+                bindCamera(false);
+                noSnapshot = false;
+                return;
+            }
             if (!safe && analysis != null && !noAnalysis) {
                 // Önce yalnızca QR/histogram analizini çıkararak dene (RAW vb. seçimler korunur)
                 noAnalysis = true;
@@ -784,7 +832,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             return;
         }
-        if (analysis != null && wantHist) histogram.setVisibility(View.VISIBLE);
+        if (analysis != null && wantHist && sp.getBoolean(P.HISTOGRAM, true)) histogram.setVisibility(View.VISIBLE);
+        overlay.setPeaking(null, 0, false);
         extActive = extMode >= 0;
         digitalZoom = 1f;
         previewView.setScaleX(1f);
@@ -886,7 +935,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void onShutter() {
         if (camera == null) return;
         if (countDownTimer != null) { cancelTimer(); return; }
-        if (mode == M_VIDEO) {
+        if (intervalActive) { stopInterval(); return; }
+        if (isVideoMode()) {
             if (recording != null) stopRecording();
             else withTimer(this::startRecording);
         } else {
@@ -1024,7 +1074,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         MediaStoreOutputOptions out = new MediaStoreOutputOptions.Builder(getContentResolver(),
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI).setContentValues(cv).build();
         PendingRecording pr = vcap.getOutput().prepareRecording(this, out);
-        if (sp.getBoolean(P.VIDEO_AUDIO, true) && hasAudioPermission()) pr = pr.withAudioEnabled();
+        if (mode != M_SLOWMO && sp.getBoolean(P.VIDEO_AUDIO, true) && hasAudioPermission()) pr = pr.withAudioEnabled();
         try {
             recording = pr.start(ContextCompat.getMainExecutor(this), this::onRecordEvent);
         } catch (Exception e) {
@@ -1069,6 +1119,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void onRecordEvent(VideoRecordEvent e) {
+        if (e instanceof VideoRecordEvent.Status && audioLevel.getVisibility() == View.VISIBLE) {
+            try {
+                double amp = e.getRecordingStats().getAudioStats().getAudioAmplitude();
+                audioLevel.setScaleX((float) Math.max(0.05, Math.min(1.0, amp * 3)));
+            } catch (Exception ignored) {}
+        }
         if (e instanceof VideoRecordEvent.Finalize) {
             VideoRecordEvent.Finalize f = (VideoRecordEvent.Finalize) e;
             Uri uri = f.getOutputResults().getOutputUri();
@@ -1099,7 +1155,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void updateRecordingUi(boolean rec) {
         recTime.setVisibility(rec ? View.VISIBLE : View.GONE);
-        btnPause.setVisibility(rec ? View.VISIBLE : View.GONE);
+        btnPause.setVisibility(rec && mode != M_SLOWMO ? View.VISIBLE : View.GONE);
+        boolean snap = rec && imageCapture != null && mode == M_VIDEO;
+        btnSnap.setVisibility(snap ? View.VISIBLE : View.GONE);
+        btnFlip.setVisibility(snap ? View.INVISIBLE : View.VISIBLE);
+        boolean audioOn = rec && mode == M_VIDEO && sp.getBoolean(P.VIDEO_AUDIO, true) && hasAudioPermission();
+        audioLevel.setVisibility(audioOn ? View.VISIBLE : View.GONE);
+        if (audioOn) {
+            FrameLayout.LayoutParams alp = (FrameLayout.LayoutParams) audioLevel.getLayoutParams();
+            alp.topMargin = topInset + dp(90);
+            audioLevel.setLayoutParams(alp);
+        }
         btnPause.setImageResource(R.drawable.ic_pause);
         thumb.setVisibility(rec ? View.INVISIBLE : View.VISIBLE);
         float a = rec ? 0f : 1f;
@@ -1112,7 +1178,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void updateShutterState() {
-        shutter.setState(mode == M_VIDEO ? (recording != null ? ShutterView.RECORDING : ShutterView.VIDEO) : ShutterView.PHOTO);
+        shutter.setState(isVideoMode() ? (recording != null ? ShutterView.RECORDING : ShutterView.VIDEO) : ShutterView.PHOTO);
     }
 
     // ------------------------------------------------------------------ odak / pozlama
@@ -1396,6 +1462,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         addProChip(S_SHUTTER, manual && expCount > 0);
         addProChip(S_FOCUS, minFocusDist > 0);
         addProChip(S_WB, true);
+        addProChip(S_PEAK, true);
+        addProChip(S_ZEBRA, true);
         refreshProChips();
     }
 
@@ -1414,6 +1482,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         t.setLayoutParams(lp);
         t.setOnClickListener(v -> {
             int ty = (Integer) v.getTag();
+            if (ty == S_PEAK || ty == S_ZEBRA) {
+                if (ty == S_PEAK) peaking = !peaking; else zebra = !zebra;
+                if (!peaking && !zebra) overlay.setPeaking(null, 0, false);
+                showHint(ty == S_PEAK ? (peaking ? "Odak tepe noktası açık\n(net yerler kırmızı)" : "Odak tepe noktası kapalı")
+                        : (zebra ? "Zebra açık\n(patlayan beyazlar çizgili)" : "Zebra kapalı"));
+                refreshProChips();
+                return;
+            }
             if (sliderType == ty) closeSlider(); else openSlider(ty);
         });
         proChips.addView(t);
@@ -1436,6 +1512,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 case S_ISO: s = "ISO " + (proIso > 0 ? proIso : (liveIso > 0 ? String.valueOf(liveIso) : "Oto")); manual = proIso > 0; break;
                 case S_SHUTTER: s = "S " + (proExp > 0 ? Caps.shutterText(proExp) : (liveExp > 0 ? Caps.shutterText(liveExp) : "Oto")); manual = proExp > 0; break;
                 case S_FOCUS: s = proFocus >= 0 ? "MF " + focusText(proFocus) : "AF"; manual = proFocus >= 0; break;
+                case S_PEAK: s = "Tepe"; manual = peaking; break;
+                case S_ZEBRA: s = "Zebra"; manual = zebra; break;
                 default: s = "BD " + WB_NAMES[proWb]; manual = proWb != 0; break;
             }
             t.setText(s);
@@ -1481,6 +1559,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (mode == M_PHOTO) { scanQr(img, now); return; }
             if (now - lastHistMs < 120) return;
             lastHistMs = now;
+            if (peaking || zebra) assistOverlay(img);
             ImageProxy.PlaneProxy pl = img.getPlanes()[0];
             ByteBuffer buf = pl.getBuffer();
             int w = img.getWidth(), h = img.getHeight(), rs = pl.getRowStride(), ps = pl.getPixelStride();
@@ -1507,7 +1586,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // ------------------------------------------------------------------ üst çubuk
 
     private void cycleFlash() {
-        if (mode == M_VIDEO) flash = flash == FL_TORCH ? FL_OFF : FL_TORCH;
+        if (isVideoMode()) flash = flash == FL_TORCH ? FL_OFF : FL_TORCH;
         else if (front) flash = flash == FL_ON ? FL_OFF : FL_ON;
         else flash = (flash + 1) % 4;
         String[] names = {"Flaş kapalı", "Flaş otomatik", "Flaş açık", "Fener açık"};
@@ -1526,7 +1605,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void updateTopBar() {
-        boolean video = mode == M_VIDEO;
+        boolean video = isVideoMode();
         int fl = flash;
         if (video && fl != FL_TORCH) fl = FL_OFF;
         btnFlash.setImageResource(fl == FL_OFF ? R.drawable.ic_flash_off : fl == FL_AUTO ? R.drawable.ic_flash_auto
@@ -1797,7 +1876,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /** Vizörde canlı filtre: önizleme TextureView'ına renk matrisi uygular. */
     private void applyPreviewFilter() {
-        int f = mode == M_VIDEO ? 0 : filterIdx;
+        int f = isVideoMode() ? 0 : filterIdx;
         TextureView tv = findTexture(previewView);
         if (tv != null) {
             android.graphics.ColorMatrix cm = Filters.matrix(f);
@@ -1828,7 +1907,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private PostProcessor.Job makeJob() {
         PostProcessor.Job j = new PostProcessor.Job();
         j.zoom = extActive ? digitalZoom : 1f;
-        j.filter = mode == M_VIDEO ? 0 : filterIdx;
+        j.filter = isVideoMode() ? 0 : filterIdx;
         j.watermark = P.i(sp, P.WATERMARK, 0);
         String custom = sp.getString(P.WATERMARK_TEXT, "").trim();
         j.brand = custom.isEmpty() ? deviceName() : custom;
@@ -1850,7 +1929,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static String capitalize(String s) { return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1); }
 
     private void postProcess(PostProcessor.Job job) {
+        boolean keep = sp.getBoolean(P.KEEP_ORIGINAL, false);
+        String fold = folder();
         postExec.execute(() -> {
+            if (keep) saveOriginalCopy(job.uri, fold);
             Bitmap t = null;
             try { t = PostProcessor.run(this, job); } catch (Throwable e) {
                 ui.post(() -> showHint("Filtre/filigran uygulanamadı, fotoğraf orijinal kaldı"));
@@ -1869,7 +1951,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // ------------------------------------------------------------------ v2: seri çekim
 
     private void burstStart() {
-        if (camera == null || imageCapture == null || mode == M_VIDEO || countDownTimer != null) return;
+        if (camera == null || imageCapture == null || isVideoMode() || countDownTimer != null || intervalActive) return;
         if (extActive) { showHint("Seri çekim bu modda yok"); onShutter(); return; }
         burst = true;
         burstShots = 0;
@@ -1998,5 +2080,246 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void stopLocation() {
         if (locationManager != null) try { locationManager.removeUpdates(locListener); } catch (Exception ignored) {}
+    }
+
+    // ------------------------------------------------------------------ v3: yardımcılar
+
+    private boolean isVideoMode() { return mode == M_VIDEO || mode == M_SLOWMO; }
+
+    /** Kısayol, kilit ekranı ve "video çek" isteklerini uygular. */
+    private void applyLaunchIntent(Intent in, boolean creating) {
+        if (in == null || in.getAction() == null) return;
+        String a = in.getAction();
+        int target = -1;
+        boolean wantFront = front;
+        switch (a) {
+            case MediaStore.INTENT_ACTION_VIDEO_CAMERA:
+            case "com.bilal.kamera.VIDEO": target = M_VIDEO; break;
+            case "com.bilal.kamera.SLOWMO": target = M_SLOWMO; wantFront = false; break;
+            case "com.bilal.kamera.PRO": target = M_PRO; break;
+            case "com.bilal.kamera.SELFIE": target = M_PHOTO; wantFront = true; break;
+            case MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA_SECURE:
+                secureMode = true;
+                setShowWhenLocked(true);
+                target = M_PHOTO;
+                break;
+            default: return;
+        }
+        if (creating) { mode = target; front = wantFront; return; }
+        if (wantFront != front && provider != null && hasCam(wantFront)) { front = wantFront; rebuildModes(); }
+        if (modes.contains(target)) { if (target != mode) setMode(target); else bindCamera(); }
+    }
+
+    /** Kilit ekranından açıldıysa önce telefonun kilidini açtırır. */
+    private void unlockThen(Runnable r) {
+        android.app.KeyguardManager km = (android.app.KeyguardManager) getSystemService(KEYGUARD_SERVICE);
+        if (secureMode && km != null && km.isKeyguardLocked()) {
+            km.requestDismissKeyguard(this, new android.app.KeyguardManager.KeyguardDismissCallback() {
+                @Override public void onDismissSucceeded() { secureMode = false; loadLastThumb(); r.run(); }
+            });
+        } else r.run();
+    }
+
+    // ------------------------------------------------------------------ v3: ağır çekim
+
+    private List<Integer> slowFps() {
+        if (provider == null) return new ArrayList<>();
+        if (slowCache == null || slowCacheFront != front) {
+            slowCacheFront = front;
+            try { slowCache = Caps.slowMoFps(provider.getCameraInfo(baseSelector())); }
+            catch (Exception e) { slowCache = new ArrayList<>(); }
+        }
+        return slowCache;
+    }
+
+    private void bindSlowMo(CameraInfo info, CameraSelector sel) {
+        List<Integer> fpsList = slowFps();
+        if (fpsList.isEmpty()) { showHint("Bu kamerada ağır çekim yok"); setMode(M_VIDEO); return; }
+        int want = P.i(sp, P.SLOWMO_FPS, 240);
+        int fps = fpsList.get(0);
+        for (int f : fpsList) if (f <= want) fps = f;
+        try {
+            VideoCapabilities hc = Recorder.getHighSpeedVideoCapabilities(info);
+            List<androidx.camera.video.Quality> qs = hc != null ? hc.getSupportedQualities(DynamicRange.SDR) : new ArrayList<>();
+            androidx.camera.video.Quality q = qs.contains(androidx.camera.video.Quality.FHD) ? androidx.camera.video.Quality.FHD
+                    : (qs.isEmpty() ? androidx.camera.video.Quality.HD : qs.get(0));
+            Recorder rec = new Recorder.Builder().setQualitySelector(QualitySelector.from(q,
+                    FallbackStrategy.lowerQualityOrHigherThan(q))).build();
+            videoCapture = VideoCapture.withOutput(rec);
+            Preview preview = new Preview.Builder().build();
+            preview.setSurfaceProvider(previewView.getSurfaceProvider());
+            Range<Integer> range = null;
+            androidx.camera.video.HighSpeedVideoSessionConfig probe = new androidx.camera.video.HighSpeedVideoSessionConfig.Builder(videoCapture)
+                    .setPreview(preview).setSlowMotionEnabled(true).build();
+            for (Range<Integer> r : info.getSupportedFrameRateRanges(probe)) {
+                if (r.getUpper() == fps && (range == null || r.getLower() > range.getLower())) range = r;
+            }
+            androidx.camera.video.HighSpeedVideoSessionConfig.Builder cb = new androidx.camera.video.HighSpeedVideoSessionConfig.Builder(videoCapture)
+                    .setPreview(preview).setSlowMotionEnabled(true);
+            if (range != null) cb.setFrameRateRange(range);
+            camera = provider.bindToLifecycle(this, sel, cb.build());
+        } catch (Throwable e) {
+            videoCapture = null;
+            showHint("Ağır çekim açılamadı");
+            setMode(M_VIDEO);
+            return;
+        }
+        extActive = false;
+        digitalZoom = 1f;
+        previewView.setScaleX(1f);
+        previewView.setScaleY(1f);
+        btnFilter.setVisibility(View.GONE);
+        filterRow.setVisibility(View.GONE);
+        qrChip.setVisibility(View.GONE);
+        overlay.setPeaking(null, 0, false);
+        schedulePreviewFilter();
+        applyTorch();
+        camera.getCameraInfo().getZoomState().removeObservers(this);
+        camera.getCameraInfo().getZoomState().observe(this, this::onZoomChanged);
+        buildZoomChips();
+        updateTopBar();
+        updateShutterState();
+        updateProUi();
+        showHint("Ağır çekim · " + fps + " fps", 1600);
+    }
+
+    // ------------------------------------------------------------------ v3: aralıklı çekim
+
+    private void showIntervalDialog() {
+        if (isVideoMode() || camera == null || imageCapture == null) { showHint("Aralıklı çekim fotoğraf modlarında"); return; }
+        final int[][] presets = {{2, 30}, {5, 60}, {10, 100}, {30, 0}, {60, 0}};
+        String[] labels = {"Her 2 sn · 30 kare", "Her 5 sn · 60 kare", "Her 10 sn · 100 kare", "Her 30 sn · durdurana kadar", "Her 1 dk · durdurana kadar"};
+        new androidx.appcompat.app.AlertDialog.Builder(this).setTitle("Aralıklı çekim")
+                .setItems(labels, (d, w) -> {
+                    intervalSec = presets[w][0];
+                    intervalTotal = presets[w][1];
+                    intervalDone = 0;
+                    intervalActive = true;
+                    shutter.setBusy(true);
+                    ui.post(intervalTick);
+                })
+                .setNegativeButton("Vazgeç", null).show();
+    }
+
+    private void stopInterval() {
+        if (!intervalActive) return;
+        intervalActive = false;
+        ui.removeCallbacks(intervalTick);
+        shutter.setBusy(false);
+        showHint("Aralıklı çekim bitti · " + intervalDone + " fotoğraf");
+    }
+
+    // ------------------------------------------------------------------ v3: alkışla / sesle çek
+
+    private void updateSoundTrigger() {
+        boolean want = sp.getBoolean(P.SOUND_TRIGGER, false) && !isVideoMode() && hasAudioPermission() && hasCameraPermission();
+        if (want && !soundRun) startSoundTrigger();
+        else if (!want && soundRun) stopSoundTrigger();
+    }
+
+    @SuppressLint("MissingPermission")
+    private void startSoundTrigger() {
+        soundRun = true;
+        soundThread = new Thread(() -> {
+            int rate = 16000;
+            int min = android.media.AudioRecord.getMinBufferSize(rate, android.media.AudioFormat.CHANNEL_IN_MONO, android.media.AudioFormat.ENCODING_PCM_16BIT);
+            android.media.AudioRecord ar;
+            try {
+                ar = new android.media.AudioRecord(android.media.MediaRecorder.AudioSource.MIC, rate,
+                        android.media.AudioFormat.CHANNEL_IN_MONO, android.media.AudioFormat.ENCODING_PCM_16BIT, Math.max(min, 4096));
+                ar.startRecording();
+            } catch (Exception e) { soundRun = false; return; }
+            short[] buf = new short[1024];
+            double avg = 1500;
+            while (soundRun) {
+                int n = ar.read(buf, 0, buf.length);
+                if (n <= 0) continue;
+                int peak = 0;
+                for (int i = 0; i < n; i++) peak = Math.max(peak, Math.abs(buf[i]));
+                long now = SystemClock.elapsedRealtime();
+                // ortam gürültüsünün çok üstünde ani bir ses = tetikle
+                if (peak > 18000 && peak > avg * 5 && now - lastSoundShot > 3000) {
+                    lastSoundShot = now;
+                    ui.post(() -> {
+                        if (!capturing && !burst && countDownTimer == null && recording == null && !isVideoMode()) {
+                            showHint("Ses algılandı");
+                            onShutter();
+                        }
+                    });
+                }
+                avg = avg * 0.97 + peak * 0.03;
+            }
+            try { ar.stop(); } catch (Exception ignored) {}
+            ar.release();
+        }, "ses-tetik");
+        soundThread.start();
+    }
+
+    private void stopSoundTrigger() {
+        soundRun = false;
+        soundThread = null;
+    }
+
+    // ------------------------------------------------------------------ v3: tepe noktası / zebra
+
+    private int[] assistPx;
+
+    private void assistOverlay(ImageProxy img) {
+        android.graphics.Rect crop = img.getCropRect();
+        ImageProxy.PlaneProxy pl = img.getPlanes()[0];
+        ByteBuffer b = pl.getBuffer();
+        int rs = pl.getRowStride(), ps = pl.getPixelStride();
+        int step = 2;
+        int w = crop.width() / step, h = crop.height() / step;
+        if (w < 4 || h < 4) return;
+        if (assistPx == null || assistPx.length != w * h) assistPx = new int[w * h];
+        int lim = b.limit();
+        for (int y = 1; y < h - 1; y++) {
+            int sy = crop.top + y * step;
+            for (int x = 1; x < w - 1; x++) {
+                int sx = crop.left + x * step;
+                int i = sy * rs + sx * ps;
+                int c = 0;
+                if (i + rs * step < lim && i - rs * step >= 0) {
+                    int v = b.get(i) & 0xFF;
+                    if (zebra && v >= 248 && ((x + y) / 3) % 2 == 0) c = 0xB3FFFFFF;
+                    else if (peaking) {
+                        int gx = (b.get(i + ps * step) & 0xFF) - (b.get(i - ps * step) & 0xFF);
+                        int gy = (b.get(i + rs * step) & 0xFF) - (b.get(i - rs * step) & 0xFF);
+                        if (Math.abs(gx) + Math.abs(gy) > 70) c = 0xFFFF2D55;
+                    }
+                }
+                assistPx[y * w + x] = c;
+            }
+        }
+        Bitmap bmp = Bitmap.createBitmap(assistPx, w, h, Bitmap.Config.ARGB_8888);
+        int rot = img.getImageInfo().getRotationDegrees();
+        boolean mirror = front;
+        ui.post(() -> { if (mode == M_PRO && (peaking || zebra)) overlay.setPeaking(bmp, rot, mirror); });
+    }
+
+    // ------------------------------------------------------------------ v3: orijinali sakla
+
+    private void saveOriginalCopy(Uri src, String fold) {
+        try {
+            String name = null;
+            try (Cursor c = getContentResolver().query(src, new String[]{MediaStore.MediaColumns.DISPLAY_NAME}, null, null, null)) {
+                if (c != null && c.moveToFirst()) name = c.getString(0);
+            }
+            if (name == null) name = "IMG_" + stamp();
+            name = name.replace(".jpg", "") + "_orijinal.jpg";
+            ContentValues cv = new ContentValues();
+            cv.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+            cv.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+            cv.put(MediaStore.MediaColumns.RELATIVE_PATH, fold);
+            Uri dst = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+            if (dst == null) return;
+            try (java.io.InputStream in = getContentResolver().openInputStream(src);
+                 java.io.OutputStream out = getContentResolver().openOutputStream(dst)) {
+                byte[] buf = new byte[1 << 16];
+                int n;
+                while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+            }
+        } catch (Exception ignored) {}
     }
 }

@@ -11,6 +11,11 @@ import android.view.View;
 public class OverlayView extends View {
     private int grid = 0;              // 0 kapalı, 3 = 3x3, 4 = 4x4, -1 altın oran
     private boolean levelOn, vignette;
+    private android.graphics.Bitmap peak;
+    private int peakRot;
+    private boolean peakMirror;
+    private final android.graphics.Matrix pm = new android.graphics.Matrix();
+    private final Paint pp = new Paint();
     private final Paint vp = new Paint();
     private float levelDeg = Float.NaN; // telefonun yataydan sapması (derece)
     private float uiRotation = 0;       // arayüz dönüşü (0/90/180/-90)
@@ -35,6 +40,11 @@ public class OverlayView extends View {
 
     public void setGrid(int g) { grid = g; invalidate(); }
     public void setVignette(boolean v) { vignette = v; invalidate(); }
+
+    /** Pro modda odak tepe noktası / zebra katmanı (analiz görüntüsü, sensör yönünde). */
+    public void setPeaking(android.graphics.Bitmap b, int rotation, boolean mirror) {
+        peak = b; peakRot = rotation; peakMirror = mirror; invalidate();
+    }
     public void setLevelEnabled(boolean on) { levelOn = on; invalidate(); }
     public void setLevel(float deg) { levelDeg = deg; if (levelOn) invalidate(); }
     public void setUiRotation(float r) { uiRotation = r; invalidate(); }
@@ -57,6 +67,19 @@ public class OverlayView extends View {
             vp.setShader(new android.graphics.RadialGradient(w / 2, h / 2, (float) Math.hypot(w, h) / 2,
                     new int[]{0, 0, 0x8C000000}, new float[]{0f, 0.55f, 1f}, android.graphics.Shader.TileMode.CLAMP));
             c.drawRect(0, 0, w, h, vp);
+        }
+        if (peak != null && w > 0) {
+            float bw = peak.getWidth(), bh = peak.getHeight();
+            boolean swap = peakRot == 90 || peakRot == 270;
+            float rw = swap ? bh : bw, rh = swap ? bw : bh;
+            float sc = Math.max(w / rw, h / rh);
+            pm.reset();
+            pm.postTranslate(-bw / 2, -bh / 2);
+            pm.postRotate(peakRot);
+            if (peakMirror) pm.postScale(-1, 1);
+            pm.postScale(sc, sc);
+            pm.postTranslate(w / 2, h / 2);
+            c.drawBitmap(peak, pm, pp);
         }
         if (grid == 3 || grid == 4) {
             for (int i = 1; i < grid; i++) {

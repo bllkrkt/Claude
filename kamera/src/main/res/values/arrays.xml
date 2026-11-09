@@ -15,4 +15,6 @@
     <string-array name="folder_v"><item>Camera</item><item>KameraPlus</item></string-array>
     <string-array name="wm_e"><item>Kapalı</item><item>Köşede yazı</item><item>Beyaz çerçeve (bilgi şeritli)</item></string-array>
     <string-array name="wm_v"><item>0</item><item>1</item><item>2</item></string-array>
+    <string-array name="slow_e"><item>120 fps (4 kat yavaş)</item><item>240 fps (8 kat yavaş)</item><item>480 fps (16 kat yavaş)</item><item>960 fps</item></string-array>
+    <string-array name="slow_v"><item>120</item><item>240</item><item>480</item><item>960</item></string-array>
 </resources>

@@ -2,4 +2,9 @@
 <resources>
     <string name="app_name">Kamera+</string>
     <string name="settings">Kamera ayarları</string>
+    <string name="sc_selfie">Selfie</string>
+    <string name="sc_video">Video</string>
+    <string name="sc_slowmo">Ağır çekim</string>
+    <string name="sc_pro">Pro mod</string>
+    <string name="tile">Kamera+</string>
 </resources>

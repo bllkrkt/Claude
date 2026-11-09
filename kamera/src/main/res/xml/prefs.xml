@@ -18,6 +18,8 @@
             app:entries="@array/wm_e" app:entryValues="@array/wm_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
         <EditTextPreference app:key="watermark_text" app:title="Filigran yazısı" app:summary="Boş bırakırsan telefonun adı yazılır"
             app:dialogTitle="Filigranda görünecek yazı" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="keep_original" app:title="Filtresiz orijinali de sakla" app:summary="Filtre/filigran/zoom uygulanınca ayrıca işlenmemiş kopya kaydedilir"
+            app:defaultValue="false" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="location" app:title="Fotoğraflara konum ekle" app:summary="Galeride haritada görünür"
             app:defaultValue="false" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="shutter_sound" app:title="Deklanşör sesi" app:defaultValue="true" app:iconSpaceReserved="false" />
@@ -34,6 +36,10 @@
             app:defaultValue="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="video_hdr" app:title="HDR video (10-bit HLG)" app:summary="Daha geniş renk ve parlaklık aralığı"
             app:defaultValue="false" app:iconSpaceReserved="false" />
+        <ListPreference app:key="slowmo_fps" app:title="Ağır çekim hızı" app:defaultValue="240"
+            app:entries="@array/slow_e" app:entryValues="@array/slow_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="video_snapshot" app:title="Video çekerken fotoğraf düğmesi" app:summary="Kayıt sırasında sağdaki düğmeyle fotoğraf çek"
+            app:defaultValue="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="video_audio" app:title="Ses kaydı" app:defaultValue="true" app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
@@ -45,6 +51,8 @@
         <SwitchPreferenceCompat app:key="qr" app:title="QR kod okuma" app:summary="Fotoğraf modunda QR koda doğrultunca bağlantıyı gösterir"
             app:defaultValue="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="histogram" app:title="Pro modda histogram" app:defaultValue="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="sound_trigger" app:title="Alkışla / sesle çek" app:summary="Yüksek bir ses (alkış, &quot;peynir!&quot;) duyunca fotoğraf çeker. Zamanlayıcıyla birlikte kullanılabilir."
+            app:defaultValue="false" app:iconSpaceReserved="false" />
         <ListPreference app:key="volume_keys" app:title="Ses tuşları" app:defaultValue="shutter"
             app:entries="@array/vol_e" app:entryValues="@array/vol_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="max_brightness" app:title="Ekran parlaklığını en yükseğe çek" app:summary="Güneş altında vizörü görmek için"

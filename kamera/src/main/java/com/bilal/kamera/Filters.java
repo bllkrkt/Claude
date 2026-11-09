@@ -6,10 +6,10 @@ import android.graphics.ColorMatrix;
 public final class Filters {
     private Filters() {}
 
-    public static final String[] NAMES = {"Doğal", "Canlı", "Sıcak", "Soğuk", "Film", "Dram", "S/B", "S/B Sert", "Sepya", "Retro"};
+    public static final String[] NAMES = {"Doğal", "Canlı", "Sıcak", "Soğuk", "Film", "Dram", "S/B", "S/B Sert", "Sepya", "Retro", "Belge"};
     /** Filtre çubuğundaki renk örneği */
-    public static final int[] SWATCH = {0xFF9E9E9E, 0xFFFF7043, 0xFFFFB74D, 0xFF64B5F6, 0xFFBCAAA4, 0xFF5D4037, 0xFFBDBDBD, 0xFF424242, 0xFFA1887F, 0xFF4DB6AC};
-    public static final boolean[] VIGNETTE = {false, false, false, false, true, true, false, true, true, true};
+    public static final int[] SWATCH = {0xFF9E9E9E, 0xFFFF7043, 0xFFFFB74D, 0xFF64B5F6, 0xFFBCAAA4, 0xFF5D4037, 0xFFBDBDBD, 0xFF424242, 0xFFA1887F, 0xFF4DB6AC, 0xFFFFFFFF};
+    public static final boolean[] VIGNETTE = {false, false, false, false, true, true, false, true, true, true, false};
 
     public static int count() { return NAMES.length; }
 
@@ -34,6 +34,7 @@ public final class Filters {
                 m.postConcat(contrast(0.92f, 0));
                 return m;
             }
+            case 10: m.setSaturation(0f); m.postConcat(contrast(1.7f, 38)); return m; // belge: beyaz kâğıt, koyu yazı
             default: return null;
         }
     }

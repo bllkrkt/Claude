@@ -23,7 +23,9 @@ import androidx.camera.extensions.ExtensionsManager;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.Quality;
 import androidx.camera.video.Recorder;
+import androidx.camera.video.HighSpeedVideoSessionConfig;
 import androidx.camera.video.VideoCapabilities;
+import androidx.camera.video.VideoCapture;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
 
 /** Telefonun kamera yeteneklerini okur ve ayarlara kaydeder. */
 @SuppressLint("UnsafeOptInUsageError")
@@ -140,6 +143,13 @@ public final class Caps {
                 for (Range<Integer> r : ci.getSupportedFrameRateRanges()) if (r.getUpper() >= 60) fps60 = true;
                 e.putBoolean(P.cap(facing, "fps60"), fps60);
                 info.append("Video: ").append(qn.length() > 0 ? qn : "?").append('\n');
+                List<Integer> slow = slowMoFps(ci);
+                StringBuilder sl = new StringBuilder();
+                for (int x : slow) { if (sl.length() > 0) sl.append(" / "); sl.append(x); }
+                StringBuilder slc = new StringBuilder();
+                for (int x : slow) { if (slc.length() > 0) slc.append(','); slc.append(x); }
+                e.putString(P.cap(facing, "slowmo"), slc.toString());
+                info.append("Ağır çekim: ").append(slow.isEmpty() ? "yok" : sl + " fps").append('\n');
                 info.append("60 fps: ").append(fps60 ? "var" : "yok").append(" · Sabitleme: ").append(stab ? "var" : "yok")
                         .append(" · HDR video (10-bit): ").append(hlg ? "var" : "yok").append('\n');
             } catch (Exception ignored) {}
@@ -158,6 +168,22 @@ public final class Caps {
         }
         e.putString(P.CAP_INFO_TEXT, info.toString().trim());
         e.apply();
+    }
+
+    /** Ağır çekimde seçilebilecek sabit kare hızları (120, 240 …). Boş = desteklenmiyor. */
+    public static List<Integer> slowMoFps(CameraInfo ci) {
+        List<Integer> out = new ArrayList<>();
+        try {
+            VideoCapabilities hc = Recorder.getHighSpeedVideoCapabilities(ci);
+            if (hc == null || hc.getSupportedQualities(DynamicRange.SDR).isEmpty()) return out;
+            VideoCapture<Recorder> v = VideoCapture.withOutput(new Recorder.Builder().build());
+            HighSpeedVideoSessionConfig cfg = new HighSpeedVideoSessionConfig.Builder(v)
+                    .setPreview(new Preview.Builder().build()).setSlowMotionEnabled(true).build();
+            TreeSet<Integer> set = new TreeSet<>();
+            for (Range<Integer> r : ci.getSupportedFrameRateRanges(cfg)) if (r.getUpper() >= 100) set.add(r.getUpper());
+            out.addAll(set);
+        } catch (Throwable ignored) {}
+        return out;
     }
 
     private static boolean safeZsl(CameraInfo ci) { try { return ci.isZslSupported(); } catch (Exception e) { return false; } }

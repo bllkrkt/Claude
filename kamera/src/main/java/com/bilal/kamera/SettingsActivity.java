@@ -66,6 +66,18 @@ public class SettingsActivity extends AppCompatActivity {
                 set(fps, e, v);
                 fps.setSummary("Bu telefonda uygulamalara yalnızca 30 fps açık");
             }
+            ListPreference slow = findPreference(P.SLOWMO_FPS);
+            String sl = sp.getString(P.cap("back", "slowmo"), null);
+            if (slow != null && sl != null) {
+                List<String> e = new ArrayList<>(), v = new ArrayList<>();
+                for (String x : sl.split(",")) {
+                    if (x.trim().isEmpty()) continue;
+                    int f = Integer.parseInt(x.trim());
+                    e.add(f + " fps (" + Math.max(1, f / 30) + " kat yavaş)"); v.add(String.valueOf(f));
+                }
+                if (v.isEmpty()) { slow.setEnabled(false); slow.setSummary("Bu telefon uygulamalara ağır çekim açmıyor"); }
+                else set(slow, e, v);
+            }
             SwitchPreferenceCompat stab = findPreference(P.VIDEO_STAB);
             if (!sp.getBoolean(P.cap("back", "stab"), true)) { stab.setEnabled(false); stab.setSummary("Telefon desteklemiyor"); }
             SwitchPreferenceCompat hdr = findPreference(P.VIDEO_HDR);

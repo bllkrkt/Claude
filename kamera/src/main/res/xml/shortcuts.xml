@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="selfie" android:enabled="true" android:icon="@drawable/ic_sc_selfie"
+        android:shortcutShortLabel="@string/sc_selfie">
+        <intent android:action="com.bilal.kamera.SELFIE" android:targetPackage="com.bilal.kamera" android:targetClass="com.bilal.kamera.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="video" android:enabled="true" android:icon="@drawable/ic_sc_video"
+        android:shortcutShortLabel="@string/sc_video">
+        <intent android:action="com.bilal.kamera.VIDEO" android:targetPackage="com.bilal.kamera" android:targetClass="com.bilal.kamera.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="slowmo" android:enabled="true" android:icon="@drawable/ic_sc_slowmo"
+        android:shortcutShortLabel="@string/sc_slowmo">
+        <intent android:action="com.bilal.kamera.SLOWMO" android:targetPackage="com.bilal.kamera" android:targetClass="com.bilal.kamera.MainActivity" />
+    </shortcut>
+    <shortcut android:shortcutId="pro" android:enabled="true" android:icon="@drawable/ic_sc_pro"
+        android:shortcutShortLabel="@string/sc_pro">
+        <intent android:action="com.bilal.kamera.PRO" android:targetPackage="com.bilal.kamera" android:targetClass="com.bilal.kamera.MainActivity" />
+    </shortcut>
+</shortcuts>

@@ -49,6 +49,11 @@ public final class P {
     public static final String WATERMARK_TEXT = "watermark_text";
     public static final String LOCATION = "location";
     public static final String QR = "qr";
+    // v3
+    public static final String SOUND_TRIGGER = "sound_trigger";
+    public static final String KEEP_ORIGINAL = "keep_original";
+    public static final String SLOWMO_FPS = "slowmo_fps";
+    public static final String VIDEO_SNAPSHOT = "video_snapshot";
     // Telefonun yetenekleri (kameradan okunur, ayarlar ekranı bunlara göre seçenek gösterir)
     public static String cap(String facing, String what) { return "cap_" + facing + "_" + what; }
     public static final String CAP_INFO_TEXT = "cap_info_text";
