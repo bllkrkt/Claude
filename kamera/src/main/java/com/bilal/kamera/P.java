@@ -43,6 +43,12 @@ public final class P {
     public static final String ST_ASPECT = "st_aspect";
     public static final String ST_HDR = "st_hdr";
     public static final String ST_FRONT = "st_front";
+    public static final String ST_FILTER = "st_filter";
+    // v2
+    public static final String WATERMARK = "watermark";
+    public static final String WATERMARK_TEXT = "watermark_text";
+    public static final String LOCATION = "location";
+    public static final String QR = "qr";
     // Telefonun yetenekleri (kameradan okunur, ayarlar ekranı bunlara göre seçenek gösterir)
     public static String cap(String facing, String what) { return "cap_" + facing + "_" + what; }
     public static final String CAP_INFO_TEXT = "cap_info_text";

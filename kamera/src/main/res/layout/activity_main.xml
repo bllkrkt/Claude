@@ -29,6 +29,38 @@
             android:layout_margin="10dp"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/qrChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginBottom="14dp"
+            android:background="@drawable/bg_qr"
+            android:drawablePadding="8dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:paddingStart="14dp"
+            android:paddingTop="9dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="9dp"
+            android:textColor="#FF111111"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/burstCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:shadowColor="#AA000000"
+            android:shadowRadius="10"
+            android:textColor="@android:color/white"
+            android:textSize="64sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <View
             android:id="@+id/flashOverlay"
             android:layout_width="match_parent"
@@ -56,6 +88,7 @@
         </FrameLayout>
         <TextView android:id="@+id/btnAspect" style="@style/TopTxt" android:text="4:3" />
         <ImageButton android:id="@+id/btnGrid" style="@style/TopBtn" android:src="@drawable/ic_grid" android:contentDescription="Izgara" />
+        <ImageButton android:id="@+id/btnFilter" style="@style/TopBtn" android:src="@drawable/ic_filter" android:contentDescription="Filtre" />
         <ImageButton android:id="@+id/btnSettings" style="@style/TopBtn" android:src="@drawable/ic_settings" android:contentDescription="Ayarlar" />
     </LinearLayout>
 
@@ -193,6 +226,23 @@
             android:visibility="gone">
             <LinearLayout
                 android:id="@+id/proChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
+        </HorizontalScrollView>
+
+        <!-- Filtre şeridi -->
+        <HorizontalScrollView
+            android:id="@+id/filterRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+            <LinearLayout
+                android:id="@+id/filterChips"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"

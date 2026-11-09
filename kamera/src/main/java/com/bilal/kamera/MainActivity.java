@@ -17,6 +17,15 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
+import android.graphics.drawable.GradientDrawable;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.view.TextureView;
 import android.media.AudioManager;
 import android.media.MediaActionSound;
 import android.media.ToneGenerator;
@@ -100,7 +109,16 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.PlanarYUVLuminanceSource;
+import com.google.zxing.Result;
+import com.google.zxing.common.HybridBinarizer;
+
 import java.nio.ByteBuffer;
+import java.util.EnumMap;
+import java.util.Map;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -172,7 +190,28 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private boolean capturing;
     private Uri lastUri;
     private boolean lastIsVideo;
-    private boolean aeLocked, settingsOpened;
+    private boolean aeLocked, settingsOpened, galleryOpened, noAnalysis;
+
+    // v2: filtre, dijital zoom, seri çekim, QR, konum
+    private ImageButton btnFilter;
+    private HorizontalScrollView filterRow;
+    private LinearLayout filterChips;
+    private TextView qrChip, burstCount;
+    private int filterIdx;
+    private boolean extActive;           // üretici modu (gece/portre/akıllı) açık mı
+    private float digitalZoom = 1f;      // üretici modlarında vizör + kayıt sonrası kırpma ile zoom
+    private boolean burst;
+    private int burstShots;
+    private Location lastLocation;
+    private LocationManager locationManager;
+    private String qrText;
+    private long lastQrMs;
+    private MultiFormatReader qrReader;
+    private byte[] qrBuf;
+    private String lensText = "";
+    private final Runnable hideQr = () -> { qrChip.setVisibility(View.GONE); qrText = null; };
+    private final LocationListener locListener = l -> lastLocation = l;
+    private final ExecutorService postExec = Executors.newSingleThreadExecutor();
 
     // Pro
     private int proIso = -1, proWb = 0;
@@ -255,9 +294,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Sensor g = sensors.getDefaultSensor(Sensor.TYPE_GRAVITY);
         if (g == null) g = sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (g != null) sensors.registerListener(this, g, SensorManager.SENSOR_DELAY_UI);
+        startLocation();
         // Ayarlardan dönünce yeniden kur (çözünürlük vb. değişmiş olabilir)
         if (settingsOpened && provider != null && recording == null) bindCamera();
         settingsOpened = false;
+        if (galleryOpened) {
+            // Galeride silinmiş olabilir: son çekimi yeniden bul
+            galleryOpened = false;
+            lastUri = null;
+            thumb.setImageDrawable(null);
+            loadLastThumb();
+        }
     }
 
     @Override
@@ -265,6 +312,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onPause();
         orientationListener.disable();
         sensors.unregisterListener(this);
+        stopLocation();
+        burst = false;
         cancelTimer();
         if (recording != null) stopRecording();
         saveState();
@@ -275,6 +324,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onDestroy();
         bg.shutdown();
         analysisExec.shutdown();
+        postExec.shutdown();
         if (sound != null) sound.release();
         if (tone != null) tone.release();
     }
@@ -302,6 +352,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         btnGrid = findViewById(R.id.btnGrid);
         btnSettings = findViewById(R.id.btnSettings);
         btnFlip = findViewById(R.id.btnFlip);
+        btnFilter = findViewById(R.id.btnFilter);
+        filterRow = findViewById(R.id.filterRow);
+        filterChips = findViewById(R.id.filterChips);
+        qrChip = findViewById(R.id.qrChip);
+        burstCount = findViewById(R.id.burstCount);
         btnPause = findViewById(R.id.btnPause);
         btnTimer = findViewById(R.id.btnTimer);
         btnTimerBox = findViewById(R.id.btnTimerBox);
@@ -325,6 +380,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         aspect = sp.getInt(P.ST_ASPECT, 0);
         hdrOn = sp.getBoolean(P.ST_HDR, false);
         front = sp.getBoolean(P.ST_FRONT, false);
+        filterIdx = sp.getInt(P.ST_FILTER, 0);
+        if (filterIdx < 0 || filterIdx >= Filters.count()) filterIdx = 0;
         if (mode < 0 || mode > M_VIDEO) mode = M_PHOTO;
         if (aspect < 0 || aspect > 3) aspect = 0;
         if (timerIdx < 0 || timerIdx >= TIMERS.length) timerIdx = 0;
@@ -332,7 +389,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void saveState() {
         sp.edit().putInt(P.ST_MODE, mode).putInt(P.ST_FLASH, flash).putInt(P.ST_TIMER, timerIdx)
-                .putInt(P.ST_ASPECT, aspect).putBoolean(P.ST_HDR, hdrOn).putBoolean(P.ST_FRONT, front).apply();
+                .putInt(P.ST_ASPECT, aspect).putBoolean(P.ST_HDR, hdrOn).putBoolean(P.ST_FRONT, front).putInt(P.ST_FILTER, filterIdx).apply();
     }
 
     private void applyGeneralSettings() {
@@ -404,13 +461,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void setupButtons() {
         shutter.setOnClickListener(v -> onShutter());
+        shutter.setOnHold(this::burstStart, this::burstEnd);
         btnFlip.setOnClickListener(v -> flipCamera());
-        thumb.setOnClickListener(v -> openLast());
+        thumb.setOnClickListener(v -> { galleryOpened = true; startActivity(new Intent(this, GalleryActivity.class)); });
+        thumb.setOnLongClickListener(v -> { openLast(); return true; });
+        btnFilter.setOnClickListener(v -> {
+            boolean show = filterRow.getVisibility() != View.VISIBLE;
+            filterRow.setVisibility(show ? View.VISIBLE : View.GONE);
+            if (show) buildFilterChips();
+        });
+        qrChip.setOnClickListener(v -> onQrClick());
         btnPause.setOnClickListener(v -> togglePause());
         btnFlash.setOnClickListener(v -> cycleFlash());
         btnHdr.setOnClickListener(v -> {
             hdrOn = !hdrOn;
-            showHint(hdrOn ? "HDR açık" : "HDR kapalı");
+            boolean isHdr = smartExt() == ExtensionMode.HDR;
+            showHint(isHdr ? (hdrOn ? "HDR açık" : "HDR kapalı") : (hdrOn ? "Akıllı sahne açık\n(gece/HDR otomatik)" : "Akıllı sahne kapalı"));
             updateTopBar();
             bindCamera();
         });
@@ -449,6 +515,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         scaleDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override public boolean onScale(@NonNull ScaleGestureDetector d) {
                 if (camera == null) return false;
+                if (extActive) { setDigitalZoom(digitalZoom * d.getScaleFactor()); return true; }
                 ZoomState z = camera.getCameraInfo().getZoomState().getValue();
                 if (z == null) return false;
                 float nz = Math.max(z.getMinZoomRatio(), Math.min(z.getMaxZoomRatio(), z.getZoomRatio() * d.getScaleFactor()));
@@ -500,6 +567,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onRequestPermissionsResult(int rc, @NonNull String[] perms, @NonNull int[] res) {
         super.onRequestPermissionsResult(rc, perms, res);
+        if (rc == 2) { startLocation(); return; }
         if (hasCameraPermission()) { permPanel.setVisibility(View.GONE); startCamera(); }
         else permPanel.setVisibility(View.VISIBLE);
     }
@@ -621,7 +689,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (!safe) {
             if (mode == M_NIGHT) extMode = ExtensionMode.NIGHT;
             else if (mode == M_PORTRAIT) extMode = ExtensionMode.BOKEH;
-            else if (mode == M_PHOTO && hdrOn && extAvailable(ExtensionMode.HDR)) extMode = ExtensionMode.HDR;
+            else if (mode == M_PHOTO && hdrOn && smartExt() >= 0) extMode = smartExt();
             if (extMode >= 0 && extAvailable(extMode)) sel = extensions.getExtensionEnabledCameraSelector(base, extMode);
             else extMode = -1;
         }
@@ -684,7 +752,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         else group.addUseCase(imageCapture);
 
         ImageAnalysis analysis = null;
-        if (mode == M_PRO && !safe && sp.getBoolean(P.HISTOGRAM, true)) {
+        boolean wantHist = mode == M_PRO && sp.getBoolean(P.HISTOGRAM, true);
+        boolean wantQr = mode == M_PHOTO && extMode < 0 && sp.getBoolean(P.QR, true);
+        if (!safe && !noAnalysis && (wantHist || wantQr)) {
             analysis = new ImageAnalysis.Builder()
                     .setResolutionSelector(new ResolutionSelector.Builder()
                             .setResolutionStrategy(new ResolutionStrategy(new Size(640, 480), ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER))
@@ -698,6 +768,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         try {
             camera = provider.bindToLifecycle(this, sel, group.build());
         } catch (Exception e) {
+            if (!safe && analysis != null && !noAnalysis) {
+                // Önce yalnızca QR/histogram analizini çıkararak dene (RAW vb. seçimler korunur)
+                noAnalysis = true;
+                bindCamera(false);
+                noAnalysis = false;
+                return;
+            }
             if (!safe) {
                 // Bazı seçenek birleşimleri desteklenmeyebilir: daha sade ayarlarla tekrar dene
                 if (mode == M_NIGHT || mode == M_PORTRAIT) showHint("Bu mod şu an açılamadı");
@@ -707,7 +784,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
             return;
         }
-        if (analysis != null) histogram.setVisibility(View.VISIBLE);
+        if (analysis != null && wantHist) histogram.setVisibility(View.VISIBLE);
+        extActive = extMode >= 0;
+        digitalZoom = 1f;
+        previewView.setScaleX(1f);
+        previewView.setScaleY(1f);
+        qrChip.setVisibility(View.GONE);
+        filterRow.setVisibility(View.GONE);
+        btnFilter.setVisibility(video ? View.GONE : View.VISIBLE);
+        schedulePreviewFilter();
         applyTorch();
         camera.getCameraInfo().getZoomState().removeObservers(this);
         camera.getCameraInfo().getZoomState().observe(this, this::onZoomChanged);
@@ -805,8 +890,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             if (recording != null) stopRecording();
             else withTimer(this::startRecording);
         } else {
-            if (capturing) return;
-            withTimer(this::takePhoto);
+            if (capturing || burst) return;
+            withTimer(() -> takePhoto(false));
         }
     }
 
@@ -849,11 +934,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         return new SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(new Date());
     }
 
-    private void takePhoto() {
+    private void takePhoto(boolean burstShot) {
         ImageCapture ic = imageCapture;
         if (ic == null) return;
         capturing = true;
-        shutter.setBusy(true);
+        if (!burstShot) shutter.setBusy(true);
+        PostProcessor.Job job = makeJob();
         String name = "IMG_" + stamp();
         ContentValues cv = new ContentValues();
         cv.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
@@ -861,23 +947,41 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cv.put(MediaStore.MediaColumns.RELATIVE_PATH, folder());
         ImageCapture.Metadata meta = new ImageCapture.Metadata();
         if (front && sp.getBoolean(P.MIRROR_FRONT, true)) meta.setReversedHorizontal(true);
+        if (sp.getBoolean(P.LOCATION, false) && lastLocation != null) meta.setLocation(lastLocation);
         ImageCapture.OutputFileOptions jpeg = new ImageCapture.OutputFileOptions.Builder(getContentResolver(),
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv).setMetadata(meta).build();
 
         boolean night = mode == M_NIGHT;
         if (night) showHint("Sabit tutun…", 60_000);
         ImageCapture.OnImageSavedCallback cb = new ImageCapture.OnImageSavedCallback() {
-            @Override public void onCaptureStarted() { shutterFeedback(); }
+            @Override public void onCaptureStarted() {
+                shutterFeedback();
+                if (burstShot) {
+                    burstShots++;
+                    burstCount.setText(String.valueOf(burstShots));
+                    ui.post(MainActivity.this::burstNext);
+                }
+            }
             @Override public void onCaptureProcessProgressed(int p) { if (night) showHint("İşleniyor %" + p, 60_000); }
             @Override public void onImageSaved(@NonNull ImageCapture.OutputFileResults r) {
                 capturing = false;
-                shutter.setBusy(false);
+                if (!burstShot) shutter.setBusy(false);
                 if (night) hideHintNow();
-                if (r.getSavedUri() != null) { lastUri = r.getSavedUri(); lastIsVideo = false; loadThumb(lastUri, false); }
+                Uri u = r.getSavedUri();
+                if (u == null) return;
+                String mt = null;
+                try { mt = getContentResolver().getType(u); } catch (Exception ignored) {}
+                if (mt != null && mt.contains("dng")) return; // RAW dosyasına dokunma, JPEG eşi işlenir
+                lastUri = u;
+                lastIsVideo = false;
+                job.uri = u;
+                if (PostProcessor.needed(job)) postProcess(job);
+                else loadThumb(u, false);
             }
             @Override public void onError(@NonNull ImageCaptureException e) {
                 capturing = false;
                 shutter.setBusy(false);
+                if (burstShot) burstEnd();
                 showHint("Fotoğraf kaydedilemedi (" + e.getImageCaptureError() + ")");
             }
         };
@@ -1037,6 +1141,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void buildZoomChips() {
         zoomRow.removeAllViews();
         if (camera == null) return;
+        if (extActive) { buildDigitalZoomChips(); return; }
         ZoomState z = camera.getCameraInfo().getZoomState().getValue();
         float min = z != null ? z.getMinZoomRatio() : 1f, max = z != null ? z.getMaxZoomRatio() : 1f;
         List<Float> stops = new ArrayList<>();
@@ -1075,6 +1180,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void onZoomChanged(ZoomState z) {
+        if (extActive) return;
         float cur = z.getZoomRatio();
         int active = -1;
         for (int i = 0; i < zoomRow.getChildCount(); i++) {
@@ -1259,6 +1365,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             expRange = c2.getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
             Float mf = c2.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
             minFocusDist = mf == null ? 0 : mf;
+            float[] fl = c2.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS);
+            float[] ap = c2.getCameraCharacteristic(CameraCharacteristics.LENS_INFO_AVAILABLE_APERTURES);
+            android.util.SizeF ss = c2.getCameraCharacteristic(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE);
+            StringBuilder lt = new StringBuilder();
+            if (fl != null && fl.length > 0 && ss != null)
+                lt.append(Math.round(fl[0] * 43.27 / Math.hypot(ss.getWidth(), ss.getHeight()))).append("mm");
+            if (ap != null && ap.length > 0) lt.append(lt.length() > 0 ? "  " : "").append(String.format(Locale.US, "f/%.1f", ap[0]));
+            lensText = lt.toString();
         } catch (Exception e) {
             isoRange = null; expRange = null; minFocusDist = 0;
         }
@@ -1364,6 +1478,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void analyze(ImageProxy img) {
         try {
             long now = SystemClock.uptimeMillis();
+            if (mode == M_PHOTO) { scanQr(img, now); return; }
             if (now - lastHistMs < 120) return;
             lastHistMs = now;
             ImageProxy.PlaneProxy pl = img.getPlanes()[0];
@@ -1417,7 +1532,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         btnFlash.setImageResource(fl == FL_OFF ? R.drawable.ic_flash_off : fl == FL_AUTO ? R.drawable.ic_flash_auto
                 : fl == FL_ON ? R.drawable.ic_flash_on : R.drawable.ic_torch);
         btnFlash.setColorFilter(fl == FL_OFF ? 0xFFFFFFFF : ContextCompat.getColor(this, R.color.accent));
-        boolean hdrAvail = mode == M_PHOTO && extAvailable(ExtensionMode.HDR);
+        int se = smartExt();
+        boolean hdrAvail = mode == M_PHOTO && se >= 0;
+        btnHdr.setImageResource(se == ExtensionMode.HDR ? R.drawable.ic_hdr : R.drawable.ic_auto);
         btnHdr.setVisibility(hdrAvail ? View.VISIBLE : View.GONE);
         btnHdr.setColorFilter(hdrOn ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
         btnHdr.setAlpha(hdrOn ? 1f : 0.6f);
@@ -1504,7 +1621,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // En kısa yoldan döndür
         float diff = ((target - uiRotation) % 360 + 540) % 360 - 180;
         uiRotation = uiRotation + diff;
-        View[] vs = {btnFlash, btnHdr, btnTimer, btnAspect, btnGrid, btnSettings, btnFlip, thumb, btnPause, zoomRow, hint, countdown};
+        View[] vs = {btnFlash, btnHdr, btnTimer, btnAspect, btnGrid, btnFilter, btnSettings, btnFlip, thumb, btnPause, hint, countdown, burstCount};
         for (View v : vs) v.animate().rotation(uiRotation).setDuration(250).start();
         overlay.setUiRotation(target);
     }
@@ -1529,6 +1646,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         boolean vol = keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN;
         if (keyCode == KeyEvent.KEYCODE_CAMERA || (vol && "shutter".equals(vk))) {
             if (event.getRepeatCount() == 0) onShutter();
+            return true;
+        }
+        if (vol && "zoom".equals(vk) && camera != null && extActive) {
+            setDigitalZoom(digitalZoom * (keyCode == KeyEvent.KEYCODE_VOLUME_UP ? 1.1f : 1 / 1.1f));
             return true;
         }
         if (vol && "zoom".equals(vk) && camera != null) {
@@ -1577,4 +1698,305 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @SuppressWarnings("unused")
     private void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }
+
+    // ------------------------------------------------------------------ v2: akıllı sahne
+
+    /** Fotoğraf modundaki üst düğmenin kullanacağı üretici modu: HDR yoksa Akıllı (Oto). */
+    private int smartExt() {
+        if (extAvailable(ExtensionMode.HDR)) return ExtensionMode.HDR;
+        if (extAvailable(ExtensionMode.AUTO)) return ExtensionMode.AUTO;
+        return -1;
+    }
+
+    // ------------------------------------------------------------------ v2: dijital zoom (üretici modları)
+
+    private static final float[] DIGITAL_STOPS = {1f, 1.5f, 2f, 3f, 4f};
+
+    private void buildDigitalZoomChips() {
+        zoomRow.setVisibility(View.VISIBLE);
+        for (float s : DIGITAL_STOPS) {
+            TextView t = new TextView(this);
+            t.setTag(s);
+            t.setGravity(Gravity.CENTER);
+            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+            t.setTypeface(null, android.graphics.Typeface.BOLD);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(38), dp(38));
+            lp.setMargins(dp(2), 0, dp(2), 0);
+            t.setLayoutParams(lp);
+            t.setOnClickListener(v -> { setDigitalZoom((Float) v.getTag()); v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK); });
+            zoomRow.addView(t);
+        }
+        setDigitalZoom(digitalZoom);
+    }
+
+    private void setDigitalZoom(float z) {
+        digitalZoom = Math.max(1f, Math.min(4f, z));
+        previewView.setScaleX(digitalZoom);
+        previewView.setScaleY(digitalZoom);
+        int active = 0;
+        for (int i = 0; i < zoomRow.getChildCount(); i++) if (digitalZoom >= (Float) zoomRow.getChildAt(i).getTag() - 0.05f) active = i;
+        for (int i = 0; i < zoomRow.getChildCount(); i++) {
+            TextView t = (TextView) zoomRow.getChildAt(i);
+            boolean on = i == active;
+            t.setBackgroundResource(on ? R.drawable.bg_zoom_on : R.drawable.bg_zoom);
+            t.setTextColor(on ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+            t.setText(on ? fmtZoom(Math.round(digitalZoom * 10) / 10f) + "×" : fmtZoom((Float) t.getTag()));
+        }
+    }
+
+    // ------------------------------------------------------------------ v2: filtreler
+
+    private void buildFilterChips() {
+        filterChips.removeAllViews();
+        for (int i = 0; i < Filters.count(); i++) {
+            TextView t = new TextView(this);
+            t.setText(Filters.NAMES[i]);
+            t.setTag(i);
+            t.setGravity(Gravity.CENTER);
+            t.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            t.setPadding(dp(12), dp(7), dp(14), dp(7));
+            GradientDrawable dot = new GradientDrawable();
+            dot.setShape(GradientDrawable.OVAL);
+            dot.setColor(Filters.SWATCH[i]);
+            dot.setSize(dp(14), dp(14));
+            t.setCompoundDrawablesRelativeWithIntrinsicBounds(dot, null, null, null);
+            t.setCompoundDrawablePadding(dp(6));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(dp(3), 0, dp(3), 0);
+            t.setLayoutParams(lp);
+            t.setOnClickListener(v -> {
+                filterIdx = (Integer) v.getTag();
+                highlightFilters();
+                applyPreviewFilter();
+                v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            });
+            filterChips.addView(t);
+        }
+        highlightFilters();
+    }
+
+    private void highlightFilters() {
+        for (int i = 0; i < filterChips.getChildCount(); i++) {
+            TextView t = (TextView) filterChips.getChildAt(i);
+            boolean on = (Integer) t.getTag() == filterIdx;
+            GradientDrawable bgd = new GradientDrawable();
+            bgd.setCornerRadius(dp(18));
+            bgd.setColor(on ? 0x99000000 : 0x40000000);
+            if (on) bgd.setStroke(dp(1), ContextCompat.getColor(this, R.color.accent));
+            t.setBackground(bgd);
+            t.setTextColor(on ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+        }
+        btnFilter.setColorFilter(filterIdx != 0 ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+    }
+
+    private void schedulePreviewFilter() {
+        highlightFilters();
+        ui.postDelayed(this::applyPreviewFilter, 300);
+        ui.postDelayed(this::applyPreviewFilter, 1200);
+    }
+
+    /** Vizörde canlı filtre: önizleme TextureView'ına renk matrisi uygular. */
+    private void applyPreviewFilter() {
+        int f = mode == M_VIDEO ? 0 : filterIdx;
+        TextureView tv = findTexture(previewView);
+        if (tv != null) {
+            android.graphics.ColorMatrix cm = Filters.matrix(f);
+            if (cm == null) tv.setLayerPaint(null);
+            else {
+                Paint p = new Paint();
+                p.setColorFilter(new ColorMatrixColorFilter(cm));
+                tv.setLayerPaint(p);
+            }
+        }
+        overlay.setVignette(Filters.VIGNETTE[f]);
+    }
+
+    private static TextureView findTexture(View v) {
+        if (v instanceof TextureView) return (TextureView) v;
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                TextureView t = findTexture(g.getChildAt(i));
+                if (t != null) return t;
+            }
+        }
+        return null;
+    }
+
+    // ------------------------------------------------------------------ v2: kayıt sonrası işlem
+
+    private PostProcessor.Job makeJob() {
+        PostProcessor.Job j = new PostProcessor.Job();
+        j.zoom = extActive ? digitalZoom : 1f;
+        j.filter = mode == M_VIDEO ? 0 : filterIdx;
+        j.watermark = P.i(sp, P.WATERMARK, 0);
+        String custom = sp.getString(P.WATERMARK_TEXT, "").trim();
+        j.brand = custom.isEmpty() ? deviceName() : custom;
+        j.lens = lensText;
+        j.quality = Math.max(50, Math.min(100, P.i(sp, P.JPEG_QUALITY, 95)));
+        return j;
+    }
+
+    private String deviceName() {
+        try {
+            String n = Settings.Global.getString(getContentResolver(), "device_name");
+            if (n != null && !n.trim().isEmpty()) return n.trim();
+        } catch (Exception ignored) {}
+        String m = android.os.Build.MODEL;
+        String b = android.os.Build.MANUFACTURER;
+        return m.toLowerCase(Locale.US).startsWith(b.toLowerCase(Locale.US)) ? m : capitalize(b) + " " + m;
+    }
+
+    private static String capitalize(String s) { return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1); }
+
+    private void postProcess(PostProcessor.Job job) {
+        postExec.execute(() -> {
+            Bitmap t = null;
+            try { t = PostProcessor.run(this, job); } catch (Throwable e) {
+                ui.post(() -> showHint("Filtre/filigran uygulanamadı, fotoğraf orijinal kaldı"));
+            }
+            Bitmap ft = t;
+            ui.post(() -> {
+                if (ft != null) {
+                    thumb.setImageBitmap(ft);
+                    thumb.setScaleX(0.6f); thumb.setScaleY(0.6f);
+                    thumb.animate().scaleX(1f).scaleY(1f).setDuration(200).start();
+                } else loadThumb(job.uri, false);
+            });
+        });
+    }
+
+    // ------------------------------------------------------------------ v2: seri çekim
+
+    private void burstStart() {
+        if (camera == null || imageCapture == null || mode == M_VIDEO || countDownTimer != null) return;
+        if (extActive) { showHint("Seri çekim bu modda yok"); onShutter(); return; }
+        burst = true;
+        burstShots = 0;
+        burstCount.setText("0");
+        burstCount.setVisibility(View.VISIBLE);
+        burstCount.setRotation(uiRotation);
+        burstNext();
+    }
+
+    private void burstNext() {
+        if (!burst) return;
+        if (burstShots >= 60) { burstEnd(); return; }
+        takePhoto(true);
+    }
+
+    private void burstEnd() {
+        if (!burst) return;
+        burst = false;
+        shutter.setBusy(false);
+        burstCount.animate().cancel();
+        ui.postDelayed(() -> { if (!burst) burstCount.setVisibility(View.GONE); }, 700);
+        if (burstShots > 0) showHint(burstShots + " fotoğraf çekildi");
+    }
+
+    // ------------------------------------------------------------------ v2: QR kod
+
+    private void scanQr(ImageProxy img, long now) {
+        if (now - lastQrMs < 250) return;
+        lastQrMs = now;
+        if (qrReader == null) {
+            qrReader = new MultiFormatReader();
+            Map<DecodeHintType, Object> h = new EnumMap<>(DecodeHintType.class);
+            h.put(DecodeHintType.POSSIBLE_FORMATS, java.util.Arrays.asList(com.google.zxing.BarcodeFormat.QR_CODE));
+            qrReader.setHints(h);
+        }
+        ImageProxy.PlaneProxy pl = img.getPlanes()[0];
+        int w = img.getWidth(), h = img.getHeight(), rs = pl.getRowStride();
+        if (qrBuf == null || qrBuf.length != w * h) qrBuf = new byte[w * h];
+        ByteBuffer b = pl.getBuffer();
+        for (int y = 0; y < h; y++) {
+            b.position(y * rs);
+            b.get(qrBuf, y * w, Math.min(w, b.remaining()));
+        }
+        try {
+            Result r = qrReader.decodeWithState(new BinaryBitmap(new HybridBinarizer(
+                    new PlanarYUVLuminanceSource(qrBuf, w, h, 0, 0, w, h, false))));
+            String text = r.getText();
+            ui.post(() -> showQr(text));
+        } catch (Exception ignored) {
+        } finally {
+            qrReader.reset();
+        }
+    }
+
+    private void showQr(String text) {
+        if (text == null || mode != M_PHOTO) return;
+        boolean isNew = !text.equals(qrText);
+        qrText = text;
+        String shown = text.startsWith("WIFI:") ? "Wi-Fi ağı: " + wifiName(text) : text;
+        qrChip.setText("QR  ›  " + shown);
+        if (isNew || qrChip.getVisibility() != View.VISIBLE) {
+            qrChip.setVisibility(View.VISIBLE);
+            qrChip.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+        }
+        ui.removeCallbacks(hideQr);
+        ui.postDelayed(hideQr, 2500);
+    }
+
+    private static String wifiName(String t) {
+        int i = t.indexOf("S:");
+        if (i < 0) return "?";
+        int e = t.indexOf(';', i);
+        return t.substring(i + 2, e < 0 ? t.length() : e);
+    }
+
+    private void onQrClick() {
+        String t = qrText;
+        if (t == null) return;
+        ui.removeCallbacks(hideQr);
+        String lower = t.toLowerCase(Locale.US);
+        if (lower.startsWith("http://") || lower.startsWith("https://")) {
+            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(t))); return; } catch (Exception ignored) {}
+        }
+        String msg = t;
+        if (t.startsWith("WIFI:")) {
+            int pi = t.indexOf("P:");
+            String pass = pi < 0 ? "" : t.substring(pi + 2, Math.max(pi + 2, t.indexOf(';', pi) < 0 ? t.length() : t.indexOf(';', pi)));
+            msg = "Ağ: " + wifiName(t) + (pass.isEmpty() ? "" : "\nŞifre: " + pass);
+            t = pass.isEmpty() ? wifiName(t) : pass;
+        }
+        final String copy = t;
+        new androidx.appcompat.app.AlertDialog.Builder(this).setTitle("QR kod").setMessage(msg)
+                .setPositiveButton("Kopyala", (d, w) -> {
+                    ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                    cm.setPrimaryClip(ClipData.newPlainText("QR", copy));
+                    showHint("Kopyalandı");
+                })
+                .setNeutralButton("Paylaş", (d, w) -> startActivity(Intent.createChooser(
+                        new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, qrTextOr(copy)), "Paylaş")))
+                .setNegativeButton("Kapat", null).show();
+    }
+
+    private String qrTextOr(String s) { return qrText != null ? qrText : s; }
+
+    // ------------------------------------------------------------------ v2: konum
+
+    @SuppressLint("MissingPermission")
+    private void startLocation() {
+        if (!sp.getBoolean(P.LOCATION, false)) return;
+        boolean fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        if (!fine && !coarse) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 2);
+            return;
+        }
+        if (locationManager == null) locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        for (String prov : new String[]{LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER}) {
+            try {
+                if (!locationManager.isProviderEnabled(prov)) continue;
+                Location l = locationManager.getLastKnownLocation(prov);
+                if (l != null && (lastLocation == null || l.getTime() > lastLocation.getTime())) lastLocation = l;
+                locationManager.requestLocationUpdates(prov, 5000, 10, locListener, Looper.getMainLooper());
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void stopLocation() {
+        if (locationManager != null) try { locationManager.removeUpdates(locListener); } catch (Exception ignored) {}
+    }
 }

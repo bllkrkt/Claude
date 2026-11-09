@@ -14,6 +14,12 @@
             app:entries="@array/empty" app:entryValues="@array/empty" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="mirror_front" app:title="Ön kamerada ayna görüntü" app:summary="Selfie vizörde nasıl görünüyorsa öyle kaydedilir"
             app:defaultValue="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="watermark" app:title="Filigran" app:defaultValue="0"
+            app:entries="@array/wm_e" app:entryValues="@array/wm_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <EditTextPreference app:key="watermark_text" app:title="Filigran yazısı" app:summary="Boş bırakırsan telefonun adı yazılır"
+            app:dialogTitle="Filigranda görünecek yazı" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="location" app:title="Fotoğraflara konum ekle" app:summary="Galeride haritada görünür"
+            app:defaultValue="false" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="shutter_sound" app:title="Deklanşör sesi" app:defaultValue="true" app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
@@ -35,6 +41,8 @@
         <ListPreference app:key="grid" app:title="Izgara çizgileri" app:defaultValue="3"
             app:entries="@array/grid_e" app:entryValues="@array/grid_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="level" app:title="Su terazisi" app:summary="Telefon tam düz olunca çizgi yeşile döner"
+            app:defaultValue="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="qr" app:title="QR kod okuma" app:summary="Fotoğraf modunda QR koda doğrultunca bağlantıyı gösterir"
             app:defaultValue="true" app:iconSpaceReserved="false" />
         <SwitchPreferenceCompat app:key="histogram" app:title="Pro modda histogram" app:defaultValue="true" app:iconSpaceReserved="false" />
         <ListPreference app:key="volume_keys" app:title="Ses tuşları" app:defaultValue="shutter"

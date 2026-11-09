@@ -13,4 +13,6 @@
     <string-array name="vol_v"><item>shutter</item><item>zoom</item><item>off</item></string-array>
     <string-array name="folder_e"><item>DCIM/Camera (Galeri\'de Kamera albümü)</item><item>DCIM/KameraPlus (ayrı albüm)</item></string-array>
     <string-array name="folder_v"><item>Camera</item><item>KameraPlus</item></string-array>
+    <string-array name="wm_e"><item>Kapalı</item><item>Köşede yazı</item><item>Beyaz çerçeve (bilgi şeritli)</item></string-array>
+    <string-array name="wm_v"><item>0</item><item>1</item><item>2</item></string-array>
 </resources>

@@ -104,7 +104,7 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 Kullanıcı Xiaomi 15T Pro'sundaki (HyperOS, Android 15) varsayılan kamerayı beğenmedi; ayrı bir kamera uygulaması istedi. Takip Temizleme ile ilgisi yok, aynı Gradle projesinde ikinci modül.
 
 - Paket: `com.bilal.kamera`, ad "Kamera+", minSdk 29, targetSdk 35, Java + CameraX **1.5.3** (1.6 compileSdk 36 istiyor, bilerek 1.5'te).
-- Derleme: `./gradlew :kamera:assembleDebug` → `kamera/build/outputs/apk/debug/kamera-debug.apk` → kullanıcıya `Kamera-vN.apk` adıyla ver. Her sürümde `kamera/build.gradle` `versionCode`'u artır (şu an 1 / "1.0").
+- Derleme: `./gradlew :kamera:assembleDebug` → `kamera/build/outputs/apk/debug/kamera-debug.apk` → kullanıcıya `Kamera-vN.apk` adıyla ver. Her sürümde `kamera/build.gradle` `versionCode`'u artır (şu an 2 / "2.0").
 - **İmza:** `kamera/keystore/kamera.keystore` (alias `kamera`, şifre `android`, SHA-256 `5a137987…6c86`). Git'e konmaz; v1'de kullanıcıya `kamera-imza-anahtari.keystore` olarak gönderildi. Yeni oturumda yoksa kullanıcıdan iste; yoksa yeni anahtar = kullanıcı eskisini silip kurar (sadece ayarlar gider, fotoğraflar DCIM'de kalır).
 - Emülatör yok (KVM yok); gerçek testi kullanıcı telefonda yapıyor. Derlemeden sonra `dexdump … | grep bilal` ile sınıfları doğrula.
 
@@ -120,6 +120,21 @@ Pro: EV, ISO, enstantane, elle odak, beyaz dengesi (Camera2 interop) + canlı IS
 Fotoğraf ayarları: çözünürlük (telefonun gerçek boyutlarından), JPEG kalitesi, biçim (JPEG/Ultra HDR/RAW+JPEG), çekim önceliği (kalite/hız/ZSL), ön kamera ayna.
 Video: 4K/1080p/720p/480p, 30/60 fps, bit hızı, sabitleme, 10-bit HLG, ses, duraklat/devam.
 Kayıt: `DCIM/Camera` (varsayılan) veya `DCIM/KameraPlus`. Küçük resim → galeride açar.
+
+## v2 (kullanıcı v1'i denedi: "portrede zoom çalışmıyor, çok sade")
+- **Dijital zoom (üretici modları):** Gece/Portre/Akıllı sahnede Xiaomi zoom'u yok sayıyor. Bu modlarda `extActive=true`: vizör `previewView.setScale` ile büyür, kayıttan sonra `PostProcessor` ortadan kırpar (1×–4×).
+- **Akıllı sahne:** Fotoğraf modunda üst düğme; HDR eklentisi yoksa `ExtensionMode.AUTO` kullanılır (bu telefonda HDR yok, Oto var).
+- **Filtreler (`Filters.java`):** 10 renk filtresi, vizörde canlı (PreviewView'ın TextureView'ına `setLayerPaint` + vinyet `OverlayView`), fotoğrafa kayıttan sonra uygulanır. Videoda yok.
+- **`PostProcessor.java`:** JPEG'i açar → EXIF yönüne göre döndürür → kırpma/filtre/vinyet/filigran → aynı URI'ye yazar, EXIF'i (ISO, enstantane, GPS…) geri koyar. RAW (DNG) dosyasına dokunmaz. Ultra HDR kazanç haritası bu işlemde kaybolur.
+- **Filigran:** Ayarlar → Filigran: köşede yazı / beyaz çerçeve (telefon adı + mm, f/, enstantane, ISO, tarih). Yazı özelleştirilebilir.
+- **Seri çekim:** deklanşöre basılı tut (en fazla 60).
+- **QR okuma:** Fotoğraf modunda ImageAnalysis + ZXing; sarı çip → bağlantıyı aç / kopyala / paylaş, Wi-Fi şifresini gösterir. Bağlama başarısız olursa önce analiz çıkarılarak tekrar denenir (`noAnalysis`).
+- **Uygulama içi galeri (`GalleryActivity`):** küçük resme dokun → kaydırarak gez, yakınlaştır (`ZoomImageView`), paylaş, düzenle, bilgi, sil. Küçük resme uzun bas = sistem galerisi.
+- **Konum:** Ayarlar'dan açılır (varsayılan kapalı), EXIF'e GPS yazar.
+
+## Kullanıcının telefonundan okunan yetenekler (v1 "Kamera bilgisi")
+Arka: en fazla 4096×3072 (13 MP; 50 MP üçüncü parti uygulamaya kapalı), LEVEL 3, ISO 50–6400, enstantane 1/20000–30", 23mm f/1.6, elle odak var, RAW var, 3 fiziksel lens, zoom 0.6×–10×, Ultra HDR ve RAW+JPEG var, video 4K/60fps/sabitleme/10-bit. Eklentiler: Gece, Portre, Oto (HDR yok).
+Ön: 3280×2464 (8 MP), ISO 50–6400, 1/10000–1/2, 21mm f/2.2, sabit odak, 1080p, 60 fps yok. Eklentiler aynı.
 
 ## Bilinen sınır
 Xiaomi, üçüncü parti uygulamalara tüm lensleri/özellikleri açmayabilir (geniş açı, 50 MP, gece modu vb.). Uygulama ne açıksa onu otomatik kullanır; Ayarlar → Kamera bilgisi ne açık olduğunu gösterir. Kullanıcıdan bu ekranın içeriğini istemek sonraki geliştirmeler için faydalı.

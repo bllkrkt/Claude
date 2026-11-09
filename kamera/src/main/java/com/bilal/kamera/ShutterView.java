@@ -58,13 +58,41 @@ public class ShutterView extends View {
         invalidate();
     }
 
+    private Runnable holdStart, holdEnd;
+    private boolean holding;
+    private final Runnable holdTrigger = () -> {
+        if (holdStart != null) { holding = true; performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS); holdStart.run(); }
+    };
+
+    /** Basılı tutunca start, bırakınca end çağrılır (seri çekim). */
+    public void setOnHold(Runnable start, Runnable end) { holdStart = start; holdEnd = end; }
+
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         if (!isEnabled()) return false;
-        if (e.getAction() == MotionEvent.ACTION_DOWN) animPress(1f);
-        else if (e.getAction() == MotionEvent.ACTION_UP || e.getAction() == MotionEvent.ACTION_CANCEL) animPress(0f);
-        return super.onTouchEvent(e);
+        switch (e.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                animPress(1f);
+                holding = false;
+                if (holdStart != null) postDelayed(holdTrigger, 450);
+                return true;
+            case MotionEvent.ACTION_UP:
+                animPress(0f);
+                removeCallbacks(holdTrigger);
+                if (holding) { holding = false; if (holdEnd != null) holdEnd.run(); }
+                else performClick();
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                animPress(0f);
+                removeCallbacks(holdTrigger);
+                if (holding) { holding = false; if (holdEnd != null) holdEnd.run(); }
+                return true;
+        }
+        return true;
     }
+
+    @Override
+    public boolean performClick() { return super.performClick(); }
 
     private void animPress(float to) {
         ValueAnimator va = ValueAnimator.ofFloat(press, to).setDuration(120);

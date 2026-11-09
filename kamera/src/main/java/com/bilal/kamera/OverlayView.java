@@ -10,7 +10,8 @@ import android.view.View;
 /** Vizör üstü çizimler: ızgara, su terazisi, odak halkası. */
 public class OverlayView extends View {
     private int grid = 0;              // 0 kapalı, 3 = 3x3, 4 = 4x4, -1 altın oran
-    private boolean levelOn;
+    private boolean levelOn, vignette;
+    private final Paint vp = new Paint();
     private float levelDeg = Float.NaN; // telefonun yataydan sapması (derece)
     private float uiRotation = 0;       // arayüz dönüşü (0/90/180/-90)
     private float fx = -1, fy, fAnim = 1f;
@@ -33,6 +34,7 @@ public class OverlayView extends View {
     }
 
     public void setGrid(int g) { grid = g; invalidate(); }
+    public void setVignette(boolean v) { vignette = v; invalidate(); }
     public void setLevelEnabled(boolean on) { levelOn = on; invalidate(); }
     public void setLevel(float deg) { levelDeg = deg; if (levelOn) invalidate(); }
     public void setUiRotation(float r) { uiRotation = r; invalidate(); }
@@ -51,6 +53,11 @@ public class OverlayView extends View {
     @Override
     protected void onDraw(Canvas c) {
         float w = getWidth(), h = getHeight(), d = getResources().getDisplayMetrics().density;
+        if (vignette && w > 0) {
+            vp.setShader(new android.graphics.RadialGradient(w / 2, h / 2, (float) Math.hypot(w, h) / 2,
+                    new int[]{0, 0, 0x8C000000}, new float[]{0f, 0.55f, 1f}, android.graphics.Shader.TileMode.CLAMP));
+            c.drawRect(0, 0, w, h, vp);
+        }
         if (grid == 3 || grid == 4) {
             for (int i = 1; i < grid; i++) {
                 c.drawLine(w * i / grid, 0, w * i / grid, h, gp);
