@@ -261,7 +261,7 @@
         </HorizontalScrollView>
 
         <!-- Lens / yakınlaştırma -->
-        <LinearLayout
+        <com.bilal.kamera.ZoomBar
             android:id="@+id/zoomRow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -272,7 +272,7 @@
             android:orientation="horizontal"
             android:padding="3dp" />
 
-        <!-- Mod seçici -->
+        <!-- Mod seçici: kaydırarak seç -->
         <HorizontalScrollView
             android:id="@+id/modeScroll"
             android:layout_width="match_parent"

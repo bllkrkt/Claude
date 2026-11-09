@@ -10,6 +10,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/galGrid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:clipToPadding="false"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/galEmpty"
         android:layout_width="wrap_content"
@@ -41,6 +49,17 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+        <TextView
+            android:id="@+id/galGridBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            android:text="Tümü"
             android:textColor="@android:color/white"
             android:textSize="14sp" />
         <TextView

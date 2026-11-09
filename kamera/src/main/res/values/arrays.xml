@@ -17,4 +17,8 @@
     <string-array name="wm_v"><item>0</item><item>1</item><item>2</item></string-array>
     <string-array name="slow_e"><item>120 fps (4 kat yavaş)</item><item>240 fps (8 kat yavaş)</item><item>480 fps (16 kat yavaş)</item><item>960 fps</item></string-array>
     <string-array name="slow_v"><item>120</item><item>240</item><item>480</item><item>960</item></string-array>
+    <string-array name="accent_e"><item>Sarı</item><item>Turuncu</item><item>Kırmızı</item><item>Pembe</item><item>Mor</item><item>Mavi</item><item>Turkuaz</item><item>Yeşil</item><item>Beyaz</item></string-array>
+    <string-array name="accent_v"><item>#FFC83D</item><item>#FF9F0A</item><item>#FF453A</item><item>#FF5E9C</item><item>#BF5AF2</item><item>#0A84FF</item><item>#40C8E0</item><item>#30D158</item><item>#FFFFFF</item></string-array>
+    <string-array name="shutter_e"><item>Klasik (beyaz)</item><item>Renkli iç daire</item><item>Renkli dış halka</item></string-array>
+    <string-array name="shutter_v"><item>white</item><item>accent</item><item>ring</item></string-array>
 </resources>

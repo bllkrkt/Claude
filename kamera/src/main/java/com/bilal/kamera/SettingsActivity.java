@@ -83,6 +83,17 @@ public class SettingsActivity extends AppCompatActivity {
             SwitchPreferenceCompat hdr = findPreference(P.VIDEO_HDR);
             if (!sp.getBoolean(P.cap("back", "hlg"), false)) { hdr.setEnabled(false); hdr.setChecked(false); hdr.setSummary("Telefon bu uygulamaya 10-bit HDR açmıyor"); }
 
+            ListPreference acc = findPreference(P.ACCENT);
+            if (acc != null) {
+                acc.setSummaryProvider(pp -> {
+                    ListPreference l = (ListPreference) pp;
+                    CharSequence name = l.getEntry() != null ? l.getEntry() : "Sarı";
+                    android.text.SpannableString ss = new android.text.SpannableString("●  " + name);
+                    ss.setSpan(new android.text.style.ForegroundColorSpan(P.accent(requireContext())), 0, 1, 0);
+                    return ss;
+                });
+                acc.setOnPreferenceChangeListener((pp, v) -> { pp.getPreferenceManager().getSharedPreferences().edit().putString(P.ACCENT, (String) v).apply(); return true; });
+            }
             Preference info = findPreference(P.CAM_INFO);
             info.setOnPreferenceClickListener(p -> {
                 String t = sp.getString(P.CAP_INFO_TEXT, "");

@@ -20,6 +20,16 @@ public class ShutterView extends View {
     private final Paint arc = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF r = new RectF();
     private ValueAnimator spinAnim;
+    private int photoColor = 0xFFFFFFFF, ringColor = 0xFFFFFFFF;
+
+    /** style: "white" klasik, "accent" renkli iç daire, "ring" renkli dış halka */
+    public void setLook(int accent, String style) {
+        photoColor = "accent".equals(style) ? accent : 0xFFFFFFFF;
+        ringColor = "ring".equals(style) ? accent : 0xFFFFFFFF;
+        arc.setColor("ring".equals(style) ? 0xFFFFFFFF : accent);
+        ring.setColor(ringColor);
+        invalidate();
+    }
 
     public ShutterView(Context c, AttributeSet a) {
         super(c, a);
@@ -111,7 +121,7 @@ public class ShutterView extends View {
             c.drawArc(r, spin, 90, false, arc);
         }
         float inner = outer - 6 * d - press * 4 * d;
-        int color = state == PHOTO ? 0xFFFFFFFF : 0xFFFF3B30;
+        int color = state == PHOTO ? photoColor : 0xFFFF3B30;
         if (busy) color = (color & 0x00FFFFFF) | 0x88000000;
         fill.setColor(color);
         // Daireden yuvarlak köşeli kareye geçiş

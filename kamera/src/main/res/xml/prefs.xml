@@ -43,6 +43,15 @@
         <SwitchPreferenceCompat app:key="video_audio" app:title="Ses kaydı" app:defaultValue="true" app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="Görünüm" app:iconSpaceReserved="false">
+        <ListPreference app:key="accent_color" app:title="Vurgu rengi" app:summary="Seçili mod, düğmeler, odak halkası ve kaydırıcılar"
+            app:defaultValue="#FFC83D" app:entries="@array/accent_e" app:entryValues="@array/accent_v" app:iconSpaceReserved="false" />
+        <ListPreference app:key="shutter_style" app:title="Deklanşör görünümü" app:defaultValue="white"
+            app:entries="@array/shutter_e" app:entryValues="@array/shutter_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="smooth_zoom" app:title="Yumuşak zoom geçişi" app:summary="Lens düğmelerine basınca zoom kayarak değişir"
+            app:defaultValue="true" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="Vizör ve kontroller" app:iconSpaceReserved="false">
         <ListPreference app:key="grid" app:title="Izgara çizgileri" app:defaultValue="3"
             app:entries="@array/grid_e" app:entryValues="@array/grid_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />

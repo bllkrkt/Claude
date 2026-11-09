@@ -40,6 +40,8 @@ public class OverlayView extends View {
 
     public void setGrid(int g) { grid = g; invalidate(); }
     public void setVignette(boolean v) { vignette = v; invalidate(); }
+    private int accent = 0xFFFFC83D;
+    public void setAccent(int a) { accent = a; invalidate(); }
 
     /** Pro modda odak tepe noktası / zebra katmanı (analiz görüntüsü, sensör yönünde). */
     public void setPeaking(android.graphics.Bitmap b, int rotation, boolean mirror) {
@@ -106,7 +108,7 @@ public class OverlayView extends View {
         }
         if (fx >= 0) {
             float r = 34 * d * fAnim;
-            fp.setColor(fLocked ? 0xFFFF9500 : 0xFFFFC83D);
+            fp.setColor(fLocked ? 0xFFFF9500 : accent);
             c.drawCircle(fx, fy, r, fp);
             c.drawCircle(fx, fy, 3 * d, fp);
         }

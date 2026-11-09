@@ -54,6 +54,16 @@ public final class P {
     public static final String KEEP_ORIGINAL = "keep_original";
     public static final String SLOWMO_FPS = "slowmo_fps";
     public static final String VIDEO_SNAPSHOT = "video_snapshot";
+    // v4: görünüm
+    public static final String ACCENT = "accent_color";
+    public static final String SHUTTER_STYLE = "shutter_style";
+    public static final String SMOOTH_ZOOM = "smooth_zoom";
+
+    /** Kullanıcının seçtiği vurgu rengi (düğmeler, seçili mod, odak halkası). */
+    public static int accent(Context c) {
+        try { return android.graphics.Color.parseColor(sp(c).getString(ACCENT, "#FFC83D")); }
+        catch (Exception e) { return 0xFFFFC83D; }
+    }
     // Telefonun yetenekleri (kameradan okunur, ayarlar ekranı bunlara göre seçenek gösterir)
     public static String cap(String facing, String what) { return "cap_" + facing + "_" + what; }
     public static final String CAP_INFO_TEXT = "cap_info_text";

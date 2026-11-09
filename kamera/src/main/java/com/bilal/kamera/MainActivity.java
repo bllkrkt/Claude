@@ -232,6 +232,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Thread soundThread;
     private long lastSoundShot;
     private boolean peaking, zebra;
+
+    // v4
+    private int accent = 0xFFFFC83D;
+    private android.animation.ValueAnimator zoomAnim;
+    private int lastZoomActive = -1;
+    private float dragZoom = -1;
+    private boolean modeTouch, modeUserScroll;
+    private final Runnable modeIdle = this::onModeScrollIdle;
     private List<Integer> slowCache;
     private boolean slowCacheFront;
 
@@ -425,6 +433,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         overlay.setGrid(gridMode);
         btnGrid.setAlpha(gridMode != 0 ? 1f : 0.45f);
         overlay.setLevelEnabled(sp.getBoolean(P.LEVEL, true));
+        accent = P.accent(this);
+        applyAccent();
         WindowManager.LayoutParams lp = getWindow().getAttributes();
         lp.screenBrightness = sp.getBoolean(P.MAX_BRIGHTNESS, false) ? 1f : WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
         getWindow().setAttributes(lp);
@@ -500,6 +510,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         qrChip.setOnClickListener(v -> onQrClick());
         btnSnap.setOnClickListener(v -> { if (recording != null && imageCapture != null && !capturing) takePhoto(false); });
         btnTimerBox.setOnLongClickListener(v -> { showIntervalDialog(); return true; });
+        ((ZoomBar) zoomRow).setOnDrag(new ZoomBar.OnDrag() {
+            @Override public void onDrag(float dx) {
+                if (camera == null) return;
+                cancelZoomAnim();
+                float f = (float) Math.exp(dx / dp(110));
+                if (extActive) { setDigitalZoom(digitalZoom * f); return; }
+                ZoomState z = camera.getCameraInfo().getZoomState().getValue();
+                if (z == null) return;
+                float base = dragZoom > 0 ? dragZoom : z.getZoomRatio();
+                dragZoom = Math.max(z.getMinZoomRatio(), Math.min(z.getMaxZoomRatio(), base * f));
+                camera.getCameraControl().setZoomRatio(dragZoom);
+            }
+            @Override public void onDragEnd() { dragZoom = -1; }
+        });
         btnPause.setOnClickListener(v -> togglePause());
         btnFlash.setOnClickListener(v -> cycleFlash());
         btnHdr.setOnClickListener(v -> {
@@ -544,6 +568,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         scaleDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override public boolean onScale(@NonNull ScaleGestureDetector d) {
                 if (camera == null) return false;
+                cancelZoomAnim();
                 if (extActive) { setDigitalZoom(digitalZoom * d.getScaleFactor()); return true; }
                 ZoomState z = camera.getCameraInfo().getZoomState().getValue();
                 if (z == null) return false;
@@ -649,6 +674,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         modes.add(M_VIDEO);
         if (!slowFps().isEmpty()) modes.add(M_SLOWMO);
         if (!modes.contains(mode)) mode = M_PHOTO;
+        setupModeWheel();
         modeRow.removeAllViews();
         int side = getResources().getDisplayMetrics().widthPixels / 2 - dp(40);
         modeRow.setPadding(side, 0, side, 0);
@@ -659,7 +685,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             t.setLetterSpacing(0.06f);
             t.setPadding(dp(13), dp(8), dp(13), dp(8));
             t.setTag(m);
-            t.setOnClickListener(v -> { if (recording == null && !capturing) setMode((Integer) v.getTag()); });
+            t.setOnClickListener(v -> { modeUserScroll = false; ui.removeCallbacks(modeIdle); if (recording == null && !capturing) setMode((Integer) v.getTag()); });
             modeRow.addView(t);
         }
         highlightMode();
@@ -669,12 +695,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         for (int i = 0; i < modeRow.getChildCount(); i++) {
             TextView t = (TextView) modeRow.getChildAt(i);
             boolean on = ((Integer) t.getTag()) == mode;
-            t.setTextColor(on ? ContextCompat.getColor(this, R.color.accent) : 0xCCFFFFFF);
+            t.setTextColor(on ? accent : 0xCCFFFFFF);
             t.setTypeface(null, on ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
             if (on) {
                 final View tv = t;
                 modeScroll.post(() -> modeScroll.smoothScrollTo(tv.getLeft() + tv.getWidth() / 2 - modeScroll.getWidth() / 2, 0));
             }
+            t.setScaleX(on ? 1.08f : 1f);
+            t.setScaleY(on ? 1.08f : 1f);
         }
     }
 
@@ -1150,7 +1178,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         long s = (now - recStartMs - paused) / 1000;
         String t = s >= 3600 ? String.format(Locale.US, "%d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60)
                 : String.format(Locale.US, "%02d:%02d", s / 60, s % 60);
-        recTime.setText((recordingPaused ? "❚❚ " : "● ") + t);
+        boolean blink = !recordingPaused && (SystemClock.elapsedRealtime() / 500) % 2 == 1;
+        recTime.setText((recordingPaused ? "❚❚ " : blink ? "○ " : "● ") + t);
     }
 
     private void updateRecordingUi(boolean rec) {
@@ -1206,6 +1235,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void buildZoomChips() {
         zoomRow.removeAllViews();
+        lastZoomActive = -1;
         if (camera == null) return;
         if (extActive) { buildDigitalZoomChips(); return; }
         ZoomState z = camera.getCameraInfo().getZoomState().getValue();
@@ -1230,10 +1260,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             lp.setMargins(dp(2), 0, dp(2), 0);
             t.setLayoutParams(lp);
             t.setText(fmtZoom(s));
-            t.setOnClickListener(v -> {
-                if (camera != null) camera.getCameraControl().setZoomRatio((Float) v.getTag());
-                v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
-            });
+            t.setOnClickListener(v -> animateZoom((Float) v.getTag()));
             t.setOnLongClickListener(v -> { openSlider(S_ZOOM); return true; });
             zoomRow.addView(t);
         }
@@ -1253,13 +1280,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             float s = (Float) zoomRow.getChildAt(i).getTag();
             if (cur >= s - 0.05f) active = i;
         }
+        if (active != lastZoomActive && lastZoomActive >= 0 && zoomAnim == null) zoomRow.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+        boolean styleChanged = active != lastZoomActive;
+        lastZoomActive = active;
         for (int i = 0; i < zoomRow.getChildCount(); i++) {
             TextView t = (TextView) zoomRow.getChildAt(i);
             float s = (Float) t.getTag();
             boolean on = i == active;
-            t.setBackgroundResource(on ? R.drawable.bg_zoom_on : R.drawable.bg_zoom);
-            t.setTextColor(on ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
-            t.setText(on ? fmtZoom(Math.round(cur * 10) / 10f) + "×" : fmtZoom(s));
+            if (styleChanged) {
+                t.setBackground(on ? zoomOnBg() : ContextCompat.getDrawable(this, R.drawable.bg_zoom));
+                t.setTextColor(on ? accent : 0xFFFFFFFF);
+            }
+            String txt = on ? fmtZoom(Math.round(cur * 10) / 10f) + "×" : fmtZoom(s);
+            if (!txt.contentEquals(t.getText())) t.setText(txt);
         }
         if (sliderType == S_ZOOM) syncSlider();
     }
@@ -1403,7 +1436,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             case S_SHUTTER: proExp = -1; applyPro(); break;
             case S_FOCUS: proFocus = -1; applyPro(); break;
             case S_WB: proWb = 0; applyPro(); break;
-            case S_ZOOM: camera.getCameraControl().setZoomRatio(1f); break;
+            case S_ZOOM: animateZoom(1f); break;
         }
         ui.postDelayed(this::syncSlider, 150);
         refreshProChips();
@@ -1517,7 +1550,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 default: s = "BD " + WB_NAMES[proWb]; manual = proWb != 0; break;
             }
             t.setText(s);
-            t.setTextColor(manual ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+            t.setTextColor(manual ? accent : 0xFFFFFFFF);
         }
         highlightProChips();
     }
@@ -1610,16 +1643,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (video && fl != FL_TORCH) fl = FL_OFF;
         btnFlash.setImageResource(fl == FL_OFF ? R.drawable.ic_flash_off : fl == FL_AUTO ? R.drawable.ic_flash_auto
                 : fl == FL_ON ? R.drawable.ic_flash_on : R.drawable.ic_torch);
-        btnFlash.setColorFilter(fl == FL_OFF ? 0xFFFFFFFF : ContextCompat.getColor(this, R.color.accent));
+        btnFlash.setColorFilter(fl == FL_OFF ? 0xFFFFFFFF : accent);
         int se = smartExt();
         boolean hdrAvail = mode == M_PHOTO && se >= 0;
         btnHdr.setImageResource(se == ExtensionMode.HDR ? R.drawable.ic_hdr : R.drawable.ic_auto);
         btnHdr.setVisibility(hdrAvail ? View.VISIBLE : View.GONE);
-        btnHdr.setColorFilter(hdrOn ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+        btnHdr.setColorFilter(hdrOn ? accent : 0xFFFFFFFF);
         btnHdr.setAlpha(hdrOn ? 1f : 0.6f);
         int t = TIMERS[timerIdx];
         btnTimer.setText(t == 0 ? "" : t + "s");
-        btnTimer.getCompoundDrawablesRelative()[0].mutate().setTint(t == 0 ? 0xFFFFFFFF : ContextCompat.getColor(this, R.color.accent));
+        btnTimer.getCompoundDrawablesRelative()[0].mutate().setTint(t == 0 ? 0xFFFFFFFF : accent);
         btnAspect.setText(video ? "16:9" : ASPECT_NAMES[aspect]);
         btnAspect.setAlpha(video ? 0.4f : 1f);
         btnAspect.setEnabled(!video);
@@ -1802,7 +1835,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(38), dp(38));
             lp.setMargins(dp(2), 0, dp(2), 0);
             t.setLayoutParams(lp);
-            t.setOnClickListener(v -> { setDigitalZoom((Float) v.getTag()); v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK); });
+            t.setOnClickListener(v -> animateZoom((Float) v.getTag()));
             zoomRow.addView(t);
         }
         setDigitalZoom(digitalZoom);
@@ -1817,8 +1850,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         for (int i = 0; i < zoomRow.getChildCount(); i++) {
             TextView t = (TextView) zoomRow.getChildAt(i);
             boolean on = i == active;
-            t.setBackgroundResource(on ? R.drawable.bg_zoom_on : R.drawable.bg_zoom);
-            t.setTextColor(on ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+            t.setBackground(on ? zoomOnBg() : ContextCompat.getDrawable(this, R.drawable.bg_zoom));
+            t.setTextColor(on ? accent : 0xFFFFFFFF);
             t.setText(on ? fmtZoom(Math.round(digitalZoom * 10) / 10f) + "×" : fmtZoom((Float) t.getTag()));
         }
     }
@@ -1861,11 +1894,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             GradientDrawable bgd = new GradientDrawable();
             bgd.setCornerRadius(dp(18));
             bgd.setColor(on ? 0x99000000 : 0x40000000);
-            if (on) bgd.setStroke(dp(1), ContextCompat.getColor(this, R.color.accent));
+            if (on) bgd.setStroke(dp(1), accent);
             t.setBackground(bgd);
-            t.setTextColor(on ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+            t.setTextColor(on ? accent : 0xFFFFFFFF);
         }
-        btnFilter.setColorFilter(filterIdx != 0 ? ContextCompat.getColor(this, R.color.accent) : 0xFFFFFFFF);
+        btnFilter.setColorFilter(filterIdx != 0 ? accent : 0xFFFFFFFF);
     }
 
     private void schedulePreviewFilter() {
@@ -2321,5 +2354,140 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
             }
         } catch (Exception ignored) {}
+    }
+
+    // ------------------------------------------------------------------ v4: yumuşak zoom
+
+    private void cancelZoomAnim() {
+        if (zoomAnim != null) { zoomAnim.cancel(); zoomAnim = null; }
+    }
+
+    /** Hedef zoom'a ani atlamak yerine kısa bir animasyonla gider (logaritmik, göze doğal gelir). */
+    private void animateZoom(float target) {
+        if (camera == null) return;
+        zoomRow.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+        cancelZoomAnim();
+        final float from;
+        if (extActive) from = digitalZoom;
+        else {
+            ZoomState z = camera.getCameraInfo().getZoomState().getValue();
+            if (z == null) { camera.getCameraControl().setZoomRatio(target); return; }
+            from = z.getZoomRatio();
+            target = Math.max(z.getMinZoomRatio(), Math.min(z.getMaxZoomRatio(), target));
+        }
+        if (!sp.getBoolean(P.SMOOTH_ZOOM, true) || Math.abs(from - target) < 0.01f) {
+            if (extActive) setDigitalZoom(target); else camera.getCameraControl().setZoomRatio(target);
+            return;
+        }
+        final float to = target;
+        final double lf = Math.log(from), lt = Math.log(to);
+        long dur = (long) Math.min(450, 180 + Math.abs(lt - lf) * 130);
+        android.animation.ValueAnimator va = android.animation.ValueAnimator.ofFloat(0f, 1f).setDuration(dur);
+        va.setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f));
+        va.addUpdateListener(a -> {
+            float z = (float) Math.exp(lf + (lt - lf) * (float) a.getAnimatedValue());
+            if (extActive) setDigitalZoom(z);
+            else if (camera != null) camera.getCameraControl().setZoomRatio(z);
+        });
+        va.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override public void onAnimationEnd(android.animation.Animator a) { if (zoomAnim == va) zoomAnim = null; }
+        });
+        zoomAnim = va;
+        va.start();
+    }
+
+    private android.graphics.drawable.Drawable zoomOnBg() {
+        GradientDrawable d = new GradientDrawable();
+        d.setShape(GradientDrawable.OVAL);
+        d.setColor(0x99000000);
+        d.setStroke(dp(1), accent);
+        return d;
+    }
+
+    // ------------------------------------------------------------------ v4: kaydırarak mod seçimi
+
+    private boolean modeWheelReady;
+
+    @SuppressLint("ClickableViewAccessibility")
+    private void setupModeWheel() {
+        if (modeWheelReady) return;
+        modeWheelReady = true;
+        modeScroll.setOnTouchListener((v, e) -> {
+            int a = e.getActionMasked();
+            if (a == MotionEvent.ACTION_DOWN) { modeTouch = true; modeUserScroll = true; ui.removeCallbacks(modeIdle); }
+            else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) { modeTouch = false; ui.removeCallbacks(modeIdle); ui.postDelayed(modeIdle, 140); }
+            return false;
+        });
+        modeScroll.setOnScrollChangeListener((v, x, y, ox, oy) -> {
+            if (!modeUserScroll) return;
+            liveHighlightMode();
+            ui.removeCallbacks(modeIdle);
+            ui.postDelayed(modeIdle, 140);
+        });
+    }
+
+    private View modeNearestCenter() {
+        int center = modeScroll.getScrollX() + modeScroll.getWidth() / 2;
+        View best = null;
+        int bd = Integer.MAX_VALUE;
+        for (int i = 0; i < modeRow.getChildCount(); i++) {
+            View c = modeRow.getChildAt(i);
+            int d = Math.abs(c.getLeft() + c.getWidth() / 2 - center);
+            if (d < bd) { bd = d; best = c; }
+        }
+        return best;
+    }
+
+    private void liveHighlightMode() {
+        View n = modeNearestCenter();
+        for (int i = 0; i < modeRow.getChildCount(); i++) {
+            TextView t = (TextView) modeRow.getChildAt(i);
+            t.setTextColor(t == n ? accent : 0xCCFFFFFF);
+        }
+    }
+
+    private void onModeScrollIdle() {
+        if (modeTouch || !modeUserScroll) return;
+        modeUserScroll = false;
+        View n = modeNearestCenter();
+        if (n == null) return;
+        int m = (Integer) n.getTag();
+        if (m != mode && recording == null && !capturing && !burst && !intervalActive) {
+            modeScroll.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            setMode(m);
+        } else {
+            highlightMode(); // yerine oturt
+        }
+    }
+
+    // ------------------------------------------------------------------ v4: renkler
+
+    private void applyAccent() {
+        shutter.setLook(accent, sp.getString(P.SHUTTER_STYLE, "white"));
+        overlay.setAccent(accent);
+        sliderLabel.setTextColor(accent);
+        btnTimer.setTextColor(accent);
+        android.content.res.ColorStateList cl = android.content.res.ColorStateList.valueOf(accent);
+        slider.setProgressTintList(cl);
+        slider.setThumbTintList(cl);
+        GradientDrawable q = new GradientDrawable();
+        q.setCornerRadius(dp(14));
+        q.setColor((accent & 0x00FFFFFF) | 0xF2000000);
+        qrChip.setBackground(q);
+        qrChip.setTextColor(isLight(accent) ? 0xFF111111 : 0xFFFFFFFF);
+        highlightMode();
+        highlightFilters();
+        lastZoomActive = -1;
+        if (camera != null && !extActive) {
+            ZoomState z = camera.getCameraInfo().getZoomState().getValue();
+            if (z != null) onZoomChanged(z);
+        } else if (extActive) setDigitalZoom(digitalZoom);
+        updateTopBar();
+        refreshProChips();
+    }
+
+    private static boolean isLight(int c) {
+        int r = (c >> 16) & 0xFF, g = (c >> 8) & 0xFF, b = c & 0xFF;
+        return r * 0.299 + g * 0.587 + b * 0.114 > 150;
     }
 }
