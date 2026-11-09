@@ -273,7 +273,7 @@
             android:padding="3dp" />
 
         <!-- Mod seçici: kaydırarak seç -->
-        <HorizontalScrollView
+        <com.bilal.kamera.ModeWheel
             android:id="@+id/modeScroll"
             android:layout_width="match_parent"
             android:layout_height="40dp"
@@ -286,7 +286,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
                 android:orientation="horizontal" />
-        </HorizontalScrollView>
+        </com.bilal.kamera.ModeWheel>
 
         <!-- Deklanşör sırası -->
         <FrameLayout

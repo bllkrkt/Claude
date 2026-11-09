@@ -198,7 +198,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private LinearLayout filterChips;
     private TextView qrChip, burstCount;
     private int filterIdx;
-    private boolean extActive;           // üretici modu (gece/portre/akıllı) açık mı
+    private boolean extActive;           // üretici modunda kırpmalı (dijital) zoom kullanılıyor mu
+    private boolean extBound;            // üretici modu (gece/portre/akıllı) bağlı mı
+    private float pendingZoom = -1;
     private float digitalZoom = 1f;      // üretici modlarında vizör + kayıt sonrası kırpma ile zoom
     private boolean burst;
     private int burstShots;
@@ -238,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private android.animation.ValueAnimator zoomAnim;
     private int lastZoomActive = -1;
     private float dragZoom = -1;
-    private boolean modeTouch, modeUserScroll;
+    private boolean modeTouch, modeUserScroll, modeMoved;
     private final Runnable modeIdle = this::onModeScrollIdle;
     private List<Integer> slowCache;
     private boolean slowCacheFront;
@@ -862,7 +864,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         if (analysis != null && wantHist && sp.getBoolean(P.HISTOGRAM, true)) histogram.setVisibility(View.VISIBLE);
         overlay.setPeaking(null, 0, false);
-        extActive = extMode >= 0;
+        // Üretici modu kameranın kendi zoom'unu destekliyorsa (zoom aralığı açık) onu kullan, yoksa kırpmalı zoom
+        ZoomState ezs = camera.getCameraInfo().getZoomState().getValue();
+        boolean nativeZoom = ezs != null && (ezs.getMaxZoomRatio() > 1.05f || ezs.getMinZoomRatio() < 0.95f);
+        extBound = extMode >= 0;
+        extActive = extBound && !nativeZoom;
+        if (pendingZoom > 0 && !extActive) { camera.getCameraControl().setZoomRatio(pendingZoom); }
+        pendingZoom = -1;
         digitalZoom = 1f;
         previewView.setScaleX(1f);
         previewView.setScaleY(1f);
@@ -1273,6 +1281,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void onZoomChanged(ZoomState z) {
+        if (extActive && extBound && (z.getMaxZoomRatio() > 1.05f || z.getMinZoomRatio() < 0.95f)) {
+            // Üretici modu zoom'u geç bildirdi: kameranın kendi zoom'una geç
+            extActive = false;
+            digitalZoom = 1f;
+            previewView.setScaleX(1f);
+            previewView.setScaleY(1f);
+            buildZoomChips();
+            return;
+        }
         if (extActive) return;
         float cur = z.getZoomRatio();
         int active = -1;
@@ -1826,7 +1843,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void buildDigitalZoomChips() {
         zoomRow.setVisibility(View.VISIBLE);
-        for (float s : DIGITAL_STOPS) {
+        List<Float> stops = new ArrayList<>();
+        float nMin = 1f, nMax = 1f;
+        boolean smart = mode == M_PHOTO;
+        if (smart) {
+            try {
+                ZoomState bz = provider.getCameraInfo(baseSelector()).getZoomState().getValue();
+                if (bz != null) { nMin = bz.getMinZoomRatio(); nMax = bz.getMaxZoomRatio(); }
+            } catch (Exception ignored) {}
+            if (nMin < 0.95f) stops.add(-nMin);            // eksi = gerçek lense geç (akıllı sahne kapanır)
+            stops.add(1f); stops.add(2f);
+            if (nMax >= 5f) stops.add(-5f); else stops.add(3f);
+        } else for (float f : DIGITAL_STOPS) stops.add(f);
+        for (float s : stops) {
             TextView t = new TextView(this);
             t.setTag(s);
             t.setGravity(Gravity.CENTER);
@@ -1835,7 +1864,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(38), dp(38));
             lp.setMargins(dp(2), 0, dp(2), 0);
             t.setLayoutParams(lp);
-            t.setOnClickListener(v -> animateZoom((Float) v.getTag()));
+            t.setOnClickListener(v -> {
+                float tag = (Float) v.getTag();
+                if (tag < 0) leaveSmartForLens(-tag); else animateZoom(tag);
+            });
             zoomRow.addView(t);
         }
         setDigitalZoom(digitalZoom);
@@ -1845,14 +1877,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         digitalZoom = Math.max(1f, Math.min(4f, z));
         previewView.setScaleX(digitalZoom);
         previewView.setScaleY(digitalZoom);
-        int active = 0;
-        for (int i = 0; i < zoomRow.getChildCount(); i++) if (digitalZoom >= (Float) zoomRow.getChildAt(i).getTag() - 0.05f) active = i;
+        int active = -1;
+        for (int i = 0; i < zoomRow.getChildCount(); i++) {
+            float tg = (Float) zoomRow.getChildAt(i).getTag();
+            if (tg > 0 && digitalZoom >= tg - 0.05f) active = i;
+        }
         for (int i = 0; i < zoomRow.getChildCount(); i++) {
             TextView t = (TextView) zoomRow.getChildAt(i);
+            float tg = (Float) t.getTag();
             boolean on = i == active;
             t.setBackground(on ? zoomOnBg() : ContextCompat.getDrawable(this, R.drawable.bg_zoom));
-            t.setTextColor(on ? accent : 0xFFFFFFFF);
-            t.setText(on ? fmtZoom(Math.round(digitalZoom * 10) / 10f) + "×" : fmtZoom((Float) t.getTag()));
+            t.setTextColor(on ? accent : (tg < 0 ? 0x99FFFFFF : 0xFFFFFFFF));
+            t.setText(on ? fmtZoom(Math.round(digitalZoom * 10) / 10f) + "×" : fmtZoom(Math.abs(tg)));
         }
     }
 
@@ -1985,7 +2021,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private void burstStart() {
         if (camera == null || imageCapture == null || isVideoMode() || countDownTimer != null || intervalActive) return;
-        if (extActive) { showHint("Seri çekim bu modda yok"); onShutter(); return; }
+        if (extBound) { showHint("Seri çekim bu modda yok"); onShutter(); return; }
         burst = true;
         burstShots = 0;
         burstCount.setText("0");
@@ -2198,6 +2234,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             return;
         }
         extActive = false;
+        extBound = false;
         digitalZoom = 1f;
         previewView.setScaleX(1f);
         previewView.setScaleY(1f);
@@ -2412,17 +2449,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private void setupModeWheel() {
         if (modeWheelReady) return;
         modeWheelReady = true;
-        modeScroll.setOnTouchListener((v, e) -> {
-            int a = e.getActionMasked();
-            if (a == MotionEvent.ACTION_DOWN) { modeTouch = true; modeUserScroll = true; ui.removeCallbacks(modeIdle); }
-            else if (a == MotionEvent.ACTION_UP || a == MotionEvent.ACTION_CANCEL) { modeTouch = false; ui.removeCallbacks(modeIdle); ui.postDelayed(modeIdle, 140); }
-            return false;
-        });
-        modeScroll.setOnScrollChangeListener((v, x, y, ox, oy) -> {
-            if (!modeUserScroll) return;
-            liveHighlightMode();
-            ui.removeCallbacks(modeIdle);
-            ui.postDelayed(modeIdle, 140);
+        ((ModeWheel) modeScroll).setListener(new ModeWheel.Listener() {
+            @Override public void onTouchStart() { modeTouch = true; modeMoved = false; ui.removeCallbacks(modeIdle); }
+            @Override public void onTouchEnd() {
+                modeTouch = false;
+                ui.removeCallbacks(modeIdle);
+                if (modeMoved) { modeUserScroll = true; ui.postDelayed(modeIdle, 160); }
+            }
+            @Override public void onScrolled() {
+                if (modeTouch) { modeMoved = true; modeUserScroll = true; }
+                if (!modeUserScroll) return;
+                liveHighlightMode();
+                if (!modeTouch) { ui.removeCallbacks(modeIdle); ui.postDelayed(modeIdle, 160); }
+            }
         });
     }
 
@@ -2489,5 +2528,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static boolean isLight(int c) {
         int r = (c >> 16) & 0xFF, g = (c >> 8) & 0xFF, b = c & 0xFF;
         return r * 0.299 + g * 0.587 + b * 0.114 > 150;
+    }
+
+    /** Akıllı sahnede 0.6× / 5× gibi gerçek bir lens seçilirse: akıllı sahneyi kapatıp o lense geç. */
+    private void leaveSmartForLens(float zoom) {
+        zoomRow.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+        hdrOn = false;
+        pendingZoom = zoom;
+        showHint("Akıllı sahne bu lenste çalışmıyor,\nkapatıldı · " + fmtZoom(zoom) + "×", 2200);
+        updateTopBar();
+        bindCamera();
     }
 }

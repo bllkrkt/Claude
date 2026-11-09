@@ -104,7 +104,7 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 Kullanıcı Xiaomi 15T Pro'sundaki (HyperOS, Android 15) varsayılan kamerayı beğenmedi; ayrı bir kamera uygulaması istedi. Takip Temizleme ile ilgisi yok, aynı Gradle projesinde ikinci modül.
 
 - Paket: `com.bilal.kamera`, ad "Kamera+", minSdk 29, targetSdk 35, Java + CameraX **1.5.3** (1.6 compileSdk 36 istiyor, bilerek 1.5'te).
-- Derleme: `./gradlew :kamera:assembleDebug` → `kamera/build/outputs/apk/debug/kamera-debug.apk` → kullanıcıya `Kamera-vN.apk` adıyla ver. Her sürümde `kamera/build.gradle` `versionCode`'u artır (şu an 4 / "4.0").
+- Derleme: `./gradlew :kamera:assembleDebug` → `kamera/build/outputs/apk/debug/kamera-debug.apk` → kullanıcıya `Kamera-vN.apk` adıyla ver. Her sürümde `kamera/build.gradle` `versionCode`'u artır (şu an 5 / "5.0").
 - **İmza:** `kamera/keystore/kamera.keystore` (alias `kamera`, şifre `android`, SHA-256 `5a137987…6c86`). Git'e konmaz; v1'de kullanıcıya `kamera-imza-anahtari.keystore` olarak gönderildi. Yeni oturumda yoksa kullanıcıdan iste; yoksa yeni anahtar = kullanıcı eskisini silip kurar (sadece ayarlar gider, fotoğraflar DCIM'de kalır).
 - Emülatör yok (KVM yok); gerçek testi kullanıcı telefonda yapıyor. Derlemeden sonra `dexdump … | grep bilal` ile sınıfları doğrula.
 
@@ -149,6 +149,10 @@ Kayıt: `DCIM/Camera` (varsayılan) veya `DCIM/KameraPlus`. Küçük resim → g
 - **Görünüm ayarları:** `accent_color` (9 renk, `P.accent()`), `shutter_style` (beyaz / renkli iç / renkli halka). Tüm vurgu renkleri `accent` alanından; `applyAccent()`.
 - **Galeri ızgarası:** "Tümü" düğmesi → 3 sütun küçük resim (LruCache), dokun → o çekime git.
 - Kayıt noktası yanıp söner.
+
+## v5 (hata düzeltme: mod kaydırma çalışmıyordu, akıllı sahnede zoom çipleri kayboluyordu)
+- **`ModeWheel`** (HorizontalScrollView alt sınıfı): `dispatchTouchEvent` ile dokunma başı/sonu bildirilir. Eski `OnTouchListener` çocuk TextView'lar DOWN'u yuttuğu için hiç tetiklenmiyordu. Seçim yalnızca parmak gerçekten kaydırdıysa (`modeMoved`) yapılır.
+- **Üretici modlarında zoom:** bağlandıktan sonra eklenti kamerasının ZoomState aralığı açıksa kameranın kendi zoom'u kullanılır (`extBound` + `extActive=false`); kapalıysa kırpmalı zoom. Akıllı sahnede kırpmalı zoom'dayken 0.6× / 5× çipleri de görünür; basınca akıllı sahne kapanıp o lense geçilir (`leaveSmartForLens`, `pendingZoom`).
 
 ## Kullanıcının telefonundan okunan yetenekler (v1 "Kamera bilgisi")
 Arka: en fazla 4096×3072 (13 MP; 50 MP üçüncü parti uygulamaya kapalı), LEVEL 3, ISO 50–6400, enstantane 1/20000–30", 23mm f/1.6, elle odak var, RAW var, 3 fiziksel lens, zoom 0.6×–10×, Ultra HDR ve RAW+JPEG var, video 4K/60fps/sabitleme/10-bit. Eklentiler: Gece, Portre, Oto (HDR yok).
