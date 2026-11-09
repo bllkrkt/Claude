@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- Vizör: boyutu ve konumu en-boy oranına göre koddan ayarlanır -->
+    <FrameLayout
+        android:id="@+id/previewBox"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.bilal.kamera.OverlayView
+            android:id="@+id/overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.bilal.kamera.HistogramView
+            android:id="@+id/histogram"
+            android:layout_width="120dp"
+            android:layout_height="64dp"
+            android:layout_gravity="top|start"
+            android:layout_margin="10dp"
+            android:visibility="gone" />
+
+        <View
+            android:id="@+id/flashOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:background="@android:color/black" />
+    </FrameLayout>
+
+    <!-- Üst çubuk -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp">
+
+        <ImageButton android:id="@+id/btnFlash" style="@style/TopBtn" android:src="@drawable/ic_flash_off" android:contentDescription="Flaş" />
+        <ImageButton android:id="@+id/btnHdr" style="@style/TopBtn" android:src="@drawable/ic_hdr" android:contentDescription="HDR" />
+        <FrameLayout android:id="@+id/btnTimerBox" style="@style/TopBtn">
+            <TextView android:id="@+id/btnTimer" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
+                android:drawableStart="@drawable/ic_timer" android:drawablePadding="2dp" android:gravity="center_vertical"
+                android:textColor="@color/accent" android:textSize="13sp" android:textStyle="bold" />
+        </FrameLayout>
+        <TextView android:id="@+id/btnAspect" style="@style/TopTxt" android:text="4:3" />
+        <ImageButton android:id="@+id/btnGrid" style="@style/TopBtn" android:src="@drawable/ic_grid" android:contentDescription="Izgara" />
+        <ImageButton android:id="@+id/btnSettings" style="@style/TopBtn" android:src="@drawable/ic_settings" android:contentDescription="Ayarlar" />
+    </LinearLayout>
+
+    <!-- Kayıt süresi -->
+    <TextView
+        android:id="@+id/recTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="64dp"
+        android:background="@drawable/bg_rec"
+        android:fontFeatureSettings="tnum"
+        android:paddingStart="10dp"
+        android:paddingTop="3dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="3dp"
+        android:text="00:00"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Geri sayım -->
+    <TextView
+        android:id="@+id/countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:shadowColor="#AA000000"
+        android:shadowRadius="12"
+        android:textColor="@android:color/white"
+        android:textSize="110sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Kısa bilgi -->
+    <TextView
+        android:id="@+id/hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_panel"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:textColor="@android:color/white"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+    <!-- İzin yok ekranı -->
+    <LinearLayout
+        android:id="@+id/permPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Kamerayı kullanabilmem için kamera izni gerekiyor."
+            android:textColor="@android:color/white"
+            android:textSize="17sp" />
+        <Button
+            android:id="@+id/btnPerm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="İzin ver" />
+    </LinearLayout>
+
+    <!-- Alt kontroller -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
+
+        <!-- Kaydırıcı paneli (EV / ISO / enstantane / odak / beyaz dengesi) -->
+        <LinearLayout
+            android:id="@+id/sliderPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="6dp"
+            android:background="@drawable/bg_panel"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="4dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/sliderLabel"
+                android:layout_width="86dp"
+                android:layout_height="wrap_content"
+                android:fontFeatureSettings="tnum"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+            <SeekBar
+                android:id="@+id/slider"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1" />
+            <TextView
+                android:id="@+id/sliderAuto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_chip"
+                android:paddingStart="12dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:text="Oto"
+                android:textColor="@android:color/white"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- Pro mod parametreleri -->
+        <HorizontalScrollView
+            android:id="@+id/proRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+            <LinearLayout
+                android:id="@+id/proChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp" />
+        </HorizontalScrollView>
+
+        <!-- Lens / yakınlaştırma -->
+        <LinearLayout
+            android:id="@+id/zoomRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_chip"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="3dp" />
+
+        <!-- Mod seçici -->
+        <HorizontalScrollView
+            android:id="@+id/modeScroll"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:fadingEdgeLength="40dp"
+            android:requiresFadingEdge="horizontal"
+            android:scrollbars="none">
+            <LinearLayout
+                android:id="@+id/modeRow"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <!-- Deklanşör sırası -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="112dp">
+            <ImageView
+                android:id="@+id/thumb"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical|start"
+                android:layout_marginStart="36dp"
+                android:background="@drawable/bg_thumb"
+                android:clipToOutline="true"
+                android:contentDescription="Galeri"
+                android:padding="1.5dp"
+                android:scaleType="centerCrop" />
+            <ImageButton
+                android:id="@+id/btnPause"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical|start"
+                android:layout_marginStart="36dp"
+                android:background="@drawable/bg_round"
+                android:contentDescription="Duraklat"
+                android:src="@drawable/ic_pause"
+                android:visibility="gone" />
+            <com.bilal.kamera.ShutterView
+                android:id="@+id/shutter"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:contentDescription="Çek" />
+            <ImageButton
+                android:id="@+id/btnFlip"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical|end"
+                android:layout_marginEnd="36dp"
+                android:background="@drawable/bg_round"
+                android:contentDescription="Kamerayı çevir"
+                android:src="@drawable/ic_flip" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

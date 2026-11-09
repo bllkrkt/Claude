@@ -96,3 +96,30 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 ## Sıradaki fikirler (kullanıcı onaylamadı, öneri olarak sun)
 - Widget gerçek telefonda görsel olarak kontrol edilmedi; kullanıcıdan geri bildirim al
 - Release imzalı / küçültülmüş (R8) APK
+
+---
+
+# İkinci uygulama: Kamera+ (`kamera/` modülü)
+
+Kullanıcı Xiaomi 15T Pro'sundaki (HyperOS, Android 15) varsayılan kamerayı beğenmedi; ayrı bir kamera uygulaması istedi. Takip Temizleme ile ilgisi yok, aynı Gradle projesinde ikinci modül.
+
+- Paket: `com.bilal.kamera`, ad "Kamera+", minSdk 29, targetSdk 35, Java + CameraX **1.5.3** (1.6 compileSdk 36 istiyor, bilerek 1.5'te).
+- Derleme: `./gradlew :kamera:assembleDebug` → `kamera/build/outputs/apk/debug/kamera-debug.apk` → kullanıcıya `Kamera-vN.apk` adıyla ver. Her sürümde `kamera/build.gradle` `versionCode`'u artır (şu an 1 / "1.0").
+- **İmza:** `kamera/keystore/kamera.keystore` (alias `kamera`, şifre `android`, SHA-256 `5a137987…6c86`). Git'e konmaz; v1'de kullanıcıya `kamera-imza-anahtari.keystore` olarak gönderildi. Yeni oturumda yoksa kullanıcıdan iste; yoksa yeni anahtar = kullanıcı eskisini silip kurar (sadece ayarlar gider, fotoğraflar DCIM'de kalır).
+- Emülatör yok (KVM yok); gerçek testi kullanıcı telefonda yapıyor. Derlemeden sonra `dexdump … | grep bilal` ile sınıfları doğrula.
+
+## Dosyalar
+- `MainActivity.java` — tüm kamera ekranı: modlar, bağlama (`bindCamera`, hata olursa `bindCamera(true)` ile sade ayarlarla tekrar), çekim, video, pro kontroller, jestler, ses tuşları.
+- `Caps.java` — telefonun yeteneklerini okuyup `cap_<back|front>_*` anahtarlarıyla kaydeder (çözünürlükler, Ultra HDR/RAW, ZSL, video kaliteleri, 60fps, sabitleme, 10-bit HDR, üretici eklenti modları). Ayarlar ekranı seçenekleri bunlardan üretir. "Kamera bilgisi" metni de burada.
+- `SettingsActivity.java` + `res/xml/prefs.xml` — ayarlar (PreferenceFragmentCompat). `P.java` anahtarlar.
+- `ShutterView`, `OverlayView` (ızgara, su terazisi, odak halkası), `HistogramView`.
+
+## Özellikler (v1)
+Modlar: PRO · GECE · PORTRE · FOTOĞRAF · VİDEO (Gece/Portre/HDR yalnızca telefon CameraX Extensions açıyorsa görünür). Lens çipleri (0.6/1/2/5/10, zoom aralığına göre), sıkıştırma ile zoom, çipe uzun bas = zoom kaydırıcı. Dokun = odak + EV kaydırıcı, uzun bas = AE/AF kilit. Sağa/sola kaydır = mod, yukarı/aşağı = kamera çevir. Flaş (kapalı/oto/açık/fener, ön kamerada ekran flaşı), zamanlayıcı 3/5/10, en-boy 4:3/16:9/1:1/TAM, ızgara (3×3/4×4/altın oran), su terazisi, deklanşör sesi, ses tuşları (deklanşör/zoom/normal).
+Pro: EV, ISO, enstantane, elle odak, beyaz dengesi (Camera2 interop) + canlı ISO/enstantane gösterimi + histogram.
+Fotoğraf ayarları: çözünürlük (telefonun gerçek boyutlarından), JPEG kalitesi, biçim (JPEG/Ultra HDR/RAW+JPEG), çekim önceliği (kalite/hız/ZSL), ön kamera ayna.
+Video: 4K/1080p/720p/480p, 30/60 fps, bit hızı, sabitleme, 10-bit HLG, ses, duraklat/devam.
+Kayıt: `DCIM/Camera` (varsayılan) veya `DCIM/KameraPlus`. Küçük resim → galeride açar.
+
+## Bilinen sınır
+Xiaomi, üçüncü parti uygulamalara tüm lensleri/özellikleri açmayabilir (geniş açı, 50 MP, gece modu vb.). Uygulama ne açıksa onu otomatik kullanır; Ayarlar → Kamera bilgisi ne açık olduğunu gösterir. Kullanıcıdan bu ekranın içeriğini istemek sonraki geliştirmeler için faydalı.

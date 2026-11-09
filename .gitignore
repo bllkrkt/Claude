@@ -11,3 +11,7 @@ node_modules/
 
 # İmza anahtarı public repoya konmaz; derlemeden önce app/keystore/debug.keystore elle eklenir
 app/keystore/
+
+# Kamera uygulamasının imza anahtarı (kullanıcıda yedeği var)
+kamera/keystore/
+kamera-imza-anahtari.keystore

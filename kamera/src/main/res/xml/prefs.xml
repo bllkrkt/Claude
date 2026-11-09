@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="Fotoğraf" app:iconSpaceReserved="false">
+        <ListPreference app:key="photo_mp_back" app:title="Arka kamera çözünürlüğü" app:defaultValue="0"
+            app:entries="@array/empty" app:entryValues="@array/empty" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="photo_mp_front" app:title="Ön kamera çözünürlüğü" app:defaultValue="0"
+            app:entries="@array/empty" app:entryValues="@array/empty" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="jpeg_quality" app:title="JPEG kalitesi" app:defaultValue="95"
+            app:entries="@array/jpeg_e" app:entryValues="@array/jpeg_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="photo_format" app:title="Dosya biçimi" app:defaultValue="jpeg"
+            app:entries="@array/empty" app:entryValues="@array/empty" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="capture_mode" app:title="Çekim önceliği" app:defaultValue="quality"
+            app:entries="@array/empty" app:entryValues="@array/empty" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="mirror_front" app:title="Ön kamerada ayna görüntü" app:summary="Selfie vizörde nasıl görünüyorsa öyle kaydedilir"
+            app:defaultValue="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="shutter_sound" app:title="Deklanşör sesi" app:defaultValue="true" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Video" app:iconSpaceReserved="false">
+        <ListPreference app:key="video_quality" app:title="Video kalitesi" app:defaultValue="UHD"
+            app:entries="@array/empty" app:entryValues="@array/empty" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="video_fps" app:title="Kare hızı" app:defaultValue="30"
+            app:entries="@array/fps_e" app:entryValues="@array/fps_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="video_bitrate" app:title="Bit hızı (görüntü kalitesi / dosya boyutu)" app:defaultValue="0"
+            app:entries="@array/br_e" app:entryValues="@array/br_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="video_stab" app:title="Görüntü sabitleme" app:summary="Elde çekimde titremeyi azaltır (görüntü biraz kırpılır)"
+            app:defaultValue="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="video_hdr" app:title="HDR video (10-bit HLG)" app:summary="Daha geniş renk ve parlaklık aralığı"
+            app:defaultValue="false" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="video_audio" app:title="Ses kaydı" app:defaultValue="true" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Vizör ve kontroller" app:iconSpaceReserved="false">
+        <ListPreference app:key="grid" app:title="Izgara çizgileri" app:defaultValue="3"
+            app:entries="@array/grid_e" app:entryValues="@array/grid_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="level" app:title="Su terazisi" app:summary="Telefon tam düz olunca çizgi yeşile döner"
+            app:defaultValue="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="histogram" app:title="Pro modda histogram" app:defaultValue="true" app:iconSpaceReserved="false" />
+        <ListPreference app:key="volume_keys" app:title="Ses tuşları" app:defaultValue="shutter"
+            app:entries="@array/vol_e" app:entryValues="@array/vol_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+        <SwitchPreferenceCompat app:key="max_brightness" app:title="Ekran parlaklığını en yükseğe çek" app:summary="Güneş altında vizörü görmek için"
+            app:defaultValue="false" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Kayıt" app:iconSpaceReserved="false">
+        <ListPreference app:key="save_folder" app:title="Kayıt klasörü" app:defaultValue="Camera"
+            app:entries="@array/folder_e" app:entryValues="@array/folder_v" app:useSimpleSummaryProvider="true" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Hakkında" app:iconSpaceReserved="false">
+        <Preference app:key="cam_info" app:title="Kamera bilgisi" app:summary="Telefonunun bu uygulamaya açtığı kamera özellikleri" app:iconSpaceReserved="false" />
+        <Preference app:key="reset" app:title="Ayarları sıfırla" app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

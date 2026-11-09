@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="empty"><item>-</item></string-array>
+    <string-array name="jpeg_e"><item>100 (en iyi, büyük dosya)</item><item>95 (önerilen)</item><item>90</item><item>85</item><item>75 (küçük dosya)</item></string-array>
+    <string-array name="jpeg_v"><item>100</item><item>95</item><item>90</item><item>85</item><item>75</item></string-array>
+    <string-array name="fps_e"><item>30 fps</item><item>60 fps (akıcı)</item></string-array>
+    <string-array name="fps_v"><item>30</item><item>60</item></string-array>
+    <string-array name="br_e"><item>Otomatik</item><item>20 Mbps</item><item>40 Mbps</item><item>60 Mbps</item><item>100 Mbps (en yüksek)</item></string-array>
+    <string-array name="br_v"><item>0</item><item>20</item><item>40</item><item>60</item><item>100</item></string-array>
+    <string-array name="grid_e"><item>Kapalı</item><item>3×3</item><item>4×4</item><item>Altın oran</item></string-array>
+    <string-array name="grid_v"><item>0</item><item>3</item><item>4</item><item>golden</item></string-array>
+    <string-array name="vol_e"><item>Deklanşör</item><item>Yakınlaştırma</item><item>Ses (normal)</item></string-array>
+    <string-array name="vol_v"><item>shutter</item><item>zoom</item><item>off</item></string-array>
+    <string-array name="folder_e"><item>DCIM/Camera (Galeri\'de Kamera albümü)</item><item>DCIM/KameraPlus (ayrı albüm)</item></string-array>
+    <string-array name="folder_v"><item>Camera</item><item>KameraPlus</item></string-array>
+</resources>
