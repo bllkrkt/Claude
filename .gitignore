@@ -5,9 +5,14 @@ local.properties
 *.apk
 tests/*.zip
 tests/*.png
+tests-arsiv/shots/
 node_modules/
 .idea/
 *.iml
 
 # İmza anahtarı public repoya konmaz; derlemeden önce app/keystore/debug.keystore elle eklenir
 app/keystore/
+arsiv/build/
+arsiv/keystore/
+tests-arsiv/*.zip
+tests-arsiv/*.png

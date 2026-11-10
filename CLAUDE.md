@@ -96,3 +96,38 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 ## Sıradaki fikirler (kullanıcı onaylamadı, öneri olarak sun)
 - Widget gerçek telefonda görsel olarak kontrol edilmedi; kullanıcıdan geri bildirim al
 - Release imzalı / küçültülmüş (R8) APK
+
+---
+
+# Arşivim (ikinci uygulama, `arsiv/` modülü)
+
+Kullanıcının isteğiyle **ayrı** bir uygulama (Takip Temizleme'ye dokunmaz, ikisi yan yana kurulur). Instagram veri ZIP'ini açıp her şeyi ayrı ayrı gösterir: mesajlar (sohbet görünümü), hikayeler, gönderiler, reels, takipçiler, beğeniler, yorumlar, aramalar, giriş geçmişi, reklam bilgileri, ham dosya gezgini. İnternete hiç çıkmaz (sayfada CSP ile kapalı).
+
+- Paket: `com.bilal.arsivim`, ad "Arşivim", şu an versionCode 1 / "1.0". Her sürümde artır.
+- **İmza:** `arsiv/keystore/arsivim.keystore` (alias `arsivim`, şifreler `android`, SHA-256 `f1bea5c0…43c2`). Repo herkese açık olduğu için keystore commit edilmez (.gitignore); kullanıcıya dosya olarak verildi, saklaması söylendi. Yeni oturumda kullanıcıdan iste ve `arsiv/keystore/` içine koy. Değişirse güncelleme kurulmaz.
+- Derleme: `./gradlew :arsiv:assembleDebug` → `arsiv/build/outputs/apk/debug/arsiv-debug.apk` → kullanıcıya `Arsivim-vN.apk` adıyla ver. (`./gradlew assembleDebug` her iki modülü derler; `app` için kendi keystore'u gerekir.) Maven Central 429 verirse proje dosyasına dokunmadan `--init-script` ile `https://maven-central.storage-download.googleapis.com/maven2/` aynası eklenebilir.
+
+## Mimari
+```
+arsiv/src/main/assets/index.html            ← tüm arayüz (tek dosya, vanilla JS)
+arsiv/src/main/java/.../ZipIndex.java       ← ZIP içindekiler tablosu okuyucu (ZIP64, konum tabanlı, Android'den bağımsız)
+arsiv/src/main/java/.../MainActivity.java   ← WebView kabuğu, ZIP'leri WebView'a sunar, JS köprüsü
+tests-arsiv/                                 ← sahte Instagram arşivi üretici + Playwright testi
+```
+- ZIP'ler `ACTION_OPEN_DOCUMENT` ile seçilir, kalıcı okuma izni alınır (SharedPreferences `arcs`); her açılışta hatırlanır. Birden çok ZIP parçası birleştirilir. Konumla okunamayan (bulut vb.) dosyalar uygulamaya kopyalanır. "Paylaş/Birlikte aç" ile gelen ZIP sadece o oturumluk (`temp`).
+- WebView'a sunum: `https://appassets.androidplatform.net/zipidx/` → `{archives, entries:[[arşivNo, ad, boyut]]}`; `/zip/<arşivNo>/<ad>` → dosyanın açılmış hâli (video için Range/206 destekli). ZIP hiçbir zaman tamamen belleğe alınmaz.
+- Köprü (`AndroidBridge`): `pickArchives()`, `removeArchive(i)`, `saveEntry(a, ad, çıktıAdı)` (İndirilenler/Arsivim), `saveText(ad, metin, mime)`, `shareText`, `setBars`, `setSecure(bool)`/`isSecure()` (FLAG_SECURE). JS tarafı: `__onArchives()`, `__onBack()`.
+- Tarayıcıda köprü yokken dosya seçici + JS ZIP okuyucu (DecompressionStream) ile aynı arayüz çalışır (testler böyle).
+- Instagram JSON'undaki bozuk Türkçe karakterler (`ÅŸ`) `fixStr` ile düzeltilir. Bilinmeyen dosyalar genel kayıt görünümüyle (string_list_data / string_map_data / label_values / media) gösterilir; dosya adı → Türkçe başlık sözlüğü `T`.
+- Ekranlar: Ana sayfa (profil, öne çıkanlar, "bugün geçmişte", kategoriler) · Mesajlar (arama, birebir/grup/istekler, sohbet içi arama, tarihe git, sohbet istatistiği, metin olarak kaydet, sohbet medyası) · Medya (hikaye/gönderi/reels/profil/arşiv/silinen/mesajlardaki) · Ara (her şeyde) · Dosyalar (klasör gezgini, ad araması, tür filtresi, en büyükler, JSON ağacı, önizleme, kaydet) · İstatistikler · Ayarlar (arşivler, tema, 4 haneli kilit, ekran görüntüsü engeli).
+- localStorage anahtarı `arsivim-v1`: `{theme, pin(SHA-256), lastTab}`.
+
+## Test
+```bash
+cd tests-arsiv && python3 make-arsiv-zip.py      # arsiv-part1.zip + arsiv-part2.zip (iki parçalı, üst klasörlü, bozuk kodlamalı)
+node e2e.mjs ../arsiv/src/main/assets/index.html arsiv-part1.zip arsiv-part2.zip shots
+```
+`errors []` görmelisin; `shots/` içindeki ekran görüntülerine bakarak görsel kontrol yap.
+
+## Sürüm geçmişi
+- **v1.0**: İlk sürüm. Emülatör olmadığı için gerçek telefonda denenmedi; arayüz tarayıcıda, ZIP okuyucu masaüstü JVM'de (70.000 dosyalık ZIP64 dahil) test edildi.
