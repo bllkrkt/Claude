@@ -92,7 +92,7 @@ await p.evaluate(() => ACT.legClose());
 
 // harita + farklı bölgeler
 await p.click('[data-v=battle]');
-await p.evaluate(() => { S.maxF = [30, 30, 30, 30, 10, 0]; updAll(); });
+await p.evaluate(() => { S.maxF = [30, 30, 30, 30, 10, 0, 5, 30]; S.floors[6] = 3; S.floors[7] = 30; updAll(); });
 await p.click('.zinfo'); await p.waitForTimeout(300); await shot('16-harita');
 await p.evaluate(() => { ACT.zone('4'); S.floors[4] = 10; S.kills = 0; spawn(); });
 await p.waitForTimeout(700); await shot('17-volkan-boss');
@@ -102,6 +102,28 @@ await p.waitForTimeout(300); await shot('18-buzul-kalkan-kombo');
 await p.evaluate(() => { S.hp = Math.round(P.hp * .2); updPl(); }); await p.waitForTimeout(200); await shot('19-dusuk-can');
 await p.evaluate(() => { S.hp = P.hp; updPl(); ACT.settings(); }); await p.waitForTimeout(300); await shot('20-ayarlar');
 await p.evaluate(() => closeSheet());
+
+// yeni bölgeler
+await p.evaluate(() => { ACT.zone('6'); }); await p.waitForTimeout(400); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(900); await shot('38-gok-tapinagi');
+await p.evaluate(() => { ACT.zone('7'); }); await p.waitForTimeout(400); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(1100); await shot('39-hiclik-boss');
+// oto saldırı: dokunmadan canavarın canı azalmalı
+await p.evaluate(() => { S.tot.boss = Math.max(1, S.tot.boss); aaCheck(); }); await p.waitForTimeout(300);
+check(await p.evaluate(() => /Oto saldırı açıldı/.test(document.getElementById('sheet').innerText)), 'oto saldırı penceresi çıkmadı');
+await shot('40a-oto-acildi'); await clear();
+check(await p.evaluate(() => aaOpen() && S.autoAtk), 'oto saldırı açılmadı');
+await p.evaluate(() => { ACT.zone('0'); S.floors[0] = 3; S.kills = 0; spawn(); M.int = 1e9; M.max = M.hp = 1e9; S.autoSk = true; R.cd = [0, 0, 0, 0]; closeSheet(); });
+await p.waitForTimeout(2500);
+check(await p.evaluate(() => M.hp < 1e9 && S.tot.skills > 0), 'oto saldırı/oto yetenek vurmadı');
+await shot('40-oto-saldiri');
+await p.evaluate(() => { ACT.aa(); }); check(await p.evaluate(() => !S.autoAtk), 'oto saldırı kapatılamadı'); await p.evaluate(() => { ACT.aa(); });
+// kostüm + yoldaş evrimi + müzik
+await p.evaluate(() => { S.gems += 500; ACT.skin('gold'); S.pets[S.pet] = 9; S.gold += 1e7; ACT.petFeed(); });
+check(await p.evaluate(() => S.skin === 'gold' && S.skins.gold && petStage(S.pets[S.pet]) === 1 && /Ulu/.test(pName(S.pet))), 'kostüm ya da evrim çalışmadı');
+await p.waitForTimeout(1200); await clear(); await shot('41-altin-kostum-evrim');
+await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=stat]'); await p.waitForTimeout(300); await shot('42-kostumler');
+await p.click('[data-a=heroSeg][data-v=pet]'); await p.waitForTimeout(300); await shot('43-evrim-karti');
+await p.click('[data-v=battle]'); await p.mouse.click(200, 400); await p.waitForTimeout(1500);
+check(await p.evaluate(() => S.set.music && musI > 0), 'müzik çalmadı');
 
 // eşya setleri: 6 parça Kurt Avcısı
 await p.evaluate(() => { ACT.zone('0'); for (const s of SLOTS) { const it = makeItem(30, 2, s.k, 'wolf'); S.inv.push(it); ACT.equip(it.id); } closeSheet(); });
@@ -113,7 +135,7 @@ await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=stat]'); 
 
 // zamanlı boss: süre dolunca bir kat geri
 await p.click('[data-v=battle]');
-await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 20; S.kills = 0; setStage(); spawn(); M.int = 1e9; });
+await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 20; S.kills = 0; setStage(); spawn(); M.int = 1e9; M.max = M.hp = 1e12; });
 await p.waitForTimeout(900); await shot('28-zamanli-boss');
 await p.evaluate(() => { M.timer = 120; }); await p.waitForTimeout(500);
 check(await p.evaluate(() => /Süre doldu/.test(document.getElementById('sheet').innerText) && S.floors[0] === 19), 'boss süresi dolunca kat geri gitmedi');
@@ -134,7 +156,7 @@ await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=reb]'); a
 await p.click('[data-a=reb]'); await p.waitForTimeout(300); await shot('34-dogus-onay');
 await p.click('[data-a=rebOk]'); await p.waitForTimeout(800);
 const rb = await p.evaluate(() => ({ lvl: S.lvl, souls: S.reb.souls, n: S.reb.n, eq: Object.keys(S.eq).length, f: S.floors[0], gold: S.gold, cls: S.cls }));
-check(rb.lvl === 1 && rb.souls > 0 && rb.n === 1 && rb.eq === 6 && rb.f === 6 && rb.gold === 0 && rb.cls === 'war', 'yeniden doğuş hatalı: ' + JSON.stringify(rb));
+check(rb.lvl === 1 && rb.souls > 0 && rb.n === 1 && rb.eq === 6 && rb.f >= 6 && rb.gold < 500 && rb.cls === 'war', 'yeniden doğuş hatalı: ' + JSON.stringify(rb));
 await shot('35-dogus-sonrasi');
 await p.evaluate(() => { const a0 = P.atk; ACT.soulUp('atk'); window.__a = [a0, P.atk]; });
 check(await p.evaluate(() => S.reb.up.atk === 1 && window.__a[1] > window.__a[0]), 'Ruh Ağacı çalışmadı');
