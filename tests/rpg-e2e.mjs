@@ -1,4 +1,6 @@
 // Efsane Avcısı oyun testi: node rpg-e2e.mjs ../rpg/src/main/assets/index.html <çıktı klasörü>
+// Telefon boyutunda: tanıtım → sınıf seçimi → günlük ödül → savaş (yetenek, iksir, kombo) → çanta/demirci →
+// kahraman (stat/yetenek/yoldaş) → görevler → dükkan → harita → sen yokken kazancı → v1 kaydından geçiş → geri tuşu
 import { createRequire } from 'module';
 import path from 'path';
 const require = createRequire(import.meta.url);
@@ -10,52 +12,126 @@ const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceSc
 const p = await ctx.newPage();
 p.on('pageerror', e => errors.push(String(e)));
 p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
-await p.goto('file://' + path.resolve(html));
+const url = 'file://' + path.resolve(html);
+await p.goto(url);
+await p.waitForTimeout(400);
 const shot = n => p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
-await shot('01-hosgeldin');
-await p.click('[data-a=start]');
-// oyuncu gibi oyna: vur, yetenek kullan, can azalınca iksir iç, öldüyse devam et
+const check = (c, msg) => { if (!c) errors.push(msg); };
+await shot('01-tanitim');
+await p.click('[data-a=pickCls][data-v=war]');
+await p.waitForTimeout(500);
+await shot('02-gunluk-odul');
+check(await p.evaluate(() => !!document.querySelector('[data-a=claimLogin]')), 'günlük ödül penceresi çıkmadı');
+await p.click('#sheet [data-a=claimLogin]');
+await p.waitForTimeout(400);
+
+// açık pencereleri oyuncu gibi kapat
+const clear = () => p.evaluate(() => {
+  for (let k = 0; k < 4; k++) {
+    if (document.querySelector('#leg.on')) ACT.legClose();
+    if (!document.querySelector('#sheetBg.on')) continue;
+    if (document.querySelector('#sheet [data-a=revive]')) ACT.revive();
+    else if (document.querySelector('#sheet [data-a=offTake]')) ACT.offTake('1');
+    else if (document.querySelector('#sheet [data-a=claimLogin]')) claimLogin();
+    else if (document.querySelector('#sheet [data-a=pickCls]')) ACT.pickCls('war');
+    else closeSheet();
+  }
+});
 async function play(ms) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
+    await clear();
     await p.evaluate(() => {
-      if (document.querySelector('#leg.on')) ACT.legClose();
-      if (document.querySelector('[data-a=revive]')) ACT.revive();
       if (S.hp < P.hp * .4 && S.potions) usePotion();
-      skill(); attack();
+      for (let i = 0; i < 4; i++) if (S.lvl >= CLS[S.cls].sk[i].lv) useSkill(i);
+      document.getElementById('bHit').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
     });
     await p.waitForTimeout(110);
   }
 }
-await play(1500); await shot('02-savas');
-await play(25000);
-// en iyi eşyaları kuşan, puanları dağıt
 const autoGear = () => p.evaluate(() => {
   for (let i = 0; i < 20; i++) { const it = S.inv.find(x => power(x) > power(S.eq[x.slot])); if (!it) break; ACT.equip(it.id); }
   while (S.pts > 0) ACT.stat(['str', 'vit', 'agi'][S.pts % 3]);
+  closeSheet();
 });
-await p.click('[data-v=inv]'); await shot('03-canta');
-await p.click('#s-inv .it[data-a=item]'); await p.waitForTimeout(400); await shot('04-esya-karsilastirma');
+await play(2500); await shot('03-savas');
+await play(20000); await clear(); await autoGear(); await p.waitForTimeout(300); await clear();
+check(await p.evaluate(() => S.lvl >= 3 && !!S.pets.wolf), 'kurt hediyesi gelmedi');
+await play(1500); await shot('04-savas-yoldas');
+
+// çanta + demirci
+await p.evaluate(() => { S.gold += 200000; S.ess += 300; S.gems += 500; updAll(); });
+await p.click('[data-v=inv]'); await p.waitForTimeout(300); await shot('05-canta');
+await p.click('#s-inv .it[data-a=item]'); await p.waitForTimeout(400); await shot('06-esya-demirci');
+const up0 = await p.evaluate(() => { const it = S.eq.weapon || S.inv[0]; for (let i = 0; i < 8; i++) ACT.forge(it.id); closeSheet(); return it.up; });
+check(up0 > 0, 'demirci geliştirme çalışmadı');
+await p.evaluate(() => { ACT.item((S.eq.weapon || S.inv[0]).id); }); await p.waitForTimeout(400); await shot('07-gelistirilmis');
 await p.evaluate(() => closeSheet());
-await autoGear();
-await p.click('[data-v=char]'); await shot('05-karakter');
-await p.evaluate(() => { S.gold += 50000; updAll(); });
-await p.click('[data-v=shop]'); await shot('06-dukkan');
-await p.click('[data-a=chest][data-v="1"]'); await p.waitForTimeout(500); await shot('07-sandik');
+await p.click('[data-a=bulk]'); await p.waitForTimeout(300); await shot('08-toplu');
 await p.evaluate(() => closeSheet());
-await p.evaluate(() => legendary(makeItem(20, 3, 'weapon'))); await p.waitForTimeout(700); await shot('08-efsanevi');
+
+// kahraman
+await p.click('[data-v=hero]'); await p.waitForTimeout(300); await shot('09-kahraman-stat');
+await p.click('[data-a=heroSeg][data-v=skill]'); await p.evaluate(() => { S.lvl = Math.max(S.lvl, 22); updAll(); ACT.skUp('0'); ACT.skUp('0'); renderSkillBar(); });
+await p.waitForTimeout(200); await shot('10-kahraman-yetenek');
+await p.click('[data-a=heroSeg][data-v=pet]'); await p.click('[data-a=petBuy][data-v=dragon]'); await p.waitForTimeout(300); await clear();
+await p.evaluate(() => { ACT.petFeed(); ACT.petFeed(); });
+await p.waitForTimeout(200); await shot('11-kahraman-yoldas');
+check(await p.evaluate(() => S.pet === 'dragon' && S.pets.dragon === 3), 'yoldaş alma/besleme çalışmadı');
+
+// görevler + dükkan
+await p.click('[data-v=quest]'); await p.waitForTimeout(300); await shot('12-gorevler');
+await p.evaluate(() => { for (const a of ACH) ACT.achClaim(a.k); S.daily.q.forEach((q, i) => { q.p = q.n; ACT.qClaim(String(i)); }); ACT.qBonus(); });
+await p.waitForTimeout(300); await clear(); await shot('13-gorevler-alindi');
+await p.click('[data-v=shop]'); await p.waitForTimeout(300); await shot('14-dukkan');
+await p.click('[data-a=chestGem][data-v="2"]'); await p.waitForTimeout(600); await clear();
+await p.evaluate(() => legendary(makeItem(40, 3, 'weapon'))); await p.waitForTimeout(700); await shot('15-efsanevi');
 await p.evaluate(() => ACT.legClose());
-await p.click('[data-v=map]'); await shot('09-harita');
+
+// harita + farklı bölgeler
 await p.click('[data-v=battle]');
-for (let i = 0; i < 6; i++) { await play(10000); await autoGear(); }
-await shot('10-ilerleme');
-const st = await p.evaluate(() => ({ lvl: S.lvl, zone: S.zone, floor: S.floors[S.zone], maxF: S.maxF, kills: S.tot.kills, boss: S.tot.boss, inv: S.inv.length, atk: P.atk, hp: P.hp }));
-// kalıcılık: yenile, aynı seviyeden devam etmeli
-await p.evaluate(() => save(true)); await p.reload();
-const lvl2 = await p.evaluate(() => S.lvl);
-if (lvl2 !== st.lvl) errors.push('kayıt yüklenmedi: ' + lvl2 + ' != ' + st.lvl);
-if (await p.evaluate(() => window.__onBack())) errors.push('savaş ekranında geri tuşu yutuldu');
-console.log('durum', JSON.stringify(st));
+await p.evaluate(() => { S.maxF = [30, 30, 30, 30, 10, 0]; updAll(); });
+await p.click('.zinfo'); await p.waitForTimeout(300); await shot('16-harita');
+await p.evaluate(() => { ACT.zone('4'); S.floors[4] = 10; S.kills = 0; spawn(); });
+await p.waitForTimeout(700); await shot('17-volkan-boss');
+await p.evaluate(() => { ACT.zone('3'); }); await p.waitForTimeout(500);
+await p.evaluate(() => { useSkill(1); for (let i = 0; i < 30; i++) { R.combo = i; } R.comboLast = performance.now(); R.combo = 34; showCombo(); });
+await p.waitForTimeout(300); await shot('18-buzul-kalkan-kombo');
+await p.evaluate(() => { S.hp = Math.round(P.hp * .2); updPl(); }); await p.waitForTimeout(200); await shot('19-dusuk-can');
+await p.evaluate(() => { S.hp = P.hp; updPl(); ACT.settings(); }); await p.waitForTimeout(300); await shot('20-ayarlar');
+await p.evaluate(() => closeSheet());
+
+// sen yokken kazancı: 3 saat önce kapatılmış gibi
+const lvlBefore = await p.evaluate(() => { save(true); const o = JSON.parse(localStorage.getItem(SAVE_KEY)); o.lastSeen = Date.now() - 3 * 3600e3; o.daily.day = ''; localStorage.setItem(SAVE_KEY, JSON.stringify(o)); save = () => {}; return S.lvl; });
+await p.reload(); await p.waitForTimeout(500);
+await shot('21-sen-yokken');
+check(await p.evaluate(() => !!document.querySelector('#sheet [data-a=offTake]')), 'sen yokken penceresi çıkmadı');
+const g0 = await p.evaluate(() => S.gold);
+await p.evaluate(() => ACT.offTake('1')); await p.waitForTimeout(400);
+check(await p.evaluate(g => S.gold > g, g0), 'sen yokken altını eklenmedi');
+check(await p.evaluate(() => !!document.querySelector('#sheet [data-a=claimLogin]')), 'yeni gün ödül penceresi çıkmadı');
+await shot('22-ertesi-gun-odul');
+await clear();
+check(await p.evaluate(l => S.lvl >= l, lvlBefore), 'kayıt yüklenmedi');
+
+// v1 kaydından geçiş: kullanıcının telefonundaki eski kayıt biçimi
+await p.evaluate(() => { save(true); save = () => {}; localStorage.setItem(SAVE_KEY, JSON.stringify({
+  v: 1, lvl: 12, xp: 40, gold: 1234, pts: 2, st: { str: 5, vit: 4, agi: 3, luck: 0 }, hp: 300, potions: 4,
+  eq: { weapon: { id: 3, slot: 'weapon', r: 2, L: 9, n: 'Kadim Balta', e: '🪓', st: { atk: 20, crit: 3.1 } } },
+  inv: [{ id: 5, slot: 'ring', r: 1, L: 8, n: 'Sağlam Yüzük', e: '💍', st: { gold: 6, hp: 18 } }],
+  zone: 0, floors: [18, 1, 1, 1, 1, 1], maxF: [18, 0, 0, 0, 0, 0], kills: 2, auto: true, nextId: 9, seen: true,
+  tot: { kills: 300, boss: 1, leg: 0, gold: 5000 }, set: { sound: false, vib: true } })); });
+await p.reload(); await p.waitForTimeout(500);
+await shot('23-v1-gecis');
+check(await p.evaluate(() => !!document.querySelector('#sheet [data-a=pickCls]')), 'v1 kaydında sınıf seçimi çıkmadı');
+await p.click('[data-a=pickCls][data-v=mag]'); await p.waitForTimeout(400); await clear();
+const mig = await p.evaluate(() => ({ lvl: S.lvl, gold: S.gold, w: S.eq.weapon && S.eq.weapon.up, cls: S.cls, wolf: !!S.pets.wolf, inv: S.inv.length }));
+check(mig.lvl === 12 && mig.w === 0 && mig.cls === 'mag' && mig.wolf && mig.inv === 1, 'v1 geçişi hatalı: ' + JSON.stringify(mig));
+await play(3000); await clear(); await shot('24-v1-sonrasi-buyucu');
+await p.evaluate(() => { ACT.tab('inv'); }); await p.waitForTimeout(200);
+check(await p.evaluate(() => window.__onBack() === true && tab === 'battle'), 'geri tuşu sekmeden savaşa dönmedi');
+check(await p.evaluate(() => window.__onBack() === false), 'savaş ekranında geri tuşu yutuldu');
+console.log('durum', JSON.stringify(mig));
 console.log('errors', JSON.stringify(errors));
 await b.close();
 process.exit(errors.length ? 1 : 0);

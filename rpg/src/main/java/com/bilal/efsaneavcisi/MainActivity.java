@@ -66,8 +66,15 @@ public class MainActivity extends Activity {
         web.loadUrl("https://" + HOST + "/assets/index.html");
     }
 
-    @Override protected void onPause() { super.onPause(); web.onPause(); }
-    @Override protected void onResume() { super.onResume(); web.onResume(); }
+    // Arka plana alınınca oyun durur; dönünce "sen yokken" kazancı hesaplanır
+    @Override protected void onPause() {
+        web.evaluateJavascript("window.__pause&&window.__pause()", null);
+        super.onPause(); web.onPause();
+    }
+    @Override protected void onResume() {
+        super.onResume(); web.onResume();
+        web.evaluateJavascript("window.__resume&&window.__resume()", null);
+    }
 
     @Override
     public void onBackPressed() {

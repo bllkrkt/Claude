@@ -101,13 +101,27 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 
 # İkinci proje: Efsane Avcısı (RPG oyunu)
 
-Aynı depoda, Takip Temizleme'den tamamen bağımsız ikinci bir Android uygulaması. Kullanıcı kod bilmiyor; telefonda oynanan Türkçe bir RPG istedi.
+Aynı depoda, Takip Temizleme'den tamamen bağımsız ikinci bir Android uygulaması. Kullanıcı kod bilmiyor; telefonda oynanan Türkçe bir RPG istedi. v2'de "aklına gelen ne varsa sormadan ekle" dedi.
 
-- `rpg/src/main/assets/index.html` ← TÜM oyun (tek dosya, vanilla JS + CSS, dış kaynak yok, görseller emoji). Tarayıcıda da tek başına çalışır.
-- `rpg/src/main/java/com/bilal/efsaneavcisi/MainActivity.java` ← WebView kabuğu (dikey kilit, ekran açık kalır, geri tuşu `window.__onBack()`).
+- `rpg/src/main/assets/index.html` ← TÜM oyun (tek dosya, vanilla JS + CSS, görseller emoji + CSS/SVG efekt). Font: `assets/fonts/` (Plus Jakarta Sans).
+- `rpg/tek-dosya.py EfsaneAvcisi.html` ← fontları gömüp tarayıcıda açılan tek dosyalık hali üretir (APK'ya alternatif olarak kullanıcıya verilir).
+- `rpg/src/main/java/com/bilal/efsaneavcisi/MainActivity.java` ← WebView kabuğu (dikey kilit, ekran açık kalır, geri tuşu `window.__onBack()`, arka plan `window.__pause/__resume`).
 - `rpg/keystore/oyun.keystore` ← oyunun imza anahtarı (depoda, SHA-256 `4b6cadc0…632a`). **Değiştirme**: değişirse güncelleme kurulmaz, oyun kaydı gider.
-- Derleme: `./gradlew :rpg:assembleDebug` → `rpg/build/outputs/apk/debug/rpg-debug.apk` → kullanıcıya `EfsaneAvcisi-vN.apk` adıyla ver. Her sürümde `rpg/build.gradle` içinde `versionCode` +1 (şu an 1 / "1.0").
-- Test: `cd tests && node rpg-e2e.mjs ../rpg/src/main/assets/index.html <çıktı klasörü>` → `errors []` görmelisin, ekran görüntülerine bak.
-- Kayıt: localStorage `efsane-avcisi-v1` (nesne `S`). Alan eklerken `fresh()` içine varsayılan koy; `applySave` eski kayıtları birleştirir. **Geriye uyumluluğu koru.**
-- Oyun: dokunarak saldırı + Güçlü Vuruş (8 sn) + iksir; 6 bölge × 30 kat (son bölge sonsuz), her 10. kat boss, 30. kat boss sonraki bölgeyi açar; 6 eşya yuvası, 4 nadirlik, rastgele statlar; seviye başına 3 stat puanı (Güç/Dayanıklılık/Çeviklik/Şans); dükkan (iksir + 3 sandık); kayıt yedeği kodu.
-- v1.0 kullanıcıya verildi; sonraki özellikler için kullanıcıya soruldu.
+- Derleme: `./gradlew :rpg:assembleDebug` → `rpg/build/outputs/apk/debug/rpg-debug.apk` → kullanıcıya `EfsaneAvcisi-vN.apk` adıyla ver. Her sürümde `rpg/build.gradle` içinde `versionCode` +1 (şu an 2 / "2.0").
+- Test: `cd tests && node rpg-e2e.mjs ../rpg/src/main/assets/index.html <çıktı klasörü>` → `errors []` görmelisin, ekran görüntülerine bak. Test v1 kaydından geçişi de dener.
+- Kayıt: localStorage `efsane-avcisi-v1` (nesne `S`, `S.v`=2). Alan eklerken `fresh()` içine varsayılan koy; `applySave` eski kayıtları birleştirir. **Geriye uyumluluğu koru** (kullanıcının telefonunda gerçek kayıt var).
+
+## Oyun içeriği (v2)
+- Savaş: dokun/VUR + kombo (+%50'ye kadar), 3 sınıf (Savaşçı/Okçu/Büyücü; `CLS`) × 4 yetenek (Sv 1/5/12/20 açılır, altınla Sv20'ye kadar), iksir, elit canavar (%7), boss her 10. kat, 6 bölge × 30 kat (son bölge sonsuz).
+- Eşya: 6 yuva, 4 nadirlik, rastgele stat; Demirci +15'e kadar (`upCost`, `upRate`; başarısızlıkta sadece malzeme gider), Erit → 💠 Öz, kilit 🔒, toplu sat/erit, yuva filtresi.
+- Yoldaşlar (`PETS`): 1,5 sn'de bir saldırır + pasif bonus; Kurt Sv3 hediye, diğerleri 💎; altınla beslenir (Sv30).
+- Günlük giriş ödülü (7 gün döngü), 3 günlük görev + hepsi bonusu, başarımlar (💎 verir). Para birimleri: 💰 altın, 💎 elmas, 💠 öz.
+- Sen yokken kazanç: en fazla 8 saat, yoldaş varsa daha çok; 💎15 ile 2 katı.
+- Görsel: bölgeye göre gökyüzü/zemin/parçacık, kesik/kıvılcım/patlama efekti, uçan altın, hayalet can barı, boss/seviye/bölge afişi, konfeti, düşük can kırmızı kenar, nadirlik parıltıları.
+
+## Sürüm geçmişi
+- **v1**: İlk oynanabilir sürüm.
+- **v2**: Sınıflar, yetenekler, kombo, demirci, yoldaşlar, günlük ödül/görev/başarım, elmas, sen yokken kazanç, elit canavar, baştan görsel tasarım. v1 kayıtları korunur (açılışta sınıf seçtirilir).
+
+## Sıradaki fikirler (öneri olarak sun)
+- Yeniden doğuş (prestij), eşya setleri, zindan/boss savaşı süresi, sıralama tablosu (çevrimdışı), ses müziği.
