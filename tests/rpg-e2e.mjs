@@ -17,6 +17,7 @@ await p.goto(url);
 await p.waitForTimeout(400);
 const shot = n => p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
 const check = (c, msg) => { if (!c) errors.push(msg); };
+check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
 await shot('01-tanitim');
 await p.click('[data-a=pickCls][data-v=war]');
 await p.waitForTimeout(500);
@@ -32,6 +33,7 @@ const clear = () => p.evaluate(() => {
     if (!document.querySelector('#sheetBg.on')) continue;
     if (document.querySelector('#sheet [data-a=revive]')) ACT.revive();
     else if (document.querySelector('#sheet [data-a=offTake]')) ACT.offTake('1');
+    else if (document.querySelector('#sheet [data-a=arenaDone]')) ACT.arenaDone();
     else if (document.querySelector('#sheet [data-a=claimLogin]')) claimLogin();
     else if (document.querySelector('#sheet [data-a=pickCls]')) ACT.pickCls('war');
     else closeSheet();
@@ -60,7 +62,7 @@ check(await p.evaluate(() => S.lvl >= 3 && !!S.pets.wolf), 'kurt hediyesi gelmed
 await play(1500); await shot('04-savas-yoldas');
 
 // çanta + demirci
-await p.evaluate(() => { S.gold += 200000; S.ess += 300; S.gems += 500; updAll(); });
+await p.evaluate(() => { S.gold += 200000; S.ess += 300; S.gems += 500; S.inv.push(makeItem(5, 2, 'gloves')); updAll(); });
 await p.click('[data-v=inv]'); await p.waitForTimeout(300); await shot('05-canta');
 await p.click('#s-inv .it[data-a=item]'); await p.waitForTimeout(400); await shot('06-esya-demirci');
 const up0 = await p.evaluate(() => { const it = S.eq.weapon || S.inv[0]; for (let i = 0; i < 8; i++) ACT.forge(it.id); closeSheet(); return it.up; });
@@ -100,6 +102,52 @@ await p.waitForTimeout(300); await shot('18-buzul-kalkan-kombo');
 await p.evaluate(() => { S.hp = Math.round(P.hp * .2); updPl(); }); await p.waitForTimeout(200); await shot('19-dusuk-can');
 await p.evaluate(() => { S.hp = P.hp; updPl(); ACT.settings(); }); await p.waitForTimeout(300); await shot('20-ayarlar');
 await p.evaluate(() => closeSheet());
+
+// eşya setleri: 6 parça Kurt Avcısı
+await p.evaluate(() => { ACT.zone('0'); for (const s of SLOTS) { const it = makeItem(30, 2, s.k, 'wolf'); S.inv.push(it); ACT.equip(it.id); } closeSheet(); });
+check(await p.evaluate(() => setBonus().n.wolf === 6 && setBonus().o.atkP === 30), 'set bonusu hesaplanmadı');
+await p.click('[data-v=inv]'); await p.waitForTimeout(300); await shot('25-set-canta');
+await p.evaluate(() => ACT.item(S.eq.weapon.id)); await p.waitForTimeout(400); await shot('26-set-esya');
+await p.evaluate(() => closeSheet());
+await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=stat]'); await p.waitForTimeout(300); await shot('27-set-kahraman');
+
+// zamanlı boss: süre dolunca bir kat geri
+await p.click('[data-v=battle]');
+await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 20; S.kills = 0; setStage(); spawn(); M.int = 1e9; });
+await p.waitForTimeout(900); await shot('28-zamanli-boss');
+await p.evaluate(() => { M.timer = 120; }); await p.waitForTimeout(500);
+check(await p.evaluate(() => /Süre doldu/.test(document.getElementById('sheet').innerText) && S.floors[0] === 19), 'boss süresi dolunca kat geri gitmedi');
+await shot('29-boss-sure-doldu'); await clear();
+
+// boss arenası
+await p.click('[data-v=quest]'); await p.waitForTimeout(300); await shot('30-arena-kart');
+await p.click('#s-quest [data-a=arena]'); await p.waitForTimeout(900);
+await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 8; i++) attack(3, { src: 'tap' }); arenaDmg = Math.max(arenaDmg, arenaTier(4) + 5); updMon(); });
+await p.waitForTimeout(500); await shot('31-arena-savas');
+await p.evaluate(() => { M.timer = 60; }); await p.waitForTimeout(500);
+check(await p.evaluate(() => S.arena.left === 2 && S.arena.best >= 4 && /Süre doldu/.test(document.getElementById('sheet').innerText)), 'arena sonucu hatalı');
+await shot('32-arena-sonuc'); await clear();
+
+// yeniden doğuş
+await p.evaluate(() => { S.maxF[1] = 25; for (const s of SLOTS) S.eq[s.k].lk = true; S.reb.up.start = 1; updAll(); });
+await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=reb]'); await p.waitForTimeout(300); await shot('33-dogus');
+await p.click('[data-a=reb]'); await p.waitForTimeout(300); await shot('34-dogus-onay');
+await p.click('[data-a=rebOk]'); await p.waitForTimeout(800);
+const rb = await p.evaluate(() => ({ lvl: S.lvl, souls: S.reb.souls, n: S.reb.n, eq: Object.keys(S.eq).length, f: S.floors[0], gold: S.gold, cls: S.cls }));
+check(rb.lvl === 1 && rb.souls > 0 && rb.n === 1 && rb.eq === 6 && rb.f === 6 && rb.gold === 0 && rb.cls === 'war', 'yeniden doğuş hatalı: ' + JSON.stringify(rb));
+await shot('35-dogus-sonrasi');
+await p.evaluate(() => { const a0 = P.atk; ACT.soulUp('atk'); window.__a = [a0, P.atk]; });
+check(await p.evaluate(() => S.reb.up.atk === 1 && window.__a[1] > window.__a[0]), 'Ruh Ağacı çalışmadı');
+await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=reb]'); await p.waitForTimeout(300); await shot('36-ruh-agaci');
+await p.click('[data-v=battle]');
+
+// 2B'ye geçiş ve geri
+await p.evaluate(() => { save = () => {}; S.set.d3 = false; localStorage.setItem(SAVE_KEY, JSON.stringify(Object.assign({}, S, { lastSeen: Date.now() }))); });
+await p.reload(); await p.waitForTimeout(600); await clear();
+check(await p.evaluate(() => !D3 && !document.getElementById('c3d')), '2B moda geçilemedi');
+await shot('37-2b-mod');
+await p.evaluate(() => { S.set.d3 = true; save(true); }); await p.reload(); await p.waitForTimeout(600); await clear();
+check(await p.evaluate(() => !!D3), '3B moda dönülemedi');
 
 // sen yokken kazancı: 3 saat önce kapatılmış gibi
 const lvlBefore = await p.evaluate(() => { save(true); const o = JSON.parse(localStorage.getItem(SAVE_KEY)); o.lastSeen = Date.now() - 3 * 3600e3; o.daily.day = ''; localStorage.setItem(SAVE_KEY, JSON.stringify(o)); save = () => {}; return S.lvl; });

@@ -103,11 +103,13 @@ node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test
 
 Aynı depoda, Takip Temizleme'den tamamen bağımsız ikinci bir Android uygulaması. Kullanıcı kod bilmiyor; telefonda oynanan Türkçe bir RPG istedi. v2'de "aklına gelen ne varsa sormadan ekle" dedi.
 
-- `rpg/src/main/assets/index.html` ← TÜM oyun (tek dosya, vanilla JS + CSS, görseller emoji + CSS/SVG efekt). Font: `assets/fonts/` (Plus Jakarta Sans).
-- `rpg/tek-dosya.py EfsaneAvcisi.html` ← fontları gömüp tarayıcıda açılan tek dosyalık hali üretir (APK'ya alternatif olarak kullanıcıya verilir).
+- `rpg/src/main/assets/index.html` ← oyun mantığı + arayüz (vanilla JS + CSS). Font: `assets/fonts/` (Plus Jakarta Sans).
+- `rpg/src/main/assets/sahne3d.js` ← 3B savaş sahnesi (`window.S3D`): tüm modeller koddan low-poly (HERO/PETM/MON listeleri, canavar adıyla eşleşir; listede olmayan ad emoji sprite'a düşer), 6 bölge ortamı (ZD), parçacıklar, efektler. `lib/three.min.js` = Three.js r149 (UMD, MIT).
+- WebGL yoksa ya da Ayarlar → "2B grafik" seçiliyse (`S.set.d3=false`) eski emoji sahnesi kullanılır; `D3` null olur. Oyun kodu 3B'ye sadece `if(D3)D3.xxx()` çağrılarıyla bağlı.
+- `rpg/tek-dosya.py EfsaneAvcisi.html` ← fontları ve 3B betikleri gömüp tarayıcıda açılan tek dosyalık hali üretir (APK'ya alternatif olarak kullanıcıya verilir).
 - `rpg/src/main/java/com/bilal/efsaneavcisi/MainActivity.java` ← WebView kabuğu (dikey kilit, ekran açık kalır, geri tuşu `window.__onBack()`, arka plan `window.__pause/__resume`).
 - `rpg/keystore/oyun.keystore` ← oyunun imza anahtarı (depoda, SHA-256 `4b6cadc0…632a`). **Değiştirme**: değişirse güncelleme kurulmaz, oyun kaydı gider.
-- Derleme: `./gradlew :rpg:assembleDebug` → `rpg/build/outputs/apk/debug/rpg-debug.apk` → kullanıcıya `EfsaneAvcisi-vN.apk` adıyla ver. Her sürümde `rpg/build.gradle` içinde `versionCode` +1 (şu an 2 / "2.0").
+- Derleme: `./gradlew :rpg:assembleDebug` → `rpg/build/outputs/apk/debug/rpg-debug.apk` → kullanıcıya `EfsaneAvcisi-vN.apk` adıyla ver. Her sürümde `rpg/build.gradle` içinde `versionCode` +1 (şu an 3 / "3.0").
 - Test: `cd tests && node rpg-e2e.mjs ../rpg/src/main/assets/index.html <çıktı klasörü>` → `errors []` görmelisin, ekran görüntülerine bak. Test v1 kaydından geçişi de dener.
 - Kayıt: localStorage `efsane-avcisi-v1` (nesne `S`, `S.v`=2). Alan eklerken `fresh()` içine varsayılan koy; `applySave` eski kayıtları birleştirir. **Geriye uyumluluğu koru** (kullanıcının telefonunda gerçek kayıt var).
 
@@ -119,9 +121,15 @@ Aynı depoda, Takip Temizleme'den tamamen bağımsız ikinci bir Android uygulam
 - Sen yokken kazanç: en fazla 8 saat, yoldaş varsa daha çok; 💎15 ile 2 katı.
 - Görsel: bölgeye göre gökyüzü/zemin/parçacık, kesik/kıvılcım/patlama efekti, uçan altın, hayalet can barı, boss/seviye/bölge afişi, konfeti, düşük can kırmızı kenar, nadirlik parıltıları.
 
+## Oyun içeriği (v3 ekleri)
+- Eşya setleri (`SETS`, 5 set, 2/4/6 parça bonusu; Epik %35, Efsanevi %60 ihtimalle sete ait; 💎60 Set Sandığı).
+- Zamanlı boss (`BOSS_T` 30 sn; süre dolarsa bir kat geri) ve günlük 3 haklı Boss Arenası (Kadim Ejder, 30 sn, `ARENA_T` 6 kademe ödül).
+- Yeniden doğuş (`S.reb`): Mağara 20. kat (gBest≥50) sonrası açılır; 🔮 Ruh Taşı = (gBest/10)^1.5; Ruh Ağacı (`SOUL`) kalıcı bonuslar; kilitli en iyi 6 eşya korunur.
+
 ## Sürüm geçmişi
 - **v1**: İlk oynanabilir sürüm.
 - **v2**: Sınıflar, yetenekler, kombo, demirci, yoldaşlar, günlük ödül/görev/başarım, elmas, sen yokken kazanç, elit canavar, baştan görsel tasarım. v1 kayıtları korunur (açılışta sınıf seçtirilir).
+- **v3**: Gerçek 3B grafik (Three.js, koddan modeller), eşya setleri, zamanlı boss + Boss Arenası, yeniden doğuş + Ruh Ağacı, 2B/3B ayarı.
 
 ## Sıradaki fikirler (öneri olarak sun)
-- Yeniden doğuş (prestij), eşya setleri, zindan/boss savaşı süresi, sıralama tablosu (çevrimdışı), ses müziği.
+- Arka plan müziği, daha fazla bölge, evcil hayvan evrimi, 3B'de karakter kostümleri, PvP benzeri gölge düellosu.
