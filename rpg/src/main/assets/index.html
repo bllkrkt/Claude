@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0e0f1a">
+<title>Efsane Avcısı</title>
+<style>
+:root{--bg:#0e0f1a;--pan:#191b2b;--pan2:#23263a;--line:#30344d;--tx:#eef0ff;--mut:#9aa0c0;--gold:#ffcf4a;--red:#ff5263;--grn:#3ddc84;--acc:#ff7a3d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;touch-action:manipulation;cursor:pointer}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding-top:env(safe-area-inset-top)}
+/* üst bilgi */
+#hud{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--pan);border-bottom:1px solid var(--line)}
+.lv{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ffb23d,#ff5a3d);display:grid;place-items:center;font-weight:800;font-size:17px;box-shadow:0 0 0 3px #0006 inset;flex:none}
+.lv small{display:block;font-size:8px;font-weight:700;line-height:1;margin-bottom:-2px;opacity:.85}
+.xpw{flex:1;min-width:0}.xpt{font-size:11px;color:var(--mut);margin-bottom:3px;display:flex;justify-content:space-between}
+.gold{font-weight:800;color:var(--gold);font-size:16px;white-space:nowrap}
+.bar{position:relative;height:10px;border-radius:99px;background:#0008;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width .18s}
+.bar span{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000}
+.bar.xp i{background:linear-gradient(90deg,#4f9cff,#7df)}
+.bar.mhp{height:20px;margin:6px 24px 0}.bar.mhp i{background:linear-gradient(90deg,#ff3d55,#ff8a5a)}
+.bar.atkb{height:5px;margin:5px 60px 0}.bar.atkb i{background:#ffd54a;transition:none}
+.bar.php{height:22px}.bar.php i{background:linear-gradient(90deg,#27c26c,#7dea8f)}
+main{flex:1;position:relative;min-height:0}
+.scr{position:absolute;inset:0;display:none;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch}
+.scr.on{display:block}
+#s-battle.on{display:flex;flex-direction:column;padding:0;overflow:hidden}
+/* savaş */
+.zbar{display:flex;align-items:center;gap:6px;padding:8px 10px}
+.zbar>button{width:44px;height:44px;border-radius:12px;background:var(--pan2);font-size:16px;flex:none}
+.zbar>button:disabled{opacity:.3}
+.zbar .chip{width:auto;padding:0 12px;font-size:12px;font-weight:700;color:var(--mut)}
+.zbar .chip.on{background:#1f5c3a;color:#aef5c6}
+.zinfo{flex:1;text-align:center;min-width:0}
+#zName{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dots{display:flex;gap:5px;justify-content:center;margin-top:5px;height:8px}
+.dots b{width:16px;height:6px;border-radius:9px;background:#fff2}.dots b.k{background:var(--gold)}
+.dots .bossT{font-size:11px;color:var(--red);font-weight:800;letter-spacing:1px;line-height:8px}
+#stage{flex:1;position:relative;margin:0 10px;border-radius:20px;overflow:hidden;min-height:0;border:1px solid var(--line);display:flex;flex-direction:column;touch-action:manipulation}
+#deco{position:absolute;inset:0;pointer-events:none}
+#deco span{position:absolute;bottom:-6px;opacity:.5;filter:saturate(.8)}
+#stage::after{content:"";position:absolute;left:0;right:0;bottom:0;height:26%;background:linear-gradient(transparent,#0009);pointer-events:none}
+#mName{position:relative;text-align:center;font-weight:800;margin-top:10px;font-size:16px;text-shadow:0 2px 4px #000}
+#mName.boss{color:#ff6b6b;font-size:18px}
+#monW{flex:1;display:grid;place-items:center;position:relative;min-height:0}
+#mon{font-size:min(34vw,150px);line-height:1;filter:drop-shadow(0 12px 10px #0009);animation:idle 2.2s ease-in-out infinite;will-change:transform}
+#mon.boss{font-size:min(44vw,190px)}
+#mon.hit{animation:hit .16s}
+#mon.dead{animation:die .45s forwards}
+#mon.in{animation:spawn .3s}
+@keyframes idle{50%{transform:translateY(-8px) scale(1.03)}}
+@keyframes hit{30%{transform:scale(.86) rotate(-6deg);filter:brightness(2.4) drop-shadow(0 12px 10px #0009)}}
+@keyframes die{to{transform:scale(.2) rotate(40deg) translateY(60px);opacity:0}}
+@keyframes spawn{from{transform:scale(.3);opacity:0}}
+.fl{position:absolute;font-weight:900;font-size:24px;color:#fff;text-shadow:0 2px 0 #000,0 0 8px #000;pointer-events:none;animation:fl .8s ease-out forwards;z-index:3;white-space:nowrap}
+.fl.c{font-size:36px;color:#ffd23d}.fl.p{color:#ff5263}.fl.h{color:#5df08f}.fl.g{color:var(--gold);font-size:17px}.fl.x{color:#7dd3ff;font-size:17px}
+@keyframes fl{0%{transform:translate(-50%,0) scale(.6);opacity:0}15%{transform:translate(-50%,-14px) scale(1.25);opacity:1}100%{transform:translate(-50%,-90px) scale(1);opacity:0}}
+#loot{position:absolute;left:8px;right:8px;bottom:8px;display:flex;flex-direction:column;gap:4px;align-items:center;pointer-events:none;z-index:4}
+#loot div{background:#000b;border:1.5px solid;border-radius:99px;padding:5px 12px;font-size:13px;font-weight:700;animation:lootIn 2.8s forwards}
+@keyframes lootIn{0%{transform:translateY(20px);opacity:0}8%,80%{transform:none;opacity:1}100%{opacity:0}}
+.shake{animation:shake .25s}
+@keyframes shake{25%{transform:translateX(-7px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+#pl{display:flex;gap:10px;align-items:center;padding:10px 12px 4px}
+.av{font-size:36px;width:52px;height:52px;border-radius:14px;background:var(--pan2);display:grid;place-items:center;flex:none}
+.pinfo{flex:1;min-width:0}#pSt{font-size:12px;color:var(--mut);margin-top:5px;display:flex;gap:12px;white-space:nowrap}
+.acts{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:10px;padding:8px 12px 12px}
+.acts button{position:relative;height:86px;border-radius:20px;font-size:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--pan2);border:1px solid var(--line);overflow:hidden}
+.acts button:active{transform:scale(.95)}
+.acts small{font-size:12px;font-weight:800;letter-spacing:.3px}
+#bHit{background:linear-gradient(160deg,#ff8a3d,#e8334b);border:0;font-size:38px;box-shadow:0 6px 0 #8a1c2c}
+#bHit:active{transform:translateY(4px) scale(.98);box-shadow:0 2px 0 #8a1c2c}
+#bHit small{font-size:15px}
+#bPot em{position:absolute;top:6px;right:8px;font-style:normal;font-size:13px;font-weight:800;background:#e8334b;border-radius:99px;min-width:22px;padding:1px 6px}
+#skCd{position:absolute;left:0;right:0;bottom:0;background:#000a;pointer-events:none}
+/* sekmeler */
+#tabs{display:grid;grid-template-columns:repeat(5,1fr);background:var(--pan);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+#tabs button{position:relative;padding:8px 0 9px;font-size:22px;display:flex;flex-direction:column;align-items:center;gap:1px;opacity:.55}
+#tabs button.on{opacity:1}#tabs button.on small{color:var(--gold)}
+#tabs small{font-size:11px;font-weight:700}
+#tabs .dot[hidden]{display:none}
+#tabs .dot{position:absolute;top:5px;right:22%;min-width:18px;height:18px;border-radius:9px;background:var(--red);font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 5px}
+/* genel */
+h2{font-size:18px;margin:4px 0 10px}h3{font-size:13px;color:var(--mut);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.6px}
+.card{background:var(--pan);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
+.btn{white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:50px;padding:0 16px;border-radius:14px;background:var(--pan2);border:1px solid var(--line);font-weight:800;font-size:15px}
+.btn.pri{background:linear-gradient(160deg,#ff8a3d,#e8334b);border:0}.btn.ok{background:#1f8f55;border:0}.btn.warn{background:#5a2330;border-color:#8a3345}
+.btn:disabled{opacity:.4}.btn:active{transform:scale(.97)}
+.row{display:flex;gap:8px;align-items:center}.grow{flex:1;min-width:0}
+.mut{color:var(--mut);font-size:13px}
+/* çanta */
+.eqg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{background:var(--pan);border:2px solid var(--line);border-radius:14px;padding:8px 4px;text-align:center;min-height:86px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.slot .e{font-size:30px;line-height:1.1}.slot.empty .e{opacity:.25;filter:grayscale(1)}
+.slot small{font-size:10.5px;color:var(--mut);font-weight:700;line-height:1.15;display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.invg{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.it{position:relative;aspect-ratio:1;border-radius:13px;border:2px solid;background:var(--pan);display:grid;place-items:center;font-size:28px}
+.it .up{position:absolute;top:1px;right:3px;font-size:12px;color:var(--grn);font-weight:900}
+.it .l{position:absolute;bottom:1px;left:4px;font-size:9.5px;color:var(--mut);font-weight:700}
+.it.empty{border:2px dashed var(--line);background:none}
+/* karakter */
+.statrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.statrow:last-child{border:0}.statrow .ic{font-size:26px;width:36px;text-align:center}
+.statrow b{font-size:15px}.statrow .v{font-size:20px;font-weight:800;min-width:34px;text-align:center}
+.statrow .plus{width:50px;height:50px;border-radius:14px;background:#1f8f55;font-size:26px;font-weight:800}
+.statrow .plus:disabled{background:var(--pan2);opacity:.4}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:14px}.dg div{display:flex;justify-content:space-between}.dg b{color:var(--gold)}
+/* harita / dükkan */
+.zone{display:flex;gap:12px;align-items:center;border-radius:16px;padding:14px;margin-bottom:10px;border:2px solid var(--line);text-align:left;width:100%}
+.zone .e{font-size:40px}.zone.cur{border-color:var(--gold)}.zone.lock{opacity:.5;filter:grayscale(.8)}
+.zone b{font-size:17px;display:block}.zone small{color:#dde;font-size:12.5px}
+.shop{display:flex;gap:12px;align-items:center}.shop .e{font-size:40px;width:52px;text-align:center}
+/* alt panel */
+#sheetBg{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;z-index:20}
+#sheetBg.on{display:flex}
+#sheet{width:100%;max-width:520px;max-height:88%;overflow-y:auto;background:var(--pan);border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:up .22s;border-top:3px solid var(--line)}
+@keyframes up{from{transform:translateY(100%)}}
+.ihead{display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.ihead .e{font-size:44px;width:68px;height:68px;border-radius:16px;border:2px solid;display:grid;place-items:center;background:var(--bg);flex:none}
+.ihead b{font-size:18px;display:block}.ihead small{font-size:12.5px;font-weight:700}
+.cmp{display:grid;grid-template-columns:1fr auto auto;gap:6px 12px;font-size:15px;margin:10px 0;align-items:center}
+.cmp .d{font-size:13px;font-weight:800;min-width:64px;text-align:right}.up2{color:var(--grn)}.dn{color:var(--red)}.cmp .val{font-weight:800;text-align:right}
+.eqnote{font-size:12.5px;color:var(--mut);background:var(--bg);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+textarea{width:100%;height:110px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:8px;font-size:12px;user-select:text;-webkit-user-select:text}
+/* efsanevi parlama */
+#leg{position:fixed;inset:0;z-index:40;display:none;place-items:center;background:radial-gradient(circle,#ff9a1f 0,#5a2600f5 45%,#000000f2 100%);overflow:hidden;animation:legIn .5s}
+#leg.on{display:grid}
+#leg::before{content:"";position:absolute;width:220vmax;height:220vmax;left:50%;top:50%;margin:-110vmax 0 0 -110vmax;background:repeating-conic-gradient(#ffd27a55 0 8deg,transparent 8deg 20deg);animation:spin 9s linear infinite}
+#leg .in{position:relative;text-align:center;animation:pop .6s cubic-bezier(.2,1.6,.4,1)}
+#leg .t{font-size:30px;font-weight:900;letter-spacing:3px;color:#fff3c4;text-shadow:0 0 18px #ff9a1f,0 3px 0 #7a3b00}
+#leg .e{font-size:120px;filter:drop-shadow(0 0 30px #ffd27a);margin:10px 0}
+#leg .n{font-size:22px;font-weight:800;color:#ffb347;text-shadow:0 2px 4px #000}
+#leg .m{margin-top:26px;font-size:13px;opacity:.8}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{transform:scale(.2);opacity:0}}
+@keyframes legIn{0%{background-color:#fff;filter:brightness(4)}100%{filter:none}}
+#toasts{position:fixed;top:calc(64px + env(safe-area-inset-top));left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:50;pointer-events:none}
+#toasts div{background:#000d;border:1px solid var(--line);border-radius:14px;padding:9px 16px;font-weight:700;font-size:14px;animation:lootIn 2.6s forwards;max-width:90%;text-align:center}
+#toasts div.big{font-size:18px;border-color:var(--gold);color:var(--gold)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="hud">
+    <div class="lv"><div><small>SV</small><span id="hLv">1</span></div></div>
+    <div class="xpw"><div class="xpt"><span>Deneyim</span><span id="hXpT"></span></div><div class="bar xp"><i id="hXp"></i></div></div>
+    <div class="gold">💰 <span id="hGold">0</span></div>
+  </header>
+  <main>
+    <section id="s-battle" class="scr on">
+      <div class="zbar">
+        <button id="fPrev" data-a="floor" data-v="-1" aria-label="Önceki kat">◀</button>
+        <div class="zinfo"><div id="zName"></div><div id="zProg" class="dots"></div></div>
+        <button id="fNext" data-a="floor" data-v="1" aria-label="Sonraki kat">▶</button>
+        <button id="autoBtn" class="chip" data-a="auto">Oto ilerle</button>
+      </div>
+      <div id="stage">
+        <div id="deco"></div>
+        <div id="mName"></div>
+        <div class="bar mhp"><i id="mHp"></i><span id="mHpT"></span></div>
+        <div class="bar atkb"><i id="mAt"></i></div>
+        <div id="monW"><div id="mon"></div></div>
+        <div id="loot"></div>
+      </div>
+      <div id="pl">
+        <div class="av">🤺</div>
+        <div class="pinfo"><div class="bar php"><i id="pHp"></i><span id="pHpT"></span></div><div id="pSt"></div></div>
+      </div>
+      <div class="acts">
+        <button id="bPot" data-a="potion">🧪<small>İksir</small><em id="potN">0</em></button>
+        <button id="bHit">⚔️<small>VUR</small></button>
+        <button id="bSk">💥<small>Güçlü Vuruş</small><i id="skCd"></i></button>
+      </div>
+    </section>
+    <section id="s-inv" class="scr"></section>
+    <section id="s-char" class="scr"></section>
+    <section id="s-shop" class="scr"></section>
+    <section id="s-map" class="scr"></section>
+  </main>
+  <nav id="tabs">
+    <button data-a="tab" data-v="battle" class="on">⚔️<small>Savaş</small></button>
+    <button data-a="tab" data-v="inv">🎒<small>Çanta</small><span class="dot" id="dInv" hidden></span></button>
+    <button data-a="tab" data-v="char">🧝<small>Karakter</small><span class="dot" id="dChar" hidden></span></button>
+    <button data-a="tab" data-v="shop">🏪<small>Dükkan</small></button>
+    <button data-a="tab" data-v="map">🗺️<small>Harita</small></button>
+  </nav>
+</div>
+<div id="sheetBg"><div id="sheet"></div></div>
+<div id="leg" data-a="legClose"><div class="in"><div class="t">✨ EFSANEVİ ✨</div><div class="e" id="legE"></div><div class="n" id="legN"></div><div class="m">Devam etmek için dokun</div></div></div>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+/* ===================== VERİ ===================== */
+const SAVE_KEY='efsane-avcisi-v1', INV_MAX=40, ZONE_FLOORS=30, KILLS_PER_FLOOR=5, SKILL_CD=8000;
+const RAR=[
+  {n:'Sıradan',c:'#9ca3af',m:1,sell:1},
+  {n:'Nadir',c:'#4f9cff',m:1.3,sell:2.5},
+  {n:'Epik',c:'#b56bff',m:1.7,sell:6},
+  {n:'Efsanevi',c:'#ff9a1f',m:2.3,sell:15}];
+const STAT={
+  atk:{n:'Saldırı',i:'⚔️',w:3},def:{n:'Savunma',i:'🛡️',w:2.5},hp:{n:'Can',i:'❤️',w:.45},
+  crit:{n:'Kritik Şansı',i:'🎯',p:1,w:8},critDmg:{n:'Kritik Hasarı',i:'💢',p:1,w:2},
+  gold:{n:'Altın Bonusu',i:'💰',p:1,w:1.5},ls:{n:'Can Çalma',i:'🩸',p:1,w:14}};
+const SLOTS=[
+  {k:'weapon',n:'Silah',e:'🗡️',pri:[['atk',1]],names:[['🗡️','Kılıç'],['🪓','Balta'],['🔨','Savaş Çekici'],['🔱','Mızrak'],['🏹','Yay'],['🪄','Asa']]},
+  {k:'armor',n:'Zırh',e:'🦺',pri:[['def',1],['hp',.5]],names:[['🦺','Zırh'],['🥋','Savaş Giysisi'],['👘','Cübbe']]},
+  {k:'helmet',n:'Kask',e:'🪖',pri:[['hp',.7],['def',.4]],names:[['🪖','Miğfer'],['⛑️','Kask'],['👑','Taç'],['🎩','Büyücü Şapkası']]},
+  {k:'gloves',n:'Eldiven',e:'🧤',pri:[['atk',.3],['crit',1]],names:[['🧤','Eldiven'],['🥊','Yumruk Eldiveni']]},
+  {k:'boots',n:'Bot',e:'🥾',pri:[['def',.5],['hp',.4]],names:[['🥾','Bot'],['👢','Çizme']]},
+  {k:'ring',n:'Yüzük',e:'💍',pri:null,names:[['💍','Yüzük'],['📿','Tılsım'],['🧿','Nazar Muskası']]}];
+const SLOT=Object.fromEntries(SLOTS.map(s=>[s.k,s]));
+const PRE=[['Paslı','Eski','Sade','Yıpranmış'],['Sağlam','Keskin','Usta İşi','Çelik'],['Kadim','Büyülü','Gölge','Fırtına'],['Ejder','Tanrısal','Ölümsüz','Anka']];
+const BASE_ST=[
+  {k:'str',n:'Güç',i:'💪',d:'+2 Saldırı'},
+  {k:'vit',n:'Dayanıklılık',i:'🧱',d:'+14 Can, +1 Savunma'},
+  {k:'agi',n:'Çeviklik',i:'🌀',d:'+%0,5 Kritik Şansı, +%1 Kritik Hasarı'},
+  {k:'luck',n:'Şans',i:'🍀',d:'+%2 Altın, +%0,4 Eşya düşme'}];
+const ZONES=[
+  {n:'Orman',e:'🌲',bg:'linear-gradient(#1d5a3a,#0c2418)',deco:['🌲','🌳','🌿','🌲','🍄'],
+   mon:[['🐗','Yaban Domuzu'],['🐺','Boz Kurt'],['🕷️','Dev Örümcek'],['🐍','Zehirli Yılan'],['🦉','Gece Baykuşu']],
+   boss:[['🐻','Koca Ayı'],['🦌','Orman Ruhu'],['🦍','Orman Devi']]},
+  {n:'Mağara',e:'🪨',bg:'linear-gradient(#3a3f55,#14161f)',deco:['🪨','💎','🪨','🕸️','🪨'],
+   mon:[['🦇','Mağara Yarasası'],['🐀','Dev Sıçan'],['💀','İskelet'],['👺','Goblin'],['🦎','Mağara Kertenkelesi']],
+   boss:[['🧌','Mağara Trolü'],['🕷️','Örümcek Ana'],['👹','Ogre Reisi']]},
+  {n:'Çöl',e:'🏜️',bg:'linear-gradient(#c9853a,#5a3312)',deco:['🌵','🏜️','🌵','🦴','🌵'],
+   mon:[['🦂','Kum Akrebi'],['🐪','Azgın Deve'],['🦅','Çöl Kartalı'],['🧟','Mumya'],['🐍','Kobra']],
+   boss:[['🦁','Kum Aslanı'],['🧞','Çöl Cini'],['🗿','Taş Dev']]},
+  {n:'Buzul',e:'🏔️',bg:'linear-gradient(#5aa3d6,#16304f)',deco:['🏔️','❄️','🌨️','🧊','🏔️'],
+   mon:[['🐺','Kar Kurdu'],['☃️','Kardan Canavar'],['🧊','Buz Elementali'],['🦭','Buz Foku'],['🐧','Vahşi Penguen']],
+   boss:[['🦣','Mamut'],['🐻‍❄️','Kutup Ayısı'],['🐲','Buz Ejderi']]},
+  {n:'Volkan',e:'🌋',bg:'linear-gradient(#7a1d12,#1c0806)',deco:['🌋','🔥','🪨','🔥','🌋'],
+   mon:[['🔥','Ateş Ruhu'],['👿','Küçük İblis'],['🦎','Lav Kertenkelesi'],['💀','Yanık İskelet'],['🦇','Kül Yarasası']],
+   boss:[['👹','Lav Devi'],['😈','İblis Lordu'],['🐉','Kızıl Ejder']]},
+  {n:'Karanlık Kale',e:'🏰',bg:'linear-gradient(#3b1d5e,#0c0616)',deco:['🏰','🕯️','⚰️','🕸️','🏰'],
+   mon:[['👻','Hayalet'],['🧛','Vampir'],['🧟','Zombi'],['🦹','Kara Şövalye'],['🧙','Kara Büyücü']],
+   boss:[['🧛','Vampir Kontu'],['☠️','Ölüm Meleği'],['👑','Karanlık Kral']]}];
+
+/* ===================== YARDIMCILAR ===================== */
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const tr=v=>(Math.round(v*10)/10).toLocaleString('tr-TR',{maximumFractionDigits:1});
+function fmt(n){n=Math.floor(n);if(n>=1e9)return tr(n/1e9)+' Mr';if(n>=1e6)return tr(n/1e6)+' Mn';if(n>=1e5)return tr(n/1e3)+' B';return n.toLocaleString('tr-TR')}
+const sv=(k,v)=>STAT[k].p?'%'+tr(v):fmt(v);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ===================== KAYIT ===================== */
+function fresh(){return {v:1,lvl:1,xp:0,gold:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
+  zone:0,floors:[1,1,1,1,1,1],maxF:[1,0,0,0,0,0],kills:0,auto:true,nextId:1,seen:false,
+  tot:{kills:0,boss:0,leg:0,gold:0},set:{sound:true,vib:true}}}
+let S=fresh();
+function load(){try{const r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){}}
+function applySave(o){const f=fresh();S=Object.assign(f,o);S.st=Object.assign(fresh().st,o.st);S.tot=Object.assign(fresh().tot,o.tot);S.set=Object.assign(fresh().set,o.set);
+  while(S.floors.length<ZONES.length){S.floors.push(1);S.maxF.push(0)}}
+let saveT=0;
+function save(now){if(now){clearTimeout(saveT);saveT=0;try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}return}
+  if(!saveT)saveT=setTimeout(()=>save(true),800)}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save(true)});
+window.addEventListener('pagehide',()=>save(true));
+
+/* ===================== HESAPLAR ===================== */
+let P={};
+function calc(){const e={atk:0,def:0,hp:0,crit:0,critDmg:0,gold:0,ls:0};
+  for(const s of SLOTS){const it=S.eq[s.k];if(it)for(const k in it.st)e[k]+=it.st[k]}
+  const t=S.st;
+  P={atk:Math.round(5+S.lvl*1.5+t.str*2+e.atk),def:Math.round(t.vit+e.def),hp:Math.round(80+S.lvl*12+t.vit*14+e.hp),
+     crit:Math.min(80,5+t.agi*.5+e.crit),critDmg:150+t.agi+e.critDmg,gold:t.luck*2+e.gold,ls:Math.min(25,e.ls),drop:Math.min(60,22+t.luck*.4)};
+  if(S.hp==null||S.hp>P.hp)S.hp=P.hp}
+const xpNeed=n=>20+12*n+4*n*n;
+const G=(z=S.zone,f=S.floors[S.zone])=>z*ZONE_FLOORS+f;
+const gBest=()=>{let b=1;S.maxF.forEach((m,z)=>{if(m>0)b=Math.max(b,G(z,m))});return b};
+const mHp=g=>18+12*g+.9*Math.pow(g,1.8);
+const mAtk=g=>3+1.1*g+.02*g*g;
+const isLast=z=>z===ZONES.length-1;
+
+/* ===================== EŞYA ===================== */
+function statBase(k,L){switch(k){
+  case'atk':return 2+L;case'def':return 1+L*.5;case'hp':return 8+L*5;
+  case'crit':return 2+Math.min(L,150)*.02;case'critDmg':return 6+Math.min(L,200)*.08;
+  case'gold':return 4+Math.min(L,200)*.04;case'ls':return .6+Math.min(L,200)*.004}}
+function makeItem(L,r,slot){slot=slot||pick(SLOTS).k;const d=SLOT[slot],st={};
+  const add=(k,f)=>{const v=statBase(k,L)*f*RAR[r].m*rnd(.85,1.15);st[k]=STAT[k].p?Math.round(v*10)/10:Math.max(1,Math.round(v))};
+  (d.pri||[[pick(['crit','critDmg','gold','ls']),1],['hp',.3]]).forEach(p=>add(p[0],p[1]));
+  const pool=Object.keys(STAT).filter(k=>!(k in st)).sort(()=>Math.random()-.5);
+  for(let i=0;i<r&&pool.length;i++){const k=pool.pop();add(k,STAT[k].p?.5:.35)}
+  const b=pick(d.names);
+  return {id:S.nextId++,slot,r,L,n:pick(PRE[r])+' '+b[1],e:b[0],st}}
+function rollRar(w){let t=w.reduce((a,b)=>a+b,0),x=Math.random()*t;for(let i=0;i<w.length;i++){x-=w[i];if(x<0)return i}return 0}
+const power=it=>it?Math.round(Object.keys(it.st).reduce((a,k)=>a+it.st[k]*STAT[k].w,0)):0;
+const price=it=>Math.round((5+it.L*2)*RAR[it.r].sell);
+function giveItem(it){if(S.inv.length>=INV_MAX){const p=price(it);S.gold+=p;toast('🎒 Çanta dolu — '+it.n+' satıldı (+'+fmt(p)+' 💰)');return false}
+  S.inv.push(it);if(it.r===3)S.tot.leg++;return true}
+
+/* ===================== SES / TİTREŞİM ===================== */
+let AC=null;
+function beep(f,d,type,vol,slide){if(!S.set.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
+  const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+  g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+function tune(ns,gap,type){ns.forEach((f,i)=>setTimeout(()=>beep(f,.16,type||'triangle',.07),i*gap))}
+function vib(p){if(S.set.vib&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+
+/* ===================== SAVAŞ ===================== */
+let M=null,dead=false,tab='battle',skillT=0,lastHit=0;
+function spawn(){const z=ZONES[S.zone],f=S.floors[S.zone],g=G(),boss=f%10===0;
+  if(boss){const b=z.boss[(f/10-1)%3];M={e:b[0],n:b[1],boss:true,max:Math.round(mHp(g)*(6+2*Math.min(3,f/10))),atk:mAtk(g)*1.6,int:1500}}
+  else{const m=pick(z.mon);M={e:m[0],n:m[1],boss:false,max:Math.round(mHp(g)*rnd(.9,1.1)),atk:mAtk(g),int:1800}}
+  M.hp=M.max;M.t=0;
+  const el=$('mon');el.textContent=M.e;el.className=(boss?'boss ':'')+'in';setTimeout(()=>{if(el.classList.contains('in'))el.classList.remove('in')},300);
+  $('mName').textContent=(boss?'👑 BOSS: ':'')+M.n;$('mName').className=boss?'boss':'';
+  updBattle()}
+function float(txt,cls,x,y){const d=document.createElement('div');d.className='fl '+(cls||'');d.textContent=txt;d.style.left=x+'%';d.style.top=y+'%';
+  $('stage').appendChild(d);d.addEventListener('animationend',()=>d.remove())}
+function attack(mult,sure){if(!M||M.dead||dead||paused())return;
+  let d=P.atk*rnd(.85,1.15)*(mult||1);const c=sure||Math.random()*100<P.crit;if(c)d*=P.critDmg/100;d=Math.max(1,Math.round(d));
+  M.hp-=d;float(fmt(d)+(c?'!':''),c?'c':'',rnd(28,72),rnd(34,50));
+  if(P.ls>0&&S.hp<P.hp){S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(d*P.ls/100)))}
+  const el=$('mon');el.classList.remove('hit','in');void el.offsetWidth;el.classList.add('hit');
+  beep(c?520:rnd(170,230),.07,'square',c?.07:.04,c?260:90);vib(c?25:8);
+  if(M.hp<=0)kill();else updBattle()}
+function kill(){M.dead=true;M.hp=0;const g=G(),boss=M.boss;
+  const xp=Math.round((5+2*g)*(boss?6:1)),gold=Math.round((3+1.2*g)*rnd(.8,1.3)*(boss?8:1)*(1+P.gold/100));
+  S.gold+=gold;S.tot.gold+=gold;S.tot.kills++;if(boss)S.tot.boss++;
+  float('+'+fmt(gold)+' 💰','g',38,62);float('+'+fmt(xp)+' XP','x',64,62);
+  addXp(xp);
+  if(boss||Math.random()*100<P.drop){const lk=S.st.luck*.05;
+    const r=rollRar(boss?[25,42,25,8+lk]:[62,27,9+lk,2+lk/2]);const it=makeItem(g,r);
+    if(giveItem(it))lootMsg(it)}
+  S.hp=Math.min(P.hp,S.hp+Math.round(P.hp*.08));
+  const el=$('mon');el.classList.remove('hit','in');el.classList.add('dead');beep(140,.25,'sawtooth',.05,50);if(boss){vib([40,40,80]);tune([392,523,659,784],90)}
+  S.kills++;const need=boss?1:KILLS_PER_FLOOR;
+  if(S.kills>=need){S.kills=0;const z=S.zone,f=S.floors[z];
+    if(f>=S.maxF[z]){
+      if(!isLast(z)&&f>=ZONE_FLOORS){if(!S.maxF[z+1]){S.maxF[z+1]=1;toast('🗺️ Yeni bölge açıldı: '+ZONES[z+1].e+' '+ZONES[z+1].n+'!','big')}}
+      else S.maxF[z]=f+1}
+    if(S.auto&&f<S.maxF[z])S.floors[z]=f+1}
+  updAll();save();setTimeout(spawn,480)}
+function addXp(x){S.xp+=x;let up=0;while(S.xp>=xpNeed(S.lvl)){S.xp-=xpNeed(S.lvl);S.lvl++;S.pts+=3;up++}
+  if(up){calc();S.hp=P.hp;toast('⭐ Seviye '+S.lvl+'! +'+(up*3)+' stat puanı','big');tune([523,659,784,1047],80);vib([30,30,30])}}
+function lootMsg(it){const c=RAR[it.r].c,d=document.createElement('div');d.style.borderColor=c;d.style.color=c;d.textContent=it.e+' '+it.n+' ('+RAR[it.r].n+')';
+  $('loot').appendChild(d);setTimeout(()=>d.remove(),2800);
+  if(it.r===3)legendary(it);else if(it.r===2){tune([440,660],90);vib(40)}}
+let legAfter=null;
+function legendary(it,after){$('legE').textContent=it.e;$('legN').textContent=it.n;$('leg').classList.add('on');legAfter=after||null;tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
+function monsterHit(){let d=Math.max(1,Math.round(M.atk*rnd(.85,1.15)*100/(100+P.def)));S.hp-=d;float('-'+fmt(d),'p',rnd(30,70),82);
+  const st=$('stage');st.classList.remove('shake');void st.offsetWidth;st.classList.add('shake');beep(90,.12,'sawtooth',.05,60);vib(18);
+  if(S.hp<=0){S.hp=0;die()}updBattle()}
+function die(){dead=true;const z=S.zone,f=S.floors[z];
+  openSheet(`<div style="text-align:center"><div style="font-size:64px">💀</div><h2>Yenildin!</h2>
+  <p class="mut">${esc(M.n)} seni alt etti. Hiçbir şey kaybetmedin; bir önceki kata dönüyorsun.<br><br>💡 Eşya kuşan, stat puanı dağıt ya da Dükkan'dan iksir al. Hazır olunca <b>▶</b> ile tekrar ilerle.</p>
+  <button class="btn pri" style="width:100%" data-a="revive">Devam et</button></div>`,true);
+  S.floors[z]=Math.max(1,f-1);S.auto=false;S.kills=0;save()}
+function usePotion(){if(dead||paused())return;if(S.potions<=0){toast('🧪 İksirin kalmadı — Dükkan\'dan alabilirsin');return}
+  if(S.hp>=P.hp){toast('Canın zaten dolu');return}
+  const h=Math.round(P.hp*.45);S.potions--;S.hp=Math.min(P.hp,S.hp+h);float('+'+fmt(h),'h',50,80);beep(500,.2,'sine',.06,900);updBattle();save()}
+function skill(){if(skillT>0||dead||paused()||!M||M.dead)return;skillT=SKILL_CD;attack(3.5,true);vib(50)}
+const paused=()=>tab!=='battle'||$('sheetBg').classList.contains('on')||$('leg').classList.contains('on')||document.hidden;
+let lastT=performance.now();
+setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=now;if(paused()||dead)return;
+  if(skillT>0){skillT=Math.max(0,skillT-dt);$('skCd').style.height=(skillT/SKILL_CD*100)+'%'}
+  if(M&&!M.dead){M.t+=dt;if(M.t>=M.int){M.t=0;monsterHit()}$('mAt').style.width=Math.min(100,M.t/M.int*100)+'%'}},50);
+function tapHit(e){e.preventDefault();const n=performance.now();if(n-lastHit<70)return;lastHit=n;attack()}
+$('bHit').addEventListener('pointerdown',tapHit);
+$('monW').addEventListener('pointerdown',tapHit);
+$('bSk').addEventListener('pointerdown',e=>{e.preventDefault();skill()});
+
+/* ===================== ÇİZİM ===================== */
+function updHud(){$('hLv').textContent=S.lvl;const n=xpNeed(S.lvl);$('hXp').style.width=(S.xp/n*100)+'%';$('hXpT').textContent=fmt(S.xp)+' / '+fmt(n);$('hGold').textContent=fmt(S.gold);
+  const dc=$('dChar');dc.hidden=!S.pts;dc.textContent=S.pts;
+  const ups=S.inv.filter(it=>power(it)>power(S.eq[it.slot])).length,di=$('dInv');di.hidden=!ups;di.textContent=ups}
+function updBattle(){const z=ZONES[S.zone],f=S.floors[S.zone];
+  $('zName').textContent=z.e+' '+z.n+' · Kat '+f+(isLast(S.zone)?'':' / '+ZONE_FLOORS);
+  const boss=f%10===0;$('zProg').innerHTML=boss?'<span class="bossT">⚠ BOSS KATI ⚠</span>':Array.from({length:KILLS_PER_FLOOR},(_,i)=>'<b class="'+(i<S.kills?'k':'')+'"></b>').join('');
+  $('fPrev').disabled=f<=1;$('fNext').disabled=f>=S.maxF[S.zone];
+  $('autoBtn').classList.toggle('on',!!S.auto);
+  if(M){$('mHp').style.width=Math.max(0,M.hp/M.max*100)+'%';$('mHpT').textContent=fmt(Math.max(0,M.hp))+' / '+fmt(M.max)}
+  $('pHp').style.width=(S.hp/P.hp*100)+'%';$('pHpT').textContent='❤️ '+fmt(S.hp)+' / '+fmt(P.hp);
+  $('pSt').innerHTML='<span>⚔️ '+fmt(P.atk)+'</span><span>🛡️ '+fmt(P.def)+'</span><span>🎯 %'+tr(P.crit)+'</span>';
+  $('potN').textContent=S.potions}
+function setStage(){const z=ZONES[S.zone];$('stage').style.background=z.bg;
+  $('deco').innerHTML=z.deco.map((e,i)=>'<span style="left:'+(i*22-4+(i%2)*5)+'%;font-size:'+(54+((i*37)%40))+'px">'+e+'</span>').join('')}
+function itemTile(it){const up=power(it)>power(S.eq[it.slot]);
+  return '<button class="it" style="border-color:'+RAR[it.r].c+';box-shadow:inset 0 0 14px '+RAR[it.r].c+'44" data-a="item" data-v="'+it.id+'">'+it.e+(up?'<span class="up">▲</span>':'')+'<span class="l">Sv'+it.L+'</span></button>'}
+function renderInv(){const inv=S.inv.slice().sort((a,b)=>b.r-a.r||power(b)-power(a));
+  let h='<h2>🎒 Çanta</h2><h3>Kuşandıkların</h3><div class="eqg">';
+  for(const s of SLOTS){const it=S.eq[s.k];
+    h+=it?'<button class="slot" style="border-color:'+RAR[it.r].c+';box-shadow:inset 0 0 18px '+RAR[it.r].c+'44" data-a="eqItem" data-v="'+s.k+'"><span class="e">'+it.e+'</span><small style="color:'+RAR[it.r].c+'">'+esc(it.n)+'</small></button>'
+          :'<div class="slot empty"><span class="e">'+s.e+'</span><small>'+s.n+'</small></div>'}
+  h+='</div><div class="row" style="margin-top:16px"><h3 class="grow" style="margin:0">Eşyalar ('+inv.length+'/'+INV_MAX+')</h3><button class="btn" style="min-height:40px;font-size:13px" data-a="bulk">🧹 Toplu sat</button></div><div class="invg" style="margin-top:8px">';
+  h+=inv.map(itemTile).join('');
+  for(let i=inv.length;i<Math.max(10,Math.ceil(inv.length/5)*5);i++)h+='<div class="it empty"></div>';
+  h+='</div>';if(!inv.length)h+='<p class="mut" style="text-align:center;margin-top:14px">Henüz eşyan yok. Canavarlar öldükçe eşya düşer; yeşil ▲ işareti kuşandığından daha iyi olanları gösterir.</p>';
+  $('s-inv').innerHTML=h}
+function renderChar(){let h='<h2>🧝 Karakter</h2><div class="card"><div class="row"><div class="grow"><b>Seviye '+S.lvl+'</b><div class="mut">Her seviyede 3 stat puanı kazanırsın</div></div><div style="text-align:center"><div style="font-size:26px;font-weight:900;color:var(--gold)">'+S.pts+'</div><div class="mut" style="font-size:11px">puan</div></div></div></div><div class="card">';
+  for(const b of BASE_ST)h+='<div class="statrow"><span class="ic">'+b.i+'</span><div class="grow"><b>'+b.n+'</b><div class="mut" style="font-size:12px">'+b.d+'</div></div><span class="v">'+S.st[b.k]+'</span><button class="plus" data-a="stat" data-v="'+b.k+'" '+(S.pts?'':'disabled')+'>+</button></div>';
+  h+='</div><h3>Toplam güç</h3><div class="card"><div class="dg">'+
+   [['⚔️ Saldırı',fmt(P.atk)],['🛡️ Savunma',fmt(P.def)],['❤️ Can',fmt(P.hp)],['🎯 Kritik Şansı','%'+tr(P.crit)],['💢 Kritik Hasarı','%'+tr(P.critDmg)],['💰 Altın Bonusu','%'+tr(P.gold)],['🩸 Can Çalma','%'+tr(P.ls)],['🎁 Eşya Düşme','%'+tr(P.drop)]]
+   .map(r=>'<div><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join('')+'</div></div>'+
+   '<h3>Macera</h3><div class="card"><div class="dg"><div><span>☠️ Öldürülen</span><b>'+fmt(S.tot.kills)+'</b></div><div><span>👑 Boss</span><b>'+fmt(S.tot.boss)+'</b></div><div><span>✨ Efsanevi</span><b>'+fmt(S.tot.leg)+'</b></div><div><span>💰 Kazanılan</span><b>'+fmt(S.tot.gold)+'</b></div></div></div>'+
+   '<h3>Ayarlar</h3><div class="card"><div class="row" style="flex-wrap:wrap"><button class="btn grow" data-a="set" data-v="sound">'+(S.set.sound?'🔊 Ses açık':'🔇 Ses kapalı')+'</button><button class="btn grow" data-a="set" data-v="vib">'+(S.set.vib?'📳 Titreşim açık':'📴 Titreşim kapalı')+'</button></div>'+
+   '<div class="row" style="margin-top:8px"><button class="btn grow" data-a="backup">💾 Kayıt yedeği</button><button class="btn warn grow" data-a="reset">🗑️ Sıfırla</button></div></div>';
+  $('s-char').innerHTML=h}
+const potPrice=()=>10+3*gBest();
+const CHESTS=[{n:'Tahta Sandık',e:'📦',d:'Çoğunlukla Sıradan, bazen Nadir',w:[70,26,4,0],p:g=>20+8*g},
+  {n:'Altın Sandık',e:'🎁',d:'En az Nadir · Epik şansı yüksek',w:[0,62,32,6],p:g=>80+35*g},
+  {n:'Efsane Sandığı',e:'👑',d:'En az Epik · %20 Efsanevi',w:[0,0,80,20],p:g=>400+150*g}];
+function renderShop(){const g=gBest(),pp=potPrice();
+  let h='<h2>🏪 Dükkan</h2><div class="card shop"><span class="e">🧪</span><div class="grow"><b>Can İksiri</b><div class="mut">Canının %45\'ini doldurur · Sende: '+S.potions+'</div></div></div>'+
+  '<div class="row" style="margin:-2px 0 14px"><button class="btn grow" data-a="buyPot" data-v="1" '+(S.gold<pp?'disabled':'')+'>1 adet · 💰 '+fmt(pp)+'</button><button class="btn grow" data-a="buyPot" data-v="5" '+(S.gold<pp*5?'disabled':'')+'>5 adet · 💰 '+fmt(pp*5)+'</button></div><h3>Sandıklar (eşya seviyesi '+g+')</h3>';
+  CHESTS.forEach((c,i)=>{const p=c.p(g);h+='<div class="card shop"><span class="e">'+c.e+'</span><div class="grow"><b>'+c.n+'</b><div class="mut">'+c.d+'</div></div><button class="btn pri" data-a="chest" data-v="'+i+'" '+(S.gold<p?'disabled':'')+'>💰 '+fmt(p)+'</button></div>'});
+  h+='<p class="mut" style="text-align:center">Sandıklardan çıkan eşyalar ulaştığın en yüksek kata göre güçlenir.</p>';
+  $('s-shop').innerHTML=h}
+function renderMap(){let h='<h2>🗺️ Harita</h2>';
+  ZONES.forEach((z,i)=>{const m=S.maxF[i],lock=!m;
+    h+='<button class="zone '+(i===S.zone?'cur ':'')+(lock?'lock':'')+'" style="background:'+z.bg+'" data-a="zone" data-v="'+i+'"><span class="e">'+(lock?'🔒':z.e)+'</span><span class="grow"><b>'+z.n+'</b><small>'+
+      (lock?ZONES[i-1].n+' bölgesinin 30. kat boss\'unu yen':'Kat '+S.floors[i]+' · En yüksek: '+m+(isLast(i)?' (sonsuz)':' / '+ZONE_FLOORS)+' · Canavar sv. '+G(i,1)+'+')+'</small></span>'+(i===S.zone?'<span>📍</span>':'')+'</button>'});
+  h+='<p class="mut" style="text-align:center">Her 10. katta boss var. 30. kat boss\'u sonraki bölgeyi açar.</p>';
+  $('s-map').innerHTML=h}
+const REND={inv:renderInv,char:renderChar,shop:renderShop,map:renderMap};
+function updAll(){calc();updHud();updBattle();if(REND[tab])REND[tab]()}
+function go(t){tab=t;document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id==='s-'+t));
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===t));lastT=performance.now();updAll()}
+function toast(msg,cls){const d=document.createElement('div');d.className=cls||'';d.textContent=msg;$('toasts').appendChild(d);setTimeout(()=>d.remove(),2600);while($('toasts').children.length>3)$('toasts').firstChild.remove()}
+let sheetLock=false;
+function openSheet(html,lock){sheetLock=!!lock;$('sheet').innerHTML=html;$('sheetBg').classList.add('on');$('sheet').scrollTop=0}
+function closeSheet(){$('sheetBg').classList.remove('on');sheetLock=false;lastT=performance.now()}
+$('sheetBg').addEventListener('click',e=>{if(e.target===$('sheetBg')&&!sheetLock)closeSheet()});
+
+/* ===================== EŞYA PANELİ ===================== */
+function itemSheet(it,equipped,title){const r=RAR[it.r],cur=equipped?null:S.eq[it.slot];
+  let h=(title?'<div class="mut" style="text-align:center;margin-bottom:8px;font-weight:800">'+title+'</div>':'')+
+   '<div class="ihead"><div class="e" style="border-color:'+r.c+';box-shadow:0 0 22px '+r.c+'66">'+it.e+'</div><div><b style="color:'+r.c+'">'+esc(it.n)+'</b><small style="color:'+r.c+'">'+r.n+'</small><small class="mut"> · '+SLOT[it.slot].n+' · Seviye '+it.L+'</small></div></div>';
+  if(equipped)h+='<div class="eqnote">Şu an kuşandığın eşya.</div>';
+  else h+='<div class="eqnote">'+(cur?'Kuşandığın: <b style="color:'+RAR[cur.r].c+'">'+cur.e+' '+esc(cur.n)+'</b> ile karşılaştırma':'Bu yuvada kuşanılı eşya yok — hepsi kazanç!')+'</div>';
+  h+='<div class="cmp">';const keys=Object.keys(STAT).filter(k=>k in it.st||(cur&&k in cur.st));
+  for(const k of keys){const a=it.st[k]||0,b=cur?(cur.st[k]||0):0,d=Math.round((a-b)*10)/10;
+    h+='<span>'+STAT[k].i+' '+STAT[k].n+'</span><span class="val">'+(a?sv(k,a):'—')+'</span><span class="d '+(d>0?'up2':d<0?'dn':'')+'">'+(equipped||!d?'':(d>0?'▲ +':'▼ −')+sv(k,Math.abs(d)))+'</span>'}
+  const pd=power(it)-power(cur);
+  h+='<span><b>⚡ Güç puanı</b></span><span class="val" style="color:var(--gold)">'+fmt(power(it))+'</span><span class="d '+(pd>0?'up2':pd<0?'dn':'')+'">'+(equipped||!pd?'':(pd>0?'▲ +':'▼ −')+fmt(Math.abs(pd)))+'</span></div>';
+  h+='<div class="row">'+(equipped?'<button class="btn grow" data-a="unequip" data-v="'+it.slot+'">Çıkar</button>'
+     :'<button class="btn ok grow" data-a="equip" data-v="'+it.id+'">✅ Kuşan</button><button class="btn warn grow" data-a="sell" data-v="'+it.id+'">Sat · 💰 '+fmt(price(it))+'</button>')+'</div>'+
+     '<button class="btn" style="width:100%;margin-top:8px" data-a="close">Kapat</button>';
+  openSheet(h)}
+const findInv=id=>S.inv.find(i=>i.id==id);
+
+/* ===================== EYLEMLER ===================== */
+const ACT={
+  tab:v=>go(v),
+  close:()=>closeSheet(),
+  floor:v=>{const z=S.zone,f=S.floors[z]+ +v;if(f<1||f>S.maxF[z]||dead)return;S.floors[z]=f;S.kills=0;spawn();save()},
+  auto:()=>{S.auto=!S.auto;toast(S.auto?'Oto ilerle açık: kat bitince sonrakine geçersin':'Oto ilerle kapalı: bu katta kalıp kasabilirsin');updBattle();save()},
+  potion:()=>usePotion(),
+  revive:()=>{dead=false;calc();S.hp=P.hp;closeSheet();spawn();updAll();save()},
+  legClose:()=>{$('leg').classList.remove('on');lastT=performance.now();const a=legAfter;legAfter=null;if(a)a()},
+  item:v=>{const it=findInv(v);if(it)itemSheet(it)},
+  eqItem:v=>{const it=S.eq[v];if(it)itemSheet(it,true)},
+  equip:v=>{const it=findInv(v);if(!it)return;const old=S.eq[it.slot];S.inv=S.inv.filter(i=>i!==it);if(old)S.inv.push(old);S.eq[it.slot]=it;
+    const ratio=P.hp?S.hp/P.hp:1;calc();S.hp=Math.max(1,Math.min(P.hp,Math.round(P.hp*ratio)));
+    beep(660,.12,'triangle',.06,990);closeSheet();toast('✅ '+it.n+' kuşanıldı');updAll();save()},
+  unequip:v=>{if(S.inv.length>=INV_MAX){toast('Çanta dolu');return}const it=S.eq[v];if(!it)return;delete S.eq[v];S.inv.push(it);calc();closeSheet();updAll();save()},
+  sell:v=>{const it=findInv(v);if(!it)return;const p=price(it);
+    const doSell=()=>{S.inv=S.inv.filter(i=>i!==it);S.gold+=p;beep(880,.1,'triangle',.05);closeSheet();toast('+'+fmt(p)+' 💰');updAll();save()};
+    if(it.r>=2&&!ACT._ok){openSheet('<h2>Emin misin?</h2><p class="mut"><b style="color:'+RAR[it.r].c+'">'+it.e+' '+esc(it.n)+'</b> ('+RAR[it.r].n+') satılacak. Geri alınamaz.</p><div class="row"><button class="btn grow" data-a="item" data-v="'+it.id+'">Vazgeç</button><button class="btn warn grow" data-a="sellOk" data-v="'+it.id+'">Sat · 💰 '+fmt(p)+'</button></div>');return}
+    doSell()},
+  sellOk:v=>{ACT._ok=true;ACT.sell(v);ACT._ok=false},
+  bulk:()=>{const cnt=f=>S.inv.filter(f),sum=a=>fmt(a.reduce((x,i)=>x+price(i),0));
+    const a=cnt(i=>i.r===0),b=cnt(i=>i.r<=1),c=cnt(i=>i.r<=1&&power(i)<=power(S.eq[i.slot]));
+    openSheet('<h2>🧹 Toplu sat</h2><p class="mut">Epik ve Efsanevi eşyalara dokunulmaz.</p>'+
+     '<button class="btn" style="width:100%;margin-bottom:8px" data-a="bulkDo" data-v="0" '+(a.length?'':'disabled')+'>Sıradanları sat ('+a.length+') · 💰 '+sum(a)+'</button>'+
+     '<button class="btn" style="width:100%;margin-bottom:8px" data-a="bulkDo" data-v="2" '+(c.length?'':'disabled')+'>Kuşandığımdan zayıf Sıradan + Nadir ('+c.length+') · 💰 '+sum(c)+'</button>'+
+     '<button class="btn" style="width:100%;margin-bottom:8px" data-a="bulkDo" data-v="1" '+(b.length?'':'disabled')+'>Tüm Sıradan + Nadir ('+b.length+') · 💰 '+sum(b)+'</button>'+
+     '<button class="btn" style="width:100%" data-a="close">Vazgeç</button>')},
+  bulkDo:v=>{const f=v==='0'?i=>i.r===0:v==='1'?i=>i.r<=1:i=>i.r<=1&&power(i)<=power(S.eq[i.slot]);
+    const s=S.inv.filter(f),g=s.reduce((x,i)=>x+price(i),0);S.inv=S.inv.filter(i=>!f(i));S.gold+=g;closeSheet();toast(s.length+' eşya satıldı · +'+fmt(g)+' 💰');beep(880,.1,'triangle',.05);updAll();save()},
+  stat:v=>{if(S.pts<=0)return;S.pts--;S.st[v]++;const old=P.hp;calc();if(P.hp>old)S.hp+=P.hp-old;beep(700,.08,'triangle',.05);updAll();save()},
+  set:v=>{S.set[v]=!S.set[v];if(v==='vib')vib(40);if(v==='sound')beep(660,.1,'triangle',.06);updAll();save()},
+  buyPot:v=>{const n=+v,p=potPrice()*n;if(S.gold<p)return;S.gold-=p;S.potions+=n;beep(600,.1,'triangle',.05);toast('🧪 +'+n+' iksir');updAll();save()},
+  chest:v=>{const c=CHESTS[v],g=gBest(),p=c.p(g);if(S.gold<p)return;if(S.inv.length>=INV_MAX){toast('🎒 Çanta dolu — önce eşya sat');return}
+    S.gold-=p;const it=makeItem(g,rollRar(c.w));giveItem(it);updAll();save();
+    const show=()=>itemSheet(it,false,c.e+' '+c.n+'\'tan çıktı!');
+    if(it.r===3)legendary(it,show);else{tune(it.r===2?[440,660,880]:[440,550],90);show()}},
+  zone:v=>{v=+v;if(!S.maxF[v]){toast('🔒 Bu bölge henüz kilitli');return}if(dead)return;S.zone=v;S.kills=0;setStage();spawn();go('battle');save()},
+  backup:()=>{const code=btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+    openSheet('<h2>💾 Kayıt yedeği</h2><p class="mut">Bu kodu kopyalayıp bir yere (ör. kendine mesaj) saklarsan, telefon değiştirince ya da oyunu silince ilerlemeni geri yükleyebilirsin.</p><textarea id="bkOut" readonly>'+code+'</textarea><button class="btn ok" style="width:100%;margin:8px 0 16px" data-a="copy">📋 Kodu kopyala</button>'+
+     '<p class="mut">Geri yüklemek için kodu buraya yapıştır:</p><textarea id="bkIn" placeholder="Kayıt kodunu yapıştır"></textarea><button class="btn warn" style="width:100%;margin-top:8px" data-a="restore">Kodu yükle (şimdiki kaydın üzerine yazar)</button><button class="btn" style="width:100%;margin-top:8px" data-a="close">Kapat</button>')},
+  copy:()=>{const t=$('bkOut');t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(t.value).catch(()=>{});toast(ok||navigator.clipboard?'📋 Kopyalandı':'Kodu elle seçip kopyala')},
+  restore:()=>{try{const o=JSON.parse(decodeURIComponent(escape(atob($('bkIn').value.trim()))));if(!o||typeof o.lvl!=='number'||!Array.isArray(o.inv))throw 0;applySave(o);dead=false;closeSheet();calc();setStage();spawn();go('battle');save(true);toast('✅ Kayıt yüklendi','big')}catch(e){toast('❌ Kod geçersiz')}},
+  reset:()=>openSheet('<h2>🗑️ Her şeyi sıfırla?</h2><p class="mut">Seviyen, eşyaların ve altınların silinir. Geri alınamaz.</p><div class="row"><button class="btn grow" data-a="close">Vazgeç</button><button class="btn warn grow" data-a="resetOk">Evet, sıfırla</button></div>'),
+  resetOk:()=>{const set=S.set;S=fresh();S.set=set;S.seen=true;dead=false;closeSheet();calc();setStage();spawn();go('battle');save(true);toast('Yeni maceraya başladın')},
+  start:()=>{S.seen=true;closeSheet();save()}
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.disabled)return;const f=ACT[t.dataset.a];if(f)f(t.dataset.v,t)});
+document.addEventListener('contextmenu',e=>{if(e.target.tagName!=='TEXTAREA')e.preventDefault()});
+window.__onBack=()=>{if($('leg').classList.contains('on')){ACT.legClose();return true}
+  if($('sheetBg').classList.contains('on')){if(!sheetLock)closeSheet();return true}
+  if(tab!=='battle'){go('battle');return true}return false};
+
+/* ===================== BAŞLAT ===================== */
+load();calc();
+if(!S.maxF[S.zone])S.zone=0;
+setStage();spawn();updAll();
+if(!S.seen)openSheet(`<div style="text-align:center"><div style="font-size:60px">⚔️</div><h2>Efsane Avcısı'na hoş geldin!</h2></div>
+ <p class="mut" style="font-size:14.5px;line-height:1.6">👆 Canavara ya da <b>VUR</b> butonuna dokunarak saldır.<br>💥 <b>Güçlü Vuruş</b> 8 saniyede bir dolar, kesin kritik vurur.<br>🧪 Canın azalınca <b>İksir</b> iç.<br>🎒 Düşen eşyaları <b>Çanta</b>'dan kuşan; yeşil ▲ daha iyi demek.<br>⭐ Seviye atlayınca <b>Karakter</b>'den stat puanı dağıt.<br>👑 Her 10. katta boss seni bekliyor!</p>
+ <button class="btn pri" style="width:100%" data-a="start">Maceraya başla</button>`,true);
+</script>
+</body>
+</html>

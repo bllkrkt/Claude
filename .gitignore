@@ -11,3 +11,5 @@ node_modules/
 
 # İmza anahtarı public repoya konmaz; derlemeden önce app/keystore/debug.keystore elle eklenir
 app/keystore/
+rpg/build/
+EfsaneAvcisi*.html
