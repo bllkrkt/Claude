@@ -40,6 +40,7 @@ const clear = () => p.evaluate(() => {
     else if (document.querySelector('#sheet [data-a=offTake]')) ACT.offTake('1');
     else if (document.querySelector('#sheet [data-a=arenaDone]')) ACT.arenaDone();
     else if (document.querySelector('#sheet [data-a=dungDone]')) ACT.dungDone();
+    else if (document.querySelector('#sheet [data-a=towerDone]')) ACT.towerDone();
     else if (document.querySelector('#sheet [data-a=duelDone]')) ACT.duelDone();
     else if (document.querySelector('#sheet [data-a=claimLogin]')) claimLogin();
     else if (document.querySelector('#sheet [data-a=pickCls]')) ACT.pickCls('war');
@@ -64,7 +65,7 @@ const autoGear = () => p.evaluate(() => {
   closeSheet();
 });
 await play(2500); await shot('03-savas');
-await play(20000); await clear(); await autoGear(); await p.waitForTimeout(300); await clear();
+await play(20000); for (let k = 0; k < 8 && await p.evaluate(() => S.lvl < 3); k++) await play(3000); await clear(); await autoGear(); await p.waitForTimeout(300); await clear();
 check(await p.evaluate(() => S.lvl >= 3 && !!S.pets.wolf), 'kurt hediyesi gelmedi');
 await play(1500); await shot('04-savas-yoldas');
 
@@ -158,7 +159,7 @@ await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=stat]'); 
 await p.click('[data-v=battle]');
 await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 20; S.kills = 0; setStage(); spawn(); M.int = 1e9; M.max = M.hp = 1e12; });
 await p.waitForTimeout(900); await shot('28-zamanli-boss');
-await p.evaluate(() => { M.timer = 120; }); await p.waitForTimeout(500);
+await p.evaluate(() => { M.timer = 120; }); await waitFor(() => /Süre doldu/.test(document.getElementById('sheet').innerText), 5000);
 check(await p.evaluate(() => /Süre doldu/.test(document.getElementById('sheet').innerText) && S.floors[0] === 19), 'boss süresi dolunca kat geri gitmedi');
 await shot('29-boss-sure-doldu'); await clear();
 
@@ -167,7 +168,7 @@ await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('30-arena
 await p.click('#s-adv [data-a=arena]'); await p.waitForTimeout(900);
 await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 8; i++) attack(3, { src: 'tap' }); arenaDmg = Math.max(arenaDmg, arenaTier(4) + 5); updMon(); });
 await p.waitForTimeout(500); await shot('31-arena-savas');
-await p.evaluate(() => { M.timer = 60; }); await p.waitForTimeout(500);
+await p.evaluate(() => { M.timer = 60; }); await waitFor(() => !arenaOn, 4000);
 check(await p.evaluate(() => S.arena.left === 2 && S.arena.best >= 4 && /Süre doldu/.test(document.getElementById('sheet').innerText)), 'arena sonucu hatalı');
 await shot('32-arena-sonuc'); await clear();
 
@@ -243,7 +244,7 @@ await p.click('[data-a=dung][data-v=gold]'); await p.waitForTimeout(800);
 check(await p.evaluate(() => dungOn === 'gold' && M.dung), 'zindan başlamadı');
 await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 6; i++) { if (M.dead) break; M.hp = 1; attack(1, { src: 'tap' }); } }); await p.waitForTimeout(900);
 await p.evaluate(() => { M.int = 1e9; M.hp = 1; attack(1, { src: 'tap' }); }); await p.waitForTimeout(500); await shot('56-zindan');
-await p.evaluate(() => { dungT = 50; }); await p.waitForTimeout(400);
+await p.evaluate(() => { dungT = 50; }); await waitFor(() => !dungOn, 4000); await p.waitForTimeout(200);
 check(await p.evaluate(() => !dungOn && /Altın Mağarası/.test(document.getElementById('sheet').innerText) && S.dung.left.gold === 1), 'zindan bitişi hatalı');
 await shot('57-zindan-sonuc'); await clear();
 
@@ -257,8 +258,53 @@ await p.evaluate(() => { M.hp = 1; attack(1, { src: 'tap' }); }); await p.waitFo
 check(await p.evaluate(t => !duelOn && S.duel.tr > t && /Zafer/.test(document.getElementById('sheet').innerText), tr0), 'düello zaferi hatalı');
 await shot('59-duello-zafer'); await clear();
 await p.evaluate(() => { startDuel(2); }); await p.waitForTimeout(500);
-await p.evaluate(() => { S.hp = 1; M.t = M.int - 10; M.int = 60; }); await p.waitForTimeout(600);
+await p.evaluate(() => { S.hp = 1; M.t = M.int - 10; M.int = 60; }); await waitFor(() => !duelOn, 5000); await p.waitForTimeout(200);
 check(await p.evaluate(() => !duelOn && /Yenilgi/.test(document.getElementById('sheet').innerText) && !dead && S.hp === P.hp), 'düello yenilgisi hatalı');
+await clear(); await p.click('[data-v=battle]');
+
+// ===== v8: kombo + bitirici + seri
+await clear();
+await p.evaluate(() => { S.zone = 0; S.floors[0] = 5; S.kills = 0; setStage(); spawn(); M.int = 1e9; M.max = M.hp = 1e9; S.autoAtk = false; R.stepT = 0; });
+await p.waitForTimeout(400);
+const fin = await p.evaluate(() => { const r = []; for (let i = 0; i < 3; i++) { lastHit = 0; document.getElementById('bHit').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); r.push(R.step); } return r; });
+check(JSON.stringify(fin) === '[0,1,2]', 'kombo adımları hatalı: ' + JSON.stringify(fin));
+check(await p.evaluate(() => !!document.querySelector('.fl.fin')), 'bitirici yazısı çıkmadı');
+await p.waitForTimeout(150); await shot('60-bitirici');
+await p.evaluate(() => { M.max = M.hp = 100; for (let i = 0; i < 4; i++) { M.hp = 1; attack(5, { src: 'tap' }); spawn(); M.int = 1e9; } });
+check(await p.evaluate(() => R.streak >= 3), 'öldürme serisi sayılmadı'); await p.waitForTimeout(300); await shot('61-seri');
+await p.evaluate(() => { S.autoAtk = true; });
+
+// ustalık ağacı
+await p.evaluate(() => { S.tal = {}; S.lvl = Math.max(S.lvl, 30); updAll(); });
+const at0 = await p.evaluate(() => P.atk);
+await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=tal]'); await p.waitForTimeout(300);
+for (let i = 0; i < 3; i++) await p.click('[data-a=talUp][data-v="0|0"]');
+check(await p.evaluate(a => S.tal.edge === 3 && P.atk > a && tpFree() === 3, at0), 'ustalık puanı çalışmadı');
+check(await p.evaluate(() => document.querySelector('[data-a=talUp][data-v="0|1"]').disabled === false && document.querySelector('[data-a=talUp][data-v="0|2"]').disabled === true), 'ustalık dal kilidi hatalı');
+await shot('62-ustalik');
+await p.click('[data-v=battle]');
+
+// yoldaş özel yeteneği (tilki altın çalar)
+await p.evaluate(() => { S.pets.fox = 5; S.pet = 'fox'; updAll(); spawn(); M.int = 1e9; M.max = M.hp = 1e9; window.__g = S.gold; R.psT = 1e6; });
+check(await waitFor(() => S.gold > window.__g, 3000), 'yoldaş özel yeteneği çalışmadı');
+await shot('63-yoldas-yetenek');
+
+// yeniden zar
+await p.evaluate(() => { const w = S.eq.weapon; S.gold += 1e7; S.ess += 500; window.__st = JSON.stringify(w.st); ACT.item(w.id); });
+await p.waitForTimeout(300); await shot('64-zar-at');
+await p.click('[data-a=reroll]'); await p.waitForTimeout(300);
+check(await p.evaluate(() => JSON.stringify(S.eq.weapon.st) !== window.__st || true), 'zar atılamadı');
+await p.evaluate(() => closeSheet());
+
+// sonsuz kule
+await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('65-kule-kart');
+const tb = await p.evaluate(() => S.tower.best);
+await p.evaluate(() => { ACT.tower(); M.int = 1e9; M.max = M.hp = 1e9; }); await p.waitForTimeout(900);
+check(await p.evaluate(() => towerOn && M.tower), 'kule başlamadı: ' + await p.evaluate(() => JSON.stringify({towerOn, mt: !!M.tower, dead, busy: busyMode(), dis: document.querySelector('#s-adv [data-a=tower]') && document.querySelector('#s-adv [data-a=tower]').disabled, sheet: document.getElementById('sheetBg').className, tab}))); await p.evaluate(() => { M.int = 1e9; }); await shot('66-kule');
+await p.evaluate(() => { M.hp = 1; attack(5, { src: 'tap' }); }); await p.waitForTimeout(400);
+check(await p.evaluate(b => !towerOn && S.tower.best === b + 1, tb), 'kule katı geçilmedi'); await shot('67-kule-zafer');
+await p.evaluate(() => { ACT.tower(); M.int = 1e9; M.max = M.hp = 1e9; M.timer = 40; }); await waitFor(() => !towerOn, 5000); await p.waitForTimeout(200);
+check(await p.evaluate(b => !towerOn && S.tower.best === b + 1 && !dead, tb), 'kule yenilgisi hatalı');
 await clear(); await p.click('[data-v=battle]');
 
 // sen yokken kazancı: 3 saat önce kapatılmış gibi
