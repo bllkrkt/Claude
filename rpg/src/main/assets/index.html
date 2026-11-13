@@ -798,7 +798,7 @@ function updBattle(){const z=ZONES[S.zone],f=S.floors[S.zone];
   $('fPrev').disabled=f<=1;$('fNext').disabled=f>=S.maxF[S.zone];$('autoBtn').classList.toggle('on',!!S.auto);
   updMon();updPl();updStats();
   const ab=$('aaBtn'),sb2=$('asBtn');ab.textContent=aaOpen()?'⚔️ OTO':'🔒 OTO';ab.className=aaOpen()?(S.autoAtk?'on':''):'lk';sb2.textContent=asOpen()?'✨ OTO':'🔒 Sv15';sb2.className=asOpen()?(S.autoSk?'on':''):'lk';
-  $('heroE').textContent=CLS[S.cls]?CLS[S.cls].e:'🤺';$('petE').textContent=S.pet?PET[S.pet].e:'';if(D3){D3.setHero(S.cls||'war',S.skin);D3.setPet(S.pet,S.pet?petStage(S.pets[S.pet]||1):0)}}
+  $('heroE').textContent=CLS[S.cls]?CLS[S.cls].e:'🤺';$('petE').textContent=S.pet?PET[S.pet].e:'';if(D3){D3.setHero(S.cls||'war',S.skin,gearOf());D3.setPet(S.pet,S.pet?petStage(S.pets[S.pet]||1):0)}}
 function renderSkillBar(){let h='';const c=CLS[S.cls];
   for(let i=0;i<4;i++){if(!c){h+='<div></div>';continue}const s=c.sk[i],lk=S.lvl<s.lv;
     h+='<button class="skb'+(lk?' lk':'')+'" data-sk="'+i+'" aria-label="'+s.n+'">'+(lk?'🔒':s.i)+'<i class="cd"></i><em>'+(lk?'Sv'+s.lv:s.n.split(' ')[0])+'</em></button>'}
@@ -837,7 +837,7 @@ const petCost=l=>Math.round(gpk(gBest())*10*Math.pow(1.3,l-1));
 function renderHero(){const c=CLS[S.cls];let h='<div class="seg">'+[['stat','📊 Stat'],['skill','✨ Yetenek'],['pet','🐾 Yoldaş'],['reb','🌀 Doğuş']].map(s=>'<button class="'+(heroSeg===s[0]?'on':'')+'" data-a="heroSeg" data-v="'+s[0]+'">'+s[1]+(s[0]==='stat'&&S.pts?' <span class="lvb">'+S.pts+'</span>':'')+'</button>').join('')+'</div>';
   if(heroSeg==='stat'){
     h+='<div class="card clsCard"><div class="e">'+(c?c.e:'❔')+'</div><div class="grow"><b style="font-size:18px">'+(c?c.n:'Sınıf yok')+'</b> <span class="lvb">Sv '+S.lvl+'</span><div class="mut" style="margin-top:3px">'+(c?c.pas:'')+'</div></div><button class="btn sm" data-a="clsChange">Değiştir</button></div>';
-    h+='<div class="card"><b>🎨 Kostümler</b>'+(D3?'':' <span class="mut">(3B grafikte görünür)</span>')+'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'+SKINS.map(k=>{const own=S.skins[k.k];return '<button class="btn sm '+(S.skin===k.k?'ok':own?'':'gem')+'" data-a="skin" data-v="'+k.k+'">'+k.e+' '+k.n+(S.skin===k.k?' ✓':own?'':' · 💎 '+k.gem)+'</button>'}).join('')+'</div></div>';
+    h+='<div class="card"><b>🎨 Kostümler</b>'+(D3?'':' <span class="mut">(3B grafikte görünür)</span>')+'<div class="mut" style="margin-top:3px">Kuşandığın eşyalar karakterin üstünde görünür. Klasik\'te eşyalar nadirlik rengini alır; kostüm seçersen renkler kostümden gelir.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">'+SKINS.map(k=>{const own=S.skins[k.k];return '<button class="btn sm '+(S.skin===k.k?'ok':own?'':'gem')+'" data-a="skin" data-v="'+k.k+'">'+k.e+' '+k.n+(S.skin===k.k?' ✓':own?'':' · 💎 '+k.gem)+'</button>'}).join('')+'</div></div>';
     const sbn=setBonus().n,sk=Object.keys(sbn);
     h+='<div class="card"><b>🧩 Eşya setleri</b>'+(sk.length?sk.map(k=>{const sd=SETS[k];return '<div style="margin-top:8px"><b>'+sd.i+' '+sd.n+'</b> <span class="mut">'+sbn[k]+'/6</span>'+sd.b.map(([c,b])=>'<div class="sbon '+(sbn[k]>=c?'on':'')+'">'+(sbn[k]>=c?'✅':'▫️')+' '+c+' parça: '+bTxt(b)+'</div>').join('')+'</div>'}).join(''):'<div class="mut" style="margin-top:4px">Epik ve Efsanevi eşyalar bazen bir sete ait olur (köşesinde set simgesi). Aynı setten 2, 4 ve 6 parça kuşanınca bonus kazanırsın.</div>')+'</div>';
     h+='<div class="card"><div class="row"><div class="grow"><b>Stat puanları</b><div class="mut">Her seviyede 3 puan kazanırsın</div></div><div style="font-size:28px;font-weight:800;color:var(--gold)">'+S.pts+'</div></div>';
@@ -941,6 +941,7 @@ function upPlan(risky,run){let g=S.gold,e=S.ess,n=0,ok=0,g0=g,e0=e;const lv={};c
   for(let k=0;k<600;k++){let best=null,bc=null;for(const it of its){const u=run?it.up:lv[it.id];if(u>=UPMAX||(!risky&&u>=5))continue;const c=upCost(Object.assign({},it,{up:u}));if(c.g>g||c.e>e)continue;if(!best||c.g<bc.g){best=it;bc=c}}
     if(!best)break;n++;g-=bc.g;e-=bc.e;if(run){if(doForge(best))ok++}else{lv[best.id]++;ok++}}
   return {n,ok,g:g0-g,e:e0-e}}
+function gearOf(){const g={};for(const s of SLOTS){const it=S.eq[s.k];if(it)g[s.k]={e:it.e,r:it.r,up:it.up>=10?10:0}}return g}
 function hpKeep(fn){const ratio=P.hp?S.hp/P.hp:1;fn();calc();S.hp=Math.max(1,Math.min(P.hp,Math.round(P.hp*ratio)))}
 function classSheet(intro){openSheet((intro||'<div style="text-align:center"><div style="font-size:50px">⚔️</div><h2>Sınıfını seç</h2></div>')+
   Object.keys(CLS).map(k=>{const c=CLS[k];return '<button class="clsPick" data-a="pickCls" data-v="'+k+'"><span class="e">'+c.e+'</span><span class="grow"><b>'+c.n+'</b><small>'+c.d+'<br><span style="color:var(--gold)">'+c.pas+'</span></small><div class="sk">'+c.sk.map(s=>s.i).join('')+'</div></span></button>'}).join(''),true)}

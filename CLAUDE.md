@@ -109,7 +109,7 @@ Aynı depoda, Takip Temizleme'den tamamen bağımsız ikinci bir Android uygulam
 - `rpg/tek-dosya.py EfsaneAvcisi.html` ← fontları ve 3B betikleri gömüp tarayıcıda açılan tek dosyalık hali üretir (APK'ya alternatif olarak kullanıcıya verilir).
 - `rpg/src/main/java/com/bilal/efsaneavcisi/MainActivity.java` ← WebView kabuğu (dikey kilit, ekran açık kalır, geri tuşu `window.__onBack()`, arka plan `window.__pause/__resume`).
 - `rpg/keystore/oyun.keystore` ← oyunun imza anahtarı (depoda, SHA-256 `4b6cadc0…632a`). **Değiştirme**: değişirse güncelleme kurulmaz, oyun kaydı gider.
-- Derleme: `./gradlew :rpg:assembleDebug` → `rpg/build/outputs/apk/debug/rpg-debug.apk` → kullanıcıya `EfsaneAvcisi-vN.apk` adıyla ver. Her sürümde `rpg/build.gradle` içinde `versionCode` +1 (şu an 5 / "5.0").
+- Derleme: `./gradlew :rpg:assembleDebug` → `rpg/build/outputs/apk/debug/rpg-debug.apk` → kullanıcıya `EfsaneAvcisi-vN.apk` adıyla ver. Her sürümde `rpg/build.gradle` içinde `versionCode` +1 (şu an 6 / "6.0").
 - Test: `cd tests && node rpg-e2e.mjs ../rpg/src/main/assets/index.html <çıktı klasörü>` → `errors []` görmelisin, ekran görüntülerine bak. Test v1 kaydından geçişi de dener.
 - Kayıt: localStorage `efsane-avcisi-v1` (nesne `S`, `S.v`=2). Alan eklerken `fresh()` içine varsayılan koy; `applySave` eski kayıtları birleştirir. **Geriye uyumluluğu koru** (kullanıcının telefonunda gerçek kayıt var).
 
@@ -129,6 +129,7 @@ Aynı depoda, Takip Temizleme'den tamamen bağımsız ikinci bir Android uygulam
 ## Sürüm geçmişi
 - **v1**: İlk oynanabilir sürüm.
 - **v2**: Sınıflar, yetenekler, kombo, demirci, yoldaşlar, günlük ödül/görev/başarım, elmas, sen yokken kazanç, elit canavar, baştan görsel tasarım. v1 kayıtları korunur (açılışta sınıf seçtirilir).
+- **v6**: Kuşanılan eşyalar 3B karakterde görünür (`gearOf()` → `S3D.setHero(cls, skin, gear)` → `applyGear`): silah tipi eşyanın emojisinden (kılıç/balta/çekiç/mızrak/yay/asa), zırh (plaka/giysi/cübbe), kask (miğfer/taç/büyücü şapkası), eldiven, bot, yüzük (dönen mücevher). Klasik kostümde nadirlik rengi (`RC`/`RM`), Epik+ silah parlar; kostüm seçiliyse renk kostümden. Kahraman silahı yukarıda tutar.
 - **v5**: Oto saldırı hız ayarı (⚔️ OTO düğmesi → pencere; `AAS` 5 kademe: Sakin/Normal her zaman, Hızlı Sv20, Çok hızlı Sv40, Fırtına 1 doğuş; `S.aaSp`), Çanta'da tek tıkla "⚡ En iyileri kuşan" (`bestList`) ve "⚒️ Toplu geliştir" (`upPlan`: Güvenli = herkes +5'e kadar, Sonuna kadar = riskli denemeler dahil). Kullanıcı tek tıkla iş gören kolaylıkları seviyor.
 - **v4**: Oto saldırı (ilk boss'tan sonra; `aaOpen`, `AA_MS`=400 ms, titreşimsiz) ve oto yetenek (Sv15; `autoSkill`), WebAudio ile bölgeye göre üretilen müzik (`MUS`, `music()`), 2 yeni bölge (Gök Tapınağı, Hiçlik → 8 bölge, sonuncusu sonsuz; eski kayıtta Kale 30'u geçmişse sonraki bölge açılır), yoldaş evrimi (Sv10/Sv20, `petStage`), 3B kostümler (`SKINS`, `S.skin`). Kullanıcı isteği: "her saldırı için tuşa basmayayım".
 - **v3**: Gerçek 3B grafik (Three.js, koddan modeller), eşya setleri, zamanlı boss + Boss Arenası, yeniden doğuş + Ruh Ağacı, 2B/3B ayarı.
