@@ -458,7 +458,7 @@ function dur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h?h+' sa
 
 /* ======================= KAYIT ======================= */
 function fresh(){return {v:2,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
-  zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
+  zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSp:1,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
   cls:null,skl:[1,1,1,1],pets:{},pet:null,ach:{},bossFirst:{},daily:{day:'',claimed:false,streak:0,last:'',q:[],bonus:false},
   lastSeen:Date.now(),arena:{left:3,best:0},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0},set:{sound:true,vib:true,d3:true,music:true}}}
 let S=fresh();
@@ -613,13 +613,19 @@ function tap(e){e.preventDefault();if(dead||paused())return;const n=performance.
   let x,y;if(e.currentTarget===$('monW')){const s=stage.getBoundingClientRect();x=e.clientX-s.left;y=e.clientY-s.top}
   swing();
   attack(1,{src:'tap',x,y});if(P.dbl&&Math.random()*100<P.dbl)setTimeout(()=>attack(.7,{src:'tap'}),90)}
-const AA_MS=400,aaOpen=()=>S.tot.boss>0||S.reb.n>0,asOpen=()=>S.lvl>=15||S.reb.n>0;
+const AAS=[{n:'Sakin',ms:650},{n:'Normal',ms:400},{n:'Hızlı',ms:280,lv:20},{n:'Çok hızlı',ms:200,lv:40},{n:'Fırtına',ms:140,reb:1}];
+const aaTierOk=t=>t.reb?S.reb.n>=t.reb:(!t.lv||S.lvl>=t.lv||S.reb.n>0);
+const aaMs=()=>{let i=Math.min(AAS.length-1,Math.max(0,S.aaSp|0));while(i>0&&!aaTierOk(AAS[i]))i--;return AAS[i].ms};
+function aaSheet(){openSheet('<h2>⚔️ Oto saldırı</h2><button class="btn w100 '+(S.autoAtk?'ok':'')+'" data-a="aaTog">'+(S.autoAtk?'✅ Açık — kapatmak için dokun':'⏸️ Kapalı — açmak için dokun')+'</button><h3>Saldırı hızı</h3>'+
+  AAS.map((t,i)=>{const ok=aaTierOk(t);return '<button class="btn w100 '+(S.aaSp===i&&ok?'pri':'')+'" style="margin-bottom:8px;justify-content:space-between" data-a="aaSp" data-v="'+i+'" '+(ok?'':'disabled')+'><span>'+(S.aaSp===i&&ok?'✓ ':'')+t.n+'</span><span style="font-size:12.5px;opacity:.85">'+(ok?'saniyede '+tr(1000/t.ms)+' vuruş':'🔒 '+(t.reb?'1 yeniden doğuş':t.lv+'. seviye'))+'</span></button>'}).join('')+
+  '<p class="mut" style="text-align:center">Hızlı kademeler seviye atladıkça açılır. Dokunarak vurmak her hızda ekstra hasar ve kombo kazandırır.</p><button class="btn w100" data-a="close">Kapat</button>')}
+const aaOpen=()=>S.tot.boss>0||S.reb.n>0,asOpen=()=>S.lvl>=15||S.reb.n>0;
 function swing(){const h=$('heroE');h.classList.remove('lunge');void h.offsetWidth;h.classList.add('lunge');if(D3)D3.heroAttack()}
 function autoSkill(){if(!S.cls)return;const sk=CLS[S.cls].sk;for(let i=0;i<4;i++){const s=sk[i];if(S.lvl<s.lv||R.cd[i]>0)continue;
   if(s.t==='hit'||s.t==='batk'||s.t==='bcrit'){useSkill(i);return}
   if((s.t==='shield'||s.t==='dodge')&&S.hp<P.hp*.6&&R.shield<=0&&R.dodge<=0){useSkill(i);return}
   if(s.t==='heal'&&S.hp<P.hp*.5){useSkill(i);return}}}
-function aaCheck(){if(aaOpen()&&!S.aaSeen){S.aaSeen=true;S.autoAtk=true;enqueue(()=>openSheet('<div style="text-align:center"><div style="font-size:64px">🤖</div><h2>Oto saldırı açıldı!</h2><p class="mut">İlk boss\'u yendin! Artık kahramanın kendiliğinden saldırıyor; her vuruş için dokunmana gerek yok.<br><br>👆 Yine de dokunursan <b>ekstra vuruş</b> yapar ve <b>kombo</b> ile hasarı %50\'ye kadar artırırsın.<br>⚔️ <b>OTO</b> düğmesiyle (VUR\'un solunda) açıp kapatabilirsin.<br>✨ 15. seviyede <b>oto yetenek</b> de açılır: yetenekler hazır olunca kendiliğinden kullanılır.</p><button class="btn pri w100" data-a="close">Süper!</button></div>'))}}
+function aaCheck(){if(aaOpen()&&!S.aaSeen){S.aaSeen=true;S.autoAtk=true;enqueue(()=>openSheet('<div style="text-align:center"><div style="font-size:64px">🤖</div><h2>Oto saldırı açıldı!</h2><p class="mut">İlk boss\'u yendin! Artık kahramanın kendiliğinden saldırıyor; her vuruş için dokunmana gerek yok.<br><br>👆 Yine de dokunursan <b>ekstra vuruş</b> yapar ve <b>kombo</b> ile hasarı %50\'ye kadar artırırsın.<br>⚔️ <b>OTO</b> düğmesinden (VUR\'un solunda) açıp kapatabilir, <b>hızını ayarlayabilirsin</b>.<br>✨ 15. seviyede <b>oto yetenek</b> de açılır: yetenekler hazır olunca kendiliğinden kullanılır.</p><button class="btn pri w100" data-a="close">Süper!</button></div>'))}}
 function showCombo(){const c=$('combo');if(R.combo<5){c.classList.remove('on');return}
   $('cN').textContent='x'+R.combo;$('cB').textContent='+%'+Math.round(comboB()*100)+' hasar';c.classList.add('on');c.classList.remove('pop');void c.offsetWidth;c.classList.add('pop')}
 function kill(){M.dead=true;M.hp=0;const g=G(),boss=M.boss,el=M.elite,z=S.zone,f=S.floors[z];
@@ -702,7 +708,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=no
   if(anyCd)updSkillCd();
   let bf=false;for(const k of ['shield','dodge','batk','bcrit'])if(R[k]>0){R[k]=Math.max(0,R[k]-dt);bf=true}
   if(bf){updBuffs();$('pSt').firstChild&&updStats()}
-  if(S.autoAtk&&aaOpen()&&M&&!M.dead){R.aaT+=dt;if(R.aaT>=AA_MS){R.aaT=0;swing();attack(1,{src:'auto'})}}
+  if(S.autoAtk&&aaOpen()&&M&&!M.dead){R.aaT+=dt;if(R.aaT>=aaMs()){R.aaT=0;swing();attack(1,{src:'auto'})}}
   if(S.autoSk&&asOpen()&&M&&!M.dead){R.asT+=dt;if(R.asT>=500){R.asT=0;autoSkill()}}
   if(S.pet&&M&&!M.dead){R.petT+=dt;if(R.petT>=1500){R.petT=0;petAttack()}}
   if(P.regen&&S.hp<P.hp){R.regT+=dt;if(R.regT>=1000){R.regT=0;S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(P.hp*P.regen/100)));updPl()}}
@@ -817,6 +823,8 @@ function renderInv(){const inv=S.inv.filter(i=>invF==='all'||i.slot===invF).sort
   for(const s of SLOTS){const it=S.eq[s.k];
     h+=it?'<button class="slot r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span class="e">'+it.e+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+'<small style="color:'+RAR[it.r].c+'">'+esc(it.n)+'</small></button>'
           :'<div class="slot empty"><span class="e">'+s.e+'</span><small>'+s.n+'</small></div>'}
+  const nb=bestList().length,nu=upPlan(false).n;
+  h+='</div><div class="row" style="margin-top:10px"><button class="btn sm grow '+(nb?'ok':'')+'" data-a="eqBest" '+(nb?'':'disabled')+'>⚡ En iyileri kuşan'+(nb?' ('+nb+')':'')+'</button><button class="btn sm grow '+(nu?'ess':'')+'" data-a="upAll" '+(nu?'':'disabled')+'>⚒️ Toplu geliştir</button>';
   h+='</div><div class="row" style="margin-top:14px"><h3 class="grow" style="margin:0">Eşyalar ('+S.inv.length+'/'+INV_MAX+')</h3><button class="btn sm" data-a="bulk">🧹 Toplu</button></div>';
   h+='<div class="filt"><button class="'+(invF==='all'?'on':'')+'" data-a="invF" data-v="all" style="font-size:13px">Tümü</button>'+SLOTS.map(s=>'<button class="'+(invF===s.k?'on':'')+'" data-a="invF" data-v="'+s.k+'" aria-label="'+s.n+'">'+s.e+'</button>').join('')+'</div><div class="invg">';
   h+=inv.map(itemTile).join('');
@@ -925,6 +933,14 @@ function openChest(ci,free){const c=CHESTS[ci],g=gBest();
   const it=makeItem(g,rollRar(c.w),null,c.set?pick(Object.keys(SETS)):null);giveItem(it);S.tot.chests++;qAdd('chest');updAll();save();
   const show=()=>itemSheet(it,c.e+' '+c.n+'\'tan çıktı!');
   if(it.r===3)legendary(it,show);else{tune(it.r===2?[440,660,880]:[440,550],90);if(it.r===2)confetti(30);if(busy())Q.unshift(show);else show()}return true}
+/* tek tıkla: en iyileri kuşan / toplu geliştir */
+function bestList(){const o=[];for(const s of SLOTS){let b=null;for(const it of S.inv)if(it.slot===s.k&&(!b||power(it)>power(b)))b=it;if(b&&power(b)>power(S.eq[s.k]))o.push(b)}return o}
+function doForge(it){const c=upCost(it);S.gold-=c.g;S.ess-=c.e;S.tot.forges++;qAdd('forge');if(Math.random()*100<upRate(it.up)){it.up++;S.tot.maxUp=Math.max(S.tot.maxUp,it.up);return true}return false}
+/* sim=true: sadece kaç geliştirme yapılabileceğini say (risksiz olanlar kesin, riskliler deneme sayısı) */
+function upPlan(risky,run){let g=S.gold,e=S.ess,n=0,ok=0,g0=g,e0=e;const lv={};const its=SLOTS.map(s=>S.eq[s.k]).filter(Boolean);its.forEach(it=>lv[it.id]=it.up);
+  for(let k=0;k<600;k++){let best=null,bc=null;for(const it of its){const u=run?it.up:lv[it.id];if(u>=UPMAX||(!risky&&u>=5))continue;const c=upCost(Object.assign({},it,{up:u}));if(c.g>g||c.e>e)continue;if(!best||c.g<bc.g){best=it;bc=c}}
+    if(!best)break;n++;g-=bc.g;e-=bc.e;if(run){if(doForge(best))ok++}else{lv[best.id]++;ok++}}
+  return {n,ok,g:g0-g,e:e0-e}}
 function hpKeep(fn){const ratio=P.hp?S.hp/P.hp:1;fn();calc();S.hp=Math.max(1,Math.min(P.hp,Math.round(P.hp*ratio)))}
 function classSheet(intro){openSheet((intro||'<div style="text-align:center"><div style="font-size:50px">⚔️</div><h2>Sınıfını seç</h2></div>')+
   Object.keys(CLS).map(k=>{const c=CLS[k];return '<button class="clsPick" data-a="pickCls" data-v="'+k+'"><span class="e">'+c.e+'</span><span class="grow"><b>'+c.n+'</b><small>'+c.d+'<br><span style="color:var(--gold)">'+c.pas+'</span></small><div class="sk">'+c.sk.map(s=>s.i).join('')+'</div></span></button>'}).join(''),true)}
@@ -950,9 +966,18 @@ const ACT={
     if((it.r>=2||it.up)&&!ok){openSheet('<h2>Eritilsin mi?</h2><p class="mut"><b style="color:'+RAR[it.r].c+'">'+it.e+' '+esc(iName(it))+'</b> eritilecek. Geri alınamaz.</p><div class="row"><button class="btn grow" data-a="item" data-v="'+it.id+'">Vazgeç</button><button class="btn ess grow" data-a="meltOk" data-v="'+it.id+'">Erit · 💠 '+e+'</button></div>');return}
     S.inv=S.inv.filter(i=>i!==it);S.ess+=e;beep(300,.2,'sawtooth',.04,120);closeSheet();toast('🔥 Eritildi · +'+e+' 💠');updAll();save()},
   meltOk:v=>ACT.melt(v,null,true),
+  eqBest:()=>{const l=bestList();if(!l.length)return;hpKeep(()=>{for(const it of l){const old=S.eq[it.slot];S.inv=S.inv.filter(i=>i!==it);if(old)S.inv.push(old);S.eq[it.slot]=it}});
+    tune([660,880,1100],70);toast('⚡ '+l.length+' eşya kuşanıldı: '+l.map(i=>i.e).join(' '),'big');updAll();save()},
+  upAll:()=>{const a=upPlan(false),b=upPlan(true);const eq=SLOTS.map(s=>S.eq[s.k]).filter(Boolean);
+    openSheet('<h2>⚒️ Toplu geliştir</h2><p class="mut">Kuşandığın eşyalar, en ucuzundan başlayarak sırayla geliştirilir.</p><div class="card" style="font-size:22px;text-align:center;letter-spacing:2px">'+eq.map(i=>i.e+'<span style="font-size:12px;font-weight:800;color:var(--gold);letter-spacing:0">+'+i.up+'</span>').join(' ')+'<div class="mut" style="letter-spacing:0;margin-top:6px">Sende: 💰 '+fmt(S.gold)+' · 💠 '+fmt(S.ess)+'</div></div>'+
+     '<button class="btn ok w100" style="margin-bottom:6px" data-a="upAllDo" data-v="0" '+(a.n?'':'disabled')+'>🛡️ Güvenli · '+a.n+' geliştirme</button><div class="mut" style="text-align:center;margin-bottom:12px">'+(a.n?'Herkes en fazla +5 olur, başarı %100 · 💰 '+fmt(a.g)+' · 💠 '+a.e:'Güvenli geliştirme kalmadı (hepsi +5 ya da kaynak yetmiyor)')+'</div>'+
+     '<button class="btn ess w100" style="margin-bottom:6px" data-a="upAllDo" data-v="1" '+(b.n>a.n?'':'disabled')+'>🔥 Sonuna kadar · en fazla '+b.n+' deneme</button><div class="mut" style="text-align:center;margin-bottom:12px">+5 üstü de denenir; başarısız olursa sadece malzeme gider · en fazla 💰 '+fmt(b.g)+' · 💠 '+b.e+'</div>'+
+     '<button class="btn w100" data-a="close">Vazgeç</button>')},
+  upAllDo:v=>{let r;hpKeep(()=>{r=upPlan(v==='1',true)});if(!r.n)return;closeSheet();if(r.ok){tune([660,880,1320],70);confetti(30)}vib([20,30,60]);
+    toast('⚒️ '+r.ok+' geliştirme başarılı'+(r.n>r.ok?' · '+(r.n-r.ok)+' başarısız':'')+' (💰 '+fmt(r.g)+' · 💠 '+r.e+')','big');updAll();save()},
   forge:v=>{const it=findAny(v);if(!it||it.up>=UPMAX)return;const c=upCost(it);if(S.gold<c.g||S.ess<c.e)return;
-    S.gold-=c.g;S.ess-=c.e;S.tot.forges++;qAdd('forge');
-    if(Math.random()*100<upRate(it.up)){hpKeep(()=>{it.up++});S.tot.maxUp=Math.max(S.tot.maxUp,it.up);tune([660,880,1320],70);vib([20,30,60]);toast('⚒️ Başarılı! '+iName(it),'big');confetti(25)}
+    let okF;hpKeep(()=>{okF=doForge(it)});
+    if(okF){tune([660,880,1320],70);vib([20,30,60]);toast('⚒️ Başarılı! '+iName(it),'big');confetti(25)}
     else{beep(120,.4,'sawtooth',.06,60);vib(120);toast('💥 Başarısız! Malzemeler gitti, eşya sağlam')}
     updAll();itemSheet(it);save()},
   bulk:()=>{const fs=bulkF();
@@ -981,7 +1006,9 @@ const ACT={
   gemEss:()=>{if(S.gems<15)return;S.gems-=15;S.ess+=40;toast('+40 💠','big');updAll();save()},
   claimLogin:()=>claimLogin(),
   arena:()=>startArena(),
-  aa:()=>{if(!aaOpen()){toast('🔒 Oto saldırı, ilk boss\'u (Orman 10. kat) yenince açılır');return}S.autoAtk=!S.autoAtk;toast(S.autoAtk?'⚔️ Oto saldırı açık':'⚔️ Oto saldırı kapalı');updBattle();save()},
+  aa:()=>{if(!aaOpen()){toast('🔒 Oto saldırı, ilk boss\'u (Orman 10. kat) yenince açılır');return}aaSheet()},
+  aaTog:()=>{S.autoAtk=!S.autoAtk;updBattle();aaSheet();save()},
+  aaSp:v=>{const t=AAS[+v];if(!t||!aaTierOk(t))return;S.aaSp=+v;S.autoAtk=true;updBattle();aaSheet();save()},
   as:()=>{if(!asOpen()){toast('🔒 Oto yetenek 15. seviyede açılır');return}S.autoSk=!S.autoSk;toast(S.autoSk?'✨ Oto yetenek açık':'✨ Oto yetenek kapalı');updBattle();save()},
   skin:v=>{const k=SKINS.find(x=>x.k===v);if(!k)return;if(!S.skins[v]){if(S.gems<k.gem){toast('💎 Yeterli elmas yok ('+k.gem+' gerekli)');return}S.gems-=k.gem;S.skins[v]=1;confetti(40);tune([523,659,784,1047],80);toast('🎨 Yeni kostüm: '+k.e+' '+k.n,'big')}S.skin=v;updAll();save()},
   arenaDone:()=>{closeSheet();spawn();updAll()},

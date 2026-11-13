@@ -115,7 +115,21 @@ await p.evaluate(() => { ACT.zone('0'); S.floors[0] = 3; S.kills = 0; spawn(); M
 await p.waitForTimeout(2500);
 check(await p.evaluate(() => M.hp < 1e9 && S.tot.skills > 0), 'oto saldırı/oto yetenek vurmadı');
 await shot('40-oto-saldiri');
-await p.evaluate(() => { ACT.aa(); }); check(await p.evaluate(() => !S.autoAtk), 'oto saldırı kapatılamadı'); await p.evaluate(() => { ACT.aa(); });
+await p.evaluate(() => { ACT.aa(); }); await p.waitForTimeout(300); await shot('40b-oto-hiz');
+await p.evaluate(() => { ACT.aaTog(); }); check(await p.evaluate(() => !S.autoAtk), 'oto saldırı kapatılamadı');
+await p.evaluate(() => { ACT.aaSp('2'); }); check(await p.evaluate(() => S.autoAtk && S.aaSp === 2 && aaMs() === 280), 'oto saldırı hızı ayarlanamadı');
+await p.evaluate(() => { ACT.aaSp('4'); }); check(await p.evaluate(() => S.aaSp === 2), 'kilitli hız seçilebildi'); await p.evaluate(() => closeSheet());
+// tek tıkla en iyileri kuşan + toplu geliştir
+await p.evaluate(() => { for (const s of SLOTS) S.inv.push(makeItem(60, 1, s.k)); S.gold += 5e6; S.ess += 400; ACT.tab('inv'); });
+await p.waitForTimeout(300); await shot('44-canta-tek-tik');
+await p.click('[data-a=eqBest]'); await p.waitForTimeout(300);
+check(await p.evaluate(() => bestList().length === 0 && SLOTS.every(s => S.eq[s.k] && S.eq[s.k].L === 60)), 'en iyileri kuşan çalışmadı');
+await p.click('[data-a=upAll]'); await p.waitForTimeout(400); await shot('45-toplu-gelistir');
+await p.click('[data-a=upAllDo][data-v="0"]'); await p.waitForTimeout(300);
+check(await p.evaluate(() => SLOTS.every(s => S.eq[s.k].up === 5)), 'güvenli toplu geliştirme hepsini +5 yapmadı');
+await p.evaluate(() => { ACT.upAll(); ACT.upAllDo('1'); });
+check(await p.evaluate(() => SLOTS.some(s => S.eq[s.k].up > 5)), 'sonuna kadar geliştirme çalışmadı');
+await p.waitForTimeout(300); await shot('46-gelistirildi'); await p.evaluate(() => { closeSheet(); ACT.tab('battle'); });
 // kostüm + yoldaş evrimi + müzik
 await p.evaluate(() => { S.gems += 500; ACT.skin('gold'); S.pets[S.pet] = 9; S.gold += 1e7; ACT.petFeed(); });
 check(await p.evaluate(() => S.skin === 'gold' && S.skins.gold && petStage(S.pets[S.pet]) === 1 && /Ulu/.test(pName(S.pet))), 'kostüm ya da evrim çalışmadı');
