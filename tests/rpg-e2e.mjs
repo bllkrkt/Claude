@@ -24,8 +24,13 @@ await p.waitForTimeout(500);
 await shot('02-gunluk-odul');
 check(await p.evaluate(() => !!document.querySelector('[data-a=claimLogin]')), 'günlük ödül penceresi çıkmadı');
 await p.click('#sheet [data-a=claimLogin]');
-await p.waitForTimeout(400);
+await p.waitForTimeout(500);
+check(await p.evaluate(() => /Bilge Ozan/.test(document.getElementById('sheet').innerText)), 'hikâye penceresi çıkmadı');
+await shot('02b-hikaye');
+await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; });
+await p.waitForTimeout(300);
 
+async function waitFor(fn, ms, arg) { const end = Date.now() + ms; while (Date.now() < end) { if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(100); } return false; }
 // açık pencereleri oyuncu gibi kapat
 const clear = () => p.evaluate(() => {
   for (let k = 0; k < 4; k++) {
@@ -34,6 +39,8 @@ const clear = () => p.evaluate(() => {
     if (document.querySelector('#sheet [data-a=revive]')) ACT.revive();
     else if (document.querySelector('#sheet [data-a=offTake]')) ACT.offTake('1');
     else if (document.querySelector('#sheet [data-a=arenaDone]')) ACT.arenaDone();
+    else if (document.querySelector('#sheet [data-a=dungDone]')) ACT.dungDone();
+    else if (document.querySelector('#sheet [data-a=duelDone]')) ACT.duelDone();
     else if (document.querySelector('#sheet [data-a=claimLogin]')) claimLogin();
     else if (document.querySelector('#sheet [data-a=pickCls]')) ACT.pickCls('war');
     else closeSheet();
@@ -104,8 +111,8 @@ await p.evaluate(() => { S.hp = P.hp; updPl(); ACT.settings(); }); await p.waitF
 await p.evaluate(() => closeSheet());
 
 // yeni bölgeler
-await p.evaluate(() => { ACT.zone('6'); }); await p.waitForTimeout(400); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(900); await shot('38-gok-tapinagi');
-await p.evaluate(() => { ACT.zone('7'); }); await p.waitForTimeout(400); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(1100); await shot('39-hiclik-boss');
+await p.evaluate(() => { ACT.zone('6'); }); await p.waitForTimeout(400); await clear(); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(900); await shot('38-gok-tapinagi');
+await p.evaluate(() => { ACT.zone('7'); }); await p.waitForTimeout(400); await clear(); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(1100); await shot('39-hiclik-boss');
 // oto saldırı: dokunmadan canavarın canı azalmalı
 await p.evaluate(() => { S.tot.boss = Math.max(1, S.tot.boss); aaCheck(); }); await p.waitForTimeout(300);
 check(await p.evaluate(() => /Oto saldırı açıldı/.test(document.getElementById('sheet').innerText)), 'oto saldırı penceresi çıkmadı');
@@ -156,8 +163,8 @@ check(await p.evaluate(() => /Süre doldu/.test(document.getElementById('sheet')
 await shot('29-boss-sure-doldu'); await clear();
 
 // boss arenası
-await p.click('[data-v=quest]'); await p.waitForTimeout(300); await shot('30-arena-kart');
-await p.click('#s-quest [data-a=arena]'); await p.waitForTimeout(900);
+await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('30-arena-kart');
+await p.click('#s-adv [data-a=arena]'); await p.waitForTimeout(900);
 await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 8; i++) attack(3, { src: 'tap' }); arenaDmg = Math.max(arenaDmg, arenaTier(4) + 5); updMon(); });
 await p.waitForTimeout(500); await shot('31-arena-savas');
 await p.evaluate(() => { M.timer = 60; }); await p.waitForTimeout(500);
@@ -184,6 +191,75 @@ check(await p.evaluate(() => !D3 && !document.getElementById('c3d')), '2B moda g
 await shot('37-2b-mod');
 await p.evaluate(() => { S.set.d3 = true; save(true); }); await p.reload(); await p.waitForTimeout(600); await clear();
 check(await p.evaluate(() => !!D3), '3B moda dönülemedi');
+
+// ===== v7: 30. kat boss'u sonraki bölgeye geçirir
+await clear();
+await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 30; S.kills = 0; S.auto = false; setStage(); spawn(); M.int = 1e9; M.hp = 1; attack(5, { src: 'tap' }); });
+await p.waitForTimeout(700); await clear();
+check(await p.evaluate(() => S.zone === 1 && S.maxF[1] >= 1), '30. kat boss\'u sonrası bölge değişmedi (Orman Devi hatası)');
+await p.evaluate(() => { S.zone = 0; S.floors[0] = 30; setStage(); spawn(); updBattle(); });
+check(await p.evaluate(() => !document.getElementById('fNext').disabled), '30. katta ▶ sonraki bölgeye geçmiyor');
+await p.evaluate(() => ACT.floor('1')); await p.waitForTimeout(300); await clear();
+check(await p.evaluate(() => S.zone === 1), '▶ ile sonraki bölgeye geçilemedi');
+
+// boss özel saldırısı + savuşturma + öfke
+await clear();
+await p.evaluate(() => { S.autoSk = false; S.zone = 1; S.floors[1] = 10; S.maxF[1] = Math.max(S.maxF[1], 10); setStage(); spawn(); M.int = 1e9; M.spT = 50; });
+check(await waitFor(() => { if (document.querySelector('#sheetBg.on')) closeSheet(); return M.tele > 0 && !document.getElementById('defBtn').hidden; }, 4000), 'boss özel saldırı uyarısı çıkmadı');
+await shot('47-boss-uyari');
+const b0 = await p.evaluate(() => S.tot.blocks);
+await p.evaluate(() => { M.tele = 5000; document.getElementById('defBtn').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); }); await p.waitForTimeout(400);
+check(await p.evaluate(b => S.tot.blocks === b + 1 && document.getElementById('defBtn').hidden, b0), 'savuşturma çalışmadı');
+await shot('48-savusturdun');
+await p.evaluate(() => { M.hp = M.max * .45; attack(.01, { src: 'tap' }); }); await p.waitForTimeout(600);
+check(await p.evaluate(() => M.enr === true), 'boss öfkelenmedi'); await shot('49-ofke');
+const h0 = await p.evaluate(() => { S.hp = P.hp; M.stun = 0; M.spT = 30; return S.hp; });
+check(await waitFor(() => M.tele > 0, 3000), 'ikinci uyarı gelmedi');
+check(await waitFor(h => !(M.tele > 0) && (S.hp < h || dead), 6000, h0), 'savunulmayan özel saldırı gerçekleşmedi'); await clear(); await p.evaluate(() => { S.autoSk = true; });
+
+// elit özellikleri
+await p.evaluate(() => { S.floors[1] = 5; let t = 0; do { spawn(); t++ } while (!M.elite && t < 400); M.int = 1e9; });
+check(await p.evaluate(() => M.elite && M.afx && M.afx.length >= 1), 'elit özellik atanmadı');
+await p.waitForTimeout(700); await shot('50-elit-ozellik');
+
+// rünler: düşme, takma, birleştirme
+await p.evaluate(() => { S.runes = { 'atk:1': 7, 'crit:2': 3 }; const w = S.eq.weapon || S.inv[0]; w.r = 3; ACT.tab('inv'); });
+await p.click('[data-a=invSeg][data-v=rune]'); await p.waitForTimeout(300); await shot('51-runler');
+await p.click('[data-a=runeMerge]'); await p.waitForTimeout(200);
+check(await p.evaluate(() => S.runes['atk:2'] === 2 && S.runes['atk:1'] === 1 && S.runes['crit:3'] === 1), 'rün birleştirme hatalı: ' + await p.evaluate(() => JSON.stringify(S.runes)));
+const a0 = await p.evaluate(() => P.atk);
+await p.evaluate(() => { const w = S.eq.weapon; ACT.item(w.id); }); await p.waitForTimeout(300);
+await p.click('[data-a=sockPick]'); await p.waitForTimeout(300); await shot('52-run-sec');
+await p.click('[data-a=sockSet][data-v$="atk:2"]'); await p.waitForTimeout(300); await shot('53-run-takili');
+check(await p.evaluate(a => S.eq.weapon.sock[0] === 'atk:2' && P.atk > a, a0), 'rün takma çalışmadı');
+await p.evaluate(() => { ACT.unsock(S.eq.weapon.id + '|0'); closeSheet(); });
+check(await p.evaluate(() => S.runes['atk:2'] === 2 && !S.eq.weapon.sock[0]), 'rün çıkarma çalışmadı');
+await p.evaluate(() => { ACT.sockSet(S.eq.weapon.id + '|0|atk:2'); closeSheet(); ACT.invSeg('items'); }); await p.waitForTimeout(500); await shot('54-canta-vitrin');
+check(await p.evaluate(() => !!document.querySelector('#vitrin canvas')), 'karakter vitrini çizilmedi');
+
+// zindan
+await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('55-macera');
+await p.click('[data-a=dung][data-v=gold]'); await p.waitForTimeout(800);
+check(await p.evaluate(() => dungOn === 'gold' && M.dung), 'zindan başlamadı');
+await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 6; i++) { if (M.dead) break; M.hp = 1; attack(1, { src: 'tap' }); } }); await p.waitForTimeout(900);
+await p.evaluate(() => { M.int = 1e9; M.hp = 1; attack(1, { src: 'tap' }); }); await p.waitForTimeout(500); await shot('56-zindan');
+await p.evaluate(() => { dungT = 50; }); await p.waitForTimeout(400);
+check(await p.evaluate(() => !dungOn && /Altın Mağarası/.test(document.getElementById('sheet').innerText) && S.dung.left.gold === 1), 'zindan bitişi hatalı');
+await shot('57-zindan-sonuc'); await clear();
+
+// düello
+await p.click('[data-v=adv]'); await p.waitForTimeout(300);
+await p.click('[data-a=duel][data-v="0"]'); await p.waitForTimeout(900);
+check(await p.evaluate(() => !!duelOn && M.duel), 'düello başlamadı');
+await shot('58-duello');
+const tr0 = await p.evaluate(() => S.duel.tr);
+await p.evaluate(() => { M.hp = 1; attack(1, { src: 'tap' }); }); await p.waitForTimeout(400);
+check(await p.evaluate(t => !duelOn && S.duel.tr > t && /Zafer/.test(document.getElementById('sheet').innerText), tr0), 'düello zaferi hatalı');
+await shot('59-duello-zafer'); await clear();
+await p.evaluate(() => { startDuel(2); }); await p.waitForTimeout(500);
+await p.evaluate(() => { S.hp = 1; M.t = M.int - 10; M.int = 60; }); await p.waitForTimeout(600);
+check(await p.evaluate(() => !duelOn && /Yenilgi/.test(document.getElementById('sheet').innerText) && !dead && S.hp === P.hp), 'düello yenilgisi hatalı');
+await clear(); await p.click('[data-v=battle]');
 
 // sen yokken kazancı: 3 saat önce kapatılmış gibi
 const lvlBefore = await p.evaluate(() => { save(true); const o = JSON.parse(localStorage.getItem(SAVE_KEY)); o.lastSeen = Date.now() - 3 * 3600e3; o.daily.day = ''; localStorage.setItem(SAVE_KEY, JSON.stringify(o)); save = () => {}; return S.lvl; });
