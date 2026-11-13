@@ -281,6 +281,8 @@ textarea{width:100%;height:100px;background:#0008;color:var(--tx);border:1px sol
 .seg.s5 button{font-size:11px;padding:0 2px}
 .tnode{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.tnode:last-child{border:0}.tnode .e{font-size:24px;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#0006;flex:none}
 .tnode.lk{opacity:.45}.tpips{display:flex;gap:3px;margin-top:4px}.tpips i{width:14px;height:5px;border-radius:3px;background:#ffffff1c}.tpips i.on{background:var(--gold)}
+.rng{display:flex;align-items:center;gap:10px;margin-top:10px;font-weight:800;font-size:14px}.rng span{width:92px;flex:none}.rng b{width:44px;text-align:right;color:var(--gold);flex:none}
+input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
 </style>
 </head>
 <body>
@@ -547,17 +549,38 @@ function dur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h?h+' sa
 function fresh(){return {v:2,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
   zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSp:1,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
   cls:null,skl:[1,1,1,1],pets:{},pet:null,ach:{},bossFirst:{},daily:{day:'',claimed:false,streak:0,last:'',q:[],bonus:false},
-  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},set:{sound:true,vib:true,d3:true,music:true}}}
+  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,set:{sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,fx:2,flash:true,bgFight:true,autoBk:true}}}
 let S=fresh();
-function load(){try{const r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){}}
+/* bozuk kayıt oyunu kilitlemesin: okunamayan kaydı ayrı anahtara sakla, temiz başla */
+function load(){let r=null;try{r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){try{if(r)localStorage.setItem(SAVE_KEY+'-bozuk',r)}catch(x){}S=fresh()}}
+function cleanItem(it){if(!it||typeof it!=='object'||!SLOT[it.slot]||!it.st||typeof it.st!=='object')return null;it.r=Math.max(0,Math.min(3,it.r|0));it.L=Math.max(1,+it.L||1);it.up=Math.max(0,Math.min(UPMAX,it.up|0));
+  for(const k in it.st)if(!STAT[k]||typeof it.st[k]!=='number'||!isFinite(it.st[k]))delete it.st[k];if(it.set&&!SETS[it.set])delete it.set;if(typeof it.e!=='string')it.e=SLOT[it.slot].e;it.n=typeof it.n==='string'?it.n.slice(0,40):SLOT[it.slot].n;
+  if(it.sock!=null){if(!Array.isArray(it.sock))delete it.sock;else it.sock=it.sock.map(k=>{if(typeof k!=='string')return null;const [t,l]=k.split(':');return RUNES[t]&&+l>=1&&+l<=5?t+':'+(+l):null})}
+  if(it.id==null)it.id=S.nextId++;return it}
+function sanitize(){for(const g of ['st','tot'])for(const k in S[g]){S[g][k]=Math.max(0,+S[g][k]||0);if(!isFinite(S[g][k]))S[g][k]=0}
+  const num=(k,min)=>{S[k]=Math.max(min,+S[k]||0);if(!isFinite(S[k]))S[k]=min};num('lvl',1);S.lvl=Math.floor(S.lvl);for(const k of ['xp','gold','gems','ess','pts','potions','nextId'])num(k,0);if(S.nextId<1)S.nextId=1;
+  if(!Array.isArray(S.inv))S.inv=[];if(!S.eq||typeof S.eq!=='object')S.eq={};
+  S.inv=S.inv.map(cleanItem).filter(Boolean).slice(0,INV_MAX+30);for(const k of Object.keys(S.eq)){const it=cleanItem(S.eq[k]);if(!SLOT[k]||!it||it.slot!==k)delete S.eq[k];else S.eq[k]=it}
+  const ids={};S.inv.concat(Object.values(S.eq)).forEach(it=>{if(ids[it.id]||!(it.id>0))it.id=S.nextId++;ids[it.id]=1;if(it.id>=S.nextId)S.nextId=it.id+1});
+  if(!CLS[S.cls])S.cls=null;if(!S.pets||typeof S.pets!=='object')S.pets={};for(const k in S.pets){if(!PET[k])delete S.pets[k];else S.pets[k]=Math.max(1,Math.min(30,S.pets[k]|0))}if(!S.pets[S.pet])S.pet=null;
+  if(!S.runes||typeof S.runes!=='object')S.runes={};for(const k in S.runes){const [t,l]=k.split(':');if(!RUNES[t]||!(+l>=1&&+l<=5)||!(S.runes[k]>0))delete S.runes[k];else S.runes[k]=Math.floor(S.runes[k])}
+  if(!S.tal||typeof S.tal!=='object')S.tal={};const tk={};TAL.forEach(b=>b.nodes.forEach(n=>tk[n.k]=n.max||5));for(const k in S.tal){if(!tk[k])delete S.tal[k];else S.tal[k]=Math.max(0,Math.min(tk[k],S.tal[k]|0))}
+  for(const k of ['story','ach','bossFirst','skins'])if(!S[k]||typeof S[k]!=='object')S[k]={};S.skins.def=1;if(!SKINS.some(k=>k.k===S.skin)||!S.skins[S.skin])S.skin='def';
+  S.skl=[0,1,2,3].map(i=>Math.max(1,Math.min(20,(Array.isArray(S.skl)?S.skl[i]:1)|0)));
+  if(!Array.isArray(S.floors))S.floors=[];if(!Array.isArray(S.maxF))S.maxF=[];S.maxF=ZONES.map((_,i)=>Math.max(i?0:1,S.maxF[i]|0));S.floors=ZONES.map((_,i)=>Math.max(1,Math.min(Math.max(1,S.maxF[i]),S.floors[i]|0)));
+  if(!(S.zone>=0&&S.zone<ZONES.length)||!S.maxF[S.zone])S.zone=0;S.zone=S.zone|0;
+  if(!Array.isArray(S.daily.q))S.daily.q=[];S.daily.q=S.daily.q.filter(q=>q&&QUESTS[q.k]&&q.n>0);if(!S.dung.left||typeof S.dung.left!=='object')S.dung.left={gold:DUNG_N,ess:DUNG_N,rune:DUNG_N};if(!S.dung.best||typeof S.dung.best!=='object')S.dung.best={};
+  if(!Array.isArray(S.duel.opp)||S.duel.opp.some(o=>!o||!CLS[o.cls]||!(o.q>0)))S.duel.opp=null;S.tower.best=Math.max(0,S.tower.best|0);S.reb.n=Math.max(0,S.reb.n|0);S.reb.souls=Math.max(0,+S.reb.souls||0);
+  S.aaSp=Math.max(0,Math.min(4,S.aaSp|0));if(S.hp!=null&&!(S.hp>0))S.hp=null}
 function applySave(o){const f=fresh();const old=!o.v||o.v<2;S=Object.assign(f,o);
-  for(const k of ['st','tot','set','daily','arena','reb','dung','duel','tower'])S[k]=Object.assign(fresh()[k],o[k]||{});S.reb.up=Object.assign({},S.reb.up);
+  for(const k of ['st','tot','set','daily','arena','reb','dung','duel','tower'])S[k]=Object.assign(fresh()[k],o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])?o[k]:{});S.reb.up=Object.assign({},S.reb.up&&typeof S.reb.up==='object'?S.reb.up:{});
+  if(!Array.isArray(S.inv))S.inv=[];if(!S.eq||typeof S.eq!=='object')S.eq={};if(!Array.isArray(S.floors))S.floors=[];if(!Array.isArray(S.maxF))S.maxF=[];S.inv=S.inv.filter(it=>it&&typeof it==='object');for(const k of Object.keys(S.eq))if(!S.eq[k]||typeof S.eq[k]!=='object')delete S.eq[k];
   if(!Array.isArray(S.skl)||S.skl.length<4)S.skl=[1,1,1,1];
   while(S.floors.length<ZONES.length){S.floors.push(1);S.maxF.push(0)}
   for(let z=0;z<ZONES.length-1;z++){if(S.maxF[z]>ZF){S.maxF[z]=ZF;if(!S.maxF[z+1])S.maxF[z+1]=1}if(S.floors[z]>ZF)S.floors[z]=ZF}
-  S.skins=Object.assign({def:1},S.skins);
+  S.skins=Object.assign({def:1},S.skins&&typeof S.skins==='object'?S.skins:{});
   S.inv.concat(Object.values(S.eq)).forEach(it=>{if(!it)return;it.up=it.up||0;S.tot.maxUp=Math.max(S.tot.maxUp,it.up)});
-  if(old){S.v=2;if(!o.lastSeen)S.lastSeen=Date.now()}}
+  if(old){S.v=2;if(!o.lastSeen)S.lastSeen=Date.now()}sanitize()}
 let saveT=0;
 function save(now){if(now){clearTimeout(saveT);saveT=0;S.lastSeen=Date.now();try{localStorage.setItem(SAVE_KEY,JSON.stringify(S))}catch(e){}return}
   if(!saveT)saveT=setTimeout(()=>save(true),800)}
@@ -630,21 +653,24 @@ const rarBg=r=>'background:radial-gradient(circle at 50% 35%,'+RAR[r].c+'44,'+RA
 /* ======================= SES / TİTREŞİM ======================= */
 let AC=null,musI=0,musNext=0,touched=false;
 document.addEventListener('pointerdown',()=>{touched=true;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}},{passive:true});
-function tone(f,d,type,vol){try{const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+let GS=null,GM=null;
+function outS(){if(!GS){GS=AC.createGain();GS.connect(AC.destination)}GS.gain.value=(S.set.vol==null?.8:S.set.vol)*1.25;return GS}
+function outM(){if(!GM){GM=AC.createGain();GM.connect(AC.destination)}GM.gain.value=(S.set.mvol==null?.6:S.set.mvol)*1.7;return GM}
+function tone(f,d,type,vol,mus){try{const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(mus?outM():outS());o.start(t);o.stop(t+d+.02)}catch(e){}}
 function music(){if(!S.set.music||!AC||AC.state!=='running'||bg||document.hidden)return;const now=performance.now();if(now<musNext)return;
   const z=MUS[S.zone%MUS.length],st=60000/z.tp/2;musNext=now+st;const i=musI++%32,n=z.sc.length;
   const deg=d=>z.r*Math.pow(2,(z.sc[((d%n)+n)%n]+12*Math.floor(d/n))/12);
-  if(i%8===0)tone(deg(MBASS[(i/8)%4])/2,st*7.6/1000,'sine',.045);
-  if(i%4===2)tone(deg(MBASS[Math.floor(i/8)%4]+2),st*1.5/1000,'sine',.014);
-  const p=MPAT[(i+(i>=16?5:0))%16];if(p>=0)tone(deg(p+(i>=24?1:0))*2,st*1.9/1000,'triangle',.02);
-  if(M&&M.boss&&!M.dead&&i%2===0)tone(z.r/2,.07,'square',.012)}
+  if(i%8===0)tone(deg(MBASS[(i/8)%4])/2,st*7.6/1000,'sine',.045,1);
+  if(i%4===2)tone(deg(MBASS[Math.floor(i/8)%4]+2),st*1.5/1000,'sine',.014,1);
+  const p=MPAT[(i+(i>=16?5:0))%16];if(p>=0)tone(deg(p+(i>=24?1:0))*2,st*1.9/1000,'triangle',.02,1);
+  if(M&&M.boss&&!M.dead&&i%2===0)tone(z.r/2,.07,'square',.012,1)}
 let NB=null;
 function noiseBuf(){if(NB)return NB;const n=Math.floor(AC.sampleRate*.4),b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return NB=b}
 function nz(dur,f,q,vol,type,f2){const t=AC.currentTime,sr=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();sr.buffer=noiseBuf();fl.type=type||'lowpass';fl.frequency.setValueAtTime(f,t);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,t+dur);fl.Q.value=q||1;
-  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);sr.connect(fl).connect(g).connect(AC.destination);sr.start(t);sr.stop(t+dur+.02)}
-function thump(f0,f1,dur,vol){const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+dur+.02)}
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);sr.connect(fl).connect(g).connect(outS());sr.start(t);sr.stop(t+dur+.02)}
+function thump(f0,f1,dur,vol){const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(outS());o.start(t);o.stop(t+dur+.02)}
 /* katmanlı vuruş sesleri: gürültü patlaması + bas darbe + metal tını */
-function sfx(k,v){if(!S.set.sound||!AC||AC.state!=='running')return;v=v==null?1:v;try{switch(k){
+function sfx(k,v){if(!S.set.sound||!AC||AC.state!=='running'||tab!=='battle')return;v=v==null?1:v;try{switch(k){
   case'swing':nz(.13,2600,2,.05*v,'bandpass',500);break;
   case'arrow':nz(.09,6000,5,.05*v,'bandpass',1500);break;
   case'magic':tone(660,.2,'sine',.03*v);tone(990,.15,'sine',.022*v);nz(.12,4000,3,.03*v,'bandpass',9000);break;
@@ -656,7 +682,7 @@ function sfx(k,v){if(!S.set.sound||!AC||AC.state!=='running')return;v=v==null?1:
   case'hurt':nz(.12,700,1,.12);thump(150,55,.16,.2);break}}catch(e){}}
 function beep(f,d,type,vol,slide){if(!S.set.sound)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
   const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
-  g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d)}catch(e){}}
+  g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(outS());o.start(t);o.stop(t+d)}catch(e){}}
 function tune(ns,gap,type){ns.forEach((f,i)=>setTimeout(()=>beep(f,.16,type||'triangle',.07),i*gap))}
 function vib(p){if(S.set.vib&&touched&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
 
@@ -665,26 +691,27 @@ const stage=$('stage');let D3=null;
 function d3Act(){if(D3)D3.setActive(tab==='battle'&&!bg&&!document.hidden)}
 function monPos(){if(D3)return D3.monScreen();const s=stage.getBoundingClientRect(),m=$('mon').getBoundingClientRect();return {x:m.left-s.left+m.width/2,y:m.top-s.top+m.height/2,w:m.width,h:m.height}}
 function heroPos(){if(D3)return D3.heroScreen();const s=stage.getBoundingClientRect(),m=$('heroE').getBoundingClientRect();return {x:m.left-s.left+m.width/2,y:m.top-s.top+m.height/2}}
-function add(el){stage.appendChild(el);el.addEventListener('animationend',()=>el.remove());return el}
+const FXF=()=>[.35,.7,1][S.set.fx==null?2:S.set.fx];
+function add(el){if(tab!=='battle')return el;stage.appendChild(el);el.addEventListener('animationend',()=>el.remove());return el}
 function floatTxt(txt,cls,x,y,sz){const d=document.createElement('div');d.className='fl '+(cls||'');d.textContent=txt;d.style.left=x+'px';d.style.top=y+'px';d.style.setProperty('--dx',rnd(-34,34)+'px');if(sz)d.style.fontSize=sz+'px';add(d)}
-function scrFlash(k){const f=$('flash');f.className='';void f.offsetWidth;f.className=k}
-function shout(txt,col){const e=$('shout');e.textContent=txt;e.style.color=col||'#ffe14a';e.style.textShadow='0 3px 0 #000,0 0 18px '+(col||'#ff9a1f');e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
+function scrFlash(k){if(S.set.flash===false||tab!=='battle')return;const f=$('flash');f.className='';void f.offsetWidth;f.className=k}
+function shout(txt,col){if(tab!=='battle')return;const e=$('shout');e.textContent=txt;e.style.color=col||'#ffe14a';e.style.textShadow='0 3px 0 #000,0 0 18px '+(col||'#ff9a1f');e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
 function fxSlash(x,y,crit){const d=document.createElement('div');d.className='slash';d.style.left=x+'px';d.style.top=y+'px';d.style.setProperty('--r',rnd(-60,30)+'deg');
   const c=crit?'#ffd23d':'#fff';d.innerHTML='<svg viewBox="0 0 100 100" width="150" height="150"><path d="M8 78 Q45 8 94 26" stroke="'+c+'" stroke-width="'+(crit?9:6)+'" fill="none" stroke-linecap="round" opacity=".95"/><path d="M14 80 Q47 20 92 34" stroke="'+c+'" stroke-width="2" fill="none" opacity=".5"/></svg>';add(d)}
-function fxSparks(x,y,col,n){for(let i=0;i<(n||6);i++){const d=document.createElement('div');d.className='spk';const a=Math.random()*6.28,r=rnd(30,80);
+function fxSparks(x,y,col,n){if(tab!=='battle')return;n=Math.max(2,Math.round((n||6)*FXF()));for(let i=0;i<n;i++){const d=document.createElement('div');d.className='spk';const a=Math.random()*6.28,r=rnd(30,80);
   d.style.cssText='left:'+x+'px;top:'+y+'px;background:'+col+';box-shadow:0 0 6px '+col+';--dx:'+Math.cos(a)*r+'px;--dy:'+Math.sin(a)*r+'px';add(d)}}
 function fxBoom(x,y,col){const d=document.createElement('div');d.className='boom';d.style.cssText='left:'+x+'px;top:'+y+'px;border-color:'+(col||'#ffb347');add(d)}
-function fxProj(e,cb){if(D3)return D3.cast(e,cb);const h=heroPos(),m=monPos();const d=document.createElement('div');d.className='proj';d.textContent=e;d.style.left='0';d.style.top='0';stage.appendChild(d);
+function fxProj(e,cb){if(D3)return D3.cast(e,cb);if(tab!=='battle'){cb&&cb();return}const h=heroPos(),m=monPos();const d=document.createElement('div');d.className='proj';d.textContent=e;d.style.left='0';d.style.top='0';stage.appendChild(d);
   const fin=()=>{d.remove();fxBoom(m.x,m.y);cb&&cb()};
   if(!d.animate){fin();return}
   const a=d.animate([{transform:'translate('+(h.x-20)+'px,'+(h.y-24)+'px) scale(.6)'},{transform:'translate('+(m.x-20)+'px,'+(m.y-24)+'px) scale(1.3)'}],{duration:200,easing:'ease-in'});
   a.onfinish=fin}
 function shake(big){if(D3)D3.shake(big);const c=big?'bigshake':'shake';stage.classList.remove('shake','bigshake');void stage.offsetWidth;stage.classList.add(c)}
-function banner(txt,cls){const b=$('banner');b.className='';b.firstChild.textContent=txt;void b.offsetWidth;b.className='on b-'+cls}
+function banner(txt,cls){if(tab!=='battle')return;const b=$('banner');b.className='';b.firstChild.textContent=txt;void b.offsetWidth;b.className='on b-'+cls}
 function confetti(n){const box=$('confetti'),cols=['#ffcf4a','#ff5263','#5fe3ff','#3ddc84','#c58bff','#ff9a1f'];
-  for(let i=0;i<(n||40);i++){const d=document.createElement('i');d.style.cssText='left:'+rnd(0,100)+'%;background:'+pick(cols)+';--dx:'+rnd(-80,80)+'px;--rot:'+rnd(200,900)+'deg;animation-duration:'+rnd(1.4,2.6)+'s;animation-delay:'+rnd(0,.3)+'s';
+  n=Math.round((n||40)*FXF());for(let i=0;i<n;i++){const d=document.createElement('i');d.style.cssText='left:'+rnd(0,100)+'%;background:'+pick(cols)+';--dx:'+rnd(-80,80)+'px;--rot:'+rnd(200,900)+'deg;animation-duration:'+rnd(1.4,2.6)+'s;animation-delay:'+rnd(0,.3)+'s';
     box.appendChild(d);d.addEventListener('animationend',()=>d.remove())}}
-function fxCoins(n){const ss=stage.getBoundingClientRect(),mp=monPos(),m={left:ss.left+mp.x-mp.w/2,top:ss.top+mp.y-mp.h/2,width:mp.w,height:mp.h},g=document.querySelector('.pill.g').getBoundingClientRect();
+function fxCoins(n){if(tab!=='battle')return;n=Math.max(1,Math.round(n*FXF()));const ss=stage.getBoundingClientRect(),mp=monPos(),m={left:ss.left+mp.x-mp.w/2,top:ss.top+mp.y-mp.h/2,width:mp.w,height:mp.h},g=document.querySelector('.pill.g').getBoundingClientRect();
   for(let i=0;i<n;i++){const d=document.createElement('div');d.className='coin';d.textContent='🪙';document.body.appendChild(d);
     const x0=m.left+m.width/2+rnd(-40,40),y0=m.top+m.height/2+rnd(-30,30);
     if(!d.animate){d.remove();continue}
@@ -756,7 +783,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   const xp=Math.round((5+2*g)*(boss?6:el?3:1)*(1+P.xp/100));
   const gold=Math.round(gpk(g)*rnd(.8,1.3)*(boss?8:el?4:1)*(1+P.gold/100));
   const nk=performance.now();R.streak=nk-R.strT<4500?R.streak+1:1;R.strT=nk;const sgx=R.streak>=3?Math.round(gold*Math.min(.5,(R.streak-2)*.05)):0;
-  S.gold+=gold+sgx;S.tot.gold+=gold+sgx;S.tot.kills++;qAdd('kill');if(R.streak>=3){shout('🔥 SERİ x'+R.streak,R.streak>=10?'#ff3d7f':'#ffb347');if(sgx)setTimeout(()=>floatTxt('+'+fmt(sgx)+' 💰 seri','g',monPos().x,monPos().y-10),120)}
+  S.gold+=gold+sgx;S.tot.gold+=gold+sgx;S.tot.kills++;qAdd('kill');if(R.streak===3||(R.streak>3&&R.streak%5===0)){shout('🔥 SERİ x'+R.streak,R.streak>=10?'#ff3d7f':'#ffb347')}if(R.streak>=3){if(sgx)setTimeout(()=>floatTxt('+'+fmt(sgx)+' 💰 seri','g',monPos().x,monPos().y-10),120)}
   const m=monPos();floatTxt('+'+fmt(gold)+' 💰','g',m.x-40,m.y+30);floatTxt('+'+fmt(xp)+' XP','x',m.x+40,m.y+30);fxCoins(boss?8:el?5:3);
   if(boss||(el&&Math.random()<.25)||Math.random()<.015){const rk=rollRune(boss?.08:0);giveRune(rk,1);setTimeout(()=>{floatTxt(runeLbl(rk),'d',m.x,m.y-70);toast('🔮 Rün düştü: '+runeLbl(rk))},300)}
   if(boss){S.tot.boss++;aaCheck();qAdd('boss');const key=z+'-'+f;if(!S.bossFirst[key]){S.bossFirst[key]=1;const gm=10+z*5;S.gems+=gm;setTimeout(()=>floatTxt('+'+gm+' 💎','d',m.x,m.y-40),200)}confetti(50)}
@@ -773,7 +800,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
     if(!isLast(z)&&f>=ZF){const nw=!S.maxF[z+1];if(nw)S.maxF[z+1]=1;S.zone=z+1;S.auto=true;setStage();
       banner((nw?'🗺️ YENİ BÖLGE: ':'🗺️ ')+ZONES[z+1].n.toLocaleUpperCase('tr'),'zone');toast('🗺️ '+ZONES[z+1].e+' '+ZONES[z+1].n+(nw?' açıldı!':'')+' Yolculuk devam ediyor','big');if(nw)confetti(60);storyCheck()}
     else{if(f>=S.maxF[z])S.maxF[z]=f+1;if(S.auto&&f<S.maxF[z])S.floors[z]=f+1}}
-  updAll();save();spawnT=setTimeout(spawn,boss&&D3?1350:480)}
+  if(tab==='battle')updAll();else{calc();updHud();updBattle()}save();spawnT=setTimeout(spawn,boss&&D3&&tab==='battle'?1350:480)}
 function addXp(x){S.xp+=x;let up=0;while(S.xp>=xpNeed(S.lvl)){S.xp-=xpNeed(S.lvl);S.lvl++;S.pts+=3;up++;if(S.lvl%5===0){S.gems+=5;toast('💎 Seviye '+S.lvl+' hediyesi: +5 elmas')}if(S.lvl===15&&!S.reb.n)toast('✨ Oto yetenek açıldı! Yetenekler kendiliğinden kullanılır','big');
     if(CLS[S.cls])CLS[S.cls].sk.forEach(s=>{if(s.lv===S.lvl)toast('✨ Yeni yetenek açıldı: '+s.i+' '+s.n,'big')})}
   if(up){calc();S.hp=P.hp;banner('⭐ SEVİYE '+S.lvl+' ⭐','lv');if(D3)D3.levelUp();confetti(35);tune([523,659,784,1047],80);vib([30,30,30]);giftCheck();renderSkillBar()}}
@@ -826,12 +853,12 @@ function petAttack(){const p=PET[S.pet];if(!p)return;const l=S.pets[S.pet]||1;if
 function petSkill(){const k=S.pet,p=PET[k],sk=PSK[k];if(!sk||!M||M.dead)return;const l=S.pets[k]||1,m=p.dm/100*(1+.1*(l-1))*(1+.25*petStage(l))*(1+P.petD/100),h=heroPos();
   floatTxt(p.e+' '+sk.n+'!','h',h.x-6,h.y-70,17);if(D3)D3.petSkill(sk.k);sfx('magic',.8);
   switch(sk.k){case'bite':for(let i=0;i<3;i++)setTimeout(()=>attack(m*1.2,{src:'pet'}),250+i*120);break;
-    case'buff':R.bcrit=5000;R.bcritV=Math.max(R.bcrit>0?R.bcritV:0,15);updBuffs();break;
+    case'buff':R.bcritV=Math.max(R.bcrit>0?R.bcritV:0,15);R.bcrit=Math.max(R.bcrit,5000);updBuffs();break;
     case'gold':{const g=Math.round(gpk(G())*3*(1+l*.05)*(1+P.gold/100)),mp=monPos();S.gold+=g;S.tot.gold+=g;floatTxt('+'+fmt(g)+' 💰','g',mp.x,mp.y-40);fxCoins(4);updHud();break}
     case'shell':if(!(R.shield>0)||R.shV<40){R.shield=4000;R.shV=40;updBuffs()}break;
     case'heal':{const hh=Math.round(P.hp*.12);S.hp=Math.min(P.hp,S.hp+hh);floatTxt('+'+fmt(hh),'h',h.x+10,h.y-30);updPl();break}
     case'fire':setTimeout(()=>attack(m*4,{src:'pet',pow:1.5}),400);break}}
-const paused=()=>tab!=='battle'||bg||document.hidden||$('sheetBg').classList.contains('on')||$('leg').classList.contains('on');
+const paused=()=>(tab!=='battle'&&(S.set.bgFight===false||busyMode()))||bg||document.hidden||$('sheetBg').classList.contains('on')||$('leg').classList.contains('on');
 let lastT=performance.now(),lastWall=Date.now(),dayT=0;
 setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=now;music();
   if(!bg&&!document.hidden){const w=Date.now();if(w-lastWall>120e3)offline(w-lastWall);lastWall=w}
@@ -848,7 +875,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=no
   if(P.regen&&S.hp<P.hp){R.regT+=dt;if(R.regT>=1000){R.regT=0;S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(P.hp*P.regen/100)));updPl()}}
   if(dungOn){dungT-=dt;updTimer();if(dungT<=0){endDung('⏱ Süre doldu');return}}
   if(M&&!M.dead&&M.timer!=null){M.timer-=dt;updTimer();if(M.timer<=0){M.timer=0;timeUp();return}}
-  if(M&&!M.dead&&M.spT!=null){if(M.stun>0)M.stun-=dt;if(M.tele>0){M.tele-=dt;$('defN').textContent=M.spN+' · '+tr(Math.max(0,M.tele)/1000)+' sn';if(M.tele<=0){M.tele=0;bossSpecial()}}else{M.spT-=dt;if(M.spT<=0)startTele()}}
+  if(M&&!M.dead&&M.spT!=null){if(M.stun>0)M.stun-=dt;if(M.tele>0){M.tele-=dt;$('defN').textContent=M.spN+' · '+tr(Math.max(0,M.tele)/1000)+' sn';if(M.tele<=0){M.tele=0;bossSpecial()}}else if(tab==='battle'){M.spT-=dt;if(M.spT<=0)startTele()}}
   if(M&&!M.dead&&M.afx&&M.afx.includes('regen')){M.rg=(M.rg||0)+dt;if(M.rg>=1000){M.rg=0;M.hp=Math.min(M.max,M.hp+M.max*.02);updMon()}}
   if(M&&!M.dead&&!(M.tele>0)&&!(M.stun>0)){M.t+=dt;if(M.t>=M.int){M.t=0;monsterHit()}$('mAt').style.width=Math.max(0,Math.min(100,M.t/M.int*100))+'%'}},50);
 $('bHit').addEventListener('pointerdown',tap);
@@ -857,7 +884,7 @@ $('skills').addEventListener('pointerdown',e=>{const b=e.target.closest('.skb');
 
 /* ======================= BOSS MEKANİKLERİ ======================= */
 let sayT=0;
-function say(who,txt){const e=$('say');e.innerHTML='<b>'+esc(who)+':</b> '+esc(txt);e.classList.add('on');clearTimeout(sayT);sayT=setTimeout(()=>e.classList.remove('on'),3200)}
+function say(who,txt){if(tab!=='battle')return;const e=$('say');e.innerHTML='<b>'+esc(who)+':</b> '+esc(txt);e.classList.add('on');clearTimeout(sayT);sayT=setTimeout(()=>e.classList.remove('on'),3200)}
 function hideDef(){$('defBtn').hidden=true;if(D3)D3.telegraph(false)}
 function startTele(){M.tele=1700;M.spN=M.duel?CLS[M.cls].sk[0].n:BSP[S.zone%BSP.length];$('defN').textContent=M.spN;$('defBtn').hidden=false;
   if(D3)D3.telegraph(true,1.7);beep(220,.5,'sawtooth',.05,880);vib([30,30,30])}
@@ -877,13 +904,17 @@ function storyCheck(){const z=S.zone;if(S.story[z]||!S.cls)return;S.story[z]=1;s
 /* ======================= SONSUZ KULE ======================= */
 let towerOn=false;
 function startTower(){if(!S.cls||dead||busyMode())return;calc();S.hp=P.hp;towerOn=true;closeSheet();go('battle');banner('🗼 SONSUZ KULE · KAT '+(S.tower.best+1),'boss');spawn();save()}
+function towerRw(f){const g=Math.round(gpk(towerG(f))*30),e=3+Math.floor(f/2),gm=f%5===0?10+f:0;let rk=null;S.gold+=g;S.tot.gold+=g;S.ess+=e;S.gems+=gm;if(f%3===0){rk=rollRune(.1+f*.01);giveRune(rk,1)}return {g,e,gm,rk}}
+/* çok kolay katlar: muhafızı ~6 sn'de kesebiliyor ve vuruşu canının %8'inden azsa savaşmadan geçilebilir */
+function towerSkipN(){const hits=Math.max(2.5,aaOpen()&&S.autoAtk?1000/aaMs():2.5),dps=P.atk*(1+P.crit/100*(P.critDmg/100-1))*hits;let n=0;
+  while(n<30){const tg=towerG(S.tower.best+1+n);if(mHp(tg)*6>dps*6||mAtk(tg)*1.5*100/(100+P.def)>P.hp*.08)break;n++}return n}
 function towerEnd(win){const f=S.tower.best+1;towerOn=false;hideDef();M.dead=true;if(D3)D3.die(win);updTimer();dead=false;let rw='';
-  if(win){S.tower.best=f;qAdd('tower');const g=Math.round(gpk(towerG(f))*30),e=3+Math.floor(f/2),gm=f%5===0?10+f:0;S.gold+=g;S.tot.gold+=g;S.ess+=e;S.gems+=gm;let rk=null;if(f%3===0){rk=rollRune(.1+f*.01);giveRune(rk,1)}
+  if(win){S.tower.best=f;qAdd('tower');const {g,e,gm,rk}=towerRw(f);
     rw='<div class="card" style="text-align:center;line-height:1.8">💰 +'+fmt(g)+' · 💠 +'+e+(gm?' · 💎 +'+gm:'')+(rk?'<br>'+runeLbl(rk):'')+'</div>';confetti(50);tune([523,659,784,1047],80)}
   calc();S.hp=P.hp;save();
   openSheet('<div style="text-align:center"><div style="font-size:60px">'+(win?'🗼':'💀')+'</div><h2>'+(win?f+'. kat geçildi!':f+'. kat geçilemedi')+'</h2><p class="mut">'+(win?'Sıradaki muhafız daha güçlü. Hazır mısın?':'Güçlen ve tekrar dene; deneme hakkı sınırsız.')+'</p></div>'+rw+
    '<div class="row"><button class="btn grow" data-a="towerDone">Çık</button><button class="btn pri grow" data-a="tower">'+(win?'⬆️ '+(f+1)+'. kat':'🔁 Tekrar dene')+'</button></div>',true)}
-function towerCard(){const f=S.tower.best+1;return '<div class="card" style="background:linear-gradient(135deg,#2a2a5a,#1e2136 70%);border-color:#9fb4ff55"><div class="row"><span style="font-size:44px">🗼</span><div class="grow"><b style="font-size:16px">Sonsuz Kule</b><div class="mut">Her katta güçlü bir muhafız, 40 saniye. İlk geçişte ödül; her 3 katta rün, her 5 katta 💎.</div><div class="mut" style="margin-top:3px">En yüksek: <b style="color:var(--gold)">'+S.tower.best+'. kat</b> · Deneme sınırsız</div></div></div><button class="btn pri w100" style="margin-top:10px" data-a="tower" '+(S.cls&&!dead&&!busyMode()?'':'disabled')+'>🗼 '+f+'. kata çık</button></div>'}
+function towerCard(){const f=S.tower.best+1;return '<div class="card" style="background:linear-gradient(135deg,#2a2a5a,#1e2136 70%);border-color:#9fb4ff55"><div class="row"><span style="font-size:44px">🗼</span><div class="grow"><b style="font-size:16px">Sonsuz Kule</b><div class="mut">Her katta güçlü bir muhafız, 40 saniye. İlk geçişte ödül; her 3 katta rün, her 5 katta 💎.</div><div class="mut" style="margin-top:3px">En yüksek: <b style="color:var(--gold)">'+S.tower.best+'. kat</b> · Deneme sınırsız</div></div></div><button class="btn pri w100" style="margin-top:10px" data-a="tower" '+(S.cls&&!dead&&!busyMode()?'':'disabled')+'>🗼 '+f+'. kata çık</button>'+(S.cls&&!dead&&!busyMode()&&towerSkipN()?'<button class="btn ok w100" style="margin-top:8px" data-a="towerSkip">⏩ Hızlı geç: '+towerSkipN()+' kolay kat (ödülleriyle)</button>':'')+'</div>'}
 
 /* ======================= ZİNDANLAR ======================= */
 let dungOn=null,dungT=0,dungKills=0,dungLoot=null;
@@ -990,7 +1021,7 @@ const questReady=()=>S.daily.q.filter(q=>!q.c&&q.p>=q.n).length+(S.cls&&!S.daily
 function updHud(){$('hLv').textContent=S.lvl;$('hAva').style.setProperty('--p',S.xp/xpNeed(S.lvl)*100);$('hXpT').textContent=fmt(S.xp)+'/'+fmt(xpNeed(S.lvl));
   $('hGold').textContent=fmt(S.gold);$('hGem').textContent=fmt(S.gems);$('hPow').textContent=fmt(cpow());
   const c=CLS[S.cls];$('hCls').textContent=c?c.e:'❔';$('tabCls').textContent=c?c.e:'🧝';$('hName').textContent=c?c.n:'Kahraman';
-  const dot=(id,n)=>{const d=$(id);d.hidden=!n;d.textContent=n};
+  const dot=(id,n)=>{const d=$(id);d.hidden=!n;d.textContent='!'};
   dot('dHero',S.pts+tpFree());dot('dInv',S.inv.filter(it=>power(it)>power(S.eq[it.slot])).length);dot('dQuest',questReady()+achReady());dot('dAdv',S.cls?(S.arena.left===3)+(S.duel.left===DUEL_N)+Object.values(S.dung.left).filter(x=>x===DUNG_N).length:0)}
 function updMon(){if(!M)return;if(M.arena){const k=arenaLvl(),lo=k?arenaTier(k):0,hi=arenaTier(Math.min(6,k+1)),p=k>=6?100:(arenaDmg-lo)/(hi-lo)*100;$('mHp').style.width=p+'%';$('mGh').style.width=p+'%';$('mHpT').textContent='💥 '+fmt(arenaDmg)+' · Kademe '+k+'/6';return}const p=Math.max(0,M.hp/M.max*100)+'%';$('mHp').style.width=p;$('mGh').style.width=p;$('mHpT').textContent=fmt(Math.max(0,M.hp))+' / '+fmt(M.max)}
 function updPl(){$('pHp').style.width=(S.hp/P.hp*100)+'%';$('pHpT').textContent='❤️ '+fmt(S.hp)+' / '+fmt(P.hp);$('vig').classList.toggle('on',tab==='battle'&&!dead&&S.hp<P.hp*.3&&!$('sheetBg').classList.contains('on'))}
@@ -1129,7 +1160,7 @@ function vitrin(){if(!D3)return;const el=$('vitrin');if(el)D3.showcase(el,{cls:S
 const REND={inv:renderInv,hero:renderHero,quest:renderQuest,shop:renderShop,adv:renderAdv};
 function updAll(){calc();updHud();updBattle();if(REND[tab])REND[tab]();if(D3){if(tab==='inv'||tab==='hero')vitrin();else D3.showcaseStop()}}
 function go(t){tab=t;document.querySelectorAll('.scr').forEach(s=>s.classList.toggle('on',s.id==='s-'+t));
-  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===t));lastT=performance.now();d3Act();updAll()}
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===t));lastT=performance.now();d3Act();if(BR&&BR.keepOn)try{BR.keepOn(t==='battle')}catch(e){}updAll()}
 function toast(msg,cls){for(const t of $('toasts').children)if(t.textContent===msg)return;const d=document.createElement('div');d.className=cls||'';d.textContent=msg;$('toasts').appendChild(d);setTimeout(()=>d.remove(),2600);while($('toasts').children.length>3)$('toasts').firstChild.remove()}
 /* panel kuyruğu: açılışta birden fazla pencere sırayla gelir */
 let sheetLock=false;const Q=[];
@@ -1139,7 +1170,23 @@ function nextQ(){if(busy())return;const f=Q.shift();if(f)f()}
 function openSheet(html,lock){sheetLock=!!lock;$('sheet').innerHTML=html;$('sheetBg').classList.add('on');$('sheet').scrollTop=0;$('vig').classList.remove('on')}
 function closeSheet(){$('sheetBg').classList.remove('on');sheetLock=false;lastT=performance.now();updPl();setTimeout(nextQ,180)}
 $('sheetBg').addEventListener('click',e=>{if(e.target===$('sheetBg')&&!sheetLock)closeSheet()});
-function wake(){const w=Date.now();if(w-lastWall>120e3)offline(w-lastWall);lastWall=w;dailyCheck();lastT=performance.now();updHud()}
+function wake(){setTimeout(autoBk,3000);const w=Date.now();if(w-lastWall>120e3)offline(w-lastWall);lastWall=w;dailyCheck();lastT=performance.now();updHud()}
+
+/* ======================= YEDEK ======================= */
+const BR=window.AndroidBridge||null;
+const bkCode=()=>btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+function clearModes(){arenaOn=false;dungOn=null;duelOn=null;towerOn=false;dead=false;offPend=null;clearTimeout(spawnT);hideDef();updTimer()}
+function bkFile(auto){const name='EfsaneAvcisi-yedek-'+today()+'.txt',code=bkCode();
+  if(BR&&BR.saveFile){let r='';try{r=BR.saveFile(name,code)}catch(e){}if(r){S.lastBk=Date.now();save();if(!auto)toast('💾 Yedek kaydedildi: '+r,'big');return true}if(!auto)toast('❌ Yedek dosyası kaydedilemedi');return false}
+  if(auto)return false;try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([code],{type:'text/plain'}));a.download=name;document.body.appendChild(a);a.click();a.remove();S.lastBk=Date.now();save();toast('💾 Yedek indirildi','big');return true}catch(e){toast('❌ Yedek indirilemedi');return false}}
+function autoBk(){if(!BR||!S.cls||S.set.autoBk===false||S.lvl<5||Date.now()-(S.lastBk||0)<7*864e5)return;if(bkFile(true))toast('💾 Haftalık otomatik yedek İndirilenler\'e kaydedildi')}
+/* yedek kodunu güvenle yükle: bozuksa eski kayda geri dön */
+function restoreCode(str){const bak=JSON.stringify(S);try{const o=JSON.parse(decodeURIComponent(escape(atob(String(str).trim().replace(/\s+/g,'')))));if(!o||typeof o!=='object'||typeof o.lvl!=='number'||!Array.isArray(o.inv))throw 0;
+    clearModes();applySave(o);calc();Q.length=0;$('sheetBg').classList.remove('on');setStage();renderSkillBar();spawn();go('battle');save(true);toast('✅ Kayıt yüklendi','big');if(!S.cls)enqueue(()=>classSheet());return true}
+  catch(e){try{applySave(JSON.parse(bak));calc()}catch(x){}toast('❌ Kod geçersiz ya da bozuk; mevcut kaydına dokunulmadı');return false}}
+document.addEventListener('change',e=>{if(e.target.id!=='bkPick')return;const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>restoreCode(r.result);r.onerror=()=>toast('❌ Dosya okunamadı');r.readAsText(f);e.target.value=''});
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.rng;if(!k)return;S.set[k]=+e.target.value/100;const b=e.target.parentNode.querySelector('b');if(b)b.textContent='%'+e.target.value;if(GS)outS();if(GM)outM();save()});
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.rng==='vol')beep(660,.1,'triangle',.06)});
 
 /* ======================= EŞYA PANELİ ======================= */
 function itemSheet(it,title){const r=RAR[it.r],eq=isEq(it),cur=eq?null:S.eq[it.slot];
@@ -1282,15 +1329,26 @@ const ACT={
   settings:()=>openSheet('<h2>⚙️ Ayarlar</h2><div class="row"><button class="btn grow" data-a="set" data-v="sound">'+(S.set.sound?'🔊 Ses açık':'🔇 Ses kapalı')+'</button><button class="btn grow" data-a="set" data-v="vib">'+(S.set.vib?'📳 Titreşim açık':'📴 Titreşim kapalı')+'</button></div>'+
     '<button class="btn w100" style="margin-top:8px" data-a="set3d">'+(S.set.d3?(D3?'🧊 3B grafik açık':'🧊 3B açık ama bu cihaz desteklemiyor'):'🖼️ 2B grafik (yavaş telefonlar için)')+'</button>'+
     '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="music">'+(S.set.music?'🎵 Müzik açık':'🎵 Müzik kapalı')+'</button>'+
+    '<div class="rng"><span>🔊 Efekt sesi</span><input type="range" min="0" max="100" step="5" value="'+Math.round((S.set.vol==null?.8:S.set.vol)*100)+'" data-rng="vol"><b>%'+Math.round((S.set.vol==null?.8:S.set.vol)*100)+'</b></div>'+
+    '<div class="rng"><span>🎵 Müzik sesi</span><input type="range" min="0" max="100" step="5" value="'+Math.round((S.set.mvol==null?.6:S.set.mvol)*100)+'" data-rng="mvol"><b>%'+Math.round((S.set.mvol==null?.6:S.set.mvol)*100)+'</b></div>'+
+    '<h3>Görüntü ve oynanış</h3><button class="btn w100" data-a="setFx">✨ Efekt yoğunluğu: '+['Düşük (en hızlı)','Orta','Yüksek'][S.set.fx==null?2:S.set.fx]+'</button>'+
+    '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="flash">'+(S.set.flash!==false?'⚡ Ekran parlaması açık':'⚡ Ekran parlaması kapalı')+'</button>'+
+    '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="bgFight">'+(S.set.bgFight!==false?'⚔️ Menüdeyken savaş sürer':'⏸️ Menüdeyken savaş durur')+'</button>'+
+    (BR?'<button class="btn w100" style="margin-top:8px" data-a="set" data-v="autoBk">'+(S.set.autoBk!==false?'💾 Haftalık otomatik yedek açık':'💾 Otomatik yedek kapalı')+'</button>':'')+
     '<h3>Macera</h3><div class="card"><div class="dg">'+[['☠️ Öldürülen',S.tot.kills],['👑 Boss',S.tot.boss],['💀 Elit',S.tot.elite],['✨ Efsanevi',S.tot.leg],['🎯 Kritik',S.tot.crits],['👆 Dokunuş',S.tot.taps],['🔥 En iyi kombo',S.tot.maxCombo],['⚒️ En iyi +',S.tot.maxUp],['🎁 Sandık',S.tot.chests],['💰 Kazanılan',S.tot.gold]].map(r=>'<div><span>'+r[0]+'</span><b>'+fmt(r[1])+'</b></div>').join('')+'</div></div>'+
     '<div class="row"><button class="btn grow" data-a="backup">💾 Kayıt yedeği</button><button class="btn warn grow" data-a="reset">🗑️ Sıfırla</button></div><button class="btn w100" style="margin-top:8px" data-a="close">Kapat</button>'),
-  backup:()=>{const code=btoa(unescape(encodeURIComponent(JSON.stringify(S))));
-    openSheet('<h2>💾 Kayıt yedeği</h2><p class="mut">Bu kodu kopyalayıp bir yere (ör. kendine mesaj) saklarsan, telefon değiştirince ya da oyunu silince ilerlemeni geri yükleyebilirsin.</p><textarea id="bkOut" readonly>'+code+'</textarea><button class="btn ok w100" style="margin:8px 0 16px" data-a="copy">📋 Kodu kopyala</button>'+
+  backup:()=>{const code=bkCode();
+    openSheet('<h2>💾 Kayıt yedeği</h2><p class="mut">Bu kodu kopyalayıp bir yere (ör. kendine mesaj) saklarsan, telefon değiştirince ya da oyunu silince ilerlemeni geri yükleyebilirsin.</p><div class="row"><button class="btn ok grow" data-a="bkFile">📁 Dosyaya kaydet</button><button class="btn grow" data-a="bkPick">📂 Dosyadan yükle</button></div><input type="file" id="bkPick" accept=".txt,text/plain,*/*" hidden><div class="mut" style="margin:6px 0 12px;font-size:12px">Dosya telefonun İndirilenler klasörüne yazılır. '+(BR?'Otomatik yedek açıksa haftada bir kendiliğinden kaydedilir.':'')+(S.lastBk?' Son yedek: '+dstr(new Date(S.lastBk)):'')+'</div><p class="mut">Ya da kodu kopyala:</p><textarea id="bkOut" readonly>'+code+'</textarea><button class="btn w100" style="margin:8px 0 16px" data-a="copy">📋 Kodu kopyala</button>'+
      '<p class="mut">Geri yüklemek için kodu buraya yapıştır:</p><textarea id="bkIn" placeholder="Kayıt kodunu yapıştır"></textarea><button class="btn warn w100" style="margin-top:8px" data-a="restore">Kodu yükle (şimdiki kaydın üzerine yazar)</button><button class="btn w100" style="margin-top:8px" data-a="close">Kapat</button>')},
   copy:()=>{const t=$('bkOut');t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(t.value).catch(()=>{});toast(ok||navigator.clipboard?'📋 Kopyalandı':'Kodu elle seçip kopyala')},
-  restore:()=>{try{const o=JSON.parse(decodeURIComponent(escape(atob($('bkIn').value.trim()))));if(!o||typeof o.lvl!=='number'||!Array.isArray(o.inv))throw 0;applySave(o);dead=false;closeSheet();calc();setStage();renderSkillBar();spawn();go('battle');save(true);toast('✅ Kayıt yüklendi','big');if(!S.cls)enqueue(()=>classSheet())}catch(e){toast('❌ Kod geçersiz')}},
+  restore:()=>restoreCode($('bkIn').value),
+  bkFile:()=>bkFile(false),
+  bkPick:()=>$('bkPick').click(),
+  towerSkip:()=>{const n=towerSkipN();if(!n||dead||busyMode())return;let g=0,e=0,gm=0;const rk=[];for(let i=0;i<n;i++){const f=S.tower.best+1,r=towerRw(f);S.tower.best=f;g+=r.g;e+=r.e;gm+=r.gm;if(r.rk)rk.push(runeLbl(r.rk))}qAdd('tower',n);confetti(50);tune([523,659,784,1047],80);
+    openSheet('<div style="text-align:center"><div style="font-size:58px">⏩</div><h2>'+n+' kat hızlı geçildi!</h2><p class="mut">Bu muhafızlar sana göre çok zayıftı. Artık '+(S.tower.best+1)+'. kattasın.</p></div><div class="card" style="text-align:center;line-height:1.8">💰 +'+fmt(g)+' · 💠 +'+e+(gm?' · 💎 +'+gm:'')+(rk.length?'<br>'+rk.join(' · '):'')+'</div><button class="btn pri w100" data-a="close">Tamam</button>');updAll();save()},
+  setFx:()=>{S.set.fx=((S.set.fx==null?2:S.set.fx)+2)%3;if(D3)D3.setQuality(S.set.fx);ACT.settings();save()},
   reset:()=>openSheet('<h2>🗑️ Her şeyi sıfırla?</h2><p class="mut">Seviyen, eşyaların, yoldaşların, elmasların ve altınların silinir. Geri alınamaz.</p><div class="row"><button class="btn grow" data-a="close">Vazgeç</button><button class="btn warn grow" data-a="resetOk">Evet, sıfırla</button></div>'),
-  resetOk:()=>{const set=S.set;S=fresh();S.set=set;dead=false;Q.length=0;offPend=null;$('sheetBg').classList.remove('on');calc();dailyCheck();setStage();renderSkillBar();spawn();go('battle');save(true);introSheet()}
+  resetOk:()=>{const set=S.set;clearModes();S=fresh();S.set=set;dead=false;Q.length=0;offPend=null;$('sheetBg').classList.remove('on');calc();dailyCheck();setStage();renderSkillBar();spawn();go('battle');save(true);introSheet()}
 };
 const bulkF=()=>[i=>!i.lk&&!i.up&&i.r===0,i=>!i.lk&&!i.up&&i.r<=1&&power(i)<=power(S.eq[i.slot]),i=>!i.lk&&!i.up&&i.r<=1];
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.disabled)return;const f=ACT[t.dataset.a];if(f)f(t.dataset.v,t)});
@@ -1310,14 +1368,14 @@ function news8(){S.nv=8;save();openSheet('<div style="text-align:center"><div st
 function news7(){S.nv=7;save();openSheet('<div style="text-align:center"><div style="font-size:56px">🎉</div><h2>Dev güncelleme!</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
   '🏰 <b>Macera sekmesi</b>: Boss Arenası, 3 Zindan, Düello Ligi<br>🛡️ <b>Boss özel saldırıları</b>: uyarı gelince SAVUN\'a bas, karşı saldır!<br>😡 Canı yarıya inen boss <b>öfkelenir</b><br>💀 Elit canavarlara <b>özellik</b>: Zırhlı, Hızlı, Vampir, Dev…<br>🔮 <b>Rün sistemi</b>: eşyalara rün tak, birleştir<br>🧙‍♂️ <b>Hikâye</b> ve boss replikleri<br>🧍 Çanta\'da dönen <b>3B karakter vitrini</b><br>🐛 30. kat boss\'u artık seni sonraki bölgeye geçiriyor</div><button class="btn pri w100" data-a="close">Hadi başlayalım!</button>')}
 load();calc();
-if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td')}}catch(e){D3=null}}
+if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td');D3.setQuality(S.set.fx==null?2:S.set.fx)}}catch(e){D3=null}}
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
 if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
 giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
-save(true);
+save(true);setTimeout(autoBk,6000);
 </script>
 </body>
 </html>

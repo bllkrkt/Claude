@@ -27,7 +27,7 @@ await p.click('#sheet [data-a=claimLogin]');
 await p.waitForTimeout(500);
 check(await p.evaluate(() => /Bilge Ozan/.test(document.getElementById('sheet').innerText)), 'hikâye penceresi çıkmadı');
 await shot('02b-hikaye');
-await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; });
+await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; S.set.bgFight = false; });
 await p.waitForTimeout(300);
 
 async function waitFor(fn, ms, arg) { const end = Date.now() + ms; while (Date.now() < end) { if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(100); } return false; }
@@ -306,6 +306,65 @@ check(await p.evaluate(b => !towerOn && S.tower.best === b + 1, tb), 'kule katı
 await p.evaluate(() => { ACT.tower(); M.int = 1e9; M.max = M.hp = 1e9; M.timer = 40; }); await waitFor(() => !towerOn, 5000); await p.waitForTimeout(200);
 check(await p.evaluate(b => !towerOn && S.tower.best === b + 1 && !dead, tb), 'kule yenilgisi hatalı');
 await clear(); await p.click('[data-v=battle]');
+
+// ---- v9 ----
+// kule hızlı geç
+await clear(); await p.click('[data-v=adv]'); await p.waitForTimeout(300);
+const sk = await p.evaluate(() => ({ n: towerSkipN(), b: S.tower.best, btn: !!document.querySelector('#s-adv [data-a=towerSkip]') }));
+check((sk.n > 0) === sk.btn, 'hızlı geç düğmesi tutarsız: ' + JSON.stringify(sk));
+if (sk.n) { await p.click('#s-adv [data-a=towerSkip]'); await p.waitForTimeout(400); await shot('70-kule-hizli-gec');
+  check(await p.evaluate(o => S.tower.best === o.b + o.n, sk), 'hızlı geç katları vermedi'); await clear(); }
+check(await p.evaluate(() => { const a = P.atk; P.atk = 1; const n = towerSkipN(); P.atk = a; return n === 0; }), 'zayıf oyuncuya hızlı geç çıktı');
+// mod sırasında yedek yükleme: mod temizlenmeli
+const code = await p.evaluate(() => bkCode());
+await p.evaluate(() => { ACT.tower(); }); await p.waitForTimeout(500);
+check(await p.evaluate(() => towerOn), 'kule (yedek testi) başlamadı');
+check(await p.evaluate(c => restoreCode(c) === true && !towerOn && !arenaOn && !dungOn && !duelOn && !dead && tab === 'battle' && M && !M.tower, code), 'mod sırasında yükleme modu temizlemedi');
+await p.waitForTimeout(300); await clear();
+// bozuk kod: mevcut kayda dokunulmamalı
+check(await p.evaluate(() => { const g = S.gold, l = S.lvl, n = S.inv.length; const r1 = restoreCode('bu bir kod değil'), r2 = restoreCode(btoa('{"lvl":"x"}')), r3 = restoreCode(''); return !r1 && !r2 && !r3 && S.gold === g && S.lvl === l && S.inv.length === n; }), 'bozuk kod reddedilmedi');
+// bozuk alanlı yedek temizlenmeli
+const san = await p.evaluate(() => { const o = JSON.parse(JSON.stringify(S)); o.inv.push({ slot: 'yok', r: 9 }, null, 5, { slot: 'weapon', r: 99, L: 'a', up: 500, n: 7, e: 3, st: { atk: 10, uydurma: 5, crit: 'x' }, set: 'yokset', sock: ['zz:9'] });
+  o.gold = 'abc'; o.zone = 77; o.cls = 'hacker'; o.pets = { wolf: 999, ejderha: 3 }; o.pet = 'ejderha'; o.skl = 'x'; o.aaSp = 40; o.lvl = 12.7;
+  const ok = restoreCode(btoa(unescape(encodeURIComponent(JSON.stringify(o))))); const bad = S.inv[S.inv.length - 1];
+  return { ok, g: S.gold, z: S.zone, c: S.cls, w: S.pets.wolf, e: S.pets.ejderha, pet: S.pet, sk: S.skl, a: S.aaSp, l: S.lvl, bad, all: S.inv.every(i => i && SLOT[i.slot]), up: UPMAX }; });
+check(san.ok && san.g === 0 && san.z === 0 && san.c === null && san.w === 30 && !san.e && san.pet === null && san.sk.length === 4 && san.a === 4 && san.l === 12 && san.bad.r === 3 && san.bad.up === san.up && san.bad.L === 1 && san.bad.st.atk === 10 && !('uydurma' in san.bad.st) && !('crit' in san.bad.st) && !san.bad.set && san.bad.sock[0] === null && san.all, 'bozuk alanlı yedek temizlenmedi: ' + JSON.stringify(san));
+await p.evaluate(c => { closeSheet(); Q.length = 0; restoreCode(c); }, code); await p.waitForTimeout(300); await clear();
+// baykuş: uzun süren etkiyi kısaltmamalı
+await p.evaluate(() => { spawn(); }); await waitFor(() => M && !M.dead, 4000);
+check(await p.evaluate(() => { const pp = S.pet, own = S.pets.owl; S.pets.owl = own || 1; S.pet = 'owl'; M.max = M.hp = 1e9; R.bcrit = 9000; R.bcritV = 10; petSkill(); const r = R.bcrit >= 9000 && R.bcritV === 15; R.bcrit = 0; R.bcritV = 40; petSkill(); const r2 = R.bcrit === 5000 && R.bcritV === 15; const dbg = JSON.stringify([r, r2, R.bcrit, R.bcritV, M.dead, S.pet]); S.pet = pp; if (!own) delete S.pets.owl; R.bcrit = 0; M.hp = 1; window.__owl = dbg; return r && r2; }), 'baykuş etkisi hatalı: ' + await p.evaluate(() => window.__owl));
+// menüdeyken savaş: açıkken öldürme sürer, sahneye efekt sızmaz
+await p.evaluate(() => { S.set.bgFight = true; S.autoAtk = true; ACT.tab('inv'); }); await p.waitForTimeout(600);
+const bg0 = await p.evaluate(() => ({ k: S.tot.kills, n: document.getElementById('stage').childElementCount }));
+await waitFor(k => S.tot.kills > k + 1, 12000, bg0.k);
+const bg1 = await p.evaluate(() => ({ k: S.tot.kills, n: document.getElementById('stage').childElementCount, tab, pa: paused(), aa: aaOpen() }));
+check(bg1.k > bg0.k, 'menüdeyken savaş sürmedi: ' + JSON.stringify([bg0, bg1]));
+check(bg1.n <= bg0.n && bg1.tab === 'inv', 'menüdeyken efekt sızdı: ' + JSON.stringify([bg0, bg1]));
+await shot('71-menude-savas');
+await p.evaluate(() => { S.set.bgFight = false; }); await p.waitForTimeout(700);
+const bg2 = await p.evaluate(() => S.tot.kills); await p.waitForTimeout(1500);
+check(await p.evaluate(k => S.tot.kills === k && paused(), bg2), 'menüde savaş kapalıyken durmadı');
+await p.click('[data-v=battle]'); await p.waitForTimeout(200);
+// ayarlar: ses kaydırıcıları, efekt yoğunluğu, parlama
+await p.evaluate(() => ACT.settings()); await p.waitForTimeout(300); await shot('72-ayarlar');
+check(await p.evaluate(() => document.querySelectorAll('#sheet input[type=range]').length === 2 && !!document.querySelector('#sheet [data-a=setFx]')), 'yeni ayarlar yok');
+await p.evaluate(() => { const r = document.querySelector('#sheet [data-rng=mvol]'); r.value = 20; r.dispatchEvent(new Event('input', { bubbles: true })); });
+check(await p.evaluate(() => Math.abs(S.set.mvol - .2) < 1e-9 && /%20/.test(document.querySelector('#sheet [data-rng=mvol]').parentNode.innerText)), 'müzik sesi ayarlanmadı');
+for (const want of [1, 0]) { await p.evaluate(() => ACT.setFx()); await p.waitForTimeout(300); check(await p.evaluate(w => S.set.fx === w, want), 'efekt yoğunluğu ' + want + ' olmadı'); }
+await p.evaluate(() => { const s = document.getElementById('sheet'); s.scrollTop = s.scrollHeight; }); await shot('73-ayarlar-dusuk');
+await p.evaluate(() => closeSheet()); await play(2500); await shot('74-dusuk-efekt-savas');
+await p.evaluate(() => { ACT.setFx(); closeSheet(); });
+check(await p.evaluate(() => { const ok = S.set.fx === 2; S.set.flash = false; const f = document.getElementById('flash'); f.className = ''; scrFlash('crit'); const r = f.className === ''; S.set.flash = true; return ok && r; }), 'parlama kapalıyken çaktı');
+await p.evaluate(() => ACT.backup()); await p.waitForTimeout(300); await shot('75-yedek');
+check(await p.evaluate(() => !!document.querySelector('#sheet [data-a=bkFile]') && !!document.querySelector('#sheet [data-a=bkPick]') && !!document.getElementById('bkPick')), 'yedek dosya düğmeleri yok');
+await p.evaluate(() => closeSheet()); await clear();
+// bozuk kayıt: oyun açılmalı, bozuk veri saklanmalı
+const good = await p.evaluate(() => { save(true); const g = localStorage.getItem(SAVE_KEY); save = () => {}; localStorage.setItem(SAVE_KEY, '{bozuk'); return g; });
+await p.reload(); await p.waitForTimeout(600);
+check(await p.evaluate(() => localStorage.getItem(SAVE_KEY + '-bozuk') === '{bozuk' && S.lvl === 1 && !!document.querySelector('#sheet [data-a=pickCls]')), 'bozuk kayıt toparlanmadı');
+await p.evaluate(g => { save = () => {}; localStorage.setItem(SAVE_KEY, g); localStorage.removeItem(SAVE_KEY + '-bozuk'); }, good);
+await p.reload(); await p.waitForTimeout(600); await clear();
+check(await p.evaluate(() => S.set.fx === 2 && Math.abs(S.set.mvol - .2) < 1e-9 && S.set.bgFight === false), 'ayarlar kalıcı olmadı');
 
 // sen yokken kazancı: 3 saat önce kapatılmış gibi
 const lvlBefore = await p.evaluate(() => { save(true); const o = JSON.parse(localStorage.getItem(SAVE_KEY)); o.lastSeen = Date.now() - 3 * 3600e3; o.daily.day = ''; localStorage.setItem(SAVE_KEY, JSON.stringify(o)); save = () => {}; return S.lvl; });
