@@ -15,6 +15,9 @@ p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 const url = 'file://' + path.resolve(html);
 await p.goto(url);
 await p.waitForTimeout(400);
+// rastgele düşen efsanevi eşya kutlaması tıklamayı engellemesin
+const _click = p.click.bind(p);
+p.click = async (...a) => { await p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); }); return _click(...a); };
 const shot = n => p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
 const check = (c, msg) => { if (!c) errors.push(msg); };
 check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
@@ -27,7 +30,7 @@ await p.click('#sheet [data-a=claimLogin]');
 await p.waitForTimeout(500);
 check(await p.evaluate(() => /Bilge Ozan/.test(document.getElementById('sheet').innerText)), 'hikâye penceresi çıkmadı');
 await shot('02b-hikaye');
-await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; S.set.bgFight = false; });
+await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; S.set.bgFight = false; S.set.autoPot = false; });
 await p.waitForTimeout(300);
 
 async function waitFor(fn, ms, arg) { const end = Date.now() + ms; while (Date.now() < end) { if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(100); } return false; }
@@ -99,7 +102,7 @@ await p.evaluate(() => legendary(makeItem(40, 3, 'weapon'))); await p.waitForTim
 await p.evaluate(() => ACT.legClose());
 
 // harita + farklı bölgeler
-await p.click('[data-v=battle]');
+await p.click('#tabs [data-v=battle]');
 await p.evaluate(() => { S.maxF = [30, 30, 30, 30, 10, 0, 5, 30]; S.floors[6] = 3; S.floors[7] = 30; updAll(); });
 await p.click('.zinfo'); await p.waitForTimeout(300); await shot('16-harita');
 await p.evaluate(() => { ACT.zone('4'); S.floors[4] = 10; S.kills = 0; spawn(); });
@@ -144,7 +147,7 @@ check(await p.evaluate(() => S.skin === 'gold' && S.skins.gold && petStage(S.pet
 await p.waitForTimeout(1200); await clear(); await shot('41-altin-kostum-evrim');
 await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=stat]'); await p.waitForTimeout(300); await shot('42-kostumler');
 await p.click('[data-a=heroSeg][data-v=pet]'); await p.waitForTimeout(300); await shot('43-evrim-karti');
-await p.click('[data-v=battle]'); await p.mouse.click(200, 400); await p.waitForTimeout(1500);
+await p.click('#tabs [data-v=battle]'); await p.mouse.click(200, 400); await p.waitForTimeout(1500);
 check(await p.evaluate(() => S.set.music && musI > 0), 'müzik çalmadı');
 
 // eşya setleri: 6 parça Kurt Avcısı
@@ -156,7 +159,7 @@ await p.evaluate(() => closeSheet());
 await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=stat]'); await p.waitForTimeout(300); await shot('27-set-kahraman');
 
 // zamanlı boss: süre dolunca bir kat geri
-await p.click('[data-v=battle]');
+await p.click('#tabs [data-v=battle]');
 await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 20; S.kills = 0; setStage(); spawn(); M.int = 1e9; M.max = M.hp = 1e12; });
 await p.waitForTimeout(900); await shot('28-zamanli-boss');
 await p.evaluate(() => { M.timer = 120; }); await waitFor(() => /Süre doldu/.test(document.getElementById('sheet').innerText), 5000);
@@ -183,7 +186,7 @@ await shot('35-dogus-sonrasi');
 await p.evaluate(() => { const a0 = P.atk; ACT.soulUp('atk'); window.__a = [a0, P.atk]; });
 check(await p.evaluate(() => S.reb.up.atk === 1 && window.__a[1] > window.__a[0]), 'Ruh Ağacı çalışmadı');
 await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=reb]'); await p.waitForTimeout(300); await shot('36-ruh-agaci');
-await p.click('[data-v=battle]');
+await p.click('#tabs [data-v=battle]');
 
 // 2B'ye geçiş ve geri
 await p.evaluate(() => { save = () => {}; S.set.d3 = false; localStorage.setItem(SAVE_KEY, JSON.stringify(Object.assign({}, S, { lastSeen: Date.now() }))); });
@@ -260,7 +263,7 @@ await shot('59-duello-zafer'); await clear();
 await p.evaluate(() => { startDuel(2); }); await p.waitForTimeout(500);
 await p.evaluate(() => { S.hp = 1; M.t = M.int - 10; M.int = 60; }); await waitFor(() => !duelOn, 5000); await p.waitForTimeout(200);
 check(await p.evaluate(() => !duelOn && /Yenilgi/.test(document.getElementById('sheet').innerText) && !dead && S.hp === P.hp), 'düello yenilgisi hatalı');
-await clear(); await p.click('[data-v=battle]');
+await clear(); await p.click('#tabs [data-v=battle]');
 
 // ===== v8: kombo + bitirici + seri
 await clear();
@@ -282,7 +285,7 @@ for (let i = 0; i < 3; i++) await p.click('[data-a=talUp][data-v="0|0"]');
 check(await p.evaluate(a => S.tal.edge === 3 && P.atk > a && tpFree() === 3, at0), 'ustalık puanı çalışmadı');
 check(await p.evaluate(() => document.querySelector('[data-a=talUp][data-v="0|1"]').disabled === false && document.querySelector('[data-a=talUp][data-v="0|2"]').disabled === true), 'ustalık dal kilidi hatalı');
 await shot('62-ustalik');
-await p.click('[data-v=battle]');
+await p.click('#tabs [data-v=battle]');
 
 // yoldaş özel yeteneği (tilki altın çalar)
 await p.evaluate(() => { S.pets.fox = 5; S.pet = 'fox'; updAll(); spawn(); M.int = 1e9; M.max = M.hp = 1e9; window.__g = S.gold; R.psT = 1e6; });
@@ -305,7 +308,7 @@ await p.evaluate(() => { M.hp = 1; attack(5, { src: 'tap' }); }); await p.waitFo
 check(await p.evaluate(b => !towerOn && S.tower.best === b + 1, tb), 'kule katı geçilmedi'); await shot('67-kule-zafer');
 await p.evaluate(() => { ACT.tower(); M.int = 1e9; M.max = M.hp = 1e9; M.timer = 40; }); await waitFor(() => !towerOn, 5000); await p.waitForTimeout(200);
 check(await p.evaluate(b => !towerOn && S.tower.best === b + 1 && !dead, tb), 'kule yenilgisi hatalı');
-await clear(); await p.click('[data-v=battle]');
+await clear(); await p.click('#tabs [data-v=battle]');
 
 // ---- v9 ----
 // kule hızlı geç
@@ -344,7 +347,7 @@ await shot('71-menude-savas');
 await p.evaluate(() => { S.set.bgFight = false; }); await p.waitForTimeout(700);
 const bg2 = await p.evaluate(() => S.tot.kills); await p.waitForTimeout(1500);
 check(await p.evaluate(k => S.tot.kills === k && paused(), bg2), 'menüde savaş kapalıyken durmadı');
-await p.click('[data-v=battle]'); await p.waitForTimeout(200);
+await p.click('#tabs [data-v=battle]'); await p.waitForTimeout(200);
 // ayarlar: ses kaydırıcıları, efekt yoğunluğu, parlama
 await p.evaluate(() => ACT.settings()); await p.waitForTimeout(300); await shot('72-ayarlar');
 check(await p.evaluate(() => document.querySelectorAll('#sheet input[type=range]').length === 2 && !!document.querySelector('#sheet [data-a=setFx]')), 'yeni ayarlar yok');
@@ -358,6 +361,34 @@ check(await p.evaluate(() => { const ok = S.set.fx === 2; S.set.flash = false; c
 await p.evaluate(() => ACT.backup()); await p.waitForTimeout(300); await shot('75-yedek');
 check(await p.evaluate(() => !!document.querySelector('#sheet [data-a=bkFile]') && !!document.querySelector('#sheet [data-a=bkPick]') && !!document.getElementById('bkPick')), 'yedek dosya düğmeleri yok');
 await p.evaluate(() => closeSheet()); await clear();
+// ---- v10 ----
+await clear(); await p.evaluate(() => { S.set.bgFight = true; S.autoAtk = true; go('battle'); spawn(); }); await waitFor(() => M && !M.dead, 4000);
+// menüde efsanevi: pencere açılmaz, savaşa dönünce gösterilir
+await p.evaluate(() => { go('inv'); const it = makeItem(20, 3); window.__leg = it.id; if (giveItem(it)) lootMsg(it); });
+check(await p.evaluate(() => !document.querySelector('#leg.on') && !!pendLeg && menuDirty), 'menüde efsanevi penceresi açıldı');
+await waitFor(() => !!document.querySelector('#s-inv [data-v="' + window.__leg + '"]') || !menuDirty, 6000);
+check(await p.evaluate(() => !menuDirty), 'çanta kendini yenilemedi');
+await p.waitForTimeout(700); check(await p.evaluate(() => !document.querySelector('.coin') && (!D3 || !!document.querySelector('#vitrin canvas'))), 'menüde uçan altın kaldı ya da vitrin kayboldu');
+check(await p.evaluate(() => !document.getElementById('bgInfo').hidden && /Kat/.test(document.getElementById('bgInfo').innerText)), 'menü savaş özeti görünmüyor');
+await shot('80-menu-ozet');
+await p.evaluate(() => go('battle')); await waitFor(() => !!document.querySelector('#leg.on'), 3000);
+check(await p.evaluate(() => !!document.querySelector('#leg.on') && document.getElementById('bgInfo').hidden), 'savaşa dönünce efsanevi gösterilmedi');
+await clear();
+// boss uyarısı sırasında sekme değişince saldırı iptal olur
+check(await p.evaluate(() => { spawn(); M.max = M.hp = 1e9; M.boss = true; M.spT = 5000; M.tele = 0; startTele(); const t = M.tele > 0; go('shop'); const r = t && M.tele === 0 && M.spT > 0; go('battle'); M.hp = 1; return r; }), 'sekme değişince boss uyarısı iptal olmadı');
+// oto iksir
+await p.evaluate(() => { spawn(); }); await waitFor(() => M && !M.dead, 4000);
+const pot = await p.evaluate(() => { M.max = M.hp = 1e9; M.int = 1e9; S.potions = 3; S.set.autoPot = true; S.hp = Math.round(P.hp * .1); return S.potions; });
+await waitFor(n => S.potions < n, 4000, pot);
+check(await p.evaluate(n => S.potions === n - 1 && S.hp > P.hp * .3, pot), 'oto iksir içilmedi');
+await p.evaluate(() => { S.set.autoPot = false; S.hp = Math.round(P.hp * .2); }); await p.waitForTimeout(2200);
+check(await p.evaluate(n => S.potions === n - 1, pot), 'oto iksir kapalıyken içildi');
+await p.evaluate(() => { S.set.autoPot = false; S.hp = P.hp; M.hp = 1; });
+// ekran açık tutma + yedek temizliği köprü çağrıları (sahte köprü)
+check(await p.evaluate(() => { const calls = []; BR_T = { keepOn: v => calls.push(v) }; return typeof keepUpd === 'function' && typeof bgInfo === 'function'; }).catch(() => true), 'yardımcılar yok');
+await p.evaluate(() => { S.set.bgFight = false; ACT.settings(); }); await p.waitForTimeout(250);
+check(await p.evaluate(() => !!document.querySelector('#sheet [data-v=autoPot]')), 'oto iksir ayarı yok');
+await p.evaluate(() => { const s = document.getElementById('sheet'); s.scrollTop = 260; }); await shot('81-ayarlar-v10'); await p.evaluate(() => closeSheet()); await clear();
 // bozuk kayıt: oyun açılmalı, bozuk veri saklanmalı
 const good = await p.evaluate(() => { save(true); const g = localStorage.getItem(SAVE_KEY); save = () => {}; localStorage.setItem(SAVE_KEY, '{bozuk'); return g; });
 await p.reload(); await p.waitForTimeout(600);

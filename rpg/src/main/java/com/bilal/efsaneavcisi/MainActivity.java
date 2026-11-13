@@ -2,13 +2,18 @@ package com.bilal.efsaneavcisi;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -27,11 +32,17 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /** Oyunun tamamı assets/index.html içinde; bu sınıf onu tam ekran gösteren kabuk + küçük bir JS köprüsü. */
 public class MainActivity extends Activity {
     private static final String HOST = "appassets.androidplatform.net";
     private static final int FILE_REQ = 41;
+    /** Çökme sonrası art arda yeniden kurmayı sınırlamak için: bu süre içinde ikinci çökmede uygulama kapanır. */
+    private static final long RECREATE_GAP_MS = 10000;
+    /** Son yeniden kurmanın zamanı (elapsedRealtime); 0 = hiç olmadı. Activity yeniden kurulsa da kalsın diye static. */
+    private static long lastRecreate = 0;
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
 
@@ -85,8 +96,20 @@ public class MainActivity extends Activity {
             // Kayıt localStorage'da olduğu için ilerleme kaybolmaz.
             @Override
             public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                // Yok edilecek WebView'a artık kimse dokunmasın: önce alanı boşalt, ekrandan sök, sonra yok et
+                if (web == view) web = null;
+                closeFileCallback();
+                detach(view);
                 try { view.destroy(); } catch (Exception ignored) { }
-                recreate();
+                try {
+                    long now = SystemClock.elapsedRealtime();
+                    boolean loop = lastRecreate != 0 && now - lastRecreate < RECREATE_GAP_MS;
+                    lastRecreate = now;
+                    // Kısa sürede ikinci çökme: sonsuz yeniden kurma döngüsüne girme, uygulamayı kapat
+                    if (loop) finish(); else recreate();
+                } catch (Exception e) {
+                    try { finish(); } catch (Exception ignored) { }
+                }
                 return true;
             }
         });
@@ -124,19 +147,66 @@ public class MainActivity extends Activity {
 
     // Arka plana alınınca oyun durur; dönünce "sen yokken" kazancı hesaplanır
     @Override protected void onPause() {
-        web.evaluateJavascript("window.__pause&&window.__pause()", null);
-        super.onPause(); web.onPause();
+        final WebView w = web;
+        if (w != null) {
+            try { w.evaluateJavascript("window.__pause&&window.__pause()", null); } catch (Exception ignored) { }
+        }
+        super.onPause();
+        if (w != null) {
+            try { w.onPause(); } catch (Exception ignored) { }
+        }
     }
     @Override protected void onResume() {
-        super.onResume(); web.onResume();
-        web.evaluateJavascript("window.__resume&&window.__resume()", null);
+        super.onResume();
+        final WebView w = web;
+        if (w == null) return;
+        try {
+            w.onResume();
+            w.evaluateJavascript("window.__resume&&window.__resume()", null);
+        } catch (Exception ignored) { }
     }
 
     @Override
     public void onBackPressed() {
-        web.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'", v -> {
-            if (v == null || !v.contains("1")) moveTaskToBack(true);
-        });
+        final WebView w = web;
+        if (w == null) { moveTaskToBack(true); return; }
+        try {
+            w.evaluateJavascript("(window.__onBack&&window.__onBack())?'1':'0'", v -> {
+                if (v == null || !v.contains("1")) moveTaskToBack(true);
+            });
+        } catch (Exception e) {
+            moveTaskToBack(true);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        closeFileCallback();
+        final WebView w = web;
+        web = null;
+        if (w != null) {
+            detach(w);
+            try { w.destroy(); } catch (Exception ignored) { }
+        }
+        super.onDestroy();
+    }
+
+    /** Bekleyen dosya seçici isteği varsa boş sonuçla kapatır. */
+    private void closeFileCallback() {
+        final ValueCallback<Uri[]> cb = fileCallback;
+        fileCallback = null;
+        if (cb != null) {
+            try { cb.onReceiveValue(null); } catch (Exception ignored) { }
+        }
+    }
+
+    /** WebView'u ekrandaki ebeveyninden çıkarır. */
+    private static void detach(WebView v) {
+        if (v == null) return;
+        try {
+            ViewParent p = v.getParent();
+            if (p instanceof ViewGroup) ((ViewGroup) p).removeView(v);
+        } catch (Exception ignored) { }
     }
 
     private class Bridge {
@@ -173,9 +243,69 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void keepOn(final boolean on) {
             runOnUiThread(() -> {
+                // Ekran çöküp kapanırken ya da Activity biterken gelen çağrıyı yok say
+                if (web == null || isFinishing() || isDestroyed()) return;
                 if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             });
+        }
+
+        /**
+         * Bu uygulamanın saveFile ile yazdığı, adı prefix ile başlayan dosyalardan en yeni keep tanesini
+         * bırakıp gerisini siler. Silinen dosya sayısını döndürür; hiçbir durumda hata fırlatmaz.
+         */
+        @JavascriptInterface
+        public int pruneBackups(String prefix, int keep) {
+            int deleted = 0;
+            try {
+                if (prefix == null || prefix.isEmpty() || keep < 1) return 0;
+                if (Build.VERSION.SDK_INT >= 29) {
+                    // İzin olmadığı için sorgu yalnızca bu uygulamanın oluşturduğu dosyaları döndürür
+                    final Uri base = MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                    ArrayList<Long> ids = new ArrayList<>();
+                    try (Cursor c = getContentResolver().query(base,
+                            new String[]{MediaStore.Downloads._ID, MediaStore.Downloads.DISPLAY_NAME,
+                                    MediaStore.Downloads.DATE_ADDED},
+                            MediaStore.Downloads.DISPLAY_NAME + " LIKE ?",
+                            new String[]{prefix + "%"},
+                            MediaStore.Downloads.DATE_ADDED + " DESC, " + MediaStore.Downloads._ID + " DESC")) {
+                        if (c == null) return 0;
+                        while (c.moveToNext()) {
+                            String n = c.getString(1);
+                            // LIKE içindeki % ve _ fazladan eşleşme getirebilir; adı burada kesin doğrula
+                            if (n != null && n.startsWith(prefix)) ids.add(c.getLong(0));
+                        }
+                    }
+                    for (int i = keep; i < ids.size(); i++) {
+                        try {
+                            if (getContentResolver().delete(ContentUris.withAppendedId(base, ids.get(i)), null, null) > 0)
+                                deleted++;
+                        } catch (Exception ignored) {
+                            // Silinemeyen (ör. yetki hatası) dosyayı atla, diğerleriyle devam et
+                        }
+                    }
+                } else {
+                    File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                    if (dir == null) return 0;
+                    File[] all = dir.listFiles();
+                    if (all == null) return 0;
+                    ArrayList<File> list = new ArrayList<>();
+                    for (File f : all) if (f.isFile() && f.getName().startsWith(prefix)) list.add(f);
+                    // Sıralama sırasında değer değişmesin diye zamanları önce bir kez oku
+                    final int n = list.size();
+                    long[][] order = new long[n][2];
+                    for (int i = 0; i < n; i++) { order[i][0] = list.get(i).lastModified(); order[i][1] = i; }
+                    Arrays.sort(order, (a, b2) -> Long.compare(b2[0], a[0]));
+                    for (int i = keep; i < n; i++) {
+                        try {
+                            if (list.get((int) order[i][1]).delete()) deleted++;
+                        } catch (Exception ignored) { }
+                    }
+                }
+            } catch (Throwable t) {
+                // Ne olursa olsun JS tarafına hata sızmasın
+            }
+            return deleted;
         }
     }
 }
