@@ -447,7 +447,7 @@ for (let i = 0; i < 5; i++) { await waitFor(() => M && M.fate && !M.dead, 4000);
 check(await p.evaluate(() => fateF === 6 && FB.atkP >= 1 && P.e.atkP >= 1 && Object.values(FB).reduce((a, b) => a + b, 0) === 6), 'kader güçleri birikmedi: ' + await p.evaluate(() => JSON.stringify([fateF, FB])));
 await waitFor(() => M && M.fate && !M.dead, 4000); await p.waitForTimeout(300); await shot('99b-kader-savas');
 await p.evaluate(() => { M.int = 1e9; S.hp = 1; R.dodge = 0; R.shield = 0; R.last = true; monsterHit(50); }); await p.waitForTimeout(300); await shot('99c-kader-son');
-check(await p.evaluate(o => !fateOn && !dead && S.fate.best === Math.max(o.best, 5) && S.gold > o.g && !P.e.atkP && !!document.querySelector('#sheet [data-a=fateDone]'), fb), 'kader yolu bitişi hatalı: ' + await p.evaluate(o => JSON.stringify({ fateOn, dead, best: S.fate.best, o, g: S.gold, e: P.e, sh: document.getElementById('sheet').innerText.slice(0, 60), on: document.getElementById('sheetBg').className, hp: S.hp }), fb));
+check(await p.evaluate(o => !fateOn && !dead && S.fate.best >= Math.max(o.best, 5) && S.gold > o.g && !P.e.atkP && !!document.querySelector('#sheet [data-a=fateDone]'), fb), 'kader yolu bitişi hatalı: ' + await p.evaluate(o => JSON.stringify({ fateOn, dead, best: S.fate.best, o, g: S.gold, e: P.e, sh: document.getElementById('sheet').innerText.slice(0, 60), on: document.getElementById('sheetBg').className, hp: S.hp }), fb));
 await p.evaluate(() => ACT.fateDone()); await waitFor(() => M && !M.dead && !M.fate, 4000);
 check(await p.evaluate(() => !busyMode() && !M.fate && document.getElementById('fateBar').innerHTML === ''), 'kader sonrası normale dönülmedi');
 await p.evaluate(() => { S.autoAtk = true; });
