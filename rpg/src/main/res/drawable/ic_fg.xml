@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:pivotX="54" android:pivotY="54" android:rotation="45">
+        <!-- kılıç: namlu, siper, kabza, topuz -->
+        <path android:fillColor="#FFFFFFFF" android:pathData="M54,24 L59,32 L59,62 L49,62 L49,32 Z"/>
+        <path android:fillColor="#FFD8DCEF" android:pathData="M54,24 L59,32 L59,62 L54,62 Z"/>
+        <path android:fillColor="#FFFFD23D" android:pathData="M40,62 h28 a3,3 0 0 1 0,6 h-28 a3,3 0 0 1 0,-6 Z"/>
+        <path android:fillColor="#FF5A3312" android:pathData="M51,68 h6 v11 h-6 Z"/>
+        <path android:fillColor="#FFFFD23D" android:pathData="M54,78 m-4.5,0 a4.5,4.5 0 1 0 9,0 a4.5,4.5 0 1 0 -9,0"/>
+    </group>
+</vector>
