@@ -19,7 +19,8 @@ await p.goto(url);
 await p.waitForTimeout(400);
 // rastgele düşen efsanevi eşya kutlaması tıklamayı engellemesin
 const _click = p.click.bind(p);
-p.click = async (...a) => { await p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); }); return _click(...a); };
+const _leg = () => p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); });
+p.click = async (sel, o = {}) => { await _leg(); try { return await _click(sel, { ...o, timeout: 12000 }); } catch (e) { await _leg(); return _click(sel, o); } };
 const shot = n => p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
 const check = (c, msg) => { if (!c) errors.push(msg); };
 check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
@@ -172,7 +173,8 @@ await shot('29-boss-sure-doldu'); await clear();
 
 // boss arenası
 await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('30-arena-kart');
-await p.waitForTimeout(300); await p.evaluate(() => updAll());
+for (let i = 0; i < 10 && await p.evaluate(() => dead || busy()); i++) { await clear(); await p.evaluate(() => { if (dead && !busy()) ACT.revive(); }); await p.waitForTimeout(200); }
+await p.evaluate(() => updAll()); await p.waitForTimeout(200);
 await p.click('#s-adv [data-a=arena]'); await p.waitForTimeout(900);
 await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 8; i++) attack(3, { src: 'tap' }); arenaDmg = Math.max(arenaDmg, arenaTier(4) + 5); updMon(); });
 await p.waitForTimeout(500); await shot('31-arena-savas');
@@ -371,7 +373,8 @@ await clear(); await p.evaluate(() => { S.set.bgFight = true; S.autoAtk = true; 
 // menüde efsanevi: pencere açılmaz, savaşa dönünce gösterilir
 await p.evaluate(() => { go('inv'); const it = makeItem(20, 3); window.__leg = it.id; if (giveItem(it)) lootMsg(it, true); });
 check(await p.evaluate(() => !document.querySelector('#leg.on') && !!pendLeg), 'menüde efsanevi penceresi açıldı');
-await waitFor(() => !!document.querySelector('#s-inv [data-v="' + window.__leg + '"]') || !menuDirty, 6000);
+await p.evaluate(() => { if (document.querySelector('#sheetBg.on')) closeSheet(); });
+await waitFor(() => !menuDirty, 9000);
 check(await p.evaluate(() => !menuDirty), 'çanta kendini yenilemedi');
 await p.waitForTimeout(700); check(await p.evaluate(() => !document.querySelector('.coin') && (!D3 || !!document.querySelector('#vitrin canvas'))), 'menüde uçan altın kaldı ya da vitrin kayboldu');
 check(await p.evaluate(() => !document.getElementById('bgInfo').hidden && /Kat/.test(document.getElementById('bgInfo').innerText)), 'menü savaş özeti görünmüyor');

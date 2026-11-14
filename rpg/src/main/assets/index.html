@@ -285,7 +285,7 @@ textarea{width:100%;height:100px;background:#0008;color:var(--tx);border:1px sol
 input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
 #bgInfo{display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 10px;background:#1a1d36;border-top:1px solid var(--line);font-size:12.5px;font-weight:800;color:#cfd3ff;white-space:nowrap;overflow:hidden}#bgInfo[hidden]{display:none}#bgInfo b{color:var(--gold)}#bgInfo .low{color:#ff5263}
 #weak{position:absolute;width:62px;height:62px;margin:-31px 0 0 -31px;border-radius:50%;border:3px solid #ffd23d;background:radial-gradient(circle,#fff8 0 18%,#ffd23d55 19% 40%,transparent 41%);box-shadow:0 0 18px #ffd23d,inset 0 0 12px #ffd23d;z-index:9;animation:weakP .55s ease-in-out infinite alternate;padding:0}
-#weak[hidden]{display:none}@keyframes weakP{from{transform:scale(.82);opacity:.75}to{transform:scale(1.12);opacity:1}}
+#weak[hidden]{display:none}#weak.d3{border-color:transparent;background:none;box-shadow:none;animation:none;width:84px;height:84px;margin:-42px 0 0 -42px}@keyframes weakP{from{transform:scale(.82);opacity:.75}to{transform:scale(1.12);opacity:1}}
 #evBtn{position:absolute;right:10px;top:42%;z-index:9;padding:9px 12px;border-radius:16px;border:2px solid #ffcf4a;background:#2a2140ee;color:#ffe9a8;font:800 13px inherit;box-shadow:0 0 18px #ffcf4a88;animation:weakP .8s ease-in-out infinite alternate}#evBtn[hidden]{display:none}
 #fateBar{position:absolute;left:10px;top:118px;z-index:6;display:flex;flex-direction:column;gap:3px;pointer-events:none;font-size:12px;font-weight:800}#fateBar span{background:#1b1230cc;border:1px solid #7b3df0aa;border-radius:10px;padding:2px 7px;color:#e6d8ff}
 #vigS{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 85% 75% at 50% 52%,transparent 55%,#0008 100%),linear-gradient(#0003,transparent 22%,transparent 80%,#0005)}
@@ -811,7 +811,8 @@ let weakOn=false,weakT=0;
 function weakHide(){if(!weakOn&&$('weak').hidden)return;weakOn=false;$('weak').hidden=true;if(D3&&D3.weakSpot)D3.weakSpot(false)}
 function weakShow(){R.wkT=0;R.wkN=rnd(6000,9500);if(!M||M.dead||paused())return;const m=monPos();let x=m.x+rnd(-m.w*.22,m.w*.22),y=m.y+rnd(-m.h*.2,m.h*.15);
   if(D3&&D3.weakSpot){D3.weakSpot(true);const q=D3.weakPos&&D3.weakPos();if(q&&isFinite(q.x)&&isFinite(q.y)){x=q.x;y=q.y}}
-  const w=$('weak');w.style.left=x+'px';w.style.top=y+'px';w.hidden=false;weakOn=true;weakT=2400}
+  const w=$('weak');w.classList.toggle('d3',!!(D3&&D3.weakPos&&D3.weakPos()));w.style.left=x+'px';w.style.top=y+'px';w.hidden=false;weakOn=true;weakT=2400}
+function weakFollow(){if(!D3||!D3.weakPos)return;const q=D3.weakPos();if(q&&isFinite(q.x)&&isFinite(q.y)){const w=$('weak');w.style.left=q.x+'px';w.style.top=q.y+'px'}}
 function weakHit(e){e.preventDefault();e.stopPropagation();if(!weakOn||!M||M.dead||dead||paused())return;const w=$('weak'),x=parseFloat(w.style.left),y=parseFloat(w.style.top);weakHide();
   swing(false);M.stun=Math.max(M.stun||0,800);shout('🎯 ZAYIF NOKTA!','#ffd23d');S.tot.weak=(S.tot.weak||0)+1;attack(4,{src:'tap',sure:true,fin:true,pow:1.6,x,y})}
 function tap(e){e.preventDefault();if(dead||paused())return;const n=performance.now();if(n-lastHit<65)return;
@@ -941,7 +942,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=no
   if(M&&!M.dead&&M.spT==null&&M.stun>0)M.stun-=dt;
   if(M&&!M.dead&&M.tr==='heal'){if(M.hlC>0){M.hlC-=dt;if(M.hlC<=0){M.hlC=0;const mp=monPos();if((M.hlD||0)>=M.max*.12){M.stun=1200;floatTxt('BÜYÜ BOZULDU!','c',mp.x,mp.y-60,22)}else{M.hp=Math.min(M.max,M.hp+M.max*.3);floatTxt('+%30 💚','x',mp.x,mp.y-60,22);if(D3&&D3.heal&&0)D3.heal()}M.hlT=6500;updMon()}}
     else{M.hlT-=dt;if(M.hlT<=0&&M.hp<M.max*.85){M.hlC=2200;M.hlD=0;shout('💚 İYİLEŞİYOR — SERT VUR!','#7dffb0');updMon()}}}
-  if(tab==='battle'&&M&&!M.dead){if(weakOn){weakT-=dt;if(weakT<=0)weakHide()}else if(!(M.tele>0)){R.wkT=(R.wkT||0)+dt;if(R.wkT>=(R.wkN||6000))weakShow()}}
+  if(tab==='battle'&&M&&!M.dead){if(weakOn){weakT-=dt;weakFollow();if(weakT<=0)weakHide()}else if(!(M.tele>0)){R.wkT=(R.wkT||0)+dt;if(R.wkT>=(R.wkN||6000))weakShow()}}
   if(evOn){evT-=dt;if(evT<=0||tab!=='battle'&&evT<20000)evHide()}
   if(M&&!M.dead&&M.afx&&M.afx.includes('regen')){M.rg=(M.rg||0)+dt;if(M.rg>=1000){M.rg=0;M.hp=Math.min(M.max,M.hp+M.max*.02);updMon()}}
   if(M&&!M.dead&&!(M.tele>0)&&!(M.stun>0)){M.t+=dt;if(M.t>=M.int){M.t=0;monsterHit()}$('mAt').style.width=Math.max(0,Math.min(100,M.t/M.int*100))+'%'}},50);
@@ -1023,7 +1024,7 @@ function evOpen(){const k=evOn;if(!k||dead||busyMode())return;evHide();S.ev=(S.e
     const it=pick(c);hpKeep(()=>{it.up=(it.up||0)+1});S.tot.maxUp=Math.max(S.tot.maxUp||0,it.up);tune([600,900],70);updAll();save();
     openSheet('<div style="text-align:center"><div style="font-size:60px">⚒️</div><h2>Gezgin demirci</h2><p class="mut">Yolda karşılaştığın usta, <b style="color:'+RAR[it.r].c+'">'+it.e+' '+esc(it.n)+'</b> eşyanı bedavaya <b>+'+it.up+'</b> yaptı.</p></div><button class="btn pri w100" data-a="close">Sağ ol usta</button>');return}
   if(k==='chest'){openSheet('<div style="text-align:center"><div style="font-size:60px">🎁</div><h2>Lanetli sandık</h2><p class="mut">İçinden hafif bir uğultu geliyor.<br><b>%55</b> ihtimalle Epik ya da Efsanevi eşya ve altın.<br><b>%45</b> ihtimalle lanet: canının %40\'ı gider.</p></div><div class="row"><button class="btn pri grow" data-a="evChest">Aç</button><button class="btn grow" data-a="close">Dokunma</button></div>');return}
-  const it=makeItem(G()+2,rollRar([0,50,38,12])),c=price(it)*5,cur=S.eq[it.slot];evD={it,c};
+  let it=null;for(let i=0;i<10;i++){const c=makeItem(Math.max(G(),gBest())+4,rollRar([0,30,50,20]),i<6?null:pick(SLOTS).k);if(!it||power(c)-power(S.eq[c.slot])>power(it)-power(S.eq[it.slot]))it=c}const c=price(it)*5,cur=S.eq[it.slot];evD={it,c};
   openSheet('<div style="text-align:center"><div style="font-size:60px">🧙</div><h2>Gezgin tüccar</h2><p class="mut">"Bunu başka yerde bulamazsın yolcu."</p></div><div class="card" style="text-align:center;border-color:'+RAR[it.r].c+'88"><div style="font-size:40px">'+it.e+'</div><b style="color:'+RAR[it.r].c+'">'+esc(it.n)+'</b><div class="mut">'+RAR[it.r].n+' · '+SLOT[it.slot].n+' · Seviye '+it.L+'</div><div style="margin-top:6px">⚡ Güç <b>'+fmt(power(it))+'</b> <span class="mut">(kuşandığın: '+fmt(power(cur))+')</span></div>'+(it.leg?'<div style="margin-top:6px;color:#ffd9a0">'+LEGP[it.leg].i+' '+LEGP[it.leg].n+': '+LEGP[it.leg].d+'</div>':'')+'</div><div class="row"><button class="btn pri grow" data-a="evBuy" '+(S.gold<c?'disabled':'')+'>Satın al · 💰 '+fmt(c)+'</button><button class="btn grow" data-a="close">Geç</button></div>')}
 function towerCard(){const f=S.tower.best+1;return '<div class="card" style="background:linear-gradient(135deg,#2a2a5a,#1e2136 70%);border-color:#9fb4ff55"><div class="row"><span style="font-size:44px">🗼</span><div class="grow"><b style="font-size:16px">Sonsuz Kule</b><div class="mut">Her katta güçlü bir muhafız, 40 saniye. İlk geçişte ödül; her 3 katta rün, her 5 katta 💎.</div><div class="mut" style="margin-top:3px">En yüksek: <b style="color:var(--gold)">'+S.tower.best+'. kat</b> · Deneme sınırsız</div></div></div><button class="btn pri w100" style="margin-top:10px" data-a="tower" '+(S.cls&&!dead&&!busyMode()?'':'disabled')+'>🗼 '+f+'. kata çık</button>'+(S.cls&&!dead&&!busyMode()&&towerSkipN()?'<button class="btn ok w100" style="margin-top:8px" data-a="towerSkip">⏩ Hızlı geç: '+towerSkipN()+' kolay kat (ödülleriyle)</button>':'')+'</div>'}
 
@@ -1232,6 +1233,7 @@ function renderHero(){const c=CLS[S.cls];let h='<div class="seg s5">'+[['stat','
 function renderQuest(){const D=S.daily,qg=qGold();
   let h='<h2>📜 Görevler</h2><div class="card"><div class="row" style="margin-bottom:10px"><b class="grow">📅 Günlük giriş ödülü</b><span class="mut">Seri: '+D.streak+' gün</span></div>'+daysHtml()+
    (D.claimed?'<div class="mut" style="text-align:center;margin-top:10px">Bugünkü ödülü aldın. Yarın yine gel!</div>':'<button class="btn pri w100" style="margin-top:12px" data-a="claimLogin">Al: '+loginRw(D.streak%7)+'</button>')+'</div>';
+  h+=zqHtml();
   h+='<h3>Günlük görevler · her gün yenilenir</h3>';
   D.q.forEach((q,i)=>{const Q=QUESTS[q.k],done=q.p>=q.n;
     h+='<div class="card quest"><span class="e">'+Q.i+'</span><div class="grow"><b>'+Q.d(q.n)+'</b><div class="rw">Ödül: 💰 '+fmt(qg)+' · 💎 8</div><div class="pbar '+(done?'done':'')+'"><i style="width:'+(q.p/q.n*100)+'%"></i></div><div class="mut" style="font-size:11px;margin-top:3px">'+fmt(q.p)+' / '+fmt(q.n)+'</div></div>'+
@@ -1243,7 +1245,6 @@ function renderQuest(){const D=S.daily,qg=qGold();
     h+='<div class="card quest"><span class="e">'+a.i+'</span><div class="grow"><b>'+a.n+'</b> <span class="stars">'+a.t.map((_,k)=>k<t?'<b>★</b>':'★').join('')+'</span><div class="rw">'+(max?'Tamamlandı!':a.d(goal)+' · 💎 '+a.g[t])+'</div>'+
      (max?'':'<div class="pbar '+(rd?'done':'')+'"><i style="width:'+Math.min(100,val/goal*100)+'%"></i></div>')+'</div>'+
      (max?'<span style="font-size:24px">🏆</span>':'<button class="btn sm '+(rd?'ok':'')+'" data-a="achClaim" data-v="'+a.k+'" '+(rd?'':'disabled')+'>Al</button>')+'</div>'});
-  h+=zqHtml();
   $('s-quest').innerHTML=h}
 const potPrice=()=>10+3*gBest();
 function renderShop(){const g=gBest(),pp=potPrice();
