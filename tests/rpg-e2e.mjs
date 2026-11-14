@@ -369,14 +369,14 @@ await p.evaluate(() => closeSheet()); await clear();
 // ---- v10 ----
 await clear(); await p.evaluate(() => { S.set.bgFight = true; S.autoAtk = true; go('battle'); spawn(); }); await waitFor(() => M && !M.dead, 4000);
 // menüde efsanevi: pencere açılmaz, savaşa dönünce gösterilir
-await p.evaluate(() => { go('inv'); const it = makeItem(20, 3); window.__leg = it.id; if (giveItem(it)) lootMsg(it); });
+await p.evaluate(() => { go('inv'); const it = makeItem(20, 3); window.__leg = it.id; if (giveItem(it)) lootMsg(it, true); });
 check(await p.evaluate(() => !document.querySelector('#leg.on') && !!pendLeg), 'menüde efsanevi penceresi açıldı');
 await waitFor(() => !!document.querySelector('#s-inv [data-v="' + window.__leg + '"]') || !menuDirty, 6000);
 check(await p.evaluate(() => !menuDirty), 'çanta kendini yenilemedi');
 await p.waitForTimeout(700); check(await p.evaluate(() => !document.querySelector('.coin') && (!D3 || !!document.querySelector('#vitrin canvas'))), 'menüde uçan altın kaldı ya da vitrin kayboldu');
 check(await p.evaluate(() => !document.getElementById('bgInfo').hidden && /Kat/.test(document.getElementById('bgInfo').innerText)), 'menü savaş özeti görünmüyor');
 await shot('80-menu-ozet');
-await p.evaluate(() => go('battle')); await waitFor(() => !!document.querySelector('#leg.on'), 3000);
+await p.evaluate(() => go('battle')); for (let i = 0; i < 30 && !(await p.evaluate(() => !!document.querySelector('#leg.on'))); i++) await p.waitForTimeout(100);
 check(await p.evaluate(() => !!document.querySelector('#leg.on') && document.getElementById('bgInfo').hidden), 'savaşa dönünce efsanevi gösterilmedi');
 await clear();
 // boss uyarısı sırasında sekme değişince saldırı iptal olur
@@ -446,8 +446,8 @@ for (let i = 0; i < 5; i++) { await waitFor(() => M && M.fate && !M.dead, 4000);
   await p.evaluate(i => { if (i === 0) ACT.fatePick('atkP'); else document.querySelector('#sheet [data-a=fatePick]').click(); }, i); await p.waitForTimeout(150); }
 check(await p.evaluate(() => fateF === 6 && FB.atkP >= 1 && P.e.atkP >= 1 && Object.values(FB).reduce((a, b) => a + b, 0) === 6), 'kader güçleri birikmedi: ' + await p.evaluate(() => JSON.stringify([fateF, FB])));
 await waitFor(() => M && M.fate && !M.dead, 4000); await p.waitForTimeout(300); await shot('99b-kader-savas');
-await p.evaluate(() => { M.int = 1e9; S.hp = 1; monsterHit(50); }); await p.waitForTimeout(300); await shot('99c-kader-son');
-check(await p.evaluate(o => !fateOn && !dead && S.fate.best === Math.max(o.best, 5) && S.gold > o.g && !P.e.atkP && !!document.querySelector('#sheet [data-a=fateDone]'), fb), 'kader yolu bitişi hatalı');
+await p.evaluate(() => { M.int = 1e9; S.hp = 1; R.dodge = 0; R.shield = 0; R.last = true; monsterHit(50); }); await p.waitForTimeout(300); await shot('99c-kader-son');
+check(await p.evaluate(o => !fateOn && !dead && S.fate.best === Math.max(o.best, 5) && S.gold > o.g && !P.e.atkP && !!document.querySelector('#sheet [data-a=fateDone]'), fb), 'kader yolu bitişi hatalı: ' + await p.evaluate(o => JSON.stringify({ fateOn, dead, best: S.fate.best, o, g: S.gold, e: P.e, sh: document.getElementById('sheet').innerText.slice(0, 60), on: document.getElementById('sheetBg').className, hp: S.hp }), fb));
 await p.evaluate(() => ACT.fateDone()); await waitFor(() => M && !M.dead && !M.fate, 4000);
 check(await p.evaluate(() => !busyMode() && !M.fate && document.getElementById('fateBar').innerHTML === ''), 'kader sonrası normale dönülmedi');
 await p.evaluate(() => { S.autoAtk = true; });

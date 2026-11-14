@@ -847,7 +847,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   if(boss||el||Math.random()<.1){const e=boss?5:el?2:1;S.ess+=e;setTimeout(()=>floatTxt('+'+e+' 💠','x',m.x,m.y+60),150)}
   addXp(xp);
   if(boss||Math.random()*100<(el?Math.min(100,P.drop*2.5):P.drop)){const lk=S.st.luck*.05;
-    const it=makeItem(g,rollRar(boss?[25,42,25,8+lk]:el?[30,45,20,5+lk]:[Math.max(34,62-g*.12),27,9+lk+g*.03,2+lk/2+g*.008]));if(giveItem(it,true))lootMsg(it)}
+    const it=makeItem(g,rollRar(boss?[25,42,25,8+lk]:el?[30,45,20,5+lk]:[Math.max(34,62-g*.12),27,9+lk+g*.03,2+lk/2+g*.008]));if(giveItem(it,true))lootMsg(it,true)}
   S.hp=Math.min(P.hp,S.hp+Math.round(P.hp*.08));
   if(D3)D3.die(boss);const me=$('mon');me.classList.remove('hit','in');me.classList.add('dead');fxBoom(m.x,m.y,boss?'#ff5263':'#fff');sfx('kill',boss?1.3:1);if(boss)scrFlash('w');
   if(boss&&tab==='battle'){vib([40,40,80]);tune([392,523,659,784],90);shake(true)}
@@ -864,10 +864,10 @@ function addXp(x){S.xp+=x;let up=0;while(S.xp>=xpNeed(S.lvl)){S.xp-=xpNeed(S.lvl
   if(up){calc();S.hp=P.hp;banner('⭐ SEVİYE '+S.lvl+' ⭐','lv');if(tab==='battle'){if(D3)D3.levelUp();confetti(35);tune([523,659,784,1047],80);vib([30,30,30])}else toast('⭐ Seviye '+S.lvl+'!');giftCheck();renderSkillBar()}}
 function giftCheck(){if(S.lvl>=3&&!S.pets.wolf){S.pets.wolf=1;if(!S.pet)S.pet='wolf';calc();
   enqueue(()=>openSheet('<div style="text-align:center"><div style="font-size:80px">🐺</div><h2>Yeni yoldaş: Kurt!</h2><p class="mut">Seviye 3 hediyesi. Kurt yanında savaşır, düşmana kendiliğinden saldırır ve kritik şansını artırır. Kahraman → Yoldaş bölümünden besleyip güçlendirebilir, başka yoldaşlar edinebilirsin.</p><button class="btn pri w100" data-a="close">Harika!</button></div>'))}}
-function lootMsg(it){const c=RAR[it.r].c,d=document.createElement('div');d.style.borderColor=c;d.style.color=c;d.textContent=it.e+' '+it.n+' ('+RAR[it.r].n+')';
+function lootMsg(it,drop){const c=RAR[it.r].c,d=document.createElement('div');d.style.borderColor=c;d.style.color=c;d.textContent=it.e+' '+it.n+' ('+RAR[it.r].n+')';
   $('loot').appendChild(d);setTimeout(()=>d.remove(),2800);
   if(D3&&it.r>=1&&tab==='battle')D3.lootBeam(RAR[it.r].c);
-  if(it.r===3){if(tab==='battle')legendary(it);else{pendLeg=it;toast('🌟 EFSANEVİ eşya düştü: '+it.e+' '+it.n,'big')}}else if(it.r===2&&tab==='battle'){tune([440,660],90);vib(40)}}
+  if(it.r===3){if(tab==='battle'||!drop)legendary(it);else{pendLeg=it;toast('🌟 EFSANEVİ eşya düştü: '+it.e+' '+it.n,'big')}}else if(it.r===2&&tab==='battle'){tune([440,660],90);vib(40)}}
 let legAfter=null;
 function legendary(it,after){$('legE').textContent=it.e;$('legN').textContent=it.n;$('leg').classList.add('on');legAfter=after||null;confetti(80);tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
 function monsterHit(mult){mult=mult||1;const h=heroPos();if(D3&&mult===1)D3.monAttack(R.dodge>0);
