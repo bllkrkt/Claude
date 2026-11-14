@@ -13,6 +13,8 @@ const p = await ctx.newPage();
 p.on('pageerror', e => errors.push(String(e)));
 p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 const url = 'file://' + path.resolve(html);
+// rastgele canavar türleri ve yol olayları eski kontrolleri bozmasın; kendi bölümlerinde açılır
+await p.addInitScript(() => { window.__noRnd = 1; });
 await p.goto(url);
 await p.waitForTimeout(400);
 // rastgele düşen efsanevi eşya kutlaması tıklamayı engellemesin
@@ -33,7 +35,7 @@ await shot('02b-hikaye');
 await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; S.set.bgFight = false; S.set.autoPot = false; });
 await p.waitForTimeout(300);
 
-async function waitFor(fn, ms, arg) { const end = Date.now() + ms; while (Date.now() < end) { if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(100); } return false; }
+async function waitFor(fn, ms, arg) { const end = Date.now() + ms; while (Date.now() < end) { await p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); }); if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(100); } return false; }
 // açık pencereleri oyuncu gibi kapat
 const clear = () => p.evaluate(() => {
   for (let k = 0; k < 4; k++) {
@@ -44,6 +46,8 @@ const clear = () => p.evaluate(() => {
     else if (document.querySelector('#sheet [data-a=arenaDone]')) ACT.arenaDone();
     else if (document.querySelector('#sheet [data-a=dungDone]')) ACT.dungDone();
     else if (document.querySelector('#sheet [data-a=towerDone]')) ACT.towerDone();
+    else if (document.querySelector('#sheet [data-a=fateDone]')) ACT.fateDone();
+    else if (document.querySelector('#sheet [data-a=fatePick]')) document.querySelector('#sheet [data-a=fatePick]').click();
     else if (document.querySelector('#sheet [data-a=duelDone]')) ACT.duelDone();
     else if (document.querySelector('#sheet [data-a=claimLogin]')) claimLogin();
     else if (document.querySelector('#sheet [data-a=pickCls]')) ACT.pickCls('war');
@@ -168,6 +172,7 @@ await shot('29-boss-sure-doldu'); await clear();
 
 // boss arenası
 await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('30-arena-kart');
+await p.waitForTimeout(300); await p.evaluate(() => updAll());
 await p.click('#s-adv [data-a=arena]'); await p.waitForTimeout(900);
 await p.evaluate(() => { M.int = 1e9; for (let i = 0; i < 8; i++) attack(3, { src: 'tap' }); arenaDmg = Math.max(arenaDmg, arenaTier(4) + 5); updMon(); });
 await p.waitForTimeout(500); await shot('31-arena-savas');
@@ -365,7 +370,7 @@ await p.evaluate(() => closeSheet()); await clear();
 await clear(); await p.evaluate(() => { S.set.bgFight = true; S.autoAtk = true; go('battle'); spawn(); }); await waitFor(() => M && !M.dead, 4000);
 // menüde efsanevi: pencere açılmaz, savaşa dönünce gösterilir
 await p.evaluate(() => { go('inv'); const it = makeItem(20, 3); window.__leg = it.id; if (giveItem(it)) lootMsg(it); });
-check(await p.evaluate(() => !document.querySelector('#leg.on') && !!pendLeg && menuDirty), 'menüde efsanevi penceresi açıldı');
+check(await p.evaluate(() => !document.querySelector('#leg.on') && !!pendLeg), 'menüde efsanevi penceresi açıldı');
 await waitFor(() => !!document.querySelector('#s-inv [data-v="' + window.__leg + '"]') || !menuDirty, 6000);
 check(await p.evaluate(() => !menuDirty), 'çanta kendini yenilemedi');
 await p.waitForTimeout(700); check(await p.evaluate(() => !document.querySelector('.coin') && (!D3 || !!document.querySelector('#vitrin canvas'))), 'menüde uçan altın kaldı ya da vitrin kayboldu');
@@ -389,6 +394,63 @@ check(await p.evaluate(() => { const calls = []; BR_T = { keepOn: v => calls.pus
 await p.evaluate(() => { S.set.bgFight = false; ACT.settings(); }); await p.waitForTimeout(250);
 check(await p.evaluate(() => !!document.querySelector('#sheet [data-v=autoPot]')), 'oto iksir ayarı yok');
 await p.evaluate(() => { const s = document.getElementById('sheet'); s.scrollTop = 260; }); await shot('81-ayarlar-v10'); await p.evaluate(() => closeSheet()); await clear();
+// ---- v11 ----
+await clear(); await p.evaluate(() => { S.set.bgFight = false; go('battle'); });
+// oto temizlik: değersiz düşen eşya çantaya girmez, güçlü olan girer
+check(await p.evaluate(() => { const n = S.inv.length, g = S.gold; S.set.autoJ = 2; S.set.autoJM = 'sell'; const eq = S.eq.weapon; const weak = makeItem(1, 0, 'weapon'); delete weak.set; const r1 = giveItem(weak, true);
+  const strong = makeItem(eq.L + 400, 1, 'weapon'); delete strong.set; const r2 = giveItem(strong, true); const r3 = giveItem(makeItem(1, 0, 'weapon'), false); S.set.autoJ = 0;
+  const ok = r1 === false && r2 === true && r3 === true && S.inv.length === n + 2 && S.gold > g; S.inv = S.inv.filter(i => i !== strong); S.inv.pop(); return ok; }), 'oto temizlik hatalı');
+// çanta doluyken epik eşya en zayıfın yerine geçer; büyütme
+check(await p.evaluate(() => { const keep = S.inv.slice(); while (S.inv.length < invMax()) S.inv.push(makeItem(1, 0)); const n = S.inv.length; const ep = makeItem(50, 2); const r = giveItem(ep, true); const ok = r === true && S.inv.length === n && S.inv.includes(ep);
+  const c0 = makeItem(1, 0); const r2 = giveItem(c0, true); const ok2 = r2 === false && S.inv.length === n; S.inv = keep; return ok && ok2; }), 'dolu çantada epik koruması hatalı');
+check(await p.evaluate(() => { const m = invMax(); S.gems += 100; ACT.invUpDo('d'); const ok = invMax() === m + 10; closeSheet(); return ok; }), 'çanta büyümedi');
+await p.click('#tabs [data-v=inv]'); await p.waitForTimeout(300); await p.evaluate(() => ACT.autoJ()); await p.waitForTimeout(250); await shot('90-oto-temizlik'); await p.evaluate(() => closeSheet());
+// efsanevi özel güç + eski efsanevilere güç atanması
+check(await p.evaluate(() => { const it = makeItem(30, 3, 'ring'); const a = !!LEGP[it.leg]; const old = JSON.parse(JSON.stringify(it)); delete old.leg; const c = cleanItem(old); return a && !!LEGP[c.leg] && !('leg' in cleanItem(JSON.parse(JSON.stringify(makeItem(5, 1))))); }), 'efsanevi güç atanmadı');
+check(await p.evaluate(() => { const old = S.eq.ring, it = makeItem(30, 3, 'ring'); if (old) delete old.leg; it.leg = 'swift'; S.eq.ring = it; calc(); const g0 = P.gold, e0 = P.e.gold || 0, b0 = P.e.giant || 0; it.leg = 'gold'; calc(); const g1 = P.gold, has = P.e.gold === e0 + 1; it.leg = 'giant'; calc(); const ok = has && Math.abs(g1 - g0 - 40) < 1e-6 && P.e.giant === b0 + 1; if (old) S.eq.ring = old; else delete S.eq.ring; calc(); return ok; }), 'özel güç etkisi hesaba girmedi');
+await p.evaluate(() => { const it = makeItem(30, 3, 'ring'); it.leg = 'storm'; S.inv.push(it); itemSheet(it); }); await p.waitForTimeout(250); await shot('91-ozel-guc');
+check(await p.evaluate(() => /Özel güç/.test(document.getElementById('sheet').innerText)), 'özel güç eşya penceresinde yok'); await p.evaluate(() => { closeSheet(); S.inv.pop(); go('battle'); });
+// canavar türleri
+await clear(); await p.evaluate(() => { TRAITS = true; S.autoAtk = false; if (document.querySelector('#leg.on')) ACT.legClose(); });
+check(await p.evaluate(() => { spawn(); M.max = M.hp = 1000; M.sh = 500; M.tr = 'shield'; delete M.pack; delete M.bomb; delete M.timer; R.cd = [0, 0, 0, 0]; attack(1, { src: 'auto' }); const a = M.hp === 1000 && M.sh < 500; M.sh = 1; attack(1, { src: 'auto' }); return a && M.sh === 0 && M.stun > 0 && M.hp === 1000; }), 'kalkanlı canavar hatalı');
+check(await p.evaluate(() => { spawn(); M.tr = 'pack'; M.pack = 3; M.max = M.hp = 10; delete M.sh; delete M.bomb; delete M.timer; const k = S.tot.kills; attack(50, { src: 'tap' }); const a = M.pack === 2 && M.hp === 10 && !M.dead && S.tot.kills === k; attack(50, { src: 'tap' }); attack(50, { src: 'tap' }); return a && M.dead && S.tot.kills === k + 1; }), 'sürü canavarı hatalı');
+await waitFor(() => M && !M.dead, 4000);
+check(await p.evaluate(() => { spawn(); M.max = M.hp = 1e9; M.int = 1e9; delete M.sh; delete M.pack; M.tr = 'bomb'; M.bomb = true; M.timer = 60; S.hp = P.hp; return true; }), '');
+await waitFor(() => M && M.dead, 3000); check(await p.evaluate(() => S.hp < P.hp && S.hp >= 1 && !dead), 'bombacı patlamadı');
+await waitFor(() => M && !M.dead, 4000);
+await p.evaluate(() => { spawn(); M.max = 1e6; M.hp = 5e5; M.int = 1e9; delete M.sh; delete M.pack; delete M.bomb; delete M.timer; M.tr = 'heal'; M.hlT = 50; S.autoAtk = false; });
+await waitFor(() => M.hlC > 0, 3000); await shot('92-sifaci'); await waitFor(() => !(M.hlC > 0), 5000);
+check(await p.evaluate(() => M.hp > 5e5), 'şifacı iyileşmedi: ' + await p.evaluate(() => JSON.stringify([M.hp, M.hlC, M.hlT, M.tr])));
+// zayıf nokta
+check(await p.evaluate(() => { spawn(); M.max = M.hp = 1e9; M.int = 1e9; delete M.sh; delete M.pack; delete M.bomb; delete M.timer; M.tr = null; weakShow(); return weakOn && !document.getElementById('weak').hidden; }), 'zayıf nokta çıkmadı');
+await p.waitForTimeout(250); await shot('93-zayif-nokta');
+check(await p.evaluate(() => { const h = M.hp; document.getElementById('weak').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); return M.hp < h && !weakOn && M.stun > 0; }), 'zayıf nokta vuruşu çalışmadı');
+// yol olayları
+for (const k of ['fount', 'smith', 'chest', 'shop']) { await p.evaluate(k => { evShow(); evOn = k; document.getElementById('evBtn').textContent = EVN[k] + ' ❗'; }, k); if (k === 'shop') await shot('94-olay-dugme');
+  await p.evaluate(() => document.getElementById('evBtn').click()); await p.waitForTimeout(250); check(await p.evaluate(() => !!document.querySelector('#sheetBg.on') && !evOn), 'olay açılmadı: ' + k); if (k === 'shop') await shot('95-tuccar');
+  if (k === 'chest') await p.evaluate(() => ACT.evChest()); if (k === 'shop') await p.evaluate(() => { S.gold += 1e9; const n = S.inv.length; ACT.evBuy(); window.__buy = S.inv.length === n + 1; }); await clear(); }
+check(await p.evaluate(() => window.__buy), 'tüccardan alınamadı');
+// defter + bölge görevi
+check(await p.evaluate(() => { const b0 = bstBonus(); S.bst['Deneme'] = 9; bstAdd('Elit Deneme'); const ok = S.bst['Deneme'] === 10 && Math.abs(bstBonus() - b0 - .4) < 1e-9; delete S.bst['Deneme']; return ok; }), 'canavar defteri hatalı');
+await p.evaluate(() => ACT.bst()); await p.waitForTimeout(250); await shot('96-defter'); await p.evaluate(() => closeSheet());
+check(await p.evaluate(() => { S.zq[S.zone] = { s: 0, p: 39 }; zqAdd('boss'); const a = S.zq[S.zone].p === 39; zqAdd('kill'); const g = S.gems; ACT.zqClaim(); return a && S.zq[S.zone].s === 1 && S.zq[S.zone].p === 0 && S.gems > g; }), 'bölge görevi hatalı');
+await p.click('#tabs [data-v=quest]'); await p.waitForTimeout(300); await p.evaluate(() => { const e = document.getElementById('s-quest'); e.scrollTop = e.scrollHeight; }); await shot('97-bolge-gorevi');
+// Kader Yolu
+await p.click('#tabs [data-v=adv]'); await p.waitForTimeout(300); await shot('98-macera');
+await p.evaluate(() => { TRAITS = false; S.autoAtk = false; S.lvl = Math.max(S.lvl, 8); ACT.fate(); }); await waitFor(() => fateOn && M && M.fate && !M.dead, 4000);
+check(await p.evaluate(() => fateOn && M.fate && tab === 'battle' && busyMode()), 'kader yolu başlamadı');
+const fb = await p.evaluate(() => ({ g: S.gold, best: S.fate.best }));
+for (let i = 0; i < 5; i++) { await waitFor(() => M && M.fate && !M.dead, 4000); await p.evaluate(() => { M.int = 1e9; M.spT = 1e9; delete M.sh; delete M.pack; M.hp = 1; attack(5, { src: 'tap' }); });
+  await waitFor(() => fatePend && !!document.querySelector('#sheetBg.on #sheet [data-a=fatePick]'), 4000); if (i === 0) await shot('99-kader-secim');
+  check(await p.evaluate(() => document.querySelectorAll('#sheet [data-a=fatePick]').length === 3), 'kader seçimi 3 güç sunmadı');
+  await p.evaluate(i => { if (i === 0) ACT.fatePick('atkP'); else document.querySelector('#sheet [data-a=fatePick]').click(); }, i); await p.waitForTimeout(150); }
+check(await p.evaluate(() => fateF === 6 && FB.atkP >= 1 && P.e.atkP >= 1 && Object.values(FB).reduce((a, b) => a + b, 0) === 6), 'kader güçleri birikmedi: ' + await p.evaluate(() => JSON.stringify([fateF, FB])));
+await waitFor(() => M && M.fate && !M.dead, 4000); await p.waitForTimeout(300); await shot('99b-kader-savas');
+await p.evaluate(() => { M.int = 1e9; S.hp = 1; monsterHit(50); }); await p.waitForTimeout(300); await shot('99c-kader-son');
+check(await p.evaluate(o => !fateOn && !dead && S.fate.best === Math.max(o.best, 5) && S.gold > o.g && !P.e.atkP && !!document.querySelector('#sheet [data-a=fateDone]'), fb), 'kader yolu bitişi hatalı');
+await p.evaluate(() => ACT.fateDone()); await waitFor(() => M && !M.dead && !M.fate, 4000);
+check(await p.evaluate(() => !busyMode() && !M.fate && document.getElementById('fateBar').innerHTML === ''), 'kader sonrası normale dönülmedi');
+await p.evaluate(() => { S.autoAtk = true; });
 // bozuk kayıt: oyun açılmalı, bozuk veri saklanmalı
 const good = await p.evaluate(() => { save(true); const g = localStorage.getItem(SAVE_KEY); save = () => {}; localStorage.setItem(SAVE_KEY, '{bozuk'); return g; });
 await p.reload(); await p.waitForTimeout(600);
