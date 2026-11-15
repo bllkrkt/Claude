@@ -106,9 +106,29 @@ public class Bridge {
                 JSONArray t = in.optJSONArray("tiles");
                 if (t != null) for (int i = 0; i < 3 && i < t.length(); i++) Toggles.setTileMode(a, i + 1, t.optString(i));
                 refreshTiles();
+                Scheduler.updateDynamic(a);
                 return true;
             }
             case "resetModes": Toggles.saveModes(a, Toggles.defaultModes()); refreshTiles(); return Toggles.modes(a);
+            case "device": return DeviceInfo.all(a);
+            case "battery": return DeviceInfo.battery(a);
+            case "phoneChecks": return AppScanner.phoneChecks(a);
+            case "torch": return Toggles.torch(a, in.optBoolean("on"));
+            case "schedules": return Scheduler.list(a);
+            case "saveSchedules": Scheduler.save(a, in.getJSONArray("list")); return true;
+            case "pinMode": return Scheduler.pin(a, in.optString("id"));
+            case "askNotif":
+                if (Build.VERSION.SDK_INT >= 33) a.runOnUiThread(() -> a.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 5));
+                return true;
+            case "openUrl": {
+                String u = in.optString("url");
+                return u.startsWith("https://github.com/") && start(new Intent(Intent.ACTION_VIEW, Uri.parse(u)));
+            }
+            case "copy": {
+                android.content.ClipboardManager cb = a.getSystemService(android.content.ClipboardManager.class);
+                cb.setPrimaryClip(android.content.ClipData.newPlainText("Araç Kutusu", in.optString("text")));
+                return true;
+            }
             case "installed":
                 try { a.getPackageManager().getPackageInfo(in.optString("pkg"), 0); return true; }
                 catch (Exception e) { return false; }
@@ -125,6 +145,8 @@ public class Bridge {
             case "delete": return Cleaner.delete(a, in.getJSONArray("paths"));
             case "scanApps": return AppScanner.scan(a, in.optBoolean("system"), in.optInt("unusedDays", 60), t -> progress(id, t));
             case "shortcuts": return Shortcuts.list(a);
+            case "permAudit": return AppScanner.permAudit(a, in.optBoolean("system"));
+            case "appList": return AppScanner.appList(a, in.optBoolean("system"), t -> progress(id, t));
             case "set": return Toggles.set(a, in.getString("key"), in.get("value"));
             case "applyMode": {
                 JSONObject mode = in.optJSONObject("mode");
@@ -164,6 +186,10 @@ public class Bridge {
         o.put("shizuku", ShizukuHelper.status(a));
         o.put("playProtect", resolves(playProtect()));
         o.put("canAddTile", Build.VERSION.SDK_INT >= 33);
+        o.put("notif", a.getSystemService(android.app.NotificationManager.class).areNotificationsEnabled());
+        o.put("exact", Scheduler.exactAllowed(a));
+        try { o.put("version", a.getPackageManager().getPackageInfo(a.getPackageName(), 0).versionName); } catch (Exception ignored) { }
+        o.put("canPin", a.getSystemService(android.content.pm.ShortcutManager.class).isRequestPinShortcutSupported());
         o.put("freeBytes", Cleaner.root().getUsableSpace());
         o.put("totalBytes", Cleaner.root().getTotalSpace());
         return o;
@@ -198,6 +224,10 @@ public class Bridge {
                 return start(new Intent("android.settings.WIRELESS_DEBUGGING_SETTINGS"))
                         || start(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
             case "dev": return start(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
+            case "autostart": return Shortcuts.open(a, "autostart");
+            case "batteryApps": return Shortcuts.open(a, "battery_apps") || Shortcuts.open(a, "battery_opt");
+            case "exactAlarm": return Build.VERSION.SDK_INT >= 31 && start(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, me));
+            case "appNotif": return start(new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, a.getPackageName()));
             case "about": return start(new Intent(Settings.ACTION_DEVICE_INFO_SETTINGS));
             case "a11y": return start(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
             case "admins": return Shortcuts.open(a, "admins") || start(new Intent(Settings.ACTION_SECURITY_SETTINGS));

@@ -35,6 +35,7 @@ final class Shortcuts {
     static final String X = "Xiaomi / HyperOS";
     static final String H = "Android'in gizli ekranları";
     static final String P = "İzin ve erişim ekranları";
+    static final String S = "Bağlantı ve sistem";
 
     static List<Item> all(Context c) {
         String me = c.getPackageName();
@@ -69,6 +70,11 @@ final class Shortcuts {
                 .cmp("com.miui.securitycore", "com.miui.securityspace.ui.activity.SpaceSettingActivity"));
         l.add(new Item("cit", X, "Donanım testi (CIT)", "Ekran, dokunmatik, hoparlör, sensör testleri. Arayıcıdaki *#*#6484#*#* kodunun ekranı.")
                 .cmp("com.miui.cit", "com.miui.cit.CitLauncherActivity"));
+        l.add(new Item("xapps", X, "Uygulama yöneticisi (Xiaomi)", "Xiaomi'nin uygulama listesi: toplu kaldırma, önbellek temizleme, izinler.")
+                .cmp("com.miui.securitycenter", "com.miui.appmanager.AppManagerMainActivity"));
+        l.add(new Item("xcleaner", X, "Xiaomi Temizleyici", "Diğer uygulamaların önbelleğini temizleyebilen Xiaomi aracı (Android bunu bize izin vermiyor).")
+                .cmp("com.miui.cleanmaster", "com.miui.optimizecenter.MainActivity")
+                .cmp("com.miui.securitycenter", "com.miui.optimizecenter.MainActivity"));
         l.add(new Item("dev", H, "Geliştirici seçenekleri",
                 "Animasyon hızı, USB hata ayıklama, arka plan sınırı. Kapalıysa: Ayarlar → Telefon hakkında → OS sürümüne 7 kez dokun.")
                 .act(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
@@ -91,6 +97,32 @@ final class Shortcuts {
                 .act(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));
         l.add(new Item("all_apps", H, "Tüm uygulamalar (sistem dahil)", "Android'in ham uygulama listesi.")
                 .act(Settings.ACTION_MANAGE_ALL_APPLICATIONS_SETTINGS));
+        l.add(new Item("privacy", H, "Gizlilik paneli", "Son 24 saatte kamera, mikrofon ve konumu hangi uygulama kullandı.")
+                .act("android.intent.action.REVIEW_PERMISSION_USAGE")
+                .act("android.settings.PRIVACY_SETTINGS"));
+        l.add(new Item("battery_use", S, "Pil kullanımı", "Pili en çok hangi uygulama tüketiyor.")
+                .act(Intent.ACTION_POWER_USAGE_SUMMARY));
+        l.add(new Item("storage", S, "Depolama", "Telefonun kendi depolama ekranı.")
+                .act(Settings.ACTION_INTERNAL_STORAGE_SETTINGS));
+        l.add(new Item("data_usage", S, "Veri kullanımı", "Mobil veri kullanımı ve kotası.")
+                .act(Settings.ACTION_DATA_USAGE_SETTINGS));
+        l.add(new Item("hotspot", S, "Kişisel erişim noktası", "Telefonu modem olarak kullan (hotspot).")
+                .cmp("com.android.settings", "com.android.settings.Settings$TetherSettingsActivity")
+                .cmp("com.android.settings", "com.android.settings.TetherSettings"));
+        l.add(new Item("vpn", S, "VPN", "VPN bağlantıları ve \"her zaman açık VPN\".")
+                .act(Settings.ACTION_VPN_SETTINGS));
+        l.add(new Item("location", S, "Konum", "Konum ve konum izni olan uygulamalar.")
+                .act(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+        l.add(new Item("nfc", S, "NFC", "Temassız ödeme ve NFC.")
+                .act(Settings.ACTION_NFC_SETTINGS));
+        l.add(new Item("lock", S, "Ekran kilidi ve güvenlik", "PIN, parmak izi, yüz tanıma.")
+                .act(Settings.ACTION_SECURITY_SETTINGS));
+        l.add(new Item("lang", S, "Dil ve klavye", "Sistem dili, klavye ayarları.")
+                .act(Settings.ACTION_LOCALE_SETTINGS));
+        l.add(new Item("date", S, "Tarih ve saat", "Otomatik saat, saat dilimi.")
+                .act(Settings.ACTION_DATE_SETTINGS));
+        l.add(new Item("alarms", P, "Alarmlar ve hatırlatıcılar", "Tam zamanında çalışabilen uygulamalar (zamanlanmış modlar için gerekli).")
+                .actPkg(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, me));
         l.add(new Item("usage_access", P, "Kullanım erişimi", "Hangi uygulamalar senin uygulama kullanımını görebiliyor.")
                 .act(Settings.ACTION_USAGE_ACCESS_SETTINGS));
         l.add(new Item("notif_access", P, "Bildirim erişimi", "Bildirimlerini okuyabilen uygulamalar.")

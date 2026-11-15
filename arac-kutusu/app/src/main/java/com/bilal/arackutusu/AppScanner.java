@@ -133,6 +133,15 @@ final class AppScanner {
                 score += 1;
             }
 
+            if (!system && requested.contains("android.permission.REQUEST_INSTALL_PACKAGES")) {
+                Boolean on = op(ao, "android:request_install_packages", ai.uid, pk);
+                if (Boolean.TRUE.equals(on)) {
+                    risks.put(risk("install", "APK yükleyebilir", 2, "Başka uygulama kurma ekranı açabilir. Tarayıcı veya dosya yöneticisi değilse "
+                            + "bu izni kapat: kötü amaçlı uygulamalar kendine \"güncelleme\" diye zararlı APK indirir."));
+                    score += 2; counts[6]++;
+                }
+            }
+
             String installer = null;
             try {
                 if (Build.VERSION.SDK_INT >= 30) {
@@ -152,6 +161,10 @@ final class AppScanner {
             }
 
             int installedDays = (int) ((now - p.firstInstallTime) / day);
+            if (!system && installedDays < 7 && risks.length() > 0) {
+                risks.put(risk("new", "Yeni yüklendi", 1, installedDays + " gün önce kuruldu. Bilerek kurduğundan emin ol."));
+                score += 1;
+            }
             Integer unused = null;
             if (usage && launchable.contains(pk) && installedDays >= unusedDays) {
                 Long t = lastUsed.get(pk);
@@ -226,5 +239,158 @@ final class AppScanner {
         }
         try { return String.valueOf(pm.getApplicationLabel(pm.getApplicationInfo(installer, 0))); }
         catch (Exception e) { return installer; }
+    }
+
+    // ---------------- Telefon güvenlik kontrol listesi ----------------
+    static JSONObject phoneChecks(Context c) throws Exception {
+        JSONArray a = new JSONArray();
+        android.app.KeyguardManager km = c.getSystemService(android.app.KeyguardManager.class);
+        boolean lock = km != null && km.isDeviceSecure();
+        a.put(check("lock", lock, "Ekran kilidi", lock ? "PIN, desen veya şifre var." : "Telefonun kilitsiz! Kaybolursa her şeye erişilir.", 3));
+        int months = -1;
+        try {
+            java.time.LocalDate pd = java.time.LocalDate.parse(Build.VERSION.SECURITY_PATCH);
+            months = (int) java.time.temporal.ChronoUnit.MONTHS.between(pd, java.time.LocalDate.now());
+        } catch (Exception ignored) { }
+        boolean patch = months >= 0 && months <= 6;
+        a.put(check("patch", patch, "Güvenlik yaması", months < 0 ? "Okunamadı." : "Tarih: " + Build.VERSION.SECURITY_PATCH + " (" + months + " ay önce)"
+                + (patch ? "" : ". Ayarlar → Telefon hakkında → güncellemeleri kontrol et."), 2));
+        boolean adb = Settings.Global.getInt(c.getContentResolver(), Settings.Global.ADB_ENABLED, 0) == 1;
+        a.put(check("adb", !adb, "USB hata ayıklama", adb ? "Açık. Shizuku kullanmıyorsan kapat: bilgisayara takılınca risk oluşturur." : "Kapalı.", 1));
+        boolean dev = Settings.Global.getInt(c.getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1;
+        a.put(check("dev", !dev, "Geliştirici seçenekleri", dev ? "Açık. Kullanmıyorsan kapatabilirsin (zararı yok ama gereksiz)." : "Kapalı.", 0));
+        boolean enc = false;
+        try {
+            android.app.admin.DevicePolicyManager dpm = c.getSystemService(android.app.admin.DevicePolicyManager.class);
+            int st = dpm.getStorageEncryptionStatus();
+            enc = st == android.app.admin.DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE
+                    || st == android.app.admin.DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_PER_USER
+                    || st == android.app.admin.DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE_DEFAULT_KEY;
+        } catch (Exception ignored) { }
+        a.put(check("enc", enc, "Depolama şifrelemesi", enc ? "Açık." : "Kapalı veya okunamadı.", 2));
+        Set<String> a11y = pkgsFromSetting(c, Settings.Secure.getString(c.getContentResolver(), "enabled_accessibility_services"));
+        a11y.remove(c.getPackageName());
+        a.put(check("a11y", a11y.isEmpty(), "Erişilebilirlik hizmetleri", a11y.isEmpty() ? "Hiçbiri açık değil." : a11y.size() + " uygulamada açık. Aşağıdaki taramada gör.", 2));
+        int total = 0, lost = 0;
+        for (int i = 0; i < a.length(); i++) {
+            JSONObject x = a.getJSONObject(i);
+            total += x.getInt("w");
+            if (!x.getBoolean("ok")) lost += x.getInt("w");
+        }
+        JSONObject o = new JSONObject();
+        o.put("checks", a);
+        o.put("score", Math.round(100f * (total - lost) / Math.max(1, total)));
+        return o;
+    }
+
+    private static JSONObject check(String k, boolean ok, String t, String d, int w) throws Exception {
+        return new JSONObject().put("k", k).put("ok", ok).put("t", t).put("d", d).put("w", w);
+    }
+
+    // ---------------- İzin denetimi: hangi izin hangi uygulamalarda açık ----------------
+    static final String[][] GROUPS = {
+            {"camera", "Kamera", "android.permission.CAMERA"},
+            {"mic", "Mikrofon", "android.permission.RECORD_AUDIO"},
+            {"loc", "Konum", "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION"},
+            {"bgloc", "Arka planda konum", "android.permission.ACCESS_BACKGROUND_LOCATION"},
+            {"contacts", "Kişiler", "android.permission.READ_CONTACTS"},
+            {"sms", "SMS", "android.permission.READ_SMS", "android.permission.SEND_SMS", "android.permission.RECEIVE_SMS"},
+            {"calls", "Arama kayıtları", "android.permission.READ_CALL_LOG"},
+            {"phone", "Telefon", "android.permission.CALL_PHONE", "android.permission.READ_PHONE_STATE"},
+            {"files", "Fotoğraf ve dosyalar", "android.permission.READ_MEDIA_IMAGES", "android.permission.READ_MEDIA_VIDEO", "android.permission.READ_EXTERNAL_STORAGE"},
+            {"calendar", "Takvim", "android.permission.READ_CALENDAR"},
+            {"body", "Vücut sensörleri", "android.permission.BODY_SENSORS"},
+            {"nearby", "Yakındaki cihazlar", "android.permission.BLUETOOTH_SCAN", "android.permission.NEARBY_WIFI_DEVICES"},
+    };
+
+    static JSONObject permAudit(Context c, boolean includeSystem) throws Exception {
+        PackageManager pm = c.getPackageManager();
+        Map<String, JSONArray> by = new HashMap<>();
+        for (String[] g : GROUPS) by.put(g[0], new JSONArray());
+        for (PackageInfo p : pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)) {
+            ApplicationInfo ai = p.applicationInfo;
+            if (ai == null || p.requestedPermissions == null || p.packageName.equals(c.getPackageName())) continue;
+            boolean system = (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            if (system && !includeSystem) continue;
+            Set<String> granted = new HashSet<>();
+            for (int i = 0; i < p.requestedPermissions.length; i++)
+                if (p.requestedPermissionsFlags != null && (p.requestedPermissionsFlags[i] & PackageInfo.REQUESTED_PERMISSION_GRANTED) != 0)
+                    granted.add(p.requestedPermissions[i]);
+            String label = null;
+            for (String[] g : GROUPS) {
+                for (int i = 2; i < g.length; i++) {
+                    if (granted.contains(g[i])) {
+                        if (label == null) label = String.valueOf(ai.loadLabel(pm));
+                        by.get(g[0]).put(new JSONObject().put("pkg", p.packageName).put("label", label).put("system", system));
+                        break;
+                    }
+                }
+            }
+        }
+        JSONArray out = new JSONArray();
+        for (String[] g : GROUPS) {
+            JSONArray apps = by.get(g[0]);
+            JSONObject[] arr = new JSONObject[apps.length()];
+            for (int i = 0; i < arr.length; i++) arr[i] = apps.getJSONObject(i);
+            Arrays.sort(arr, (x, y) -> x.optString("label").compareToIgnoreCase(y.optString("label")));
+            JSONArray sorted = new JSONArray();
+            for (JSONObject x : arr) sorted.put(x);
+            out.put(new JSONObject().put("k", g[0]).put("t", g[1]).put("apps", sorted));
+        }
+        return new JSONObject().put("groups", out);
+    }
+
+    // ---------------- Uygulama yöneticisi: boyut, son kullanım, kurulum ----------------
+    static JSONObject appList(Context c, boolean includeSystem, Cleaner.Progress pr) throws Exception {
+        PackageManager pm = c.getPackageManager();
+        boolean usage = usageAccess(c);
+        long now = System.currentTimeMillis(), day = 86400000L;
+        Map<String, Long> lastUsed = new HashMap<>();
+        if (usage) {
+            UsageStatsManager um = c.getSystemService(UsageStatsManager.class);
+            for (Map.Entry<String, UsageStats> e : um.queryAndAggregateUsageStats(now - 730 * day, now).entrySet()) {
+                long t = Math.max(e.getValue().getLastTimeUsed(), Build.VERSION.SDK_INT >= 29 ? e.getValue().getLastTimeVisible() : 0);
+                if (t > 0) lastUsed.put(e.getKey(), t);
+            }
+        }
+        android.app.usage.StorageStatsManager ssm = c.getSystemService(android.app.usage.StorageStatsManager.class);
+        Set<String> launchable = new HashSet<>();
+        for (ResolveInfo ri : pm.queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0))
+            launchable.add(ri.activityInfo.packageName);
+        JSONArray arr = new JSONArray();
+        long totalApp = 0, totalCache = 0;
+        int n = 0;
+        for (PackageInfo p : pm.getInstalledPackages(0)) {
+            ApplicationInfo ai = p.applicationInfo;
+            if (ai == null || p.packageName.equals(c.getPackageName())) continue;
+            boolean system = (ai.flags & ApplicationInfo.FLAG_SYSTEM) != 0;
+            if (system && !includeSystem) continue;
+            if (system && !launchable.contains(p.packageName)) continue;
+            if (++n % 20 == 0) pr.on(n + " uygulama okundu…");
+            JSONObject o = new JSONObject();
+            o.put("pkg", p.packageName);
+            o.put("label", String.valueOf(ai.loadLabel(pm)));
+            o.put("system", system);
+            o.put("installed", p.firstInstallTime);
+            o.put("updated", p.lastUpdateTime);
+            o.put("version", p.versionName);
+            o.put("enabled", ai.enabled);
+            Long t = lastUsed.get(p.packageName);
+            o.put("lastUsed", t == null ? JSONObject.NULL : t);
+            if (usage && ssm != null) {
+                try {
+                    android.app.usage.StorageStats st = ssm.queryStatsForPackage(ai.storageUuid, p.packageName, android.os.Process.myUserHandle());
+                    o.put("app", st.getAppBytes());
+                    o.put("data", st.getDataBytes());
+                    o.put("cache", st.getCacheBytes());
+                    totalApp += st.getAppBytes() + st.getDataBytes();
+                    totalCache += st.getCacheBytes();
+                } catch (Exception ignored) { }
+            } else {
+                try { o.put("app", new java.io.File(ai.sourceDir).length()); } catch (Exception ignored) { }
+            }
+            arr.put(o);
+        }
+        return new JSONObject().put("apps", arr).put("usage", usage).put("total", totalApp).put("cache", totalCache);
     }
 }

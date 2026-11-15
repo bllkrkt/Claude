@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
 
@@ -70,6 +71,15 @@ final class Toggles {
             o.put("wifi", wm != null && wm.isWifiEnabled());
             PowerManager pm = c.getSystemService(PowerManager.class);
             o.put("saver", pm != null && pm.isPowerSaveMode());
+            o.put("media", Math.round(am.getStreamVolume(AudioManager.STREAM_MUSIC) * 100f / Math.max(1, am.getStreamMaxVolume(AudioManager.STREAM_MUSIC))));
+            o.put("alarm", Math.round(am.getStreamVolume(AudioManager.STREAM_ALARM) * 100f / Math.max(1, am.getStreamMaxVolume(AudioManager.STREAM_ALARM))));
+            o.put("rotate", Settings.System.getInt(c.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 0) == 1);
+            o.put("airplane", Settings.Global.getInt(c.getContentResolver(), Settings.Global.AIRPLANE_MODE_ON, 0) == 1);
+            android.app.UiModeManager um = c.getSystemService(android.app.UiModeManager.class);
+            o.put("dark", um != null && um.getNightMode() == android.app.UiModeManager.MODE_NIGHT_YES);
+            android.location.LocationManager lm = c.getSystemService(android.location.LocationManager.class);
+            o.put("location", lm != null && Build.VERSION.SDK_INT >= 28 && lm.isLocationEnabled());
+            o.put("torch", torchOn);
         } catch (Exception ignored) { }
         return o;
     }
@@ -91,6 +101,14 @@ final class Toggles {
                 case "bt": shellToggle(c, r, bool(v) ? "svc bluetooth enable || cmd bluetooth_manager enable"
                         : "svc bluetooth disable || cmd bluetooth_manager disable"); break;
                 case "saver": saver(c, bool(v), r); break;
+                case "media": volume(c, AudioManager.STREAM_MUSIC, v, r); break;
+                case "alarm": volume(c, AudioManager.STREAM_ALARM, v, r); break;
+                case "rotate": rotate(c, bool(v), r); break;
+                case "data": shellToggle(c, r, bool(v) ? "svc data enable" : "svc data disable"); break;
+                case "airplane": shellToggle(c, r, bool(v) ? "cmd connectivity airplane-mode enable" : "cmd connectivity airplane-mode disable"); break;
+                case "location": shellToggle(c, r, "cmd location set-location-enabled " + bool(v)
+                        + " || settings put secure location_mode " + (bool(v) ? 3 : 0)); break;
+                case "dark": shellToggle(c, r, "cmd uimode night " + (bool(v) ? "yes" : "no")); break;
                 default: fail(r, "Bilinmeyen ayar", null);
             }
         } catch (Exception e) {
@@ -181,6 +199,46 @@ final class Toggles {
         else fail(r, "Bu telefon sistem pil tasarrufunu komutla değiştirmeye izin vermedi (Xiaomi kendi pil modunu kullanıyor olabilir)", null);
     }
 
+    private static void volume(Context c, int stream, Object v, JSONObject r) throws Exception {
+        AudioManager am = c.getSystemService(AudioManager.class);
+        int max = am.getStreamMaxVolume(stream);
+        int pct = Math.max(0, Math.min(100, (int) Math.round(Double.parseDouble(String.valueOf(v)))));
+        try {
+            am.setStreamVolume(stream, Math.round(max * pct / 100f), 0);
+        } catch (SecurityException e) {
+            fail(r, "Rahatsız etmeyin açıkken ses değiştirilemedi; \"Rahatsız etmeyin erişimi\" izni gerekli", "dnd");
+            return;
+        }
+        ok(r, (stream == AudioManager.STREAM_MUSIC ? "Medya sesi" : "Alarm sesi") + " %" + pct);
+    }
+
+    private static void rotate(Context c, boolean on, JSONObject r) throws Exception {
+        if (!canWrite(c)) { fail(r, "\"Sistem ayarlarını değiştirme\" izni gerekli", "write"); return; }
+        Settings.System.putInt(c.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, on ? 1 : 0);
+        ok(r, on ? "Otomatik döndürme açık" : "Otomatik döndürme kapalı (dikey)");
+    }
+
+    /** Fener: izin gerekmez, kamera sistemi üzerinden açılır. */
+    static boolean torchOn = false;
+
+    static JSONObject torch(Context c, boolean on) throws Exception {
+        JSONObject r = new JSONObject().put("key", "torch").put("label", "Fener");
+        android.hardware.camera2.CameraManager cm = c.getSystemService(android.hardware.camera2.CameraManager.class);
+        for (String id : cm.getCameraIdList()) {
+            Boolean fl = cm.getCameraCharacteristics(id).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE);
+            if (Boolean.TRUE.equals(fl)) {
+                try {
+                    cm.setTorchMode(id, on);
+                    torchOn = on;
+                    ok(r, on ? "Fener açık" : "Fener kapalı");
+                } catch (Exception e) { fail(r, "Fener açılamadı (kamera başka uygulamada kullanılıyor olabilir)", null); }
+                return r;
+            }
+        }
+        fail(r, "Bu telefonda flaş bulunamadı", null);
+        return r;
+    }
+
     private static void shellToggle(Context c, JSONObject r, String cmd) throws Exception {
         if (!ShizukuHelper.ready()) {
             fail(r, "Android 10+ uygulamaların Wi-Fi/Bluetooth'u doğrudan açıp kapatmasına izin vermiyor; Shizuku gerekli (ya da paneli aç)", "shizuku");
@@ -213,20 +271,29 @@ final class Toggles {
             case "wifi": return "Wi-Fi";
             case "bt": return "Bluetooth";
             case "saver": return "Pil tasarrufu";
+            case "media": return "Medya sesi";
+            case "alarm": return "Alarm sesi";
+            case "rotate": return "Otomatik döndürme";
+            case "data": return "Mobil veri";
+            case "airplane": return "Uçak modu";
+            case "location": return "Konum";
+            case "dark": return "Karanlık mod";
             default: return key;
         }
     }
 
     // ---------- Modlar ----------
-    static final String[] ORDER = {"brightness", "timeout", "ringer", "dnd", "anim", "wifi", "bt", "saver"};
+    static final String[] ORDER = {"airplane", "brightness", "timeout", "ringer", "dnd", "media", "alarm", "rotate", "anim", "dark",
+            "wifi", "bt", "data", "location", "saver"};
 
     static JSONArray defaultModes() {
         try {
             return new JSONArray("["
                     + "{\"id\":\"gece\",\"name\":\"Gece modu\",\"emoji\":\"🌙\",\"set\":{\"brightness\":8,\"timeout\":30,\"ringer\":\"vibrate\",\"dnd\":true}},"
                     + "{\"id\":\"pil\",\"name\":\"Pil tasarrufu\",\"emoji\":\"🔋\",\"set\":{\"brightness\":30,\"timeout\":30,\"anim\":0.5}},"
-                    + "{\"id\":\"oyun\",\"name\":\"Oyun modu\",\"emoji\":\"🎮\",\"set\":{\"brightness\":100,\"timeout\":600,\"dnd\":true,\"anim\":0.5}},"
-                    + "{\"id\":\"normal\",\"name\":\"Normal\",\"emoji\":\"☀️\",\"set\":{\"brightness\":\"auto\",\"timeout\":60,\"ringer\":\"normal\",\"dnd\":false,\"anim\":1}}"
+                    + "{\"id\":\"oyun\",\"name\":\"Oyun modu\",\"emoji\":\"🎮\",\"set\":{\"brightness\":100,\"timeout\":600,\"dnd\":true,\"anim\":0.5,\"media\":70,\"rotate\":true}},"
+                    + "{\"id\":\"normal\",\"name\":\"Normal\",\"emoji\":\"☀️\",\"set\":{\"brightness\":\"auto\",\"timeout\":60,\"ringer\":\"normal\",\"dnd\":false,\"anim\":1}},"
+                    + "{\"id\":\"toplanti\",\"name\":\"Toplantı / ders\",\"emoji\":\"💼\",\"set\":{\"ringer\":\"vibrate\",\"media\":0}}"
                     + "]");
         } catch (Exception e) { return new JSONArray(); }
     }

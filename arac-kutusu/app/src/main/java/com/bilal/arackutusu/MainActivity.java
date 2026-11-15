@@ -84,6 +84,7 @@ public class MainActivity extends Activity {
             }
         });
         webView.loadUrl(START_URL);
+        new Thread(() -> { Scheduler.updateDynamic(this); Scheduler.rescheduleAll(this); }).start();
     }
 
     @Override

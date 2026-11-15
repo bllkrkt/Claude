@@ -145,6 +145,20 @@ select{min-height:46px;border-radius:12px;border:1.5px solid var(--line);backgro
 #toast{position:fixed;left:16px;right:16px;bottom:24px;z-index:60;background:#2B3542;color:var(--tx);padding:14px 18px;border-radius:16px;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s;max-width:600px;margin:0 auto}
 #toast.show{opacity:1}
 .empty{text-align:center;padding:30px 10px;color:var(--tx2)}
+.ring{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-weight:800;font-size:24px}
+.ring>span{width:68px;height:68px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
+.kv:last-child{border-bottom:0} .kv span:first-child{color:var(--tx2)} .kv span:last-child{text-align:right;font-weight:600}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+.mini button{background:var(--card);border-radius:16px;padding:12px 6px;text-align:center}
+.mini b{display:block;font-size:17px} .mini span{font-size:11.5px;color:var(--tx2)}
+.cbar{display:flex;height:14px;border-radius:8px;overflow:hidden;background:var(--card2);margin:10px 0 12px}
+.cbar i{display:block;height:100%}
+.leg{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;font-size:13.5px}
+.leg div{display:flex;align-items:center;gap:8px} .leg i{width:10px;height:10px;border-radius:3px;flex:none}
+.search{position:relative;margin-bottom:12px} .search input{padding-left:44px}
+.search svg{position:absolute;left:14px;top:16px;color:var(--tx3)}
+input[type=time]{min-height:54px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg2);color:var(--tx);font:inherit;font-size:22px;padding:0 14px;width:100%;color-scheme:dark}
 details summary{cursor:pointer;color:var(--tx2);padding:10px 4px;font-size:14.5px}
 </style>
 </head>
@@ -172,6 +186,11 @@ const IC={
   lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
   folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
   plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  phone:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
   ext:'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
 };
 const ic=(n,cls)=>`<svg class="i ${cls||''}" viewBox="0 0 24 24">${IC[n]}</svg>`;
@@ -216,7 +235,7 @@ function refreshInfo(){ INFO=sync('info')||{}; }
 
 // ================= Gezinme =================
 const stack=['home'];
-const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları'};
+const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Hakkında'};
 let viewArg=null;
 function go(v,arg){ closeSheet(); stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
 function goBack(){
@@ -225,38 +244,62 @@ function goBack(){
   return false;
 }
 window.__onBack=goBack;
-window.__onResume=()=>{ refreshInfo(); const v=stack[stack.length-1]; if(['home','clean','sec','quick','shizuku'].includes(v)) render(true); if(v==='sec') checkUninstalled(); };
+window.__onResume=()=>{
+  refreshInfo(); const v=stack[stack.length-1];
+  if(v==='sec') checkUninstalled();
+  if(v==='apps'&&AP.queue) { nextUninstall(); return; }
+  if(['home','clean','sec','quick','shizuku','device'].includes(v)) render(true);
+};
 function render(soft){
   const v=stack[stack.length-1];
   $('#ttl').textContent=TITLES[v]||'';
   $('#hdr').style.display=v==='home'?'none':'flex';
   $('#backBtn').style.display=stack.length>1?'flex':'none';
   $('#dock').classList.remove('show');
-  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits})[v](soft);
+  if(devTimer&&v!=='device'){ clearInterval(devTimer); devTimer=null; }
+  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,apps:vApps,perms:vPerms,about:vAbout})[v](soft);
 }
 const V=h=>{ $('#view').innerHTML=h; };
 
 // ================= Ana ekran =================
+let DEV=null, devTimer=null;
 function vHome(){
   if(!B){ V(`<div class="hero"><h1>Araç Kutusu</h1></div><div class="note warn">${ic('warn')}<div>Bu sayfa sadece telefondaki uygulamanın içinde çalışır.</div></div>`); return; }
+  DEV=sync('device')||{};
   const used=INFO.totalBytes? (INFO.totalBytes-INFO.freeBytes)/INFO.totalBytes*100 : 0;
   const dev=[INFO.brand&&INFO.brand[0].toUpperCase()+INFO.brand.slice(1), INFO.model].filter(Boolean).join(' ');
+  const bt=DEV.battery||{}, ramPct=DEV.ramTotal?Math.round((DEV.ramTotal-DEV.ramFree)/DEV.ramTotal*100):0;
   V(`<div class="hero"><h1>Araç Kutusu</h1>
     <p class="muted small">${esc(dev)}${INFO.os?' · '+esc(INFO.os):''} · Android ${esc(INFO.android)}</p>
     <div class="store"><div class="row small" style="justify-content:space-between;margin-bottom:6px"><span class="muted">Depolama</span><span><b>${bytes(INFO.freeBytes)}</b> <span class="muted">boş / ${bytes(INFO.totalBytes)}</span></span></div>
-    <div class="bar"><i style="width:${used.toFixed(1)}%"></i></div></div></div>
+    <div class="bar"><i style="width:${used.toFixed(1)}%"></i></div></div>
+    <div class="mini">
+      <button onclick="go('device')"><b>%${bt.level??'?'}</b><span>Pil${bt.charging?' ⚡':''}</span></button>
+      <button onclick="go('device')"><b>${bt.temp?Math.round(bt.temp)+'°':'?'}</b><span>Sıcaklık</span></button>
+      <button onclick="go('device')"><b>%${ramPct}</b><span>RAM dolu</span></button>
+      <button onclick="go('device')"><b>${DEV.system?Math.floor(DEV.system.uptimeMin/1440)+'g':'?'}</b><span>Açık süre</span></button>
+    </div></div>
   <div class="grid4">
-    <button class="tile c1" onclick="go('clean')"><div class="ic">${ic('trash')}</div><b>Temizlik</b><span>Büyük dosya, kopya fotoğraf, eski APK, boş klasör</span></button>
-    <button class="tile c2" onclick="go('sec')"><div class="ic">${ic('shield')}</div><b>Güvenlik kontrolü</b><span>Riskli izinler, bilinmeyen kaynak, kullanılmayanlar</span></button>
+    <button class="tile c1" onclick="go('clean')"><div class="ic">${ic('trash')}</div><b>Temizlik</b><span>Büyük dosya, kopya fotoğraf, eski APK, çöp, uygulamalar</span></button>
+    <button class="tile c2" onclick="go('sec')"><div class="ic">${ic('shield')}</div><b>Güvenlik kontrolü</b><span>Güvenlik puanı, riskli izinler, izin denetimi</span></button>
     <button class="tile c3" onclick="go('hidden')"><div class="ic">${ic('key')}</div><b>Gizli ayarlar</b><span>Xiaomi / HyperOS'un saklı ekranları</span></button>
-    <button class="tile c4" onclick="go('quick')"><div class="ic">${ic('zap')}</div><b>Tek tık ayarlar</b><span>Modlar, parlaklık, sessiz, kutucuklar</span></button>
+    <button class="tile c4" onclick="go('quick')"><div class="ic">${ic('zap')}</div><b>Tek tık ayarlar</b><span>Modlar, zamanlayıcı, kutucuklar</span></button>
   </div>
-  <div style="text-align:center;margin-top:18px"><button class="link" onclick="go('limits')">${ic('info')} Android'in izin vermedikleri</button></div>`);
+  <div class="list" style="margin-top:16px">
+    <button class="item" onclick="go('device')"><div class="th" style="width:40px;height:40px;color:var(--ac)">${ic('phone')}</div><div class="grow"><b>Telefon durumu</b><div class="muted tiny">Pil sağlığı, işlemci, ekran, sistem</div></div>${ic('chev')}</button>
+    <button class="item" onclick="go('limits')"><div class="th" style="width:40px;height:40px;color:var(--warn)">${ic('lock')}</div><div class="grow"><b>Android'in izin vermedikleri</b><div class="muted tiny">Neyi neden yapamıyoruz</div></div>${ic('chev')}</button>
+    <button class="item" onclick="go('about')"><div class="th" style="width:40px;height:40px;color:var(--blue)">${ic('info')}</div><div class="grow"><b>Hakkında ve güncelleme</b><div class="muted tiny">Sürüm ${esc(INFO.version||'')}, gizlilik</div></div>${ic('chev')}</button>
+  </div>`);
 }
 
 // ================= 1) Temizlik =================
 const CL={res:null,busy:false,prog:'',tab:'large',min:100,sel:new Map()};
-const TABS=[['large','Büyük dosyalar'],['dupes','Kopya fotoğraflar'],['apks','Eski APK\'lar'],['empty','Boş klasörler']];
+const TABS=[['large','Büyük dosyalar'],['dupes','Kopya fotoğraflar'],['apks','Eski APK\'lar'],['junk','Çöp dosyalar'],['oldDl','Eski indirilenler'],['shots','Eski ekran görüntüleri'],['waOld','Eski WhatsApp medyası'],['empty','Boş klasörler']];
+const TABINFO={junk:'.thumbnails önbellekleri, .tmp/.log/.bak dosyaları ve 0 baytlık boş dosyalar. Silmek güvenlidir; uygulamalar gerekirse yeniden oluşturur.',
+  oldDl:'İndirilenler klasöründe 90 günden eski dosyalar (APK\'lar hariç). Gerekli belgelerin olabilir, tek tek bak.',
+  shots:'30 günden eski ekran görüntüleri ve ekran kayıtları (en eskiden yeniye).',
+  waOld:'WhatsApp\'tan gelen veya gönderilen, 6 aydan eski fotoğraf, video, ses ve belgeler. Sohbet yedeğine dokunulmaz.'};
+const CATCOL=['#4FD1A5','#6AA8FF','#C39BFF','#F5B94A','#F26D6D','#FF8FB1','#6B7686'];
 function vClean(){
   if(!INFO.files){
     V(`<div class="card"><div class="row" style="margin-bottom:12px"><div class="th" style="color:var(--ac)">${ic('folder')}</div><div class="grow"><b>Dosya izni gerekli</b><p class="muted small">Dosyaları bulup silebilmem için Android'in <b>"Tüm dosyalara erişim"</b> iznini vermen lazım.</p></div></div>
@@ -265,7 +308,7 @@ function vClean(){
       <div class="note info">${ic('info')}<div>Uygulama internete hiçbir şey göndermez. Senin onayın olmadan hiçbir dosya silinmez.</div></div>`);
     return;
   }
-  let h=`<div class="card"><b>Büyük dosya sınırı</b><div class="seg" style="margin:10px 0 14px">${[50,100,250,500,1024].map(m=>`<button class="${CL.min===m?'on':''}" onclick="CL.min=${m};render()">${m>=1024?'1 GB':m+' MB'}</button>`).join('')}</div>
+  let h=`<button class="btn" style="margin-bottom:12px" onclick="go('apps')">${ic('grid')} Uygulama yöneticisi</button><div class="card"><b>Büyük dosya sınırı</b><div class="seg" style="margin:10px 0 14px">${[50,100,250,500,1024].map(m=>`<button class="${CL.min===m?'on':''}" onclick="CL.min=${m};render()">${m>=1024?'1 GB':m+' MB'}</button>`).join('')}</div>
     <button class="btn pri" ${CL.busy?'disabled':''} onclick="scanClean()">${CL.busy?'<div class="spin"></div> Taranıyor…':(CL.res?'Yeniden tara':'Taramayı başlat')}</button>
     ${CL.busy?`<p class="muted small" id="clProg" style="margin-top:10px;text-align:center">${esc(CL.prog||'Başlıyor…')}</p>`:''}</div>`;
   const r=CL.res;
@@ -273,7 +316,13 @@ function vClean(){
     const sum=a=>a.reduce((s,x)=>s+x.size,0);
     const dupeCount=r.dupes.reduce((s,g)=>s+g.length-1,0);
     const st={large:[r.large.length+(r.largeTotal>r.large.length?'+':''),bytes(sum(r.large))],dupes:[dupeCount,bytes(r.dupeWaste)+' fazlalık'],apks:[r.apks.length,bytes(sum(r.apks))],empty:[r.empty.length,'klasör']};
-    h+=`<p class="muted small" style="margin:4px 4px 12px">${r.files.toLocaleString('tr-TR')} dosya tarandı (${bytes(r.bytes)}).</p><div class="stats">${TABS.map(([k,t])=>`<button class="stat ${CL.tab===k?'on':''}" onclick="CL.tab='${k}';render()"><b>${st[k][0]}</b><span>${t}<br>${st[k][1]}</span></button>`).join('')}</div>`;
+    for(const k of ['junk','oldDl','shots','waOld']) st[k]=[(r[k]||[]).length,bytes(sum(r[k]||[]))];
+    const ct=(r.cats||[]).reduce((s2,c)=>s2+c.bytes,0)||1;
+    h+=`<p class="muted small" style="margin:4px 4px 12px">${r.files.toLocaleString('tr-TR')} dosya tarandı (${bytes(r.bytes)}).</p>`;
+    if(r.cats) h+=`<div class="card"><b>Depolama dağılımı</b><div class="cbar">${r.cats.map((c,i)=>`<i style="width:${(c.bytes/ct*100).toFixed(2)}%;background:${CATCOL[i]}"></i>`).join('')}</div>
+      <div class="leg">${r.cats.map((c,i)=>`<div><i style="background:${CATCOL[i]}"></i><span class="grow">${c.t}</span><b>${bytes(c.bytes)}</b></div>`).join('')}</div>
+      <details style="margin-top:8px"><summary>En çok yer kaplayan klasörler</summary>${(r.topDirs||[]).map(d=>`<div class="kv"><span class="ellip">${esc(d.name)}</span><span>${bytes(d.bytes)}</span></div>`).join('')}</details></div>`;
+    h+=`<div class="stats">${TABS.map(([k,t])=>`<button class="stat ${CL.tab===k?'on':''}" onclick="CL.tab='${k}';render()"><b>${st[k][0]}</b><span>${t}<br>${st[k][1]}</span></button>`).join('')}</div>`;
     h+=cleanList();
     h+=`<div class="note info">${ic('info')}<div class="small">Android 11'den beri hiçbir uygulama <b>Android/data</b> ve <b>Android/obb</b> klasörlerine giremez; oradaki dosyalar taranmadı. Kopya araması sadece <b>birebir aynı</b> fotoğrafları bulur; benzer ama farklı fotoğrafları bulmaz.</div></div>`;
   } else if(!CL.busy){
@@ -309,6 +358,13 @@ function cleanList(){
       const s=f.broken?['bad','Bozuk / eksik dosya']:st[f.installed]||['','?'];
       return row(f,`<div class="tiny">${f.app?`<b>${esc(f.app)}</b> ${esc(f.ver||'')} · `:''}<span class="badge ${s[0]}">${s[1]}</span> <span class="muted">${date(f.mtime)}</span></div>`);
     }).join('')}</div>`;
+  } else if(TABINFO[t]){
+    const L=r[t]||[];
+    const note=`<div class="note info">${ic('info')}<div class="small">${TABINFO[t]}</div></div>`;
+    if(!L.length) return note+`<div class="card empty">Bu grupta dosya yok. 👍</div>`;
+    acts=`<button class="btn sm" onclick="selAll('${t}',true)">Tümünü seç</button><button class="btn sm ghost" onclick="selAll('${t}',false)">Seçimi kaldır</button>`;
+    h=note.replace('class="note','style="margin-bottom:12px" class="note').replace(/^/,'')+`<div class="list">${L.map(f=>row(f,`<div class="muted tiny">${date(f.mtime)}</div>`)).join('')}</div>`;
+    return `<div class="btns" style="margin-bottom:12px">${acts}</div>`+h;
   } else {
     if(!r.empty.length) return `<div class="card empty">Boş klasör yok.</div>`;
     acts=`<button class="btn sm" onclick="selAll('empty',true)">Tümünü seç</button><button class="btn sm ghost" onclick="selAll('empty',false)">Seçimi kaldır</button>`;
@@ -355,7 +411,7 @@ async function doDelete(){
   const gone=new Set(r.deleted);
   const keep=f=>!gone.has(f.path);
   const R=CL.res;
-  R.large=R.large.filter(keep); R.apks=R.apks.filter(keep); R.empty=R.empty.filter(keep);
+  for(const k of ['large','apks','empty','junk','oldDl','shots','waOld']) if(R[k]) R[k]=R[k].filter(keep);
   R.dupes=R.dupes.map(g=>g.filter(keep)).filter(g=>g.length>1);
   R.dupeWaste=R.dupes.reduce((s,g)=>s+g[0].size*(g.length-1),0);
   gone.forEach(p=>CL.sel.delete(p));
@@ -368,9 +424,18 @@ async function doDelete(){
 
 // ================= 2) Güvenlik =================
 const SC={res:null,busy:false,prog:'',sys:false,days:60,filter:'all',open:null,pendingUn:null};
-const RF=[['all','Hepsi'],['sms','SMS'],['a11y','Erişilebilirlik'],['admin','Cihaz yöneticisi'],['overlay','Üstte gösterme'],['notif','Bildirim erişimi'],['unknown','Bilinmeyen kaynak'],['unused','Kullanılmayan']];
+const RF=[['all','Hepsi'],['sms','SMS'],['a11y','Erişilebilirlik'],['admin','Cihaz yöneticisi'],['overlay','Üstte gösterme'],['notif','Bildirim erişimi'],['unknown','Bilinmeyen kaynak'],['install','APK yükleyebilir'],['new','Yeni yüklendi'],['unused','Kullanılmayan']];
 function vSec(){
   let h=`<div class="note warn">${ic('warn')}<div><b>Bu gerçek bir antivirüs değil.</b> Virüs imzası taramaz, uygulamaların içine bakmaz. Sadece hangi uygulamanın <b>tehlikeli izinleri</b> olduğunu, <b>nereden yüklendiğini</b> ve <b>ne zamandır açılmadığını</b> gösterir. Listede olmak "virüs" demek değildir; tanıyorsan sorun yok.</div></div>`;
+  const PC=sync('phoneChecks');
+  if(PC&&PC.checks){
+    const col=PC.score>=80?'var(--ac)':PC.score>=50?'var(--warn)':'var(--bad)';
+    h+=`<div class="card"><div class="row" style="margin-bottom:8px"><div class="ring" style="background:conic-gradient(${col} ${PC.score*3.6}deg,var(--card2) 0)"><span style="color:${col}">${PC.score}</span></div>
+      <div class="grow"><b style="font-size:18px">Telefon güvenlik puanı</b><p class="muted small">${PC.score>=80?'İyi durumdasın.':PC.score>=50?'Birkaç şeyi düzeltebilirsin.':'Önemli eksikler var.'}</p></div></div>
+      ${PC.checks.map(c=>`<div class="row" style="padding:10px 0;border-top:1px solid var(--line);align-items:flex-start"><div style="color:${c.ok?'var(--ac)':c.w>=2?'var(--bad)':'var(--warn)'};margin-top:1px">${ic(c.ok?'check':'warn')}</div><div class="grow"><b class="small">${esc(c.t)}</b><div class="muted tiny">${esc(c.d)}</div></div>
+        ${!c.ok&&c.k==='lock'?`<button class="btn sm" onclick="sync('openShortcut',{id:'lock'})">Ayarla</button>`:''}${!c.ok&&(c.k==='adb'||c.k==='dev')?`<button class="btn sm" onclick="sync('openPerm',{which:'dev'})">Aç</button>`:''}</div>`).join('')}</div>`;
+  }
+  h+=`<button class="btn" style="margin-bottom:12px" onclick="go('perms')">${ic('eye')} İzin denetimi: kamera, mikrofon, konum kimde?</button>`;
   h+= INFO.playProtect
     ? `<button class="btn" style="margin-bottom:12px" onclick="if(!sync('playProtect'))toast('Play Protect açılamadı')">${ic('shield')} Play Protect ile tara (Google)</button>`
     : `<div class="note info">${ic('info')}<div class="small">Bu telefonda Play Protect kısayolu bulunamadı. Elle aç: <b>Play Store → sağ üstte profil resmi → Play Protect</b>.</div></div>`;
@@ -429,17 +494,22 @@ function checkUninstalled(){
 }
 
 // ================= 3) Gizli ayarlar =================
-let SH=null;
+let SH=null, SHQ='';
+const trl=x=>String(x).toLocaleLowerCase('tr-TR');
+function shList(){
+  const q=trl(SHQ.trim()), groups={};
+  SH.items.filter(it=>!q||trl(it.title+' '+it.desc+' '+it.group).includes(q)).forEach(it=>(groups[it.group]=groups[it.group]||[]).push(it));
+  let h='';
+  for(const g in groups) h+=`<h3>${esc(g)}</h3><div class="list">${groups[g].map(it=>`<button class="item" onclick="openSc('${it.id}')"><div class="grow"><div style="font-weight:700">${esc(it.title)}${it.id==='dev'&&!SH.devEnabled?' <span class="badge warn">Kapalı</span>':''}</div><div class="muted small">${esc(it.desc)}</div></div>${ic('chev')}</button>`).join('')}</div>`;
+  return h||`<div class="card empty">"${esc(SHQ)}" ile eşleşen kısayol yok.</div>`;
+}
 async function vHidden(){
   if(!SH){ V(`<div class="card row"><div class="spin"></div><span class="muted">Bu telefonda hangi ekranların açıldığına bakılıyor…</span></div>`); SH=await call('shortcuts'); if(stack[stack.length-1]!=='hidden') return; }
   if(SH.error){ V(`<div class="note bad">${ic('warn')}<div>Kısayollar okunamadı: ${esc(SH.error)}</div></div>`); return; }
-  const groups={};
-  SH.items.forEach(it=>(groups[it.group]=groups[it.group]||[]).push(it));
-  let h=`<div class="note info">${ic('info')}<div class="small">Sadece <b>bu telefonda gerçekten açılabilen</b> ekranlar gösteriliyor. Bunlar telefonun kendi ayar ekranları; değişikliği sen yaparsın.</div></div>`;
+  let h=`<div class="search">${ic('search')}<input type="text" placeholder="Ayar ara (ör. pil, kilit, DNS)" value="${esc(SHQ)}" oninput="SHQ=this.value;$('#shList').innerHTML=shList()"></div>
+    <div class="note info">${ic('info')}<div class="small">Sadece <b>bu telefonda gerçekten açılabilen</b> ekranlar gösteriliyor. Bunlar telefonun kendi ayar ekranları; değişikliği sen yaparsın.</div></div>`;
   if(!INFO.xiaomi) h+=`<div class="note warn">${ic('warn')}<div class="small">Bu telefon Xiaomi görünmüyor; Xiaomi'ye özel kısayollar büyük ihtimalle gizlendi.</div></div>`;
-  for(const g in groups){
-    h+=`<h3>${esc(g)}</h3><div class="list">${groups[g].map(it=>`<button class="item" onclick="openSc('${it.id}')"><div class="grow"><div style="font-weight:700">${esc(it.title)}${it.id==='dev'&&!SH.devEnabled?' <span class="badge warn">Kapalı</span>':''}</div><div class="muted small">${esc(it.desc)}</div></div>${ic('chev')}</button>`).join('')}</div>`;
-  }
+  h+=`<div id="shList">${shList()}</div>`;
   if(SH.hidden.length) h+=`<details><summary>Bu telefonda bulunamadığı için gizlenen ${SH.hidden.length} kısayol</summary><div class="list">${SH.hidden.map(it=>`<div class="item" style="min-height:52px"><div class="grow"><div class="small" style="font-weight:600">${esc(it.title)}</div><div class="muted tiny">${esc(it.group)}</div></div></div>`).join('')}</div><p class="muted tiny" style="margin:0 4px">Bu ekranlar HyperOS sürümüne göre kaldırılmış, adı değişmiş veya dışarıdan açılmaya kapatılmış olabilir.</p></details>`;
   V(h);
 }
@@ -459,7 +529,9 @@ function openSc(id){
 let MD=null, ST={};
 const KEYS={
   brightness:{t:'Parlaklık'}, timeout:{t:'Ekran zaman aşımı'}, ringer:{t:'Zil modu'}, dnd:{t:'Rahatsız etmeyin'},
-  anim:{t:'Animasyon hızı',sh:1}, wifi:{t:'Wi-Fi',sh:1}, bt:{t:'Bluetooth',sh:1}, saver:{t:'Sistem pil tasarrufu',sh:1}
+  media:{t:'Medya sesi'}, alarm:{t:'Alarm sesi'}, rotate:{t:'Otomatik döndürme'},
+  anim:{t:'Animasyon hızı',sh:1}, dark:{t:'Karanlık mod',sh:1}, wifi:{t:'Wi-Fi',sh:1}, bt:{t:'Bluetooth',sh:1},
+  data:{t:'Mobil veri',sh:1}, airplane:{t:'Uçak modu',sh:1}, location:{t:'Konum',sh:1}, saver:{t:'Sistem pil tasarrufu',sh:1}
 };
 const TO=[[15,'15 sn'],[30,'30 sn'],[60,'1 dk'],[120,'2 dk'],[300,'5 dk'],[600,'10 dk'],[1800,'30 dk']];
 const ANIM=[[0,'Kapalı'],[0.5,'0,5x'],[1,'1x'],[1.5,'1,5x'],[2,'2x']];
@@ -470,7 +542,9 @@ function valText(k,v){
   if(k==='ringer') return {normal:'Normal',vibrate:'Titreşim',silent:'Sessiz'}[v];
   if(k==='anim') return 'Animasyon '+((ANIM.find(x=>x[0]===v)||[0,v+'x'])[1]);
   if(k==='dnd') return 'Rahatsız etme '+(v?'açık':'kapalı');
-  if(k==='wifi'||k==='bt'||k==='saver') return KEYS[k].t+' '+(v?'açık':'kapalı');
+  if(k==='media'||k==='alarm') return KEYS[k].t+' %'+v;
+  if(k==='rotate') return 'Döndürme '+(v?'açık':'kapalı');
+  if(KEYS[k]) return KEYS[k].t+' '+(v?'açık':'kapalı');
   return v;
 }
 const shReady=()=>INFO.shizuku&&INFO.shizuku.granted;
@@ -490,7 +564,7 @@ function vQuick(soft){
   h+=`<h3>Modlar</h3>`+MD.modes.map((m,i)=>{
     const keys=Object.keys(m.set||{}).filter(k=>m.set[k]!==null&&m.set[k]!==undefined);
     return `<div class="mode ${MD.last===m.id?'last':''}"><div class="row" style="margin-bottom:12px"><div class="em">${esc(m.emoji||'⚙️')}</div><div class="grow"><b style="font-size:18px">${esc(m.name)}</b>${MD.last===m.id?' <span class="badge ok">Son uygulanan</span>':''}<div>${keys.map(k=>`<span class="badge">${esc(valText(k,m.set[k]))}</span>`).join('')||'<span class="muted small">Ayar seçilmedi</span>'}</div></div></div>
-      <div class="btns"><button class="btn pri" onclick="applyMode(${i})">Uygula</button><button class="btn ghost sm" style="flex:0 0 auto" onclick="go('mode',${i})">Düzenle</button></div></div>`;
+      <div class="btns"><button class="btn pri" onclick="applyMode(${i})">Uygula</button><button class="btn ghost sm" style="flex:0 0 auto;min-width:0" onclick="go('mode',${i})">Düzenle</button>${INFO.canPin?`<button class="btn ghost sm" style="flex:0 0 50px;min-width:0;padding:0" aria-label="Ana ekrana ekle" onclick="pinMode(${i})">${ic('plus')}</button>`:''}</div></div>`;
   }).join('')+`<div class="btns" style="margin-bottom:6px"><button class="btn ghost" onclick="go('mode',-1)">${ic('plus')} Yeni mod</button></div>
   <div style="text-align:right"><button class="link small" onclick="resetModes()">Varsayılan modlara dön</button></div>`;
 
@@ -503,6 +577,10 @@ function vQuick(soft){
   <div class="set"><div class="top"><b>Ekran zaman aşımı</b></div><div class="seg">${TO.map(([s,t])=>`<button class="${ST.timeout===s?'on':''}" onclick="setOne('timeout',${s})">${t}</button>`).join('')}</div></div>
   <div class="set"><div class="top"><b>Zil modu</b></div><div class="seg">${[['normal','Normal'],['vibrate','Titreşim'],['silent','Sessiz']].map(([k,t])=>`<button class="${ST.ringer===k?'on':''}" onclick="setOne('ringer','${k}')">${t}</button>`).join('')}</div></div>
   <div class="set"><div class="row" style="justify-content:space-between" onclick="setOne('dnd',${!ST.dnd})"><b>Rahatsız etmeyin</b><div class="sw ${ST.dnd?'on':''}"></div></div></div>
+  <div class="set"><div class="top"><b>Medya sesi</b><span class="v" id="mV">%${ST.media??'?'}</span></div><input type="range" min="0" max="100" value="${ST.media??50}" oninput="$('#mV').textContent='%'+this.value" onchange="setOne('media',+this.value)">
+    <div class="top" style="margin:10px 0 0"><b>Alarm sesi</b><span class="v" id="aV">%${ST.alarm??'?'}</span></div><input type="range" min="0" max="100" value="${ST.alarm??50}" oninput="$('#aV').textContent='%'+this.value" onchange="setOne('alarm',+this.value)"></div>
+  <div class="set"><div class="row" style="justify-content:space-between;margin-bottom:14px" onclick="setOne('rotate',${!ST.rotate})"><b>Otomatik döndürme</b><div class="sw ${ST.rotate?'on':''}"></div></div>
+    <div class="row" style="justify-content:space-between" onclick="torch(${!ST.torch})"><b>Fener</b><div class="sw ${ST.torch?'on':''}"></div></div></div>
   <div class="set"><div class="top"><b>Animasyon hızı</b>${animOk()?'':'<span class="badge warn">Shizuku gerekli</span>'}</div>
     <div class="seg">${ANIM.map(([v,t])=>`<button class="${Math.abs((ST.anim??1)-v)<.01?'on':''}" ${animOk()?'':'disabled style="opacity:.5"'} onclick="setOne('anim',${v})">${t}</button>`).join('')}</div>
     ${animOk()?'':`<p class="muted tiny" style="margin-top:10px">Android bu ayarı normal uygulamalara kapatmış. <button class="link tiny" style="padding:0" onclick="go('shizuku')">Shizuku'yu kur</button> veya Geliştirici seçeneklerinden elle değiştir.</p>`}</div>
@@ -512,7 +590,19 @@ function vQuick(soft){
   <div class="set"><div class="top"><b>Bluetooth</b></div>
     <div class="btns"><button class="btn sm" onclick="sync('panel',{which:'bt'})||toast('Açılamadı')">Bluetooth ayarı</button>${shReady()?`<button class="btn sm" onclick="setOne('bt',true)">Aç</button><button class="btn sm" onclick="setOne('bt',false)">Kapat</button>`:''}</div>
     ${shReady()?'':'<p class="muted tiny" style="margin-top:10px">Android\'de Bluetooth için hızlı panel yok; ayar ekranı açılır. (Shizuku ile doğrudan açıp kapatabilirim.)</p>'}</div>
+  ${shReady()?['dark','data','airplane','location'].map(k=>`<div class="set"><div class="top"><b>${KEYS[k].t}</b><span class="muted small">${ST[k]===undefined?'':ST[k]?'Açık':'Kapalı'}</span></div><div class="btns"><button class="btn sm" onclick="setOne('${k}',true)">Aç</button><button class="btn sm" onclick="setOne('${k}',false)">Kapat</button></div></div>`).join(''):`<div class="note info">${ic('info')}<div class="small"><b>Shizuku kurarsan ek olarak:</b> karanlık mod, mobil veri, uçak modu, konum, Wi-Fi/Bluetooth aç-kapat ve animasyon hızı da tek tıkla değişir. <button class="link tiny" style="padding:0" onclick="go('shizuku')">Nasıl kurulur?</button></div></div>`}
   ${shReady()?`<div class="set"><div class="top"><b>Sistem pil tasarrufu</b><span class="badge">Deneysel</span></div><div class="btns"><button class="btn sm" onclick="setOne('saver',true)">Aç</button><button class="btn sm" onclick="setOne('saver',false)">Kapat</button></div><p class="muted tiny" style="margin-top:10px">Bazı Xiaomi'lerde kendi pil modu kullanıldığı için çalışmayabilir; çalışmazsa söylerim.</p></div>`:''}`;
+
+  // Zamanlayıcı
+  const SCH=sync('schedules')||[];
+  const DN=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+  const dayTxt=d=>!d||!d.length||d.length===7?'Her gün':(d.length===5&&!d.includes(6)&&!d.includes(7)?'Hafta içi':(d.length===2&&d.includes(6)&&d.includes(7)?'Hafta sonu':d.map(x=>DN[x-1]).join(', ')));
+  h+=`<h3>Zamanlayıcı</h3><div class="card"><p class="muted small" style="margin-bottom:12px">Seçtiğin saatte mod kendiliğinden uygulanır. Örn: 23:30'da Gece modu, 07:30'da Normal.</p>
+    ${SCH.length?`<div class="list" style="background:var(--bg2)">${SCH.map((x,i)=>{ const m=MD.modes.find(mm=>mm.id===x.mode); return `<div class="item"><button class="grow" style="text-align:left" onclick="editSched(${i})"><b style="font-size:22px">${String(x.h).padStart(2,'0')}:${String(x.m).padStart(2,'0')}</b><div class="muted small">${m?esc((m.emoji||'')+' '+m.name):'<span style="color:var(--bad)">Mod silinmiş</span>'} · ${dayTxt(x.days)}</div></button><div class="sw ${x.on!==false?'on':''}" onclick="togSched(${i})"></div></div>`; }).join('')}</div>`:''}
+    <button class="btn ghost" onclick="editSched(-1)">${ic('clock')} Zamanlama ekle</button>
+    ${SCH.length&&(!INFO.notif||!INFO.exact)?`<div class="note warn" style="margin:12px 0 0">${ic('warn')}<div class="small">${!INFO.exact?'Tam zamanında çalışması için <b>"Alarmlar ve hatırlatıcılar"</b> izni gerekli. <button class="link tiny" style="padding:0" onclick="sync(\'openPerm\',{which:\'exactAlarm\'})">Ver</button><br>':''}${!INFO.notif?'Uygulandığında haber vermem için bildirim izni gerekli. <button class="link tiny" style="padding:0" onclick="askNotif()">Ver</button>':''}</div></div>`:''}
+    ${SCH.length&&INFO.xiaomi?`<details><summary>Xiaomi'de zamanlayıcı çalışmazsa</summary><p class="muted small" style="margin:0 4px 10px">Xiaomi arka plandaki uygulamaları kapatabiliyor. Araç Kutusu için şu ikisini aç:</p><div class="btns"><button class="btn sm" onclick="sync('openPerm',{which:'autostart'})||toast('Açılamadı')">Otomatik başlatma</button><button class="btn sm" onclick="sync('openPerm',{which:'batteryApps'})||toast('Açılamadı')">Pil: Kısıtlama yok</button></div></details>`:''}
+  </div>`;
 
   // Kutucuklar
   h+=`<h3>Bildirim çubuğu kutucukları</h3><div class="card"><p class="muted small" style="margin-bottom:12px">Android uygulamalara en fazla önceden tanımlı kutucuk izni veriyor; bu uygulamada <b>3 kutucuk</b> var. Her birine bir mod seç.</p>
@@ -544,6 +634,33 @@ async function applyMode(i){
     ${needs.length?`<div class="btns" style="margin-bottom:10px">${needs.map(needBtn).join('')}</div>`:''}
     <button class="btn" onclick="closeSheet()">Tamam</button>`);
 }
+async function torch(on){ const r=sync('torch',{on}); toast(r.msg||'Olmadı'); render(true); }
+function pinMode(i){ if(sync('pinMode',{id:MD.modes[i].id})) toast('Ana ekrana ekleme penceresi açıldı'); else toast('Ana ekranın kısayol eklemeyi desteklemiyor'); }
+function askNotif(){ sync('askNotif'); if(INFO.sdk<33) sync('openPerm',{which:'appNotif'}); }
+let SE=null;
+function editSched(i){
+  const L=sync('schedules')||[];
+  SE= i>=0? Object.assign({},L[i],{_i:i}) : {id:'s'+Date.now().toString(36),h:23,m:30,days:[],mode:(MD.modes[0]||{}).id,on:true,_i:-1};
+  drawSched();
+}
+function drawSched(){
+  const DN=['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'], d=SE.days||[];
+  openSheet(`<h4>${SE._i>=0?'Zamanlamayı düzenle':'Yeni zamanlama'}</h4>
+    <b>Saat</b><input type="time" style="margin:8px 0 16px" value="${String(SE.h).padStart(2,'0')}:${String(SE.m).padStart(2,'0')}" onchange="const p=this.value.split(':');SE.h=+p[0];SE.m=+p[1]">
+    <b>Günler</b> <span class="muted tiny">(hiçbiri seçilmezse her gün)</span><div class="seg" style="margin:8px 0 16px">${DN.map((n,k)=>`<button class="${d.includes(k+1)?'on':''}" style="min-width:54px;padding:0 10px" onclick="schDay(${k+1})">${n}</button>`).join('')}</div>
+    <b>Mod</b><div class="seg" style="margin:8px 0 18px">${MD.modes.map(m=>`<button class="${SE.mode===m.id?'on':''}" onclick="SE.mode='${esc(m.id)}';drawSched()">${esc((m.emoji||'')+' '+m.name)}</button>`).join('')}</div>
+    <div class="btns"><button class="btn pri" onclick="saveSched()">Kaydet</button>${SE._i>=0?`<button class="btn red sm" style="flex:0 0 auto" onclick="delSched()">Sil</button>`:''}</div>`);
+}
+function schDay(n){ const d=SE.days||(SE.days=[]); const i=d.indexOf(n); if(i>=0) d.splice(i,1); else d.push(n); d.sort(); drawSched(); }
+function saveSched(){
+  const L=sync('schedules')||[]; const x=Object.assign({},SE); delete x._i;
+  if(SE._i>=0) L[SE._i]=x; else L.push(x);
+  L.sort((a,b)=>a.h*60+a.m-(b.h*60+b.m));
+  sync('saveSchedules',{list:L}); closeSheet(); toast('Zamanlama kaydedildi'); render(true);
+  if(!INFO.notif) askNotif();
+}
+function delSched(){ const L=sync('schedules')||[]; L.splice(SE._i,1); sync('saveSchedules',{list:L}); closeSheet(); toast('Zamanlama silindi'); render(true); }
+function togSched(i){ const L=sync('schedules')||[]; L[i].on=L[i].on===false; sync('saveSchedules',{list:L}); render(true); }
 function setTile(i,id){ MD.tiles[i]=id; sync('saveModes',{tiles:MD.tiles}); toast('Kutucuk '+(i+1)+' güncellendi'); }
 async function addTile(slot){
   const r=await call('addTile',{slot});
@@ -576,6 +693,13 @@ function vMode(soft){
     ${block('timeout',TO.map(([v,t])=>opt('timeout',v,t)).join(''))}
     ${block('ringer',opt('ringer','normal','Normal')+opt('ringer','vibrate','Titreşim')+opt('ringer','silent','Sessiz'))}
     ${block('dnd',opt('dnd',true,'Aç')+opt('dnd',false,'Kapat'))}
+    ${block('media',[0,30,50,70,100].map(v=>opt('media',v,'%'+v)).join(''))}
+    ${block('alarm',[30,50,70,100].map(v=>opt('alarm',v,'%'+v)).join(''))}
+    ${block('rotate',opt('rotate',true,'Açık')+opt('rotate',false,'Kapalı'))}
+    ${block('dark',opt('dark',true,'Aç')+opt('dark',false,'Kapat'))}
+    ${block('data',opt('data',true,'Aç')+opt('data',false,'Kapat'))}
+    ${block('airplane',opt('airplane',true,'Aç')+opt('airplane',false,'Kapat'))}
+    ${block('location',opt('location',true,'Aç')+opt('location',false,'Kapat'))}
     ${block('anim',ANIM.map(([v,t])=>opt('anim',v,t)).join(''))}
     ${block('wifi',opt('wifi',true,'Aç')+opt('wifi',false,'Kapat'))}
     ${block('bt',opt('bt',true,'Aç')+opt('bt',false,'Kapat'))}
@@ -640,6 +764,101 @@ function vLimits(){
   ];
   V(`<p class="muted" style="margin:6px 4px 14px">Bu uygulamada sahte buton yok. Android'in izin vermediği şeyler burada:</p>
     <div class="list">${L.map(([t,d])=>`<div class="item" style="cursor:default;align-items:flex-start"><div class="th" style="width:36px;height:36px;color:var(--warn)">${ic('lock')}</div><div class="grow"><div style="font-weight:700">${t}</div><div class="muted small">${d}</div></div></div>`).join('')}</div>`);
+}
+
+// ================= Telefon durumu =================
+function vDevice(soft){
+  const d=sync('device')||{}; DEV=d;
+  const b=d.battery||{}, c=d.cpu||{}, sc=d.screen||{}, sy=d.system||{};
+  const kv=(k,v)=>v===undefined||v===null||v===''?'':`<div class="kv"><span>${k}</span><span>${v}</span></div>`;
+  let est='';
+  if(b.chargeMah&&b.level>5){
+    const full=Math.round(b.chargeMah*100/b.level);
+    est = b.designMah? `~${full.toLocaleString('tr-TR')} mAh (tasarımın %${Math.min(100,Math.round(full/b.designMah*100))}'i)` : `~${full.toLocaleString('tr-TR')} mAh`;
+  }
+  const up=sy.uptimeMin||0;
+  const hz=sc.maxHz&&sc.maxHz!==sc.hz?`${sc.hz} Hz (en fazla ${sc.maxHz} Hz)`:`${sc.hz||'?'} Hz`;
+  const ramPct=d.ramTotal?Math.round((d.ramTotal-d.ramFree)/d.ramTotal*100):0;
+  const txt=[`${sy.brand} ${sy.model} (${sy.device})`,`Android ${sy.android} (API ${sy.sdk}) ${INFO.os||''}`,`Güvenlik yaması: ${sy.patch}`,`Yapı: ${sy.build}`,`Çekirdek: ${sy.kernel}`,
+    `İşlemci: ${c.soc} · ${c.cores} çekirdek${c.maxMhz?' · '+c.maxMhz+' MHz':''}`,`RAM: ${bytes(d.ramTotal)} · Depolama: ${bytes(d.storageTotal)}`,`Ekran: ${sc.w}×${sc.h} · ${hz} · ${sc.dpi} dpi`,
+    `Pil: %${b.level} · ${b.health} · ${b.temp}°C${b.cycles!==undefined?' · '+b.cycles+' döngü':''}`].join('\n');
+  V(`<div class="card"><div class="row" style="margin-bottom:6px"><div class="ring" style="background:conic-gradient(${b.level>20?'var(--ac)':'var(--bad)'} ${(b.level||0)*3.6}deg,var(--card2) 0)"><span>%${b.level??'?'}</span></div>
+      <div class="grow"><b style="font-size:18px">Pil</b><p class="muted small">${esc(b.status||'')}${b.plug?' · '+esc(b.plug):''}${b.fullInMin?` · ~${b.fullInMin} dk'da dolar`:''}</p></div></div>
+    ${kv('Sağlık',esc(b.health))}${kv('Sıcaklık',b.temp!==undefined?b.temp.toLocaleString('tr-TR')+' °C'+(b.temp>=42?' <span class="badge bad">Sıcak</span>':''):'')}
+    ${kv('Voltaj',b.voltage?(b.voltage/1000).toLocaleString('tr-TR',{maximumFractionDigits:2})+' V':'')}${kv('Anlık akım',b.currentMa!==undefined?b.currentMa+' mA':'')}
+    ${kv('Şarj döngüsü',b.cycles)}${kv('Tasarım kapasitesi',b.designMah?b.designMah.toLocaleString('tr-TR')+' mAh':'')}${kv('Tahmini gerçek kapasite',est)}${kv('Teknoloji',esc(b.tech))}
+    ${est?'<p class="muted tiny" style="margin-top:8px">Kapasite tahmini telefonun bildirdiği değerlerden hesaplanır; kesin ölçüm değildir.</p>':''}</div>
+  <div class="card"><b>Bellek ve depolama</b>
+    <div class="row small" style="justify-content:space-between;margin:12px 0 6px"><span class="muted">RAM</span><span>${bytes(d.ramTotal-d.ramFree)} / ${bytes(d.ramTotal)}</span></div><div class="bar"><i style="width:${ramPct}%"></i></div>
+    <div class="row small" style="justify-content:space-between;margin:14px 0 6px"><span class="muted">Depolama</span><span>${bytes(d.storageTotal-d.storageFree)} / ${bytes(d.storageTotal)}</span></div><div class="bar"><i style="width:${d.storageTotal?((d.storageTotal-d.storageFree)/d.storageTotal*100).toFixed(1):0}%"></i></div></div>
+  <div class="card"><b>İşlemci ve ekran</b>${kv('Yonga',esc(c.soc))}${kv('Çekirdek',c.cores)}${kv('En yüksek hız',c.maxMhz?(c.maxMhz/1000).toLocaleString('tr-TR',{maximumFractionDigits:2})+' GHz':'')}${kv('Mimari',esc(c.abi))}
+    ${kv('Çözünürlük',sc.w?sc.w+' × '+sc.h:'')}${kv('Yenileme hızı',hz)}${kv('Yoğunluk',sc.dpi?sc.dpi+' dpi':'')}${kv('HDR',sc.hdr===undefined?'':sc.hdr?'Var':'Yok')}</div>
+  <div class="card"><b>Sistem</b>${kv('Model',esc(sy.brand+' '+sy.model))}${kv('Kod adı',esc(sy.device))}${kv('Android',esc(sy.android)+' (API '+sy.sdk+')')}${kv('Arayüz',esc(INFO.os||''))}
+    ${kv('Güvenlik yaması',esc(sy.patch))}${kv('Çekirdek',esc((sy.kernel||'').split('-')[0]))}${kv('Ekran kilidi',d.secureLock?'Var':'<span style="color:var(--bad)">Yok</span>')}${kv('Bağlantı',esc(d.network))}
+    ${kv('Açık kalma süresi',Math.floor(up/1440)+' gün '+Math.floor(up%1440/60)+' sa')}</div>
+  <details class="card" style="padding:4px 16px"><summary>Sensörler (${(d.sensors||[]).length})</summary>${(d.sensors||[]).map(x=>`<div class="kv"><span>${esc(x)}</span></div>`).join('')}</details>
+  <button class="btn" onclick="sync('copy',{text:${esc(JSON.stringify(txt))}});toast('Telefon bilgileri kopyalandı')">Bilgileri kopyala</button>`);
+  if(!devTimer) devTimer=setInterval(()=>{ if(stack[stack.length-1]==='device'&&!sheetOpen()){ const y=scrollY; vDevice(true); scrollTo(0,y);} },5000);
+}
+
+// ================= Uygulama yöneticisi =================
+const AP={res:null,busy:false,prog:'',sys:false,sort:'size',q:'',sel:new Set(),queue:null};
+function vApps(){
+  let h='';
+  if(!INFO.usage) h+=`<div class="card"><b>Boyutları görmek için izin</b><p class="muted small" style="margin:4px 0 12px">Uygulama boyutu, önbellek ve son kullanım için <b>Kullanım erişimi</b> izni gerekli. İzin olmadan sadece kurulum dosyası boyutu görünür.</p><button class="btn sm pri" onclick="sync('openPerm',{which:'usage'})">İzni ver</button></div>`;
+  if(!AP.res&&!AP.busy){ loadApps(); return; }
+  if(AP.busy){ V(h+`<div class="card row"><div class="spin"></div><span class="muted" id="apProg">${esc(AP.prog||'Uygulamalar okunuyor…')}</span></div>`); return; }
+  const r=AP.res; const now=Date.now();
+  const sz=a=>(a.app||0)+(a.data||0);
+  const q=trl(AP.q.trim());
+  let L=r.apps.filter(a=>!q||trl(a.label+' '+a.pkg).includes(q));
+  const S={size:(a,b)=>sz(b)-sz(a),cache:(a,b)=>(b.cache||0)-(a.cache||0),used:(a,b)=>(a.lastUsed||0)-(b.lastUsed||0),inst:(a,b)=>b.installed-a.installed,name:(a,b)=>a.label.localeCompare(b.label,'tr')};
+  L.sort(S[AP.sort]);
+  const ago=t=>{ if(!t) return r.usage?'kayıtta açılmamış':''; const d=Math.floor((now-t)/864e5); return d<1?'bugün kullanıldı':d+' gün önce kullanıldı'; };
+  h+=`<div class="search">${ic('search')}<input type="text" placeholder="Uygulama ara" value="${esc(AP.q)}" oninput="AP.q=this.value;clearTimeout(window._apq);window._apq=setTimeout(()=>{render(true);const e=document.querySelector('.search input');e.focus();e.setSelectionRange(99,99)},300)"></div>
+    <div class="seg" style="margin-bottom:10px">${[['size','Boyut'],...(r.usage?[['cache','Önbellek'],['used','En az kullanılan']]:[]),['inst','Yeni kurulan'],['name','Ad']].map(([k,t])=>`<button class="${AP.sort===k?'on':''}" onclick="AP.sort='${k}';render(true)">${t}</button>`).join('')}</div>
+    <div class="row" style="justify-content:space-between;margin:0 4px 12px" onclick="AP.sys=!AP.sys;AP.res=null;render()"><span class="small">Sistem uygulamalarını göster</span><div class="sw ${AP.sys?'on':''}"></div></div>
+    <p class="muted small" style="margin:0 4px 10px">${L.length} uygulama${r.usage?` · toplam ${bytes(r.total)} · önbellek ${bytes(r.cache)}`:''}. Kaldırmak için seç; önbelleği uygulamanın kendi ayar ekranından temizlersin.</p>
+    <div class="list">${L.map(a=>`<div class="item ${AP.sel.has(a.pkg)?'sel':''}">${a.system?'<div style="width:28px"></div>':`<div class="chk" onclick="apSel('${esc(a.pkg)}')">${ic('check')}</div>`}<img class="th" style="width:44px;height:44px" loading="lazy" src="/icon/${esc(a.pkg)}" onerror="this.style.visibility='hidden'">
+      <button class="grow" style="text-align:left;min-width:0" onclick="sync('appSettings',{pkg:'${esc(a.pkg)}'})"><div class="ellip" style="font-weight:700">${esc(a.label)}${a.enabled?'':' <span class="badge">Devre dışı</span>'}</div><div class="muted tiny ellip">${esc(ago(a.lastUsed))}${a.cache>50*1048576?` · <span style="color:var(--warn)">önbellek ${bytes(a.cache)}</span>`:''}</div></button>
+      <div class="sz">${sz(a)?bytes(sz(a)):''}</div></div>`).join('')}</div>`;
+  V(h);
+  const d=$('#dock');
+  if(AP.sel.size){ $('#dockIn').innerHTML=`<div class="grow"><b>${AP.sel.size} uygulama seçili</b><div class="muted small">Her biri için Android onay soracak</div></div><button class="btn red sm" style="min-width:110px" onclick="startUninstall()">${ic('trash')} Kaldır</button>`; d.classList.add('show'); }
+}
+function apSel(p){ AP.sel.has(p)?AP.sel.delete(p):AP.sel.add(p); const y=scrollY; render(true); scrollTo(0,y); }
+async function loadApps(){
+  AP.busy=true; render();
+  const r=await call('appList',{system:AP.sys},t=>{ AP.prog=t; const e=$('#apProg'); if(e) e.textContent=t; });
+  AP.busy=false; if(r.error) toast('Hata: '+r.error); else AP.res=r;
+  if(stack[stack.length-1]==='apps') render();
+}
+function startUninstall(){ AP.queue=[...AP.sel]; nextUninstall(); }
+function nextUninstall(){
+  if(AP.queue&&AP.queue._last){ const p=AP.queue._last; if(!sync('installed',{pkg:p})){ AP.res.apps=AP.res.apps.filter(a=>a.pkg!==p); } AP.sel.delete(p); }
+  const p=AP.queue&&AP.queue.shift();
+  if(!p){ AP.queue=null; render(true); toast('Kaldırma tamamlandı'); return; }
+  AP.queue._last=p; if(!sync('uninstall',{pkg:p})){ AP.queue._last=null; nextUninstall(); }
+}
+
+// ================= İzin denetimi =================
+const PA={res:null,sys:false,open:null};
+async function vPerms(){
+  if(!PA.res){ V(`<div class="card row"><div class="spin"></div><span class="muted">İzinler okunuyor…</span></div>`); PA.res=await call('permAudit',{system:PA.sys}); if(stack[stack.length-1]!=='perms') return; }
+  if(PA.res.error){ V(`<div class="note bad">${ic('warn')}<div>${esc(PA.res.error)}</div></div>`); return; }
+  V(`<p class="muted small" style="margin:4px 4px 12px">Hangi hassas izin hangi uygulamalarda <b>şu an açık</b>. Gereksiz gördüğün izni uygulamanın ayarlarından kapat.</p>
+    <div class="row" style="justify-content:space-between;margin:0 4px 14px" onclick="PA.sys=!PA.sys;PA.res=null;render()"><span class="small">Sistem uygulamalarını göster</span><div class="sw ${PA.sys?'on':''}"></div></div>
+    ${PA.res.groups.map(g=>`<div class="app ${PA.open===g.k?'open':''}"><button class="head" onclick="PA.open=PA.open==='${g.k}'?null:'${g.k}';render(true)"><div class="grow"><b>${esc(g.t)}</b></div><span class="badge ${g.apps.length>10?'warn':''}">${g.apps.length} uygulama</span>${ic('chev')}</button>
+      <div class="body">${g.apps.length?g.apps.map(a=>`<button class="item" style="padding:10px 0" onclick="sync('appSettings',{pkg:'${esc(a.pkg)}'})"><img class="th" style="width:36px;height:36px" loading="lazy" src="/icon/${esc(a.pkg)}" onerror="this.style.visibility='hidden'"><div class="grow ellip">${esc(a.label)}${a.system?' <span class="badge">Sistem</span>':''}</div>${ic('ext')}</button>`).join(''):'<p class="muted small">Hiçbir uygulamada açık değil.</p>'}</div></div>`).join('')}`);
+}
+
+// ================= Hakkında =================
+function vAbout(){
+  V(`<div class="card" style="text-align:center;padding:26px 16px"><div class="tile c4" style="min-height:0;padding:0;background:none;align-items:center"><div class="ic" style="width:68px;height:68px">${ic('zap')}</div></div>
+      <h2 style="margin:12px 0 4px">Araç Kutusu</h2><p class="muted">Sürüm ${esc(INFO.version||'?')}</p></div>
+    <button class="btn pri" style="margin-bottom:12px" onclick="sync('openUrl',{url:'https://github.com/bllkrkt/Claude/releases'})||toast('Tarayıcı açılamadı')">Güncellemeleri kontrol et</button>
+    <div class="note ok">${ic('lock')}<div class="small"><b>Gizlilik:</b> Bu uygulamanın internet izni yok; hiçbir veriyi hiçbir yere gönderemez. Taramalar sadece telefonunda yapılır.</div></div>
+    <div class="card small"><b>Güncelleme nasıl kurulur?</b><p class="muted" style="margin-top:6px">Yukarıdaki butonla sürüm sayfasını aç → en üstteki <b>AracKutusu-vX.apk</b> dosyasını indir → aç → <b>Güncelle</b>. Modların ve zamanlamaların korunur.</p><p class="muted" style="margin-top:8px">"Uygulama yüklenmedi / paket çakışıyor" hatası alırsan eski sürüm farklı bir imzayla derlenmiştir: eskisini kaldırıp yenisini kur.</p></div>`);
 }
 
 // ================= Başlat =================

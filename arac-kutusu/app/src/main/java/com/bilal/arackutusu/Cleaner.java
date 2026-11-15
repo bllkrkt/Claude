@@ -33,7 +33,24 @@ final class Cleaner {
             "Alarms", "Audiobooks", "DCIM", "Documents", "Download", "Movies", "Music", "Notifications",
             "Pictures", "Podcasts", "Recordings", "Ringtones", "Android", "MIUI"));
 
+    private static final Set<String> VID = new HashSet<>(Arrays.asList("mp4", "mkv", "avi", "mov", "3gp", "webm", "m4v", "ts"));
+    private static final Set<String> AUD = new HashSet<>(Arrays.asList("mp3", "m4a", "aac", "ogg", "opus", "wav", "flac", "amr", "wma"));
+    private static final Set<String> DOC = new HashSet<>(Arrays.asList("pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "odt", "csv", "epub"));
+    private static final Set<String> ARC = new HashSet<>(Arrays.asList("zip", "rar", "7z", "tar", "gz", "obb", "xapk", "apks"));
+    private static final Set<String> JUNK_EXT = new HashSet<>(Arrays.asList("tmp", "temp", "log", "bak", "dmp"));
+    static final String[] CATS = {"Fotoğraf", "Video", "Ses", "Belge", "APK", "Arşiv", "Diğer"};
+
     private Cleaner() { }
+
+    private static int cat(String ext) {
+        if (IMG.contains(ext)) return 0;
+        if (VID.contains(ext)) return 1;
+        if (AUD.contains(ext)) return 2;
+        if (DOC.contains(ext)) return 3;
+        if ("apk".equals(ext)) return 4;
+        if (ARC.contains(ext)) return 5;
+        return 6;
+    }
 
     static File root() { return Environment.getExternalStorageDirectory(); }
 
@@ -47,6 +64,11 @@ final class Cleaner {
         List<File> apks = new ArrayList<>();
         List<File> emptyDirs = new ArrayList<>();
         String downloadPath = new File(root, Environment.DIRECTORY_DOWNLOADS).getCanonicalPath();
+        long now = System.currentTimeMillis(), day = 86400000L;
+        long[] catBytes = new long[CATS.length];
+        int[] catCount = new int[CATS.length];
+        Map<String, Long> topDirs = new HashMap<>();
+        List<File> oldDl = new ArrayList<>(), shots = new ArrayList<>(), waOld = new ArrayList<>(), junk = new ArrayList<>();
 
         // Klasör ağacı: post-order ile boş klasörleri bul
         Map<String, Boolean> hasContent = new HashMap<>();
@@ -80,6 +102,24 @@ final class Cleaner {
                     l.add(k);
                 }
                 if ("apk".equals(ext) && dp.startsWith(downloadPath)) apks.add(k);
+                int ci = cat(ext);
+                catBytes[ci] += len; catCount[ci]++;
+                String rel = dp.length() > rootPath.length() ? dp.substring(rootPath.length() + 1) : "";
+                String top = rel.isEmpty() ? "(ana klasör)" : rel.contains("/") ? rel.substring(0, rel.indexOf('/')) : rel;
+                if (top.equals("Android") && rel.startsWith("Android/media/")) {
+                    String[] parts = rel.split("/");
+                    if (parts.length >= 3) top = "Android/media/" + parts[2];
+                }
+                Long tv = topDirs.get(top); topDirs.put(top, (tv == null ? 0 : tv) + len);
+                long age = (now - k.lastModified()) / day;
+                String nm = k.getName();
+                if (dp.startsWith(downloadPath) && !"apk".equals(ext) && age >= 90) oldDl.add(k);
+                if ((rel.contains("Screenshots") || rel.contains("ScreenRecorder")) && age >= 30) shots.add(k);
+                if ((rel.startsWith("WhatsApp/Media") || rel.startsWith("Android/media/com.whatsapp/WhatsApp/Media")
+                        || rel.startsWith("Android/media/com.whatsapp.w4b/WhatsApp Business/Media"))
+                        && age >= 180 && !nm.startsWith(".")) waOld.add(k);
+                if (rel.contains(".thumbnails") || (JUNK_EXT.contains(ext) && !nm.startsWith("."))
+                        || (len == 0 && !nm.startsWith("."))) junk.add(k);
                 if (count % 2000 == 0) pr.on(count + " dosya tarandı…");
             }
             hasContent.put(dp, anyFile);
@@ -176,6 +216,19 @@ final class Cleaner {
         }
 
         JSONObject out = new JSONObject();
+        JSONArray cats = new JSONArray();
+        for (int i = 0; i < CATS.length; i++) cats.put(new JSONObject().put("t", CATS[i]).put("bytes", catBytes[i]).put("count", catCount[i]));
+        out.put("cats", cats);
+        List<Map.Entry<String, Long>> td = new ArrayList<>(topDirs.entrySet());
+        td.sort((x, y) -> Long.compare(y.getValue(), x.getValue()));
+        JSONArray tda = new JSONArray();
+        for (int i = 0; i < Math.min(12, td.size()); i++)
+            tda.put(new JSONObject().put("name", td.get(i).getKey()).put("bytes", td.get(i).getValue()));
+        out.put("topDirs", tda);
+        out.put("oldDl", list(oldDl, root, true));
+        out.put("shots", list(shots, root, false));
+        out.put("waOld", list(waOld, root, true));
+        out.put("junk", list(junk, root, true));
         out.put("large", la);
         out.put("largeTotal", large.size());
         out.put("dupes", dupes);
@@ -187,6 +240,14 @@ final class Cleaner {
         out.put("freeBytes", root.getUsableSpace());
         out.put("totalSpace", root.getTotalSpace());
         return out;
+    }
+
+    private static JSONArray list(List<File> l, File root, boolean bySize) throws Exception {
+        if (bySize) l.sort((a, b) -> Long.compare(b.length(), a.length()));
+        else l.sort((a, b) -> Long.compare(a.lastModified(), b.lastModified()));
+        JSONArray a = new JSONArray();
+        for (int i = 0; i < Math.min(1500, l.size()); i++) a.put(file(l.get(i), root));
+        return a;
     }
 
     private static JSONObject file(File f, File root) throws Exception {
