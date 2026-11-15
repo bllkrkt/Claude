@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Araç Kutusu</title>
+<style>
+:root{
+  --bg:#0E1116; --bg2:#151A21; --card:#1A2029; --card2:#212935; --line:#2A3340;
+  --tx:#E8EDF3; --tx2:#9AA6B5; --tx3:#6B7686;
+  --ac:#4FD1A5; --ac2:#2FB386; --acbg:rgba(79,209,165,.12);
+  --warn:#F5B94A; --warnbg:rgba(245,185,74,.12);
+  --bad:#F26D6D; --badbg:rgba(242,109,109,.13);
+  --blue:#6AA8FF; --bluebg:rgba(106,168,255,.12);
+  --r:18px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;padding-bottom:110px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;padding:10px 12px;background:rgba(14,17,22,.94);backdrop-filter:blur(10px);min-height:60px}
+header h2{margin:0;font-size:20px;font-weight:700;flex:1}
+#backBtn{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--card)}
+#backBtn svg{width:24px;height:24px}
+main{padding:4px 16px 16px;max-width:640px;margin:0 auto}
+h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2);margin:26px 4px 10px;font-weight:700}
+p{margin:0}
+.muted{color:var(--tx2)} .small{font-size:14px} .tiny{font-size:12.5px}
+.card{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.row{display:flex;align-items:center;gap:12px}
+.grow{flex:1;min-width:0}
+.ellip{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Ana ekran */
+.hero{padding:18px 4px 6px}
+.hero h1{margin:0 0 4px;font-size:30px;letter-spacing:-.02em}
+.store{margin-top:14px}
+.bar{height:10px;border-radius:6px;background:var(--card2);overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--ac2),var(--ac));border-radius:6px}
+.grid4{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.tile{background:var(--card);border-radius:22px;padding:18px 16px;text-align:left;min-height:168px;display:flex;flex-direction:column;gap:10px;border:1px solid transparent;transition:transform .12s}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center}
+.tile .ic svg{width:28px;height:28px}
+.tile b{font-size:18px;line-height:1.2}
+.tile span{font-size:13.5px;color:var(--tx2);line-height:1.35}
+.c1 .ic{background:var(--acbg);color:var(--ac)} .c2 .ic{background:var(--bluebg);color:var(--blue)}
+.c3 .ic{background:var(--warnbg);color:var(--warn)} .c4 .ic{background:rgba(190,140,255,.13);color:#C39BFF}
+
+/* Butonlar */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 20px;border-radius:16px;font-weight:700;font-size:17px;background:var(--card2);width:100%}
+.btn.pri{background:var(--ac);color:#06281C}
+.btn.red{background:var(--bad);color:#2A0707}
+.btn.ghost{background:transparent;border:1.5px solid var(--line)}
+.btn.sm{min-height:46px;font-size:15px;border-radius:14px;padding:0 14px;width:auto}
+.btn:disabled{opacity:.45}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btns>.btn{flex:1;min-width:130px}
+.link{color:var(--ac);font-weight:600;padding:12px 4px;display:inline-flex;align-items:center;gap:6px}
+
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{min-height:46px;padding:0 16px;border-radius:14px;background:var(--card2);font-weight:600;font-size:15px;border:1.5px solid transparent}
+.seg button.on{background:var(--acbg);border-color:var(--ac);color:var(--ac)}
+
+.note{display:flex;gap:12px;align-items:flex-start;border-radius:var(--r);padding:14px 16px;margin-bottom:12px;font-size:14.5px}
+.note svg{margin-top:1px}
+.note.warn{background:var(--warnbg);color:#F7D9A0} .note.warn svg{color:var(--warn)}
+.note.info{background:var(--bluebg);color:#C7DCFF} .note.info svg{color:var(--blue)}
+.note.bad{background:var(--badbg);color:#FFC9C9} .note.bad svg{color:var(--bad)}
+.note.ok{background:var(--acbg);color:#BDF2DE} .note.ok svg{color:var(--ac)}
+.note b{color:var(--tx)}
+
+/* Liste */
+.list{background:var(--card);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);min-height:64px;width:100%;text-align:left}
+.item:last-child{border-bottom:0}
+.item:active{background:var(--card2)}
+.chk{width:28px;height:28px;border-radius:9px;border:2px solid var(--tx3);display:flex;align-items:center;justify-content:center;flex:none}
+.chk svg{width:18px;height:18px;opacity:0;stroke-width:3}
+.item.sel .chk{background:var(--ac);border-color:var(--ac);color:#06281C}
+.item.sel .chk svg{opacity:1}
+.th{width:52px;height:52px;border-radius:12px;background:var(--card2);flex:none;object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:11px;font-weight:700;overflow:hidden}
+.th img{width:100%;height:100%;object-fit:cover}
+.sz{font-weight:700;font-size:15px;white-space:nowrap}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:8px;background:var(--card2);color:var(--tx2);margin:2px 4px 2px 0}
+.badge.ok{background:var(--acbg);color:var(--ac)} .badge.warn{background:var(--warnbg);color:var(--warn)}
+.badge.bad{background:var(--badbg);color:var(--bad)} .badge.blue{background:var(--bluebg);color:var(--blue)}
+.grp{padding:10px 14px;background:var(--bg2);font-size:13px;color:var(--tx2);display:flex;justify-content:space-between}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--card);border-radius:16px;padding:14px;text-align:left;border:1.5px solid transparent}
+.stat.on{border-color:var(--ac)}
+.stat b{display:block;font-size:22px}
+.stat span{font-size:13px;color:var(--tx2)}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:12px 16px calc(12px + var(--sb,0px));background:linear-gradient(transparent,var(--bg) 22%);display:none}
+.dock.show{display:block}
+.dock .in{max-width:640px;margin:0 auto;background:var(--card2);border-radius:20px;padding:12px 12px 12px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+
+.spin{width:22px;height:22px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--ac);animation:sp 1s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Uygulama kartı */
+.app{background:var(--card);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.app>.head{display:flex;gap:12px;align-items:center;padding:14px;width:100%;text-align:left}
+.app img.aic{width:46px;height:46px;border-radius:12px;flex:none;background:var(--card2)}
+.app .body{padding:0 14px 14px;display:none}
+.app.open .body{display:block}
+.risk{border-left:3px solid var(--warn);padding:6px 0 6px 12px;margin:10px 0}
+.risk.l3{border-color:var(--bad)} .risk.l1{border-color:var(--tx3)}
+.risk b{display:block;font-size:15px}
+.risk p{font-size:14px;color:var(--tx2)}
+
+/* Ayar satırları */
+.set{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px}
+.set .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.set .top b{font-size:16.5px}
+.set .top .v{color:var(--ac);font-weight:700}
+input[type=range]{width:100%;height:44px;accent-color:var(--ac)}
+.sw{width:58px;height:34px;border-radius:20px;background:var(--line);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;left:4px;top:4px;width:26px;height:26px;border-radius:50%;background:#fff;transition:left .2s}
+.sw.on{background:var(--ac)} .sw.on::after{left:28px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bad);flex:none}
+.dot.ok{background:var(--ac)} .dot.mid{background:var(--warn)}
+input[type=text]{width:100%;min-height:54px;border-radius:14px;border:1.5px solid var(--line);background:var(--bg2);color:var(--tx);font:inherit;font-size:17px;padding:0 14px}
+select{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);color:var(--tx);font:inherit;padding:0 10px;flex:1;min-width:0}
+
+.mode{background:var(--card);border-radius:var(--r);padding:16px;margin-bottom:10px;border:1.5px solid transparent}
+.mode.last{border-color:var(--ac2)}
+.mode .em{font-size:30px;width:52px;height:52px;border-radius:16px;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none}
+
+.steps{counter-reset:s;padding:0;margin:0;list-style:none}
+.steps li{counter-increment:s;position:relative;padding:0 0 18px 46px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--acbg);color:var(--ac);font-weight:800;display:flex;align-items:center;justify-content:center}
+.steps li.done::before{content:"✓";background:var(--ac);color:#06281C}
+.steps li>b{display:block;margin-bottom:4px}
+.steps p{color:var(--tx2);font-size:14.5px;margin-bottom:10px}
+
+/* Pencere ve bildirim */
+#sheetBg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;display:none}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--bg2);border-radius:24px 24px 0 0;max-height:86vh;overflow:auto;padding:20px 16px calc(20px + var(--sb,0px));transform:translateY(105%);transition:transform .22s,visibility 0s .22s;visibility:hidden}
+#sheet.show{transform:none;visibility:visible;transition:transform .22s}
+#sheet h4{margin:0 0 8px;font-size:21px}
+#toast{position:fixed;left:16px;right:16px;bottom:24px;z-index:60;background:#2B3542;color:var(--tx);padding:14px 18px;border-radius:16px;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .2s;max-width:600px;margin:0 auto}
+#toast.show{opacity:1}
+.empty{text-align:center;padding:30px 10px;color:var(--tx2)}
+details summary{cursor:pointer;color:var(--tx2);padding:10px 4px;font-size:14.5px}
+</style>
+</head>
+<body>
+<header id="hdr"><button id="backBtn" onclick="goBack()" aria-label="Geri"></button><h2 id="ttl">Araç Kutusu</h2></header>
+<main id="view"></main>
+<div class="dock" id="dock"><div class="in" id="dockIn"></div></div>
+<div id="sheetBg" onclick="closeSheet()"></div>
+<div id="sheet"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+// ================= Simgeler =================
+const IC={
+  back:'<polyline points="15 18 9 12 15 6"/>',
+  chev:'<polyline points="9 18 15 12 9 6"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  key:'<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2m-4 4 3 3m-6 0 2 2"/>',
+  zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  warn:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  ext:'<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>',
+};
+const ic=(n,cls)=>`<svg class="i ${cls||''}" viewBox="0 0 24 24">${IC[n]}</svg>`;
+document.getElementById('backBtn').innerHTML=ic('back');
+
+// ================= Köprü =================
+const B=window.AndroidBridge||null;
+let seq=0; const pend={}, prog={};
+function sync(m,a){
+  if(!B) return null;
+  try{ return JSON.parse(B.sync(m,JSON.stringify(a||{}))); }catch(e){ return {error:String(e)}; }
+}
+function call(m,a,onProg){
+  return new Promise(res=>{
+    if(!B){ res({error:'nobridge'}); return; }
+    const id='c'+(++seq); pend[id]=res; if(onProg) prog[id]=onProg;
+    B.async(id,m,JSON.stringify(a||{}));
+  });
+}
+window.__done=(id,r)=>{ const f=pend[id]; delete pend[id]; delete prog[id]; if(f) f(r); };
+window.__progress=(id,t)=>{ if(prog[id]) prog[id](t); };
+
+// ================= Yardımcılar =================
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function bytes(n){
+  if(!n) return '0 B';
+  const u=['B','KB','MB','GB','TB']; let i=0; n=+n;
+  while(n>=1024&&i<u.length-1){n/=1024;i++;}
+  return (i>=2? n.toLocaleString('tr-TR',{maximumFractionDigits:n<10?1:0}) : Math.round(n))+' '+u[i];
+}
+const date=t=>t?new Date(t).toLocaleDateString('tr-TR',{day:'numeric',month:'short',year:'numeric'}):'';
+const b64url=s=>btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+let toastT;
+function toast(t){ const e=$('#toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),3200); }
+function openSheet(html){ $('#sheet').innerHTML=html; $('#sheetBg').style.display='block'; requestAnimationFrame(()=>$('#sheet').classList.add('show')); }
+function closeSheet(){ $('#sheet').classList.remove('show'); $('#sheetBg').style.display='none'; }
+const sheetOpen=()=>$('#sheet').classList.contains('show');
+
+let INFO={};
+function refreshInfo(){ INFO=sync('info')||{}; }
+
+// ================= Gezinme =================
+const stack=['home'];
+const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları'};
+let viewArg=null;
+function go(v,arg){ closeSheet(); stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
+function goBack(){
+  if(sheetOpen()){ closeSheet(); return true; }
+  if(stack.length>1){ stack.pop(); viewArg=null; render(); window.scrollTo(0,0); return true; }
+  return false;
+}
+window.__onBack=goBack;
+window.__onResume=()=>{ refreshInfo(); const v=stack[stack.length-1]; if(['home','clean','sec','quick','shizuku'].includes(v)) render(true); if(v==='sec') checkUninstalled(); };
+function render(soft){
+  const v=stack[stack.length-1];
+  $('#ttl').textContent=TITLES[v]||'';
+  $('#hdr').style.display=v==='home'?'none':'flex';
+  $('#backBtn').style.display=stack.length>1?'flex':'none';
+  $('#dock').classList.remove('show');
+  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits})[v](soft);
+}
+const V=h=>{ $('#view').innerHTML=h; };
+
+// ================= Ana ekran =================
+function vHome(){
+  if(!B){ V(`<div class="hero"><h1>Araç Kutusu</h1></div><div class="note warn">${ic('warn')}<div>Bu sayfa sadece telefondaki uygulamanın içinde çalışır.</div></div>`); return; }
+  const used=INFO.totalBytes? (INFO.totalBytes-INFO.freeBytes)/INFO.totalBytes*100 : 0;
+  const dev=[INFO.brand&&INFO.brand[0].toUpperCase()+INFO.brand.slice(1), INFO.model].filter(Boolean).join(' ');
+  V(`<div class="hero"><h1>Araç Kutusu</h1>
+    <p class="muted small">${esc(dev)}${INFO.os?' · '+esc(INFO.os):''} · Android ${esc(INFO.android)}</p>
+    <div class="store"><div class="row small" style="justify-content:space-between;margin-bottom:6px"><span class="muted">Depolama</span><span><b>${bytes(INFO.freeBytes)}</b> <span class="muted">boş / ${bytes(INFO.totalBytes)}</span></span></div>
+    <div class="bar"><i style="width:${used.toFixed(1)}%"></i></div></div></div>
+  <div class="grid4">
+    <button class="tile c1" onclick="go('clean')"><div class="ic">${ic('trash')}</div><b>Temizlik</b><span>Büyük dosya, kopya fotoğraf, eski APK, boş klasör</span></button>
+    <button class="tile c2" onclick="go('sec')"><div class="ic">${ic('shield')}</div><b>Güvenlik kontrolü</b><span>Riskli izinler, bilinmeyen kaynak, kullanılmayanlar</span></button>
+    <button class="tile c3" onclick="go('hidden')"><div class="ic">${ic('key')}</div><b>Gizli ayarlar</b><span>Xiaomi / HyperOS'un saklı ekranları</span></button>
+    <button class="tile c4" onclick="go('quick')"><div class="ic">${ic('zap')}</div><b>Tek tık ayarlar</b><span>Modlar, parlaklık, sessiz, kutucuklar</span></button>
+  </div>
+  <div style="text-align:center;margin-top:18px"><button class="link" onclick="go('limits')">${ic('info')} Android'in izin vermedikleri</button></div>`);
+}
+
+// ================= 1) Temizlik =================
+const CL={res:null,busy:false,prog:'',tab:'large',min:100,sel:new Map()};
+const TABS=[['large','Büyük dosyalar'],['dupes','Kopya fotoğraflar'],['apks','Eski APK\'lar'],['empty','Boş klasörler']];
+function vClean(){
+  if(!INFO.files){
+    V(`<div class="card"><div class="row" style="margin-bottom:12px"><div class="th" style="color:var(--ac)">${ic('folder')}</div><div class="grow"><b>Dosya izni gerekli</b><p class="muted small">Dosyaları bulup silebilmem için Android'in <b>"Tüm dosyalara erişim"</b> iznini vermen lazım.</p></div></div>
+      <p class="small muted" style="margin-bottom:14px">Açılan ekranda <b>Araç Kutusu</b> anahtarını aç, sonra geri tuşuyla buraya dön.</p>
+      <button class="btn pri" onclick="sync('openPerm',{which:'files'})">İzni ver</button></div>
+      <div class="note info">${ic('info')}<div>Uygulama internete hiçbir şey göndermez. Senin onayın olmadan hiçbir dosya silinmez.</div></div>`);
+    return;
+  }
+  let h=`<div class="card"><b>Büyük dosya sınırı</b><div class="seg" style="margin:10px 0 14px">${[50,100,250,500,1024].map(m=>`<button class="${CL.min===m?'on':''}" onclick="CL.min=${m};render()">${m>=1024?'1 GB':m+' MB'}</button>`).join('')}</div>
+    <button class="btn pri" ${CL.busy?'disabled':''} onclick="scanClean()">${CL.busy?'<div class="spin"></div> Taranıyor…':(CL.res?'Yeniden tara':'Taramayı başlat')}</button>
+    ${CL.busy?`<p class="muted small" id="clProg" style="margin-top:10px;text-align:center">${esc(CL.prog||'Başlıyor…')}</p>`:''}</div>`;
+  const r=CL.res;
+  if(r&&!CL.busy){
+    const sum=a=>a.reduce((s,x)=>s+x.size,0);
+    const dupeCount=r.dupes.reduce((s,g)=>s+g.length-1,0);
+    const st={large:[r.large.length+(r.largeTotal>r.large.length?'+':''),bytes(sum(r.large))],dupes:[dupeCount,bytes(r.dupeWaste)+' fazlalık'],apks:[r.apks.length,bytes(sum(r.apks))],empty:[r.empty.length,'klasör']};
+    h+=`<p class="muted small" style="margin:4px 4px 12px">${r.files.toLocaleString('tr-TR')} dosya tarandı (${bytes(r.bytes)}).</p><div class="stats">${TABS.map(([k,t])=>`<button class="stat ${CL.tab===k?'on':''}" onclick="CL.tab='${k}';render()"><b>${st[k][0]}</b><span>${t}<br>${st[k][1]}</span></button>`).join('')}</div>`;
+    h+=cleanList();
+    h+=`<div class="note info">${ic('info')}<div class="small">Android 11'den beri hiçbir uygulama <b>Android/data</b> ve <b>Android/obb</b> klasörlerine giremez; oradaki dosyalar taranmadı. Kopya araması sadece <b>birebir aynı</b> fotoğrafları bulur; benzer ama farklı fotoğrafları bulmaz.</div></div>`;
+  } else if(!CL.busy){
+    h+=`<div class="note info">${ic('info')}<div class="small">Tarama hiçbir şeyi silmez. Önce listeyi görürsün, sen seçip onaylarsan silinir.</div></div>`;
+  }
+  V(h); dock();
+}
+function cleanList(){
+  const r=CL.res, t=CL.tab;
+  const row=(f,extra)=>{
+    const sel=CL.sel.has(f.path);
+    const th=f.img?`<div class="th"><img loading="lazy" src="/thumb/${b64url(f.path)}" onerror="this.remove()"></div>`
+      : `<div class="th">${f.dir?ic('folder'):esc((f.name.split('.').pop()||'').slice(0,4).toUpperCase())}</div>`;
+    return `<button class="item ${sel?'sel':''}" data-p="${esc(f.path)}" data-s="${f.size}" onclick="tgl(this)"><div class="chk">${ic('check')}</div>${th}
+      <div class="grow"><div class="ellip" style="font-weight:600">${esc(f.name)}</div><div class="muted tiny ellip">${esc(f.rel.slice(0,-f.name.length-1)||'/')}</div>${extra||''}</div>
+      <div class="sz">${f.dir?'':bytes(f.size)}</div></button>`;
+  };
+  let h='', acts='';
+  if(t==='large'){
+    if(!r.large.length) return `<div class="card empty">${CL.min>=1024?'1 GB':CL.min+' MB'}'tan büyük dosya yok.</div>`;
+    acts=`<button class="btn sm" onclick="selAll('large',true)">Tümünü seç</button><button class="btn sm ghost" onclick="selAll('large',false)">Seçimi kaldır</button>`;
+    h=`<div class="list">${r.large.map(f=>row(f,`<div class="muted tiny">${date(f.mtime)}</div>`)).join('')}</div>`;
+    if(r.largeTotal>r.large.length) h+=`<p class="muted tiny" style="margin:0 4px 12px">En büyük ${r.large.length} dosya gösteriliyor (toplam ${r.largeTotal}).</p>`;
+  } else if(t==='dupes'){
+    if(!r.dupes.length) return `<div class="card empty">Birebir kopya fotoğraf bulunamadı. 👍</div>`;
+    acts=`<button class="btn sm" onclick="selDupes()">Her gruptan en eskiyi koru, kalanları seç</button><button class="btn sm ghost" onclick="selAll('dupes',false)">Seçimi kaldır</button>`;
+    h=r.dupes.map((g,gi)=>`<div class="list"><div class="grp"><span>Grup ${gi+1} · ${g.length} aynı fotoğraf</span><span>${bytes(g[0].size)}</span></div>${g.map((f,i)=>row(f,`<div class="tiny">${i===0?'<span class="badge ok">En eski (orijinal)</span>':'<span class="badge">Kopya</span>'} <span class="muted">${date(f.mtime)}</span></div>`)).join('')}</div>`).join('');
+  } else if(t==='apks'){
+    if(!r.apks.length) return `<div class="card empty">İndirilenler'de APK dosyası yok.</div>`;
+    acts=`<button class="btn sm" onclick="selApks()">Zaten yüklü olanları seç</button><button class="btn sm" onclick="selAll('apks',true)">Tümünü seç</button><button class="btn sm ghost" onclick="selAll('apks',false)">Kaldır</button>`;
+    const st={same:['ok','Bu sürüm yüklü'],newer:['ok','Daha yeni sürüm yüklü'],older:['warn','Yüklü sürüm daha eski'],no:['blue','Yüklü değil']};
+    h=`<div class="list">${r.apks.map(f=>{
+      const s=f.broken?['bad','Bozuk / eksik dosya']:st[f.installed]||['','?'];
+      return row(f,`<div class="tiny">${f.app?`<b>${esc(f.app)}</b> ${esc(f.ver||'')} · `:''}<span class="badge ${s[0]}">${s[1]}</span> <span class="muted">${date(f.mtime)}</span></div>`);
+    }).join('')}</div>`;
+  } else {
+    if(!r.empty.length) return `<div class="card empty">Boş klasör yok.</div>`;
+    acts=`<button class="btn sm" onclick="selAll('empty',true)">Tümünü seç</button><button class="btn sm ghost" onclick="selAll('empty',false)">Seçimi kaldır</button>`;
+    h=`<div class="list">${r.empty.map(f=>row(f)).join('')}</div><p class="muted tiny" style="margin:0 4px 12px">Klasör, silme anında içinde dosya çıkarsa silinmez.</p>`;
+  }
+  return `<div class="btns" style="margin-bottom:12px">${acts}</div>`+h;
+}
+function itemsOf(tab){ const r=CL.res; return tab==='dupes'? r.dupes.flat() : r[tab]; }
+function tgl(el){ const p=el.dataset.p; if(CL.sel.has(p)) CL.sel.delete(p); else CL.sel.set(p,+el.dataset.s); el.classList.toggle('sel'); dock(); }
+function selAll(tab,on){ for(const f of itemsOf(tab)){ if(on) CL.sel.set(f.path,f.size); else CL.sel.delete(f.path);} render(); }
+function selDupes(){ for(const g of CL.res.dupes) g.forEach((f,i)=>{ if(i===0) CL.sel.delete(f.path); else CL.sel.set(f.path,f.size); }); render(); }
+function selApks(){ for(const f of CL.res.apks) if(f.installed==='same'||f.installed==='newer') CL.sel.set(f.path,f.size); render(); }
+function dock(){
+  const d=$('#dock');
+  if(stack[stack.length-1]!=='clean'||!CL.sel.size){ d.classList.remove('show'); return; }
+  let s=0; CL.sel.forEach(v=>s+=v);
+  $('#dockIn').innerHTML=`<div class="grow"><b>${CL.sel.size} öğe seçili</b><div class="muted small">${bytes(s)} yer açılacak</div></div><button class="btn red sm" style="min-width:110px" onclick="confirmDel()">${ic('trash')} Sil</button>`;
+  d.classList.add('show');
+}
+async function scanClean(){
+  CL.busy=true; CL.prog=''; CL.sel.clear(); render();
+  const r=await call('scanClean',{minLarge:CL.min*1048576},t=>{ CL.prog=t; const e=$('#clProg'); if(e) e.textContent=t; });
+  CL.busy=false;
+  if(r.error==='noaccess'){ refreshInfo(); }
+  else if(r.error){ toast('Tarama hatası: '+r.error); }
+  else CL.res=r;
+  if(stack[stack.length-1]==='clean') render();
+}
+function confirmDel(){
+  const all=[...CL.sel.entries()]; let s=0; all.forEach(([,v])=>s+=v);
+  const name=p=>p.split('/').pop();
+  openSheet(`<h4>Silinsin mi?</h4><p class="muted" style="margin-bottom:12px"><b style="color:var(--tx)">${all.length} öğe</b> silinecek, <b style="color:var(--tx)">${bytes(s)}</b> yer açılacak.</p>
+    <div class="list" style="max-height:38vh;overflow:auto">${all.slice(0,60).map(([p,v])=>`<div class="item" style="min-height:48px"><div class="grow ellip small">${esc(name(p))}</div><div class="muted small">${v?bytes(v):'klasör'}</div></div>`).join('')}
+    ${all.length>60?`<div class="item muted small" style="min-height:44px">…ve ${all.length-60} öğe daha</div>`:''}</div>
+    <div class="note bad">${ic('warn')}<div><b>Kalıcı olarak silinir.</b> Çöp kutusuna gitmez, geri alınamaz.</div></div>
+    <div class="btns"><button class="btn ghost" onclick="closeSheet()">Vazgeç</button><button class="btn red" id="delGo" onclick="doDelete()">Evet, sil</button></div>`);
+}
+async function doDelete(){
+  const b=$('#delGo'); b.disabled=true; b.innerHTML='<div class="spin"></div> Siliniyor…';
+  const paths=[...CL.sel.keys()];
+  const r=await call('delete',{paths});
+  closeSheet();
+  if(r.error){ toast('Silme hatası: '+r.error); return; }
+  const gone=new Set(r.deleted);
+  const keep=f=>!gone.has(f.path);
+  const R=CL.res;
+  R.large=R.large.filter(keep); R.apks=R.apks.filter(keep); R.empty=R.empty.filter(keep);
+  R.dupes=R.dupes.map(g=>g.filter(keep)).filter(g=>g.length>1);
+  R.dupeWaste=R.dupes.reduce((s,g)=>s+g[0].size*(g.length-1),0);
+  gone.forEach(p=>CL.sel.delete(p));
+  refreshInfo(); render();
+  openSheet(`<h4>${r.failed.length?'Kısmen tamamlandı':'Tamamlandı'}</h4>
+    <div class="note ok">${ic('check')}<div><b>${bytes(r.freed)}</b> yer açıldı · ${r.done} öğe silindi.<br>Şu an boş alan: <b>${bytes(r.freeBytes)}</b></div></div>
+    ${r.failed.length?`<div class="note warn">${ic('warn')}<div>${r.failed.length} öğe silinemedi (başka bir uygulamaya ait veya klasörde dosya var). Seçili bırakıldı.</div></div>`:''}
+    <button class="btn pri" onclick="closeSheet()">Tamam</button>`);
+}
+
+// ================= 2) Güvenlik =================
+const SC={res:null,busy:false,prog:'',sys:false,days:60,filter:'all',open:null,pendingUn:null};
+const RF=[['all','Hepsi'],['sms','SMS'],['a11y','Erişilebilirlik'],['admin','Cihaz yöneticisi'],['overlay','Üstte gösterme'],['notif','Bildirim erişimi'],['unknown','Bilinmeyen kaynak'],['unused','Kullanılmayan']];
+function vSec(){
+  let h=`<div class="note warn">${ic('warn')}<div><b>Bu gerçek bir antivirüs değil.</b> Virüs imzası taramaz, uygulamaların içine bakmaz. Sadece hangi uygulamanın <b>tehlikeli izinleri</b> olduğunu, <b>nereden yüklendiğini</b> ve <b>ne zamandır açılmadığını</b> gösterir. Listede olmak "virüs" demek değildir; tanıyorsan sorun yok.</div></div>`;
+  h+= INFO.playProtect
+    ? `<button class="btn" style="margin-bottom:12px" onclick="if(!sync('playProtect'))toast('Play Protect açılamadı')">${ic('shield')} Play Protect ile tara (Google)</button>`
+    : `<div class="note info">${ic('info')}<div class="small">Bu telefonda Play Protect kısayolu bulunamadı. Elle aç: <b>Play Store → sağ üstte profil resmi → Play Protect</b>.</div></div>`;
+  if(!INFO.usage) h+=`<div class="card"><b>Kullanmadıklarını bulmak için izin</b><p class="muted small" style="margin:4px 0 12px">"Uzun süredir açılmayan" listesi için <b>Kullanım erişimi</b> izni gerekli. Açılan listede Araç Kutusu'nu bul ve aç. (İzin vermesen de diğer kontroller çalışır.)</p><button class="btn sm" onclick="sync('openPerm',{which:'usage'})">Kullanım erişimini ver</button></div>`;
+  h+=`<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:12px" onclick="SC.sys=!SC.sys;render()"><div><b>Sistem uygulamalarını da göster</b><p class="muted tiny">Telefonla gelenler (çoğu kaldırılamaz)</p></div><div class="sw ${SC.sys?'on':''}"></div></div>
+    <b>"Açılmadı" sayılması için</b><div class="seg" style="margin:10px 0 14px">${[30,60,90,180].map(d=>`<button class="${SC.days===d?'on':''}" onclick="SC.days=${d};render()">${d} gün</button>`).join('')}</div>
+    <button class="btn pri" ${SC.busy?'disabled':''} onclick="scanApps()">${SC.busy?'<div class="spin"></div> Taranıyor…':(SC.res?'Yeniden tara':'Uygulamaları tara')}</button>
+    ${SC.busy?`<p class="muted small" id="scProg" style="margin-top:10px;text-align:center">${esc(SC.prog||'Başlıyor…')}</p>`:''}</div>`;
+  const r=SC.res;
+  if(r&&!SC.busy){
+    const cnt=k=>k==='all'?r.apps.length:r.apps.filter(a=>a.risks.some(x=>x.k===k)).length;
+    h+=`<p class="muted small" style="margin:4px 4px 12px">${r.scanned} uygulama incelendi, <b style="color:var(--tx)">${r.apps.length}</b> tanesinde dikkat edilecek bir şey var.</p>
+      <div class="seg" style="margin-bottom:14px">${RF.filter(([k])=>k==='all'||cnt(k)).map(([k,t])=>`<button class="${SC.filter===k?'on':''}" onclick="SC.filter='${k}';render()">${t} · ${cnt(k)}</button>`).join('')}</div>`;
+    const list=r.apps.filter(a=>SC.filter==='all'||a.risks.some(x=>x.k===SC.filter));
+    h+= list.length? list.map(appCard).join('') : `<div class="card empty">Bu grupta uygulama yok. 👍</div>`;
+    if(!r.usage) h+=`<p class="muted tiny" style="margin:4px">"Kullanılmayan" kontrolü kullanım erişimi izni olmadığı için yapılamadı.</p>`;
+  }
+  V(h);
+}
+function appCard(a){
+  const lv=Math.max(...a.risks.map(x=>x.lv));
+  const tag=x=>`<span class="badge ${x.lv>=3?'bad':x.lv===2?'warn':''}">${esc(x.t)}</span>`;
+  const has=k=>a.risks.some(x=>x.k===k);
+  const p=JSON.stringify(a.pkg).replace(/"/g,'&quot;');
+  let extra='';
+  if(has('a11y')) extra+=`<button class="btn sm" onclick="sync('openPerm',{which:'a11y'})">Erişilebilirliği kapat</button>`;
+  if(has('admin')) extra+=`<button class="btn sm" onclick="sync('openPerm',{which:'admins'})">Yönetici yetkisini kapat</button>`;
+  if(has('overlay')) extra+=`<button class="btn sm" onclick="sync('overlaySettings',{pkg:${p}})">Üstte göstermeyi kapat</button>`;
+  if(has('notif')) extra+=`<button class="btn sm" onclick="sync('openPerm',{which:'notifAccess'})">Bildirim erişimini kapat</button>`;
+  return `<div class="app ${SC.open===a.pkg?'open':''}" id="app-${esc(a.pkg)}">
+    <button class="head" onclick="SC.open=SC.open===${p}?null:${p};render(true)"><img class="aic" src="/icon/${esc(a.pkg)}" onerror="this.style.visibility='hidden'">
+      <div class="grow"><div class="row" style="gap:8px"><b class="ellip">${esc(a.label)}</b>${lv>=3?`<span class="dot"></span>`:''}</div><div>${a.risks.map(tag).join('')}</div></div>${ic('chev')}</button>
+    <div class="body">
+      ${a.risks.map(x=>`<div class="risk l${x.lv}"><b>${esc(x.t)}</b><p>${esc(x.why)}</p></div>`).join('')}
+      <p class="muted tiny" style="margin:10px 0 14px">${esc(a.pkg)} · sürüm ${esc(a.version||'?')}<br>Kaynak: ${esc(a.installer)} · ${a.installedDays} gün önce kuruldu</p>
+      <div class="btns">
+        <button class="btn sm" onclick="sync('appSettings',{pkg:${p}})">${ic('ext')} Ayarlarını aç</button>
+        ${a.system?'':`<button class="btn sm red" onclick="SC.pendingUn=${p};if(!sync('uninstall',{pkg:${p}}))toast('Kaldırma ekranı açılamadı')">${ic('trash')} Kaldır</button>`}
+        ${extra}
+      </div>
+      ${a.system?`<p class="muted tiny" style="margin-top:10px">Sistem uygulaması: kaldırılamaz. "Ayarlarını aç" ekranından izinlerini kapatabilir veya devre dışı bırakabilirsin (Xiaomi izin veriyorsa).</p>`:''}
+      ${has('admin')&&!a.system?`<p class="muted tiny" style="margin-top:10px">Cihaz yöneticisi açıkken Android kaldırmaya izin vermez: önce "Yönetici yetkisini kapat".</p>`:''}
+    </div></div>`;
+}
+async function scanApps(){
+  SC.busy=true; SC.prog=''; render();
+  const r=await call('scanApps',{system:SC.sys,unusedDays:SC.days},t=>{ SC.prog=t; const e=$('#scProg'); if(e) e.textContent=t; });
+  SC.busy=false;
+  if(r.error) toast('Tarama hatası: '+r.error); else { SC.res=r; SC.filter='all'; }
+  if(stack[stack.length-1]==='sec') render();
+}
+function checkUninstalled(){
+  if(!SC.pendingUn||!SC.res) return;
+  const pkg=SC.pendingUn; SC.pendingUn=null;
+  if(!sync('installed',{pkg})){ SC.res.apps=SC.res.apps.filter(a=>a.pkg!==pkg); toast('Uygulama kaldırıldı'); render(true); }
+}
+
+// ================= 3) Gizli ayarlar =================
+let SH=null;
+async function vHidden(){
+  if(!SH){ V(`<div class="card row"><div class="spin"></div><span class="muted">Bu telefonda hangi ekranların açıldığına bakılıyor…</span></div>`); SH=await call('shortcuts'); if(stack[stack.length-1]!=='hidden') return; }
+  if(SH.error){ V(`<div class="note bad">${ic('warn')}<div>Kısayollar okunamadı: ${esc(SH.error)}</div></div>`); return; }
+  const groups={};
+  SH.items.forEach(it=>(groups[it.group]=groups[it.group]||[]).push(it));
+  let h=`<div class="note info">${ic('info')}<div class="small">Sadece <b>bu telefonda gerçekten açılabilen</b> ekranlar gösteriliyor. Bunlar telefonun kendi ayar ekranları; değişikliği sen yaparsın.</div></div>`;
+  if(!INFO.xiaomi) h+=`<div class="note warn">${ic('warn')}<div class="small">Bu telefon Xiaomi görünmüyor; Xiaomi'ye özel kısayollar büyük ihtimalle gizlendi.</div></div>`;
+  for(const g in groups){
+    h+=`<h3>${esc(g)}</h3><div class="list">${groups[g].map(it=>`<button class="item" onclick="openSc('${it.id}')"><div class="grow"><div style="font-weight:700">${esc(it.title)}${it.id==='dev'&&!SH.devEnabled?' <span class="badge warn">Kapalı</span>':''}</div><div class="muted small">${esc(it.desc)}</div></div>${ic('chev')}</button>`).join('')}</div>`;
+  }
+  if(SH.hidden.length) h+=`<details><summary>Bu telefonda bulunamadığı için gizlenen ${SH.hidden.length} kısayol</summary><div class="list">${SH.hidden.map(it=>`<div class="item" style="min-height:52px"><div class="grow"><div class="small" style="font-weight:600">${esc(it.title)}</div><div class="muted tiny">${esc(it.group)}</div></div></div>`).join('')}</div><p class="muted tiny" style="margin:0 4px">Bu ekranlar HyperOS sürümüne göre kaldırılmış, adı değişmiş veya dışarıdan açılmaya kapatılmış olabilir.</p></details>`;
+  V(h);
+}
+function openSc(id){
+  if(id==='dev'&&!SH.devEnabled){
+    openSheet(`<h4>Geliştirici seçenekleri kapalı</h4><ol class="steps" style="margin-top:14px"><li><b>Telefon hakkında'yı aç</b><p>Aşağıdaki butona dokun.</p></li><li><b>"OS sürümü"ne 7 kez dokun</b><p>"Artık bir geliştiricisiniz" yazısı çıkar (ekran kilidi şifresini sorabilir).</p></li><li><b>Buraya dön</b><p>Kısayol artık çalışır: Ayarlar → Ek ayarlar → Geliştirici seçenekleri.</p></li></ol>
+      <div class="btns"><button class="btn pri" onclick="closeSheet();sync('openPerm',{which:'about'})">Telefon hakkında'yı aç</button><button class="btn ghost" onclick="closeSheet();sync('openShortcut',{id:'dev'})">Yine de dene</button></div>`);
+    return;
+  }
+  if(!sync('openShortcut',{id})){
+    toast('Bu ekran telefonun tarafından engellendi, listeden kaldırıldı.');
+    const i=SH.items.findIndex(x=>x.id===id); if(i>=0) SH.hidden.push(...SH.items.splice(i,1)); render();
+  }
+}
+
+// ================= 4) Tek tık ayarlar =================
+let MD=null, ST={};
+const KEYS={
+  brightness:{t:'Parlaklık'}, timeout:{t:'Ekran zaman aşımı'}, ringer:{t:'Zil modu'}, dnd:{t:'Rahatsız etmeyin'},
+  anim:{t:'Animasyon hızı',sh:1}, wifi:{t:'Wi-Fi',sh:1}, bt:{t:'Bluetooth',sh:1}, saver:{t:'Sistem pil tasarrufu',sh:1}
+};
+const TO=[[15,'15 sn'],[30,'30 sn'],[60,'1 dk'],[120,'2 dk'],[300,'5 dk'],[600,'10 dk'],[1800,'30 dk']];
+const ANIM=[[0,'Kapalı'],[0.5,'0,5x'],[1,'1x'],[1.5,'1,5x'],[2,'2x']];
+const toName=s=>(TO.find(x=>x[0]===s)||[0,s+' sn'])[1];
+function valText(k,v){
+  if(k==='brightness') return v==='auto'?'Otomatik':'%'+v;
+  if(k==='timeout') return toName(v);
+  if(k==='ringer') return {normal:'Normal',vibrate:'Titreşim',silent:'Sessiz'}[v];
+  if(k==='anim') return 'Animasyon '+((ANIM.find(x=>x[0]===v)||[0,v+'x'])[1]);
+  if(k==='dnd') return 'Rahatsız etme '+(v?'açık':'kapalı');
+  if(k==='wifi'||k==='bt'||k==='saver') return KEYS[k].t+' '+(v?'açık':'kapalı');
+  return v;
+}
+const shReady=()=>INFO.shizuku&&INFO.shizuku.granted;
+const animOk=()=>INFO.secure||shReady();
+function loadModes(){ MD=sync('modes')||{modes:[],tiles:[]}; }
+function vQuick(soft){
+  if(!MD) loadModes();
+  ST=sync('state')||{};
+  const permRow=(ok,t,d,btn)=>`<div class="item" style="cursor:default"><div class="dot ${ok?'ok':''}"></div><div class="grow"><div style="font-weight:700">${t}</div><div class="muted tiny">${d}</div></div>${ok?`<span class="badge ok">Verildi</span>`:btn}</div>`;
+  const shz=INFO.shizuku||{};
+  let h=`<h3 style="margin-top:8px">İzinler</h3><div class="list">
+    ${permRow(INFO.write,'Sistem ayarlarını değiştirme','Parlaklık, ekran zaman aşımı',`<button class="btn sm pri" onclick="sync('openPerm',{which:'write'})">Ver</button>`)}
+    ${permRow(INFO.dnd,'Rahatsız etmeyin erişimi','Sessiz mod, rahatsız etmeyin',`<button class="btn sm pri" onclick="sync('openPerm',{which:'dnd'})">Ver</button>`)}
+    ${permRow(shReady(),'Shizuku (isteğe bağlı)',shReady()?'Animasyon, Wi-Fi/Bluetooth aç-kapat, pil tasarrufu':(shz.running?'Çalışıyor, izin bekliyor':shz.installed?'Yüklü ama çalışmıyor':'Animasyon hızı, Wi-Fi/Bluetooth aç-kapat için'),`<button class="btn sm" onclick="go('shizuku')">Kur</button>`)}
+  </div>`;
+
+  h+=`<h3>Modlar</h3>`+MD.modes.map((m,i)=>{
+    const keys=Object.keys(m.set||{}).filter(k=>m.set[k]!==null&&m.set[k]!==undefined);
+    return `<div class="mode ${MD.last===m.id?'last':''}"><div class="row" style="margin-bottom:12px"><div class="em">${esc(m.emoji||'⚙️')}</div><div class="grow"><b style="font-size:18px">${esc(m.name)}</b>${MD.last===m.id?' <span class="badge ok">Son uygulanan</span>':''}<div>${keys.map(k=>`<span class="badge">${esc(valText(k,m.set[k]))}</span>`).join('')||'<span class="muted small">Ayar seçilmedi</span>'}</div></div></div>
+      <div class="btns"><button class="btn pri" onclick="applyMode(${i})">Uygula</button><button class="btn ghost sm" style="flex:0 0 auto" onclick="go('mode',${i})">Düzenle</button></div></div>`;
+  }).join('')+`<div class="btns" style="margin-bottom:6px"><button class="btn ghost" onclick="go('mode',-1)">${ic('plus')} Yeni mod</button></div>
+  <div style="text-align:right"><button class="link small" onclick="resetModes()">Varsayılan modlara dön</button></div>`;
+
+  // Tekil ayarlar
+  const b=ST.brightness;
+  h+=`<h3>Hızlı ayarlar</h3>
+  <div class="set"><div class="top"><b>Parlaklık</b><span class="v" id="bV">${ST.autoBrightness?'Otomatik':'%'+(b||'?')}</span></div>
+    <input type="range" min="1" max="100" value="${b||50}" oninput="$('#bV').textContent='%'+this.value" onchange="setOne('brightness',+this.value)">
+    <div class="row" style="justify-content:space-between;margin-top:6px" onclick="setOne('brightness',ST.autoBrightness?(ST.brightness||50):'auto')"><span>Otomatik parlaklık</span><div class="sw ${ST.autoBrightness?'on':''}"></div></div></div>
+  <div class="set"><div class="top"><b>Ekran zaman aşımı</b></div><div class="seg">${TO.map(([s,t])=>`<button class="${ST.timeout===s?'on':''}" onclick="setOne('timeout',${s})">${t}</button>`).join('')}</div></div>
+  <div class="set"><div class="top"><b>Zil modu</b></div><div class="seg">${[['normal','Normal'],['vibrate','Titreşim'],['silent','Sessiz']].map(([k,t])=>`<button class="${ST.ringer===k?'on':''}" onclick="setOne('ringer','${k}')">${t}</button>`).join('')}</div></div>
+  <div class="set"><div class="row" style="justify-content:space-between" onclick="setOne('dnd',${!ST.dnd})"><b>Rahatsız etmeyin</b><div class="sw ${ST.dnd?'on':''}"></div></div></div>
+  <div class="set"><div class="top"><b>Animasyon hızı</b>${animOk()?'':'<span class="badge warn">Shizuku gerekli</span>'}</div>
+    <div class="seg">${ANIM.map(([v,t])=>`<button class="${Math.abs((ST.anim??1)-v)<.01?'on':''}" ${animOk()?'':'disabled style="opacity:.5"'} onclick="setOne('anim',${v})">${t}</button>`).join('')}</div>
+    ${animOk()?'':`<p class="muted tiny" style="margin-top:10px">Android bu ayarı normal uygulamalara kapatmış. <button class="link tiny" style="padding:0" onclick="go('shizuku')">Shizuku'yu kur</button> veya Geliştirici seçeneklerinden elle değiştir.</p>`}</div>
+  <div class="set"><div class="top"><b>Wi-Fi</b><span class="muted small">${ST.wifi?'Açık':'Kapalı'}</span></div>
+    <div class="btns"><button class="btn sm" onclick="sync('panel',{which:'wifi'})||toast('Açılamadı')">Wi-Fi paneli</button>${shReady()?`<button class="btn sm" onclick="setOne('wifi',true)">Aç</button><button class="btn sm" onclick="setOne('wifi',false)">Kapat</button>`:''}</div>
+    ${shReady()?'':'<p class="muted tiny" style="margin-top:10px">Android 10\'dan beri uygulamalar Wi-Fi\'yi kendisi açıp kapatamaz. Panel açılır, oradan tek dokunuşla değiştirirsin. (Shizuku ile doğrudan açıp kapatabilirim.)</p>'}</div>
+  <div class="set"><div class="top"><b>Bluetooth</b></div>
+    <div class="btns"><button class="btn sm" onclick="sync('panel',{which:'bt'})||toast('Açılamadı')">Bluetooth ayarı</button>${shReady()?`<button class="btn sm" onclick="setOne('bt',true)">Aç</button><button class="btn sm" onclick="setOne('bt',false)">Kapat</button>`:''}</div>
+    ${shReady()?'':'<p class="muted tiny" style="margin-top:10px">Android\'de Bluetooth için hızlı panel yok; ayar ekranı açılır. (Shizuku ile doğrudan açıp kapatabilirim.)</p>'}</div>
+  ${shReady()?`<div class="set"><div class="top"><b>Sistem pil tasarrufu</b><span class="badge">Deneysel</span></div><div class="btns"><button class="btn sm" onclick="setOne('saver',true)">Aç</button><button class="btn sm" onclick="setOne('saver',false)">Kapat</button></div><p class="muted tiny" style="margin-top:10px">Bazı Xiaomi'lerde kendi pil modu kullanıldığı için çalışmayabilir; çalışmazsa söylerim.</p></div>`:''}`;
+
+  // Kutucuklar
+  h+=`<h3>Bildirim çubuğu kutucukları</h3><div class="card"><p class="muted small" style="margin-bottom:12px">Android uygulamalara en fazla önceden tanımlı kutucuk izni veriyor; bu uygulamada <b>3 kutucuk</b> var. Her birine bir mod seç.</p>
+    ${[0,1,2].map(i=>`<div class="row" style="margin-bottom:10px"><b style="width:86px">Kutucuk ${i+1}</b><select onchange="setTile(${i},this.value)">${MD.modes.map(m=>`<option value="${esc(m.id)}" ${MD.tiles[i]===m.id?'selected':''}>${esc((m.emoji||'')+' '+m.name)}</option>`).join('')}</select>${INFO.canAddTile?`<button class="btn sm" onclick="addTile(${i+1})">Ekle</button>`:''}</div>`).join('')}
+    <details><summary>Elle ekleme (Ekle çalışmazsa)</summary><ol class="steps" style="margin-top:8px"><li><b>Kontrol merkezini aç</b><p>Ekranın sağ üstünden aşağı kaydır.</p></li><li><b>Düzenle'ye dokun</b><p>Kalem simgesi veya "Düzenle".</p></li><li><b>"Araç Kutusu" kutucuklarını bul</b><p>Altta, mod adlarıyla görünürler (Gece modu, Pil tasarrufu…). Basılı tutup yukarı sürükle.</p></li></ol></details></div>`;
+  V(h);
+}
+function needBtn(n){
+  if(n==='write') return `<button class="btn sm pri" onclick="closeSheet();sync('openPerm',{which:'write'})">İzni ver</button>`;
+  if(n==='dnd') return `<button class="btn sm pri" onclick="closeSheet();sync('openPerm',{which:'dnd'})">İzni ver</button>`;
+  if(n==='shizuku') return `<button class="btn sm" onclick="closeSheet();go('shizuku')">Shizuku'yu kur</button>`;
+  return '';
+}
+async function setOne(k,v){
+  const r=await call('set',{key:k,value:v});
+  if(r.ok){ toast(r.msg); render(true); return; }
+  if(r.need) openSheet(`<h4>${esc(KEYS[k].t)} değiştirilemedi</h4><div class="note warn">${ic('warn')}<div>${esc(r.msg)}</div></div><div class="btns">${needBtn(r.need)}<button class="btn sm ghost" onclick="closeSheet()">Kapat</button></div>`);
+  else toast(r.msg||r.error||'Olmadı');
+  render(true);
+}
+async function applyMode(i){
+  const m=MD.modes[i];
+  const r=await call('applyMode',{id:m.id});
+  if(r.error){ toast(r.error); return; }
+  loadModes(); render(true);
+  const needs=[...new Set(r.results.filter(x=>!x.ok&&x.need).map(x=>x.need))];
+  openSheet(`<h4>${esc(m.emoji||'')} ${esc(m.name)}</h4><p class="muted" style="margin-bottom:12px">${r.ok} ayar uygulandı${r.failed?`, ${r.failed} ayar uygulanamadı`:''}.</p>
+    <div class="list">${r.results.map(x=>`<div class="item" style="cursor:default"><div class="th" style="width:36px;height:36px;color:${x.ok?'var(--ac)':'var(--bad)'}">${ic(x.ok?'check':'x')}</div><div class="grow"><div style="font-weight:700">${esc(x.label)}</div><div class="muted small">${esc(x.msg)}</div></div></div>`).join('')||'<div class="item muted">Bu modda ayar yok.</div>'}</div>
+    ${needs.length?`<div class="btns" style="margin-bottom:10px">${needs.map(needBtn).join('')}</div>`:''}
+    <button class="btn" onclick="closeSheet()">Tamam</button>`);
+}
+function setTile(i,id){ MD.tiles[i]=id; sync('saveModes',{tiles:MD.tiles}); toast('Kutucuk '+(i+1)+' güncellendi'); }
+async function addTile(slot){
+  const r=await call('addTile',{slot});
+  const t={added:'Kutucuk eklendi. Bildirim çubuğunu aşağı çekince görürsün.',already:'Bu kutucuk zaten ekli.',declined:'Kutucuk eklenmedi.',unsupported:'Telefonun bu pencereyi desteklemiyor. "Elle ekleme" adımlarını kullan.'}[r.result]||'Olmadı';
+  toast(t);
+}
+function resetModes(){
+  openSheet(`<h4>Varsayılan modlara dönülsün mü?</h4><p class="muted" style="margin-bottom:16px">Kendi eklediğin ve düzenlediğin modlar silinir; Gece, Pil tasarrufu, Oyun ve Normal modları geri gelir.</p><div class="btns"><button class="btn ghost" onclick="closeSheet()">Vazgeç</button><button class="btn red" onclick="sync('resetModes');loadModes();closeSheet();render()">Evet</button></div>`);
+}
+
+// ---- Mod düzenleyici ----
+let ED=null;
+const EMOJI=['🌙','🔋','🎮','☀️','📚','💼','🚗','😴','🎧','🏃','🎬','🕌'];
+function vMode(soft){
+  if(!soft||!ED){
+    const i=viewArg;
+    ED= i>=0 ? JSON.parse(JSON.stringify(MD.modes[i])) : {id:'m'+Date.now().toString(36),name:'',emoji:'⭐',set:{}};
+    ED._i=i;
+  }
+  const s=ED.set;
+  const opt=(k,v,t)=>`<button class="${JSON.stringify(s[k])===JSON.stringify(v)||(v===undefined&&!(k in s))?'on':''}" onclick="edSet('${k}',${v===undefined?'undefined':JSON.stringify(v).replace(/"/g,'&quot;')})">${t}</button>`;
+  const shNote=k=>KEYS[k].sh&&!(k==='anim'?animOk():shReady())?'<span class="badge warn">Shizuku gerekli</span>':'';
+  const block=(k,opts)=>`<div class="set"><div class="top"><b>${KEYS[k].t}</b>${shNote(k)}</div><div class="seg">${opt(k,undefined,'Dokunma')}${opts}</div></div>`;
+  const bOn=typeof s.brightness==='number';
+  V(`<div class="card"><b>Ad</b><input type="text" style="margin:10px 0 14px" maxlength="24" value="${esc(ED.name)}" placeholder="Örn: Ders modu" oninput="ED.name=this.value">
+      <b>Simge</b><div class="seg" style="margin-top:10px">${EMOJI.map(e=>`<button class="${ED.emoji===e?'on':''}" style="font-size:22px;min-width:52px" onclick="ED.emoji='${e}';render(true)">${e}</button>`).join('')}</div></div>
+    <p class="muted small" style="margin:14px 4px">"Dokunma" seçilen ayar, mod uygulanınca olduğu gibi kalır.</p>
+    <div class="set"><div class="top"><b>Parlaklık</b>${bOn?`<span class="v" id="ebV">%${s.brightness}</span>`:''}</div><div class="seg">${opt('brightness',undefined,'Dokunma')}${opt('brightness','auto','Otomatik')}<button class="${bOn?'on':''}" onclick="edSet('brightness',${bOn?s.brightness:50})">Sabit değer</button></div>
+      ${bOn?`<input type="range" min="1" max="100" value="${s.brightness}" style="margin-top:8px" oninput="ED.set.brightness=+this.value;$('#ebV').textContent='%'+this.value">`:''}</div>
+    ${block('timeout',TO.map(([v,t])=>opt('timeout',v,t)).join(''))}
+    ${block('ringer',opt('ringer','normal','Normal')+opt('ringer','vibrate','Titreşim')+opt('ringer','silent','Sessiz'))}
+    ${block('dnd',opt('dnd',true,'Aç')+opt('dnd',false,'Kapat'))}
+    ${block('anim',ANIM.map(([v,t])=>opt('anim',v,t)).join(''))}
+    ${block('wifi',opt('wifi',true,'Aç')+opt('wifi',false,'Kapat'))}
+    ${block('bt',opt('bt',true,'Aç')+opt('bt',false,'Kapat'))}
+    ${block('saver',opt('saver',true,'Aç')+opt('saver',false,'Kapat'))}
+    <div class="btns" style="margin-top:18px"><button class="btn pri" onclick="edSave()">Kaydet</button>${ED._i>=0&&MD.modes.length>1?`<button class="btn red sm" style="flex:0 0 auto" onclick="edDel()">Sil</button>`:''}</div>`);
+}
+function edSet(k,v){ if(v===undefined) delete ED.set[k]; else ED.set[k]=v; const y=window.scrollY; render(true); window.scrollTo(0,y); }
+function edSave(){
+  const n=(ED.name||'').trim(); if(!n){ toast('Moda bir ad ver'); return; }
+  const m={id:ED.id,name:n,emoji:ED.emoji,set:ED.set};
+  if(ED._i>=0) MD.modes[ED._i]=m; else MD.modes.push(m);
+  sync('saveModes',{modes:MD.modes}); ED=null; toast('Kaydedildi'); goBack();
+}
+function edDel(){
+  const id=ED.id; MD.modes.splice(ED._i,1);
+  MD.tiles=MD.tiles.map(t=>t===id?MD.modes[0].id:t);
+  sync('saveModes',{modes:MD.modes,tiles:MD.tiles}); ED=null; toast('Mod silindi'); goBack();
+}
+
+// ================= Shizuku kurulumu =================
+function vShizuku(){
+  const s=INFO.shizuku||{};
+  const st=(ok,t)=>`<div class="row small" style="margin:6px 0"><div class="dot ${ok?'ok':''}"></div>${t}</div>`;
+  V(`<div class="note info">${ic('info')}<div class="small"><b>Shizuku nedir?</b> Telefona ek yetki veren ücretsiz bir uygulama. Bilgisayar gerekmez; telefonun kendi "kablosuz hata ayıklama" özelliğiyle çalışır. Animasyon hızı ve Wi-Fi/Bluetooth'u doğrudan açıp kapatmak için gerekli. Zorunlu değil — diğer her şey onsuz çalışır.</div></div>
+  <div class="card">${st(s.installed,'Shizuku yüklü')}${st(s.running,'Shizuku çalışıyor')}${st(s.granted,'Araç Kutusu\'na izin verildi')}${st(INFO.secure,'Kalıcı ayar izni (isteğe bağlı)')}</div>
+  <ol class="steps" style="margin-top:18px">
+    <li class="${s.installed?'done':''}"><b>Shizuku'yu yükle</b><p>Play Store'da "Shizuku" ara (geliştirici: RikkaW) veya GitHub'dan indir.</p>
+      ${s.installed?'':`<div class="btns"><button class="btn sm" onclick="sync('openPerm',{which:'shizukuStore'})||sync('openPerm',{which:'shizukuDownload'})">Play Store'da aç</button><button class="btn sm ghost" onclick="sync('openPerm',{which:'shizukuDownload'})">GitHub'dan indir</button></div>`}</li>
+    <li class="${INFO.devOn||s.running?'done':''}"><b>Geliştirici seçeneklerini aç</b><p>Ayarlar → Telefon hakkında → <b>OS sürümü</b>'ne 7 kez dokun.</p>
+      <button class="btn sm" onclick="sync('openPerm',{which:'about'})">Telefon hakkında</button></li>
+    <li class="${s.running?'done':''}"><b>Kablosuz hata ayıklamayı aç</b><p>Wi-Fi'ye bağlı ol. Ayarlar → Ek ayarlar → Geliştirici seçenekleri → <b>Kablosuz hata ayıklama</b>'yı aç ("İzin ver" de).</p>
+      <button class="btn sm" onclick="sync('openPerm',{which:'wirelessDebug'})||toast('Açılamadı')">Geliştirici seçenekleri</button></li>
+    <li class="${s.running?'done':''}"><b>Shizuku'yu eşleştir ve başlat</b><p>Shizuku'yu aç → "Kablosuz hata ayıklama" altında <b>Eşleştir</b>'e dokun. Sonra Kablosuz hata ayıklama ekranında <b>"Cihazı eşleştirme koduyla eşleştir"</b>'e dokun; çıkan 6 haneli kodu Shizuku'nun bildirimine yaz. Son olarak Shizuku'da <b>Başlat</b>'a dokun.</p>
+      ${s.installed?`<button class="btn sm" onclick="sync('openPerm',{which:'shizukuApp'})">Shizuku'yu aç</button>`:''}</li>
+    <li class="${s.granted?'done':''}"><b>Araç Kutusu'na izin ver</b><p>Aşağıdaki butona dokun, çıkan pencerede "İzin ver" de.</p>
+      <button class="btn sm pri" ${s.running&&!s.granted?'':'disabled'} onclick="sync('shizukuRequest')">İzin iste</button></li>
+    <li class="${INFO.secure?'done':''}"><b>(İsteğe bağlı) Kalıcı ayar izni</b><p>Bunu bir kez yaparsan animasyon hızı, telefon yeniden başlayıp Shizuku kapansa bile çalışır.</p>
+      <button class="btn sm" ${s.granted&&!INFO.secure?'':'disabled'} onclick="grantSecure()">Kalıcı izni al</button></li>
+  </ol>
+  <div class="note warn">${ic('warn')}<div class="small"><b>Bilmen gerekenler:</b><br>• Telefon yeniden başlayınca Shizuku durur; 4. adımdaki "Başlat"ı tekrar yaparsın (eşleştirme bir kez yeter).<br>• Xiaomi Shizuku'yu arka planda kapatabilir: Gizli ayarlar → Otomatik başlatma'dan Shizuku'yu aç, pil kısıtlamasını "Kısıtlama yok" yap.<br>• Kalıcı izin Xiaomi'de hata verirse: Geliştirici seçenekleri → <b>"USB hata ayıklama (Güvenlik ayarları)"</b>'nı aç (Mi hesabı ve SIM kart ister) ve tekrar dene.</div></div>`);
+}
+async function grantSecure(){
+  const r=await call('grantSecure');
+  refreshInfo(); render(true);
+  if(r.ok) toast('Kalıcı ayar izni alındı');
+  else openSheet(`<h4>Kalıcı izin alınamadı</h4><div class="note warn">${ic('warn')}<div class="small">Xiaomi bunu engelledi. Geliştirici seçenekleri → <b>"USB hata ayıklama (Güvenlik ayarları)"</b>'nı açıp tekrar dene. Shizuku çalıştığı sürece animasyon hızı yine de değişir.</div></div><p class="muted tiny" style="margin-bottom:14px;word-break:break-all">${esc(r.out||r.error||'')}</p><button class="btn" onclick="closeSheet()">Tamam</button>`);
+}
+
+// ================= Sınırlar (dürüst liste) =================
+function vLimits(){
+  const L=[
+    ['Wi-Fi ve Bluetooth\'u doğrudan açıp kapatmak','Android 10\'dan beri yasak. Bunun yerine Wi-Fi paneli / Bluetooth ayarı açılır. Shizuku kurarsan doğrudan yapabilirim.'],
+    ['Animasyon hızı, sistem pil tasarrufu','Normal uygulamalara kapalı. Sadece Shizuku ile (veya Geliştirici seçeneklerinden elle).'],
+    ['Android/data ve Android/obb klasörleri','Android 11\'den beri hiçbir uygulama giremez; Temizlik bu klasörleri taramaz.'],
+    ['Başka uygulamaların önbelleğini temizlemek','Android 6\'dan beri sadece sistem uygulamaları yapabilir. Xiaomi\'nin kendi Temizleyicisi bunu yapar (Gizli ayarlar → Güvenlik uygulaması).'],
+    ['Uygulamayı sessizce kaldırmak','Her kaldırma için Android onay penceresi açar; sen "Tamam" dersin.'],
+    ['Gerçek virüs taraması','Bu uygulama izinlere ve kaynağa bakar, virüs imzası taramaz. Play Protect\'i kullan.'],
+    ['Benzer fotoğrafları bulmak','Sadece birebir aynı dosyalar bulunur. Benzer kareleri ayırt etmek yapılmadı.'],
+    ['Silinen dosyaları geri getirmek','Silinen dosya çöp kutusuna gitmez.'],
+    ['Sınırsız bildirim kutucuğu','Kutucuklar uygulamada önceden tanımlı olmalı; bu sürümde 3 tane var.'],
+    ['Bazı Xiaomi ekranları','HyperOS bazı ekranları dışarıdan açılmaya kapatıyor; bunlar Gizli ayarlar listesinde gizlenir.'],
+  ];
+  V(`<p class="muted" style="margin:6px 4px 14px">Bu uygulamada sahte buton yok. Android'in izin vermediği şeyler burada:</p>
+    <div class="list">${L.map(([t,d])=>`<div class="item" style="cursor:default;align-items:flex-start"><div class="th" style="width:36px;height:36px;color:var(--warn)">${ic('lock')}</div><div class="grow"><div style="font-weight:700">${t}</div><div class="muted small">${d}</div></div></div>`).join('')}</div>`);
+}
+
+// ================= Başlat =================
+refreshInfo();
+render();
+</script>
+</body>
+</html>

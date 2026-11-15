@@ -1,0 +1,71 @@
+name: Araç Kutusu APK
+
+on:
+  push:
+    paths:
+      - 'arac-kutusu/**'
+      - '.github/workflows/arac-kutusu.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  derle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: arac-kutusu
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: İmza anahtarını hazırla
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ARAC_KUTUSU_KEYSTORE }}
+          KEYSTORE_PASS: ${{ secrets.ARAC_KUTUSU_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/imza.jks"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASS" >> "$GITHUB_ENV"
+            echo "::notice::Kalıcı imza anahtarı kullanıldı: güncellemeler eskisinin üzerine kurulur."
+          else
+            keytool -genkeypair -keystore "$RUNNER_TEMP/imza.jks" -storepass gecici123 -keypass gecici123 \
+              -alias arackutusu -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Arac Kutusu"
+            echo "KEYSTORE_PASSWORD=gecici123" >> "$GITHUB_ENV"
+            echo "::warning::Kalıcı imza anahtarı (ARAC_KUTUSU_KEYSTORE) yok; geçici anahtar kullanıldı. Bir sonraki sürümü kurmadan önce eskisini silmen gerekir."
+          fi
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/imza.jks" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=arackutusu" >> "$GITHUB_ENV"
+
+      - name: APK'yı derle
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+          SURUM=$(grep -oP "versionName '\K[^']+" app/build.gradle)
+          echo "SURUM=$SURUM" >> "$GITHUB_ENV"
+          cp app/build/outputs/apk/release/app-release.apk "AracKutusu-v$SURUM.apk"
+
+      - name: APK'yı yükle (Actions sayfası)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AracKutusu-v${{ env.SURUM }}
+          path: arac-kutusu/AracKutusu-v${{ env.SURUM }}.apk
+
+      - name: Sürüm sayfasına koy (telefondan indirmek için)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: arac-kutusu-v${{ env.SURUM }}
+          name: Araç Kutusu v${{ env.SURUM }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: arac-kutusu/AracKutusu-v${{ env.SURUM }}.apk
+          body: |
+            Telefona kurmak için aşağıdaki **AracKutusu-v${{ env.SURUM }}.apk** dosyasına dokun, indir ve aç.
+            İlk kurulumda "Bilinmeyen uygulamaları yükle" izni istenirse tarayıcına izin ver.
