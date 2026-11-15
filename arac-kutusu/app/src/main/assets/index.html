@@ -256,7 +256,7 @@ function refreshInfo(){ INFO=sync('info')||{}; }
 
 // ================= Gezinme =================
 const stack=['home'];
-const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',tools:'Araçlar',tool:'',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Ayarlar ve hakkında',usage:'Ekran süresi',xtips:'Xiaomi rehberi'};
+const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',tools:'Araçlar',tool:'',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Ayarlar ve hakkında',usage:'Ekran süresi',xtips:'Xiaomi rehberi',files:'Dosya yöneticisi',checkup:'Telefon Check-up'};
 let viewArg=null;
 function go(v,arg){ closeSheet(); stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
 function goBack(){
@@ -269,7 +269,7 @@ window.__onResume=()=>{
   refreshInfo(); const v=stack[stack.length-1];
   if(v==='sec') checkUninstalled();
   if(v==='apps'&&AP.queue) { nextUninstall(); return; }
-  if(['home','clean','sec','quick','shizuku','device','tool','about','usage'].includes(v)) render(true);
+  if(['home','clean','sec','quick','shizuku','device','tool','about','usage','files','checkup'].includes(v)) render(true);
 };
 function render(soft){
   const v=stack[stack.length-1];
@@ -279,7 +279,7 @@ function render(soft){
   $('#dock').classList.remove('show');
   if(devTimer&&v!=='device'){ clearInterval(devTimer); devTimer=null; }
   if(v!=='tool'&&typeof stopTool==='function'&&TOOL) stopTool();
-  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,tools:vTools,tool:vTool,apps:vApps,perms:vPerms,about:vAbout,usage:vUsage,xtips:vXtips})[v](soft);
+  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,tools:vTools,tool:vTool,apps:vApps,perms:vPerms,about:vAbout,usage:vUsage,xtips:vXtips,files:vFiles,checkup:vCheckup})[v](soft);
 }
 const V=h=>{ $('#view').innerHTML=h; };
 
@@ -332,7 +332,7 @@ function vClean(){
       <div class="note info">${ic('info')}<div>Uygulama internete hiçbir şey göndermez. Senin onayın olmadan hiçbir dosya silinmez.</div></div>`);
     return;
   }
-  let h=`<button class="btn" style="margin-bottom:12px" onclick="go('apps')">${ic('grid')} Uygulama yöneticisi</button><div class="card"><b>Büyük dosya sınırı</b><div class="seg" style="margin:10px 0 14px">${[50,100,250,500,1024].map(m=>`<button class="${CL.min===m?'on':''}" onclick="CL.min=${m};render()">${m>=1024?'1 GB':m+' MB'}</button>`).join('')}</div>
+  let h=`<div class="btns" style="margin-bottom:12px"><button class="btn sm" onclick="go('apps')">📦 Uygulamalar</button><button class="btn sm" onclick="go('files')">🗂️ Dosyalar</button><button class="btn sm" onclick="go('tool','compress')">🗜️ Fotoğraf küçült</button></div><div class="card"><b>Büyük dosya sınırı</b><div class="seg" style="margin:10px 0 14px">${[50,100,250,500,1024].map(m=>`<button class="${CL.min===m?'on':''}" onclick="CL.min=${m};render()">${m>=1024?'1 GB':m+' MB'}</button>`).join('')}</div>
     <button class="btn pri" ${CL.busy?'disabled':''} onclick="scanClean()">${CL.busy?'<div class="spin"></div> Taranıyor…':(CL.res?'Yeniden tara':'Taramayı başlat')}</button>
     ${CL.busy?`<p class="muted small" id="clProg" style="margin-top:10px;text-align:center">${esc(CL.prog||'Başlıyor…')}</p>`:''}</div>`;
   const r=CL.res;
@@ -1007,6 +1007,7 @@ refreshInfo();
 <script src="lib/jsQR.js"></script>
 <script src="tools.js"></script>
 <script src="tools2.js"></script>
+<script src="tools3.js"></script>
 <script>render();</script>
 </body>
 </html>

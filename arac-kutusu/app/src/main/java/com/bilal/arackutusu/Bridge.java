@@ -179,6 +179,13 @@ public class Bridge {
                 return true;
             }
             case "pickFile": a.runOnUiThread(a::pickFile); return true;
+            case "fsList": return FileOps.list(in.optString("path"), in.optBoolean("hidden"));
+            case "fsOpen": try { return FileOps.open(a, in.optString("path")); } catch (Exception e) { return false; }
+            case "fsShare": try { return FileOps.share(a, in.optString("path")); } catch (Exception e) { return false; }
+            case "fsRename": return FileOps.rename(a, in.optString("path"), in.optString("name").trim());
+            case "fsMkdir": return FileOps.mkdir(in.optString("path"), in.optString("name").trim());
+            case "wifi": return FileOps.wifi(a);
+            case "battHist": return new JSONArray(a.getSharedPreferences(Toggles.PREFS, 0).getString("battHist", "[]"));
             case "installed":
                 try { a.getPackageManager().getPackageInfo(in.optString("pkg"), 0); return true; }
                 catch (Exception e) { return false; }
@@ -216,6 +223,21 @@ public class Bridge {
             case "addTile": return addTile(id, in.optInt("slot", 1));
             case "backupApk": return a.hw.backupApk(in.optString("pkg"));
             case "screenTime": return Extras.screenTime(a);
+            case "fsDelete": return FileOps.delete(a, in.getJSONArray("paths"));
+            case "bigPhotos": return FileOps.bigPhotos(in.optLong("min", 3L << 20));
+            case "compress": {
+                JSONArray ps = in.getJSONArray("paths"), res = new JSONArray();
+                long saved = 0;
+                for (int i = 0; i < ps.length(); i++) {
+                    progress(id, (i + 1) + " / " + ps.length() + " fotoğraf küçültülüyor…");
+                    try {
+                        JSONObject r = FileOps.compress(a, ps.getString(i), in.optInt("max", 2560), in.optInt("q", 85), in.optBoolean("replace"));
+                        saved += r.optLong("before") - r.optLong("after");
+                        res.put(r.put("src", ps.getString(i)));
+                    } catch (Exception e) { res.put(new JSONObject().put("src", ps.getString(i)).put("error", e.getMessage())); }
+                }
+                return new JSONObject().put("results", res).put("saved", saved);
+            }
             case "contacts": return Extras.contactsInfo(a);
             case "exportVcf": return new JSONObject().put("path", Extras.exportVcf(a, a.hw));
             case "location": return Extras.location(a);

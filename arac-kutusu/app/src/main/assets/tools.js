@@ -20,7 +20,7 @@ window.__sensor=(k,v)=>{ if(TOOL&&TOOL.onSensor) TOOL.onSensor(k,v); };
 window.__onPerm=(p,ok)=>{ refreshInfo(); if(TOOL&&TOOL.onPerm) TOOL.onPerm(p,ok); };
 window.__micTest=st=>{ if(TOOL&&TOOL.onMic) TOOL.onMic(st); };
 const _prevBack=window.__onBack;
-window.__onBack=()=>{ if(OVL){ closeOverlay(); return true; } if(!sheetOpen()&&TOOL&&TOOL.back&&TOOL.back()) return true; return _prevBack(); };
+window.__onBack=()=>{ if(OVL){ closeOverlay(); return true; } if(!sheetOpen()&&TOOL&&TOOL.back&&TOOL.back()) return true; return goBack(); };
 window.__onPause=()=>{ if(TOOL&&TOOL.pause) TOOL.pause(); };
 
 function stopTool(){ if(TOOL&&TOOL.stop) try{ TOOL.stop(); }catch(e){} if(TOOL&&TOOL.sensor) sync('sensorStop'); TOOL=null; TS={}; closeOverlay(); }

@@ -84,6 +84,18 @@ public class ChargeService extends Service {
         double temp = b.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) / 10.0;
         int limit = p.getInt("chargeLimit", 80), low = p.getInt("chargeLow", 20), hot = p.getInt("chargeHot", 45);
 
+        // Pil geçmişi: seviye değiştikçe kaydet (son 7 gün)
+        if (lv != p.getInt("histLast", -1)) {
+            try {
+                org.json.JSONArray h = new org.json.JSONArray(p.getString("battHist", "[]"));
+                long now = System.currentTimeMillis();
+                h.put(new org.json.JSONArray().put(now).put(lv).put(charging ? 1 : 0).put(temp));
+                org.json.JSONArray k = new org.json.JSONArray();
+                for (int i = Math.max(0, h.length() - 1500); i < h.length(); i++)
+                    if (now - h.getJSONArray(i).getLong(0) < 7 * 86400000L) k.put(h.get(i));
+                p.edit().putString("battHist", k.toString()).putInt("histLast", lv).apply();
+            } catch (Exception ignored) { }
+        }
         getSystemService(NotificationManager.class).notify(7, running("%" + lv + (charging ? " · şarj oluyor" : "") + " · " + temp + " °C"
                 + (charging ? " · sınır %" + limit : "")));
 
