@@ -129,6 +129,22 @@ public class Bridge {
                 cb.setPrimaryClip(android.content.ClipData.newPlainText("Araç Kutusu", in.optString("text")));
                 return true;
             }
+            case "sensorStart": return a.hw.start(in.optString("kind"));
+            case "sensorStop": a.hw.stop(); return true;
+            case "soundMeter": return a.hw.soundMeter();
+            case "micTest": return a.hw.micTest();
+            case "vibrate": a.hw.vibrate(in.optJSONArray("p") == null ? new JSONArray().put(400) : in.optJSONArray("p")); return true;
+            case "screen": return a.hw.screen();
+            case "sensors": return Hardware.hasSensors(a);
+            case "hasPerm": return a.checkSelfPermission(in.optString("perm")) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            case "askPerm": {
+                String perm = in.optString("perm");
+                if (!perm.equals("android.permission.CAMERA") && !perm.equals("android.permission.RECORD_AUDIO")) return false;
+                a.runOnUiThread(() -> a.requestPermissions(new String[]{perm}, 9));
+                return true;
+            }
+            case "saveText": return a.hw.saveText(in.optString("name"), in.optString("text"));
+            case "addCaffeine": return addTileCls(CaffeineTile.class, "Kafein", R.drawable.ic_coffee);
             case "installed":
                 try { a.getPackageManager().getPackageInfo(in.optString("pkg"), 0); return true; }
                 catch (Exception e) { return false; }
@@ -164,6 +180,7 @@ public class Bridge {
                 return o;
             }
             case "addTile": return addTile(id, in.optInt("slot", 1));
+            case "backupApk": return a.hw.backupApk(in.optString("pkg"));
             default: throw new IllegalArgumentException("Bilinmeyen metot: " + m);
         }
     }
@@ -277,6 +294,17 @@ public class Bridge {
             try { android.service.quicksettings.TileService.requestListeningState(a, new ComponentName(a, c)); }
             catch (Exception ignored) { }
         }
+    }
+
+    private boolean addTileCls(Class<?> cls, String label, int icon) {
+        if (Build.VERSION.SDK_INT < 33) return false;
+        a.runOnUiThread(() -> {
+            try {
+                a.getSystemService(StatusBarManager.class).requestAddTileService(new ComponentName(a, cls), label,
+                        Icon.createWithResource(a, icon), a.getMainExecutor(), c -> { });
+            } catch (Exception ignored) { }
+        });
+        return true;
     }
 
     private Object addTile(String id, int slot) throws Exception {

@@ -62,6 +62,13 @@ await page.addInitScript(() => {
       case 'schedules': return sched;
       case 'saveSchedules': sched = a.list; return true;
       case 'torch': return { ok: true, msg: 'Fener açık' };
+      case 'sensorStart': setTimeout(() => { const k = a.kind; const v = k === 'orient' ? [47, 2, 1, 3] : k === 'level' ? [0.3, -0.5, 9.7] : k === 'light' ? [320] : [48, 3]; window.__sensor(k, v); }, 100); return true;
+      case 'hasPerm': return true;
+      case 'soundMeter': setTimeout(() => window.__sensor('sound', [57.4]), 100); return true;
+      case 'screen': return { xdpi: 440, ydpi: 440, density: 2.75 };
+      case 'sensors': return { light: true, mag: true, orient: true, level: true, flash: true, vibrator: true };
+      case 'battery': return { level: 54, charging: true, plug: 'Adaptör', currentMa: 2900, voltage: 4300, fullInMin: 48 };
+      case 'saveText': return 'İndirilenler/AracKutusu/notlar.txt';
       default: return true;
     }
   };
@@ -120,6 +127,15 @@ await tap('Uygulama yöneticisi'); await page.waitForTimeout(300); await page.lo
 await tap('Güvenlik kontrolü'); await tap('İzin denetimi'); await page.waitForTimeout(300); await page.locator('.app .head').first().click(); await shot('18-izinler'); await back(); await back();
 await tap('Gizli ayarlar'); await page.waitForTimeout(300); await page.locator('.search input').fill('pil'); await shot('19-gizli-arama'); await back();
 await tap('Tek tık ayarlar'); await tap('Zamanlama ekle'); await shot('20-zamanlayici'); await back(); await back();
+await tap('Araçlar'); await shot('21-araclar');
+for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35']]) {
+  await page.evaluate(i => go('tool', i), id); await page.waitForTimeout(350);
+  if (id === 'qrgen') { await page.fill('#qS', 'EvWifi'); await page.fill('#qP', 'şifre123'); await page.waitForTimeout(100); }
+  if (id === 'loan') { await page.fill('#a', '100000'); await page.fill('#r', '3,59'); await page.fill('#n', '24'); }
+  if (id === 'notes') { await page.evaluate(() => { TS.edit = -1; vTool(true); }); await page.fill('#nT', 'Alışveriş'); await page.fill('#nB', 'süt, ekmek'); await page.evaluate(() => TOOL.save()); }
+  await shot(n + '-' + id); await back();
+}
+await back();
 const stillHome = await page.evaluate(() => window.__onBack());
 console.log('anasayfada geri =', stillHome, '(false olmalı)');
 console.log('errors', errors);

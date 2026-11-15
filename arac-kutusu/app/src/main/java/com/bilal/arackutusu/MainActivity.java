@@ -32,6 +32,7 @@ public class MainActivity extends Activity {
 
     WebView webView;
     private Bridge bridge;
+    Hardware hw;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +68,21 @@ public class MainActivity extends Activity {
         s.setAllowContentAccess(false);
         s.setSupportMultipleWindows(false);
 
+        hw = new Hardware(this);
         bridge = new Bridge(this);
+        // QR okuyucu: sayfa kamera isterse, uygulamanın kamera izni varsa ver
+        webView.setWebChromeClient(new android.webkit.WebChromeClient() {
+            @Override
+            public void onPermissionRequest(android.webkit.PermissionRequest req) {
+                runOnUiThread(() -> {
+                    boolean cam = checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
+                    java.util.List<String> ok = new java.util.ArrayList<>();
+                    for (String r : req.getResources())
+                        if (android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r) && cam) ok.add(r);
+                    if (ok.isEmpty()) req.deny(); else req.grant(ok.toArray(new String[0]));
+                });
+            }
+        });
         webView.addJavascriptInterface(bridge, "AndroidBridge");
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -92,6 +107,21 @@ public class MainActivity extends Activity {
         super.onResume();
         // İzin ekranından dönünce arayüz durumu yenilesin
         if (webView != null) webView.evaluateJavascript("window.__onResume&&window.__onResume()", null);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (hw != null) hw.stop(); // arka planda sensör/mikrofon çalışmasın
+        if (webView != null) webView.evaluateJavascript("window.__onPause&&window.__onPause()", null);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(code, perms, res);
+        boolean ok = res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED;
+        String p = perms.length > 0 ? perms[0] : "";
+        js("window.__onPerm&&window.__onPerm(" + org.json.JSONObject.quote(p) + "," + ok + ")");
     }
 
     @Override

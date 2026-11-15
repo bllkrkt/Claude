@@ -235,7 +235,7 @@ function refreshInfo(){ INFO=sync('info')||{}; }
 
 // ================= Gezinme =================
 const stack=['home'];
-const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Hakkında'};
+const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',tools:'Araçlar',tool:'',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Hakkında'};
 let viewArg=null;
 function go(v,arg){ closeSheet(); stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
 function goBack(){
@@ -248,7 +248,7 @@ window.__onResume=()=>{
   refreshInfo(); const v=stack[stack.length-1];
   if(v==='sec') checkUninstalled();
   if(v==='apps'&&AP.queue) { nextUninstall(); return; }
-  if(['home','clean','sec','quick','shizuku','device'].includes(v)) render(true);
+  if(['home','clean','sec','quick','shizuku','device','tool'].includes(v)) render(true);
 };
 function render(soft){
   const v=stack[stack.length-1];
@@ -257,7 +257,8 @@ function render(soft){
   $('#backBtn').style.display=stack.length>1?'flex':'none';
   $('#dock').classList.remove('show');
   if(devTimer&&v!=='device'){ clearInterval(devTimer); devTimer=null; }
-  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,apps:vApps,perms:vPerms,about:vAbout})[v](soft);
+  if(v!=='tool'&&typeof stopTool==='function'&&TOOL) stopTool();
+  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,tools:vTools,tool:vTool,apps:vApps,perms:vPerms,about:vAbout})[v](soft);
 }
 const V=h=>{ $('#view').innerHTML=h; };
 
@@ -284,6 +285,7 @@ function vHome(){
     <button class="tile c2" onclick="go('sec')"><div class="ic">${ic('shield')}</div><b>Güvenlik kontrolü</b><span>Güvenlik puanı, riskli izinler, izin denetimi</span></button>
     <button class="tile c3" onclick="go('hidden')"><div class="ic">${ic('key')}</div><b>Gizli ayarlar</b><span>Xiaomi / HyperOS'un saklı ekranları</span></button>
     <button class="tile c4" onclick="go('quick')"><div class="ic">${ic('zap')}</div><b>Tek tık ayarlar</b><span>Modlar, zamanlayıcı, kutucuklar</span></button>
+    <button class="tile" style="grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(135deg,#1F3A4A,#1A2029)" onclick="go('tools')"><div class="ic" style="background:rgba(106,168,255,.15);color:#8FC1FF">${ic('grid')}</div><div><b>Araçlar</b><br><span>${typeof TOOLS==='object'?Object.keys(TOOLS).length:'30'}+ araç: pusula, QR, fener, ses ölçer, testler, hesaplayıcılar, notlar…</span></div></button>
   </div>
   <div class="list" style="margin-top:16px">
     <button class="item" onclick="go('device')"><div class="th" style="width:40px;height:40px;color:var(--ac)">${ic('phone')}</div><div class="grow"><b>Telefon durumu</b><div class="muted tiny">Pil sağlığı, işlemci, ekran, sistem</div></div>${ic('chev')}</button>
@@ -607,6 +609,7 @@ function vQuick(soft){
   // Kutucuklar
   h+=`<h3>Bildirim çubuğu kutucukları</h3><div class="card"><p class="muted small" style="margin-bottom:12px">Android uygulamalara en fazla önceden tanımlı kutucuk izni veriyor; bu uygulamada <b>3 kutucuk</b> var. Her birine bir mod seç.</p>
     ${[0,1,2].map(i=>`<div class="row" style="margin-bottom:10px"><b style="width:86px">Kutucuk ${i+1}</b><select onchange="setTile(${i},this.value)">${MD.modes.map(m=>`<option value="${esc(m.id)}" ${MD.tiles[i]===m.id?'selected':''}>${esc((m.emoji||'')+' '+m.name)}</option>`).join('')}</select>${INFO.canAddTile?`<button class="btn sm" onclick="addTile(${i+1})">Ekle</button>`:''}</div>`).join('')}
+    <div class="row" style="margin:6px 0 10px;padding-top:12px;border-top:1px solid var(--line)"><div class="grow"><b>☕ Kafein</b><div class="muted tiny">Dokununca ekran 30 dk kapanmaz, tekrar dokununca eski haline döner</div></div>${INFO.canAddTile?`<button class="btn sm" onclick="sync('addCaffeine')">Ekle</button>`:''}</div>
     <details><summary>Elle ekleme (Ekle çalışmazsa)</summary><ol class="steps" style="margin-top:8px"><li><b>Kontrol merkezini aç</b><p>Ekranın sağ üstünden aşağı kaydır.</p></li><li><b>Düzenle'ye dokun</b><p>Kalem simgesi veya "Düzenle".</p></li><li><b>"Araç Kutusu" kutucuklarını bul</b><p>Altta, mod adlarıyla görünürler (Gece modu, Pil tasarrufu…). Basılı tutup yukarı sürükle.</p></li></ol></details></div>`;
   V(h);
 }
@@ -761,6 +764,10 @@ function vLimits(){
     ['Silinen dosyaları geri getirmek','Silinen dosya çöp kutusuna gitmez.'],
     ['Sınırsız bildirim kutucuğu','Kutucuklar uygulamada önceden tanımlı olmalı; bu sürümde 3 tane var.'],
     ['Bazı Xiaomi ekranları','HyperOS bazı ekranları dışarıdan açılmaya kapatıyor; bunlar Gizli ayarlar listesinde gizlenir.'],
+    ['Kayıtlı Wi-Fi şifrelerini göstermek','Sadece root\'lu telefonlarda mümkün. Bunun yerine: Ayarlar → Wi-Fi → bağlı ağa dokun → "Paylaş" QR kodunu gösterir.'],
+    ['İnternet hız testi, döviz kuru','Bilerek eklenmedi: uygulamanın internet izni yok, böylece hiçbir verin dışarı çıkamaz.'],
+    ['Geri sayım ekran kapalıyken','Araçlar açıkken çalışır; uygulama kapanınca durur. Uzun süreler için telefonun Saat uygulamasını kullan.'],
+    ['Ses ölçer ve metal dedektörü hassasiyeti','Telefon sensörleri ölçüm cihazı değildir; değerler yaklaşıktır.'],
   ];
   V(`<p class="muted" style="margin:6px 4px 14px">Bu uygulamada sahte buton yok. Android'in izin vermediği şeyler burada:</p>
     <div class="list">${L.map(([t,d])=>`<div class="item" style="cursor:default;align-items:flex-start"><div class="th" style="width:36px;height:36px;color:var(--warn)">${ic('lock')}</div><div class="grow"><div style="font-weight:700">${t}</div><div class="muted small">${d}</div></div></div>`).join('')}</div>`);
@@ -820,11 +827,25 @@ function vApps(){
     <div class="row" style="justify-content:space-between;margin:0 4px 12px" onclick="AP.sys=!AP.sys;AP.res=null;render()"><span class="small">Sistem uygulamalarını göster</span><div class="sw ${AP.sys?'on':''}"></div></div>
     <p class="muted small" style="margin:0 4px 10px">${L.length} uygulama${r.usage?` · toplam ${bytes(r.total)} · önbellek ${bytes(r.cache)}`:''}. Kaldırmak için seç; önbelleği uygulamanın kendi ayar ekranından temizlersin.</p>
     <div class="list">${L.map(a=>`<div class="item ${AP.sel.has(a.pkg)?'sel':''}">${a.system?'<div style="width:28px"></div>':`<div class="chk" onclick="apSel('${esc(a.pkg)}')">${ic('check')}</div>`}<img class="th" style="width:44px;height:44px" loading="lazy" src="/icon/${esc(a.pkg)}" onerror="this.style.visibility='hidden'">
-      <button class="grow" style="text-align:left;min-width:0" onclick="sync('appSettings',{pkg:'${esc(a.pkg)}'})"><div class="ellip" style="font-weight:700">${esc(a.label)}${a.enabled?'':' <span class="badge">Devre dışı</span>'}</div><div class="muted tiny ellip">${esc(ago(a.lastUsed))}${a.cache>50*1048576?` · <span style="color:var(--warn)">önbellek ${bytes(a.cache)}</span>`:''}</div></button>
+      <button class="grow" style="text-align:left;min-width:0" onclick="appSheet('${esc(a.pkg)}')"><div class="ellip" style="font-weight:700">${esc(a.label)}${a.enabled?'':' <span class="badge">Devre dışı</span>'}</div><div class="muted tiny ellip">${esc(ago(a.lastUsed))}${a.cache>50*1048576?` · <span style="color:var(--warn)">önbellek ${bytes(a.cache)}</span>`:''}</div></button>
       <div class="sz">${sz(a)?bytes(sz(a)):''}</div></div>`).join('')}</div>`;
   V(h);
   const d=$('#dock');
   if(AP.sel.size){ $('#dockIn').innerHTML=`<div class="grow"><b>${AP.sel.size} uygulama seçili</b><div class="muted small">Her biri için Android onay soracak</div></div><button class="btn red sm" style="min-width:110px" onclick="startUninstall()">${ic('trash')} Kaldır</button>`; d.classList.add('show'); }
+}
+function appSheet(p){
+  const a=AP.res.apps.find(x=>x.pkg===p); if(!a) return;
+  const sz=(a.app||0)+(a.data||0);
+  openSheet(`<div class="row" style="margin-bottom:14px"><img class="th" src="/icon/${esc(p)}" onerror="this.style.visibility='hidden'"><div class="grow"><h4 style="margin:0">${esc(a.label)}</h4><p class="muted tiny">${esc(p)} · ${esc(a.version||'')}</p></div></div>
+    ${a.app!==undefined?`<div class="kv"><span>Uygulama</span><span>${bytes(a.app)}</span></div>`:''}${a.data!==undefined?`<div class="kv"><span>Veri</span><span>${bytes(a.data)}</span></div>`:''}${a.cache!==undefined?`<div class="kv"><span>Önbellek</span><span>${bytes(a.cache)}</span></div>`:''}
+    <div class="kv"><span>Kuruldu</span><span>${date(a.installed)}</span></div><div class="kv"><span>Güncellendi</span><span>${date(a.updated)}</span></div>
+    <div class="btns" style="margin-top:14px"><button class="btn" onclick="sync('appSettings',{pkg:'${esc(p)}'})">${ic('ext')} Ayarlar / önbellek</button><button class="btn" id="bkB" onclick="backupApk('${esc(p)}')">APK'sını yedekle</button>
+    ${a.system?'':`<button class="btn red" onclick="closeSheet();SC.pendingUn='${esc(p)}';AP.queue=[];AP.queue._last=null;AP.queue.push('${esc(p)}');nextUninstall()">${ic('trash')} Kaldır</button>`}</div>`);
+}
+async function backupApk(p){
+  const b=$('#bkB'); b.disabled=true; b.innerHTML='<div class="spin"></div> Kopyalanıyor…';
+  const r=await call('backupApk',{pkg:p}); b.disabled=false; b.textContent="APK'sını yedekle";
+  if(r.error) toast('Yedeklenemedi: '+r.error); else toast('Kaydedildi: '+r.path+(r.split?' (Not: bu uygulama parçalı APK; tek dosya her telefonda kurulmayabilir)':''));
 }
 function apSel(p){ AP.sel.has(p)?AP.sel.delete(p):AP.sel.add(p); const y=scrollY; render(true); scrollTo(0,y); }
 async function loadApps(){
@@ -863,7 +884,10 @@ function vAbout(){
 
 // ================= Başlat =================
 refreshInfo();
-render();
 </script>
+<script src="lib/qrcode.js"></script>
+<script src="lib/jsQR.js"></script>
+<script src="tools.js"></script>
+<script>render();</script>
 </body>
 </html>
