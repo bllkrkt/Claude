@@ -66,6 +66,19 @@ public class Scheduler extends BroadcastReceiver {
             if (exactAllowed(c)) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi(c, id));
             else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi(c, id));
         }
+        // Hatırlatıcılar (ilaç, sulama, fatura…)
+        JSONArray r = reminders(c);
+        for (int i = 0; i < r.length(); i++) {
+            JSONObject s = r.optJSONObject(i);
+            if (s == null) continue;
+            String id = "r:" + s.optString("id");
+            ids.append(id).append(',');
+            if (!s.optBoolean("on", true)) continue;
+            long t = next(s);
+            if (t <= 0) continue;
+            if (exactAllowed(c)) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi(c, id));
+            else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi(c, id));
+        }
         p.edit().putString("schedIds", ids.toString()).apply();
     }
 
@@ -105,6 +118,20 @@ public class Scheduler extends BroadcastReceiver {
         final PendingResult pr = goAsync();
         final Context app = c.getApplicationContext();
         final String id = intent.getStringExtra("id");
+        if (id != null && id.startsWith("r:")) {
+            try {
+                JSONArray r = reminders(app);
+                for (int i = 0; i < r.length(); i++) {
+                    JSONObject s = r.getJSONObject(i);
+                    if (!("r:" + s.optString("id")).equals(id)) continue;
+                    remind(app, s);
+                    if (s.optBoolean("once")) { s.put("on", false); app.getSharedPreferences(Toggles.PREFS, 0).edit().putString("reminders", r.toString()).apply(); }
+                }
+            } catch (Exception ignored) { }
+            rescheduleAll(app);
+            pr.finish();
+            return;
+        }
         new Thread(() -> {
             try {
                 JSONArray l = list(app);
@@ -125,6 +152,35 @@ public class Scheduler extends BroadcastReceiver {
                 pr.finish();
             }
         }).start();
+    }
+
+    static JSONArray reminders(Context c) {
+        try { return new JSONArray(c.getSharedPreferences(Toggles.PREFS, 0).getString("reminders", "[]")); }
+        catch (Exception e) { return new JSONArray(); }
+    }
+
+    static void saveReminders(Context c, JSONArray a) {
+        c.getSharedPreferences(Toggles.PREFS, 0).edit().putString("reminders", a.toString()).apply();
+        rescheduleAll(c);
+    }
+
+    static void remind(Context c, JSONObject s) {
+        NotificationManager nm = c.getSystemService(NotificationManager.class);
+        if (nm.getNotificationChannel("hatirlatici") == null) {
+            NotificationChannel ch = new NotificationChannel("hatirlatici", "Hatırlatıcılar", NotificationManager.IMPORTANCE_HIGH);
+            ch.enableVibration(true);
+            nm.createNotificationChannel(ch);
+        }
+        Intent open = new Intent(c, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        String note = s.optString("note");
+        Notification n = new Notification.Builder(c, "hatirlatici")
+                .setSmallIcon(R.drawable.ic_tile)
+                .setContentTitle((s.optString("emoji", "⏰") + " " + s.optString("text")).trim())
+                .setContentText(note.isEmpty() ? String.format("%02d:%02d hatırlatıcısı", s.optInt("h"), s.optInt("m")) : note)
+                .setAutoCancel(true)
+                .setContentIntent(PendingIntent.getActivity(c, 5, open, PendingIntent.FLAG_IMMUTABLE))
+                .build();
+        try { nm.notify(1000 + Math.abs(s.optString("id").hashCode() % 100000), n); } catch (SecurityException ignored) { }
     }
 
     static void notify(Context c, String title, String body) {

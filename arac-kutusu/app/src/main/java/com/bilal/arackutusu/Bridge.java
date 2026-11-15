@@ -140,7 +140,8 @@ public class Bridge {
             case "askPerm": {
                 String perm = in.optString("perm");
                 if (!java.util.Arrays.asList("android.permission.CAMERA", "android.permission.RECORD_AUDIO",
-                        "android.permission.READ_CONTACTS", "android.permission.ACCESS_COARSE_LOCATION").contains(perm)) return false;
+                        "android.permission.READ_CONTACTS", "android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION",
+                        "android.permission.POST_NOTIFICATIONS").contains(perm)) return false;
                 a.runOnUiThread(() -> a.requestPermissions(new String[]{perm}, 9));
                 return true;
             }
@@ -171,6 +172,7 @@ public class Bridge {
                     a.getWindow().setStatusBarColor(col);
                     a.getWindow().setNavigationBarColor(col);
                     a.webView.setBackgroundColor(col);
+                    a.root.setBackgroundColor(col);
                     if (Build.VERSION.SDK_INT >= 30) {
                         int f = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
                         a.getWindow().getInsetsController().setSystemBarsAppearance(light ? f : 0, f);
@@ -186,6 +188,26 @@ public class Bridge {
             case "fsMkdir": return FileOps.mkdir(in.optString("path"), in.optString("name").trim());
             case "wifi": return FileOps.wifi(a);
             case "battHist": return new JSONArray(a.getSharedPreferences(Toggles.PREFS, 0).getString("battHist", "[]"));
+            case "recStart": {
+                RecorderService.lastError = null;
+                a.startForegroundService(new Intent(a, RecorderService.class).putExtra("name", in.optString("name")));
+                return true;
+            }
+            case "recStop": a.startService(new Intent(a, RecorderService.class).setAction(RecorderService.STOP)); return true;
+            case "recState": return RecorderService.state();
+            case "recList": return RecorderService.list(a);
+            case "recDelete": return RecorderService.delete(a, in.optLong("id"));
+            case "recShare": return RecorderService.share(a, in.optLong("id"));
+            case "recRename": return RecorderService.rename(a, in.optLong("id"), in.optString("name"));
+            case "reminders": return Scheduler.reminders(a);
+            case "saveReminders": Scheduler.saveReminders(a, in.getJSONArray("list")); return true;
+            case "testReminder": Scheduler.remind(a, in.getJSONObject("r")); return true;
+            case "openContact": return Extras.openContact(a, in.optLong("id"));
+            case "openGeo": {
+                String q = in.optDouble("lat") + "," + in.optDouble("lon");
+                return start(new Intent(Intent.ACTION_VIEW, Uri.parse("geo:" + q + "?q=" + q + "(" + Uri.encode(in.optString("label", "Konum")) + ")")))
+                        || start(new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=" + q + "&mode=w")));
+            }
             case "installed":
                 try { a.getPackageManager().getPackageInfo(in.optString("pkg"), 0); return true; }
                 catch (Exception e) { return false; }
@@ -240,8 +262,10 @@ public class Bridge {
             }
             case "contacts": return Extras.contactsInfo(a);
             case "exportVcf": return new JSONObject().put("path", Extras.exportVcf(a, a.hw));
-            case "location": return Extras.location(a);
-            case "saveFile": return new JSONObject().put("path", a.hw.saveText(in.optString("name"), in.optString("text")));
+            case "location": return Extras.location(a, in.optBoolean("precise"));
+            case "birthdays": return Extras.birthdays(a);
+            case "saveFile": return new JSONObject().put("path", a.hw.saveBytes(in.optString("name"), in.optString("mime", "text/plain"),
+                    in.optString("text").getBytes(java.nio.charset.StandardCharsets.UTF_8)));
             default: throw new IllegalArgumentException("Bilinmeyen metot: " + m);
         }
     }

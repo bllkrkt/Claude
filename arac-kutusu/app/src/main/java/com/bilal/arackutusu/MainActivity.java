@@ -31,6 +31,7 @@ public class MainActivity extends Activity {
     private static final String START_URL = "https://" + HOST + "/assets/index.html";
 
     WebView webView;
+    android.widget.FrameLayout root;
     private Bridge bridge;
     Hardware hw;
 
@@ -39,19 +40,28 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         webView = new WebView(this);
         webView.setBackgroundColor(0xFF0E1116);
-        setContentView(webView);
+        // WebView kendi iç boşluğunu (padding) yok sayar; bu yüzden onu bir kapsayıcıya koyup
+        // durum çubuğu, kamera çentiği ve gezinme çubuğu boşluğunu kapsayıcıya veriyoruz.
+        root = new android.widget.FrameLayout(this);
+        root.setBackgroundColor(0xFF0E1116);
+        root.addView(webView, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        setContentView(root);
 
-        // Kenardan kenara ekran (Android 15): içerik sistem çubuklarının altında kalmasın
-        webView.setOnApplyWindowInsetsListener((v, insets) -> {
-            int top, bottom;
+        // Kenardan kenara ekran (Android 15): içerik sistem çubuklarının ve kameranın altında kalmasın
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top, bottom, left, right;
             if (Build.VERSION.SDK_INT >= 30) {
-                android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars());
-                top = i.top; bottom = i.bottom;
+                android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars()
+                        | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime());
+                top = i.top; bottom = i.bottom; left = i.left; right = i.right;
             } else {
                 top = insets.getSystemWindowInsetTop(); bottom = insets.getSystemWindowInsetBottom();
+                left = insets.getSystemWindowInsetLeft(); right = insets.getSystemWindowInsetRight();
+                if (Build.VERSION.SDK_INT >= 28 && insets.getDisplayCutout() != null)
+                    top = Math.max(top, insets.getDisplayCutout().getSafeInsetTop());
             }
-            v.setPadding(0, top, 0, bottom);
-            return insets;
+            v.setPadding(left, top, right, bottom);
+            return WindowInsets.CONSUMED;
         });
 
         final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
@@ -59,6 +69,10 @@ public class MainActivity extends Activity {
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .addPathHandler("/icon/", this::appIcon)
                 .addPathHandler("/thumb/", this::thumbnail)
+                .addPathHandler("/media/", p -> { // ses kayıtlarını uygulama içinde çal
+                    try { return new WebResourceResponse("audio/mp4", null, getContentResolver().openInputStream(RecorderService.uriOf(Long.parseLong(p)))); }
+                    catch (Exception e) { return null; }
+                })
                 .build();
 
         WebSettings s = webView.getSettings();

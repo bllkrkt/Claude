@@ -3,7 +3,7 @@
 //  Araçlar (2. paket): namaz vakitleri, kıble, zikirmatik, kayan yazı, büyüteç, ayna,
 //  metronom, akort, uyku sesleri, nefes, sayıyı yazıya, doğrulayıcılar, yakıt, su, rehber
 // =====================================================================
-const PERM_NAMES={'android.permission.CAMERA':'Kamera','android.permission.RECORD_AUDIO':'Mikrofon','android.permission.READ_CONTACTS':'Rehber','android.permission.ACCESS_COARSE_LOCATION':'Yaklaşık konum'};
+const PERM_NAMES={'android.permission.CAMERA':'Kamera','android.permission.RECORD_AUDIO':'Mikrofon','android.permission.READ_CONTACTS':'Rehber','android.permission.ACCESS_COARSE_LOCATION':'Yaklaşık konum','android.permission.ACCESS_FINE_LOCATION':'Konum'};
 function needPerm2(perm,why){
   if(sync('hasPerm',{perm})) return '';
   return `<div class="card"><b>${PERM_NAMES[perm]} izni gerekli</b><p class="muted small" style="margin:6px 0 12px">${why}</p><button class="btn pri" onclick="sync('askPerm',{perm:'${perm}'})">İzin ver</button>

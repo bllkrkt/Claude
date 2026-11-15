@@ -168,8 +168,35 @@ final class Extras {
         return hw.saveBytes(name, "text/x-vcard", out.toByteArray()) + " (" + n + " kişi)";
     }
 
-    // ---------------- Konum (namaz vakitleri / kıble) ----------------
-    static JSONObject location(Context c) throws Exception {
+    // ---------------- Doğum günleri (rehberden) ----------------
+    static JSONArray birthdays(Context c) throws Exception {
+        JSONArray a = new JSONArray();
+        String[] cols = {ContactsContract.CommonDataKinds.Event.DISPLAY_NAME, ContactsContract.CommonDataKinds.Event.START_DATE, ContactsContract.CommonDataKinds.Event.CONTACT_ID};
+        try (Cursor cu = c.getContentResolver().query(ContactsContract.Data.CONTENT_URI, cols,
+                ContactsContract.Data.MIMETYPE + "=? AND " + ContactsContract.CommonDataKinds.Event.TYPE + "=?",
+                new String[]{ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE, String.valueOf(ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY)}, null)) {
+            Set<String> seen = new HashSet<>();
+            if (cu != null) while (cu.moveToNext()) {
+                String key = cu.getString(2) + cu.getString(1);
+                if (!seen.add(key)) continue;
+                a.put(new JSONObject().put("name", cu.getString(0) == null ? "(adsız)" : cu.getString(0)).put("date", cu.getString(1)).put("cid", cu.getLong(2)));
+            }
+        }
+        return a;
+    }
+
+    static boolean openContact(Context c, long id) {
+        try {
+            c.startActivity(new Intent(Intent.ACTION_VIEW, Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, String.valueOf(id)))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    // ---------------- Konum (namaz vakitleri / kıble / park yeri) ----------------
+    static JSONObject location(Context c) throws Exception { return location(c, false); }
+
+    static JSONObject location(Context c, boolean precise) throws Exception {
         LocationManager lm = c.getSystemService(LocationManager.class);
         if (lm == null) return new JSONObject().put("error", "Konum servisi yok");
         if (Build.VERSION.SDK_INT >= 28 && !lm.isLocationEnabled()) return new JSONObject().put("error", "off");
@@ -180,8 +207,9 @@ final class Extras {
                 if (l != null && (best == null || l.getTime() > best.getTime())) best = l;
             } catch (SecurityException ignored) { }
         }
-        if ((best == null || System.currentTimeMillis() - best.getTime() > 6 * 3600000L) && Build.VERSION.SDK_INT >= 30) {
-            String prov = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ? LocationManager.NETWORK_PROVIDER : LocationManager.GPS_PROVIDER;
+        if ((precise || best == null || System.currentTimeMillis() - best.getTime() > 6 * 3600000L) && Build.VERSION.SDK_INT >= 30) {
+            String prov = precise && lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ? LocationManager.GPS_PROVIDER
+                    : lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ? LocationManager.NETWORK_PROVIDER : LocationManager.GPS_PROVIDER;
             final Location[] got = {null};
             CountDownLatch latch = new CountDownLatch(1);
             try {
@@ -191,6 +219,6 @@ final class Extras {
             if (got[0] != null) best = got[0];
         }
         if (best == null) return new JSONObject().put("error", "Konum bulunamadı");
-        return new JSONObject().put("lat", best.getLatitude()).put("lon", best.getLongitude());
+        return new JSONObject().put("lat", best.getLatitude()).put("lon", best.getLongitude()).put("acc", best.getAccuracy()).put("age", System.currentTimeMillis() - best.getTime());
     }
 }

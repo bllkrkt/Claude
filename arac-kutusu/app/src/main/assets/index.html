@@ -927,8 +927,8 @@ function chSet(o){ sync('setCharge',o); if(o.on&&!INFO.notif) askNotif(); render
 function backupAll(){
   const ls={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k.startsWith('ak-')) ls[k]=localStorage.getItem(k); }
   const m=sync('modes')||{};
-  const data={app:'arac-kutusu',v:1,at:new Date().toISOString(),modes:m.modes,tiles:m.tiles,schedules:sync('schedules'),charge:sync('charge'),ls};
-  call('saveFile',{name:'arac-kutusu-yedek-'+new Date().toISOString().slice(0,10)+'.json',text:JSON.stringify(data,null,1)}).then(r=>toast(r.error?'Kaydedilemedi: '+r.error:'Yedek kaydedildi: '+r.path));
+  const data={app:'arac-kutusu',v:1,at:new Date().toISOString(),modes:m.modes,tiles:m.tiles,schedules:sync('schedules'),reminders:sync('reminders'),charge:sync('charge'),ls};
+  call('saveFile',{name:'arac-kutusu-yedek-'+new Date().toISOString().slice(0,10)+'.json',mime:'application/json',text:JSON.stringify(data,null,1)}).then(r=>toast(r.error?'Kaydedilemedi: '+r.error:'Yedek kaydedildi: '+r.path));
 }
 window.__onPicked=text=>{
   if(!text) return;
@@ -939,6 +939,7 @@ window.__onPicked=text=>{
   $('#rsGo').onclick=()=>{
     if(d.modes) sync('saveModes',{modes:d.modes,tiles:d.tiles||undefined});
     if(d.schedules) sync('saveSchedules',{list:d.schedules});
+    if(d.reminders) sync('saveReminders',{list:d.reminders});
     if(d.charge) sync('setCharge',{limit:d.charge.limit,low:d.charge.low,hot:d.charge.hot});
     for(const k in (d.ls||{})) if(k.startsWith('ak-')) localStorage.setItem(k,d.ls[k]);
     MD=null; closeSheet(); applyTheme(); toast('Yedek geri yüklendi'); render();
@@ -987,6 +988,11 @@ const XT=[
    '<b>İkinci alan</b>: aynı telefonda ayrı bir kullanıcı alanı (Gizli ayarlar → İkinci alan).',
    '<b>Uygulama klonlama</b>: iki WhatsApp/Instagram hesabı (Ayarlar → Uygulamalar → İkili uygulamalar).',
    '<b>Gizli klasör</b>: Galeri\'de albümler ekranında aşağı çek → gizli albüm.'],null],
+ ['🔐','Uygulama kilidi (WhatsApp, Galeri…)',[
+   'Ayarlar → Uygulamalar → <b>Uygulama kilidi</b> (veya Güvenlik uygulaması → Uygulama kilidi).',
+   'Kilit şifresini belirle, parmak izini aç; kilitlemek istediğin uygulamaları işaretle.',
+   '"Kilit zamanı" ile ekran kapanınca mı, uygulamadan çıkınca mı kilitleneceğini seç.',
+   'Bildirim içeriğini gizlemek için: Ayarlar → Bildirimler → Kilit ekranı → "İçeriği gizle".'],'security'],
  ['🛡️','Güvenlik için',[
    'Ayarlar → Şifreler ve güvenlik → <b>Bul</b> (Cihazımı Bul) açık olsun.',
    'Mi hesabına giriş yap: telefon çalınırsa kilitlenebilir ve silinebilir.',
@@ -1008,6 +1014,7 @@ refreshInfo();
 <script src="tools.js"></script>
 <script src="tools2.js"></script>
 <script src="tools3.js"></script>
+<script src="tools4.js"></script>
 <script>render();</script>
 </body>
 </html>
