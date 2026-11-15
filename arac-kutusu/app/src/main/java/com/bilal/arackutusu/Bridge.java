@@ -246,6 +246,22 @@ public class Bridge {
             case "backupApk": return a.hw.backupApk(in.optString("pkg"));
             case "screenTime": return Extras.screenTime(a);
             case "fsDelete": return FileOps.delete(a, in.getJSONArray("paths"));
+            case "makePdf": return new JSONObject().put("path", a.hw.makePdf(in.getJSONArray("pages"), in.optString("name")));
+            case "bench": return a.hw.storageBench(t -> progress(id, t));
+            case "cpuBench": {
+                int cores = Runtime.getRuntime().availableProcessors();
+                long[] cnt = new long[cores];
+                Thread[] th = new Thread[cores];
+                final long end = System.nanoTime() + 2_000_000_000L;
+                for (int i = 0; i < cores; i++) {
+                    final int k = i;
+                    th[i] = new Thread(() -> { long n = 0; double x = 1.0001; while (System.nanoTime() < end) { for (int j = 0; j < 20000; j++) x = x * 1.0000001 + Math.sqrt(x) * 1e-9; n++; } cnt[k] = n + (x > 1e300 ? 1 : 0); });
+                    th[i].start();
+                }
+                long single = 0, total = 0;
+                for (int i = 0; i < cores; i++) { th[i].join(); total += cnt[i]; single = Math.max(single, cnt[i]); }
+                return new JSONObject().put("single", single).put("multi", total).put("cores", cores);
+            }
             case "bigPhotos": return FileOps.bigPhotos(in.optLong("min", 3L << 20));
             case "compress": {
                 JSONArray ps = in.getJSONArray("paths"), res = new JSONArray();

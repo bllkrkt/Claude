@@ -60,7 +60,7 @@ T('prayer','gunluk','🕌','Namaz vakitleri ve kıble','Bulunduğun şehre göre
     LS.set('loc',{name:best<0.6?near+' (konum)':'Konumum',lat:r.lat,lon:r.lon}); TS.pick=0; vTool(true); },
   onPerm(p,ok){ if(ok&&p.includes('LOCATION')) TOOL.gps(); },
   onSensor(k,v){ if(k!=='orient') return; const a=$('#qbA'); if(a) a.style.transform=`rotate(${TS.q-v[0]}deg)`; },
-  stop(){ clearInterval(TS.iv); sync('sensorStop'); }});
+  stop(){ clearInterval(TS.iv); sync('sensorStop'); }, pause(){ TS.sens=false; }});
 
 // ---------------- Zikirmatik / sayaç ----------------
 T('counter','gunluk','📿','Zikirmatik / sayaç','Dokun say, hedefte titre',{

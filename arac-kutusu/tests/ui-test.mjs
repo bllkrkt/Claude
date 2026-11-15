@@ -63,11 +63,11 @@ await page.addInitScript(() => {
       case 'schedules': return sched;
       case 'saveSchedules': sched = a.list; return true;
       case 'torch': return { ok: true, msg: 'Fener açık' };
-      case 'sensorStart': setTimeout(() => { const k = a.kind; const v = k === 'orient' ? [47, 2, 1, 3] : k === 'level' ? [0.3, -0.5, 9.7] : k === 'light' ? [320] : [48, 3]; window.__sensor(k, v); }, 100); return true;
+      case 'sensorStart': setTimeout(() => { const k = a.kind; const v = k === 'orient' ? [47, 2, 1, 3] : k === 'level' ? [0.3, -0.5, 9.7] : k === 'light' ? [320] : k === 'pressure' ? [1013.4, 0.3] : k === 'gps' ? [13.9, 112, 5, 90, 41.01, 28.98, now] : [48, 3]; window.__sensor(k, v); }, 100); return true;
       case 'hasPerm': return true;
       case 'soundMeter': setTimeout(() => window.__sensor('sound', [57.4]), 100); return true;
       case 'screen': return { xdpi: 440, ydpi: 440, density: 2.75 };
-      case 'sensors': return { light: true, mag: true, orient: true, level: true, flash: true, vibrator: true };
+      case 'sensors': return { light: true, mag: true, orient: true, level: true, flash: true, vibrator: true, pressure: true, gps: true };
       case 'battery': return { level: 54, charging: true, plug: 'Adaptör', currentMa: 2900, voltage: 4300, fullInMin: 48 };
       case 'charge': return { on: true, limit: 80, low: 20, hot: 45 };
       case 'setBars': case 'setCharge': case 'pickFile': case 'pinWidget': return true;
@@ -101,6 +101,8 @@ await page.addInitScript(() => {
       case 'location': return { lat: 41.01, lon: 28.98 };
       case 'bigPhotos': return { count: 2, total: 13 * MB, items: [f('DCIM/Camera/IMG_1.jpg', 8 * MB, 30), f('DCIM/Camera/IMG_2.jpg', 5 * MB, 60)] };
       case 'birthdays': return [{ name: 'Annem', date: '1968-11-20', cid: 1 }, { name: 'Mehmet', date: '--03-05', cid: 2 }];
+      case 'bench': return { write: 812, read: 1650, iops: 4200 };
+      case 'cpuBench': return { single: 4120, multi: 21900, cores: 8 };
       case 'permAudit': return { groups: [{ k: 'camera', t: 'Kamera', apps: [{ pkg: 'com.instagram.android', label: 'Instagram' }] }, { k: 'mic', t: 'Mikrofon', apps: [] }] };
       case 'appList': return { usage: true, total: 30 * GB, cache: 2 * GB, apps: [
         { pkg: 'com.whatsapp', label: 'WhatsApp', app: 120 * MB, data: 4 * GB, cache: 300 * MB, lastUsed: Date.now(), installed: Date.now() - 900 * d, enabled: true },
@@ -155,13 +157,17 @@ await tap('Güvenlik kontrolü'); await tap('İzin denetimi'); await page.waitFo
 await tap('Gizli ayarlar'); await page.waitForTimeout(300); await page.locator('.search input').fill('pil'); await shot('19-gizli-arama'); await back();
 await tap('Tek tık ayarlar'); await tap('Zamanlama ekle'); await shot('20-zamanlayici'); await back(); await back();
 await tap('Araçlar'); await shot('21-araclar');
-for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35'],['prayer','36'],['counter','37'],['water','38'],['banner','39'],['metronome','40'],['sleep','41'],['breath','42'],['numwords','43'],['validate','44'],['fuel','45'],['contacts','46'],['compress','47'],['wifisig','48'],['morse','49'],['holidays','50'],['nightclock','51'],['recorder','52'],['reminders','53'],['money','54'],['ice','55'],['parking','56'],['birthdays','57']]) {
+for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35'],['prayer','36'],['counter','37'],['water','38'],['banner','39'],['metronome','40'],['sleep','41'],['breath','42'],['numwords','43'],['validate','44'],['fuel','45'],['contacts','46'],['compress','47'],['wifisig','48'],['morse','49'],['holidays','50'],['nightclock','51'],['recorder','52'],['reminders','53'],['money','54'],['ice','55'],['parking','56'],['birthdays','57'],['deadlines','58'],['subs','59'],['speedo','60'],['barometer','61'],['bench','62'],['worldclock','63'],['snippets','64'],['deposit','65'],['docscan','66']]) {
+  if (id === 'deadlines') await page.evaluate(() => localStorage.setItem('ak-deadlines', JSON.stringify([{ id: 1, emoji: '🚗', t: 'Araç muayenesi', date: '2027-01-10', before: 7 }, { id: 2, emoji: '🛡️', t: 'Trafik sigortası', date: '2026-11-25', before: 7, note: '34 ABC 123' }, { id: 3, emoji: '🛂', t: 'Pasaport', date: '2026-11-01', before: 30 }])));
+  if (id === 'subs') await page.evaluate(() => localStorage.setItem('ak-subs', JSON.stringify([{ id: 1, emoji: '🎬', name: 'Netflix', amt: 229.99, cycle: 'ay', day: 20 }, { id: 2, emoji: '🎵', name: 'Spotify', amt: 99, cycle: 'ay', day: 3 }, { id: 3, emoji: '☁️', name: 'iCloud', amt: 480, cycle: 'yıl', day: 5, month: 2 }])));
+  if (id === 'snippets') await page.evaluate(() => localStorage.setItem('ak-snips', JSON.stringify([{ t: 'IBAN — Ziraat', v: 'TR00 0001 0000 0000 0000 0000 00' }, { t: 'Ev adresi', v: 'Örnek Mah. 1. Sk. No:5 Kadıköy/İstanbul' }])));
   if (id === 'money') await page.evaluate(() => localStorage.setItem('ak-money', JSON.stringify([{ id: 1, t: 'gelir', amt: 42000, cat: 'Maaş', note: '', d: new Date().toISOString().slice(0, 10) }, { id: 2, t: 'gider', amt: 3250.5, cat: 'Market', note: 'Haftalık', d: new Date().toISOString().slice(0, 10) }, { id: 3, t: 'gider', amt: 14000, cat: 'Kira', note: '', d: new Date().toISOString().slice(0, 10) }])));
   if (id === 'ice') await page.evaluate(() => localStorage.setItem('ak-ice', JSON.stringify({ name: 'Bilal K.', blood: '0 Rh+', allergy: 'Penisilin', c1: 'Annem 0532 111 22 33' })));
   if (id === 'parking') await page.evaluate(() => localStorage.setItem('ak-park', JSON.stringify({ lat: 41.0105, lon: 28.9790, acc: 6, at: Date.now() - 3600e3, note: 'B2 katı, 34' })));
   if (id === 'prayer') await page.evaluate(() => localStorage.setItem('ak-loc', JSON.stringify({ name: 'İstanbul', lat: 41.01, lon: 28.98 })));
   await page.evaluate(i => go('tool', i), id); await page.waitForTimeout(350);
   if (id === 'qrgen') { await page.fill('#qS', 'EvWifi'); await page.fill('#qP', 'şifre123'); await page.waitForTimeout(100); }
+  if (id === 'deposit') { await page.fill('#dA', '100000'); await page.fill('#dR', '45'); }
   if (id === 'numwords') await page.fill('#nw', '12.750,50');
   if (id === 'validate') { await page.fill('#vI', 'TR33 0006 1005 1978 6457 8413 26'); await page.fill('#vT', '10000000146'); }
   if (id === 'fuel') { await page.fill('#fk', '450'); await page.fill('#fc', '6,5'); await page.fill('#fp', '44,9'); await page.fill('#fn', '3'); }

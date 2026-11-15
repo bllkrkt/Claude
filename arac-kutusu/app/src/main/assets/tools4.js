@@ -144,7 +144,7 @@ T('parking','gunluk','🅿️','Park yerim','Arabayı nereye bıraktım?',{
     LS.set('park',{lat:r.lat,lon:r.lon,acc:r.acc,at:Date.now(),note:($('#pkN')||{}).value||''}); TS.me=r; toast(`Kaydedildi (±${Math.round(r.acc||0)} m)`); vTool(true); },
   onPerm(){ vTool(true); },
   onSensor(k,v){ if(k!=='orient'||TS.b==null) return; const a=$('#pkA'); if(a) a.style.transform=`rotate(${TS.b-v[0]}deg)`; },
-  stop(){ sync('sensorStop'); }});
+  stop(){ sync('sensorStop'); }, pause(){ TS.sens=false; }});
 
 // ---------------- Doğum günleri ----------------
 T('birthdays','gunluk','🎂','Doğum günleri','Rehberdeki yaklaşanlar',{

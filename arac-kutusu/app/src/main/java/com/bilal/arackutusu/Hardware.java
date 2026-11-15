@@ -56,6 +56,8 @@ final class Hardware implements SensorEventListener {
             case "mag": type = Sensor.TYPE_MAGNETIC_FIELD; break;
             case "orient": type = Sensor.TYPE_ROTATION_VECTOR; break;
             case "level": type = Sensor.TYPE_GRAVITY; break;
+            case "pressure": type = Sensor.TYPE_PRESSURE; break;
+            case "gps": return startGps();
             default: return false;
         }
         Sensor s = sm.getDefaultSensor(type);
@@ -67,7 +69,32 @@ final class Hardware implements SensorEventListener {
         return true;
     }
 
+    // ---------------- GPS (hız göstergesi) ----------------
+    private android.location.LocationListener gpsL;
+
+    private boolean startGps() {
+        android.location.LocationManager lm = a.getSystemService(android.location.LocationManager.class);
+        if (lm == null || a.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return false;
+        kind = "gps";
+        gpsL = l -> {
+            JSONArray v = new JSONArray();
+            try {
+                v.put(l.hasSpeed() ? l.getSpeed() : -1).put(l.hasAltitude() ? l.getAltitude() : JSONObject.NULL).put(l.getAccuracy())
+                        .put(l.hasBearing() ? l.getBearing() : JSONObject.NULL).put(l.getLatitude()).put(l.getLongitude()).put(l.getTime());
+            } catch (Exception ignored) { }
+            a.js("window.__sensor&&window.__sensor('gps'," + v + ")");
+        };
+        try {
+            lm.requestLocationUpdates(android.location.LocationManager.GPS_PROVIDER, 1000, 0, gpsL, android.os.Looper.getMainLooper());
+            return true;
+        } catch (Exception e) { gpsL = null; return false; }
+    }
+
     void stop() {
+        if (gpsL != null) {
+            try { a.getSystemService(android.location.LocationManager.class).removeUpdates(gpsL); } catch (Exception ignored) { }
+            gpsL = null;
+        }
         sm.unregisterListener(this);
         kind = null;
         meterOn = false;
@@ -85,6 +112,8 @@ final class Hardware implements SensorEventListener {
                 SensorManager.getOrientation(rot, ori);
                 double az = (Math.toDegrees(ori[0]) + 360) % 360;
                 v.put(az).put(Math.toDegrees(ori[1])).put(Math.toDegrees(ori[2])).put(e.accuracy);
+            } else if ("pressure".equals(kind)) {
+                v.put((double) e.values[0]).put((double) SensorManager.getAltitude(SensorManager.PRESSURE_STANDARD_ATMOSPHERE, e.values[0]));
             } else if ("mag".equals(kind)) {
                 double t = Math.sqrt(e.values[0] * e.values[0] + e.values[1] * e.values[1] + e.values[2] * e.values[2]);
                 v.put(t).put(e.accuracy);
@@ -214,6 +243,73 @@ final class Hardware implements SensorEventListener {
         return o;
     }
 
+    // ---------------- Belge tarayıcı: JPEG sayfalardan PDF ----------------
+    String makePdf(JSONArray pages, String name) throws Exception {
+        android.graphics.pdf.PdfDocument doc = new android.graphics.pdf.PdfDocument();
+        try {
+            for (int i = 0; i < pages.length(); i++) {
+                String b64 = pages.getString(i);
+                if (b64.contains(",")) b64 = b64.substring(b64.indexOf(',') + 1);
+                byte[] jpg = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+                android.graphics.Bitmap bm = android.graphics.BitmapFactory.decodeByteArray(jpg, 0, jpg.length);
+                if (bm == null) continue;
+                int W = 595, H = 842; // A4, 72 dpi nokta
+                android.graphics.pdf.PdfDocument.Page pg = doc.startPage(new android.graphics.pdf.PdfDocument.PageInfo.Builder(W, H, i + 1).create());
+                float sc = Math.min((W - 24f) / bm.getWidth(), (H - 24f) / bm.getHeight());
+                float w = bm.getWidth() * sc, h = bm.getHeight() * sc;
+                android.graphics.Canvas cv = pg.getCanvas();
+                cv.drawColor(0xFFFFFFFF);
+                cv.drawBitmap(bm, null, new android.graphics.RectF((W - w) / 2, (H - h) / 2, (W + w) / 2, (H + h) / 2),
+                        new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG));
+                doc.finishPage(pg);
+                bm.recycle();
+            }
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            doc.writeTo(out);
+            String n = name.replaceAll("[^\\p{L}\\p{N} ._-]", "").trim();
+            if (n.isEmpty()) n = "Belge";
+            return saveBytes(n + " " + new java.text.SimpleDateFormat("yyyy-MM-dd HH.mm", java.util.Locale.US).format(new java.util.Date()) + ".pdf",
+                    "application/pdf", out.toByteArray());
+        } finally { doc.close(); }
+    }
+
+    // ---------------- Depolama hız testi ----------------
+    JSONObject storageBench(Cleaner.Progress pr) throws Exception {
+        File f = new File(a.getExternalFilesDir(null), "hiz-testi.tmp");
+        int mb = 256;
+        byte[] buf = new byte[1 << 20];
+        new java.util.Random().nextBytes(buf);
+        long t0 = System.nanoTime();
+        try (java.io.FileOutputStream o = new java.io.FileOutputStream(f)) {
+            for (int i = 0; i < mb; i++) { o.write(buf); if (i % 32 == 0) pr.on("Yazma testi… %" + (i * 100 / mb)); }
+            o.getFD().sync();
+        }
+        double w = mb / ((System.nanoTime() - t0) / 1e9);
+        t0 = System.nanoTime();
+        try (FileInputStream in = new FileInputStream(f)) {
+            int n, i = 0;
+            while ((n = in.read(buf)) > 0) { if (++i % 32 == 0) pr.on("Okuma testi… %" + (i * 100 / mb)); }
+        }
+        double r = mb / ((System.nanoTime() - t0) / 1e9);
+        // Rastgele 4K yazma (uygulama açılış hızını en çok etkileyen)
+        java.util.Random rnd = new java.util.Random();
+        byte[] small = new byte[4096];
+        int ops = 0;
+        pr.on("Küçük dosya testi…");
+        t0 = System.nanoTime();
+        try (java.io.RandomAccessFile ra = new java.io.RandomAccessFile(f, "rw")) {
+            while (System.nanoTime() - t0 < 1_500_000_000L) {
+                ra.seek((long) rnd.nextInt(mb * 256) * 4096);
+                ra.write(small);
+                if (++ops % 64 == 0) ra.getFD().sync();
+            }
+            ra.getFD().sync();
+        }
+        double iops = ops / ((System.nanoTime() - t0) / 1e9);
+        f.delete();
+        return new JSONObject().put("write", w).put("read", r).put("iops", iops);
+    }
+
     JSONObject screen() throws Exception {
         android.util.DisplayMetrics m = a.getResources().getDisplayMetrics();
         return new JSONObject().put("xdpi", m.xdpi).put("ydpi", m.ydpi).put("density", m.density);
@@ -226,6 +322,8 @@ final class Hardware implements SensorEventListener {
                 .put("mag", sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null)
                 .put("orient", sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR) != null || sm.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR) != null)
                 .put("level", sm.getDefaultSensor(Sensor.TYPE_GRAVITY) != null || sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null)
+                .put("pressure", sm.getDefaultSensor(Sensor.TYPE_PRESSURE) != null)
+                .put("gps", c.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS))
                 .put("flash", c.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH))
                 .put("vibrator", c.getSystemService(Vibrator.class) != null && c.getSystemService(Vibrator.class).hasVibrator());
     }

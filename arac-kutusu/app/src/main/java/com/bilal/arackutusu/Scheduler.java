@@ -84,6 +84,15 @@ public class Scheduler extends BroadcastReceiver {
 
     /** Sonraki tetiklenme zamanı. days: 1=Pazartesi … 7=Pazar; boşsa her gün. */
     static long next(JSONObject s) {
+        // Belirli bir tarihe kurulmuş hatırlatıcı (ör. sigorta bitişinden 7 gün önce)
+        String date = s.optString("date", "");
+        if (date.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            Calendar c = Calendar.getInstance();
+            c.set(Integer.parseInt(date.substring(0, 4)), Integer.parseInt(date.substring(5, 7)) - 1, Integer.parseInt(date.substring(8, 10)),
+                    s.optInt("h"), s.optInt("m"), 0);
+            c.set(Calendar.MILLISECOND, 0);
+            return c.getTimeInMillis() > System.currentTimeMillis() ? c.getTimeInMillis() : -1;
+        }
         JSONArray days = s.optJSONArray("days");
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.SECOND, 0);
