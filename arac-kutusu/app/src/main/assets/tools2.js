@@ -160,19 +160,21 @@ function autoCorr(buf,sr){ let n=buf.length, rms=0; for(let i=0;i<n;i++) rms+=bu
   let T0=mp; const x1=c[T0-1],x2=c[T0],x3=c[T0+1]; const a=(x1+x3-2*x2)/2, b=(x3-x1)/2; if(a) T0-=b/(2*a); return sr/T0; }
 T('tuner','gunluk','🎸','Akort','Gitar, bağlama, keman…',{
   view(){ const p=needPerm2('android.permission.RECORD_AUDIO','Çaldığın notayı duymak için mikrofon gerekli. Ses kaydedilmez.'); if(p){ V(p); return; }
-    V(`<div class="card" style="text-align:center"><div id="tnN" style="font-size:80px;font-weight:800;line-height:1.1">—</div><div id="tnF" class="muted">Bir tel çal</div>
+    V(`<div class="card" style="text-align:center"><div id="tnN" style="font-size:80px;font-weight:800;line-height:1.1">—</div><div id="tnF" class="muted">Bir tel çal</div><div class="bar" style="height:6px;margin:12px 30px 0"><i id="tnV" style="width:0"></i></div>
       <div style="position:relative;height:46px;margin:18px 6px 6px;border-radius:12px;background:var(--card2)"><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--ac)"></div><div id="tnI" style="position:absolute;top:6px;bottom:6px;width:8px;margin-left:-4px;left:50%;border-radius:4px;background:var(--tx);transition:left .1s"></div></div>
       <div class="row tiny muted" style="justify-content:space-between;margin:0 6px"><span>Pes (−50)</span><span id="tnC">0 sent</span><span>Tiz (+50)</span></div></div>
       <div class="card small"><b>Standart gitar akordu</b><p class="muted" style="margin-top:4px">6. tel (kalın) → 1. tel: Mi (E2) · La (A2) · Re (D3) · Sol (G3) · Si (B3) · Mi (E4)</p><p class="muted" style="margin-top:6px">Bağlama (kısa sap, bağlama düzeni): La – Re – Sol</p></div>`);
-    TOOL.go(); },
-  async go(){ try{ TS.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
-      AC=AC||new AudioContext(); const src=AC.createMediaStreamSource(TS.stream), an=AC.createAnalyser(); an.fftSize=2048; src.connect(an); const buf=new Float32Array(an.fftSize);
-      TS.iv=setInterval(()=>{ an.getFloatTimeDomainData(buf); const f=autoCorr(buf,AC.sampleRate); const N=$('#tnN'); if(!N) return; if(f<40||f>2000) return;
-        const nn=12*Math.log2(f/440)+69, r=Math.round(nn), cents=Math.round((nn-r)*100);
-        N.textContent=NOTE[r%12]; $('#tnF').textContent=`${NOTE_EN[r%12]}${Math.floor(r/12)-1} · ${num(f,1)} Hz`;
-        $('#tnI').style.left=(50+cents)+'%'; $('#tnI').style.background=Math.abs(cents)<6?'var(--ac)':'var(--warn)'; $('#tnC').textContent=(cents>0?'+':'')+cents+' sent'; },90);
-    }catch(e){ toast('Mikrofon açılamadı: '+e.message); } },
-  stop(){ clearInterval(TS.iv); camStop(); }, pause(){ TOOL.stop(); }, onPerm(){ vTool(true); }});
+    if(!TS.on) TOOL.go(); },
+  go(){ TS.on=sync('tuner'); if(!TS.on) toast('Mikrofon açılamadı'); TS.hist=[]; },
+  onSensor(k,v){ if(k!=='pitch') return; const N=$('#tnN'); if(!N) return;
+    if(v[0]===-2){ N.textContent='—'; $('#tnF').textContent='Mikrofon başka bir uygulama tarafından kullanılıyor olabilir'; return; }
+    const f=v[0]; const bar=$('#tnV'); if(bar) bar.style.width=Math.min(100,v[1]*400)+'%';
+    if(f<40||f>1500){ $('#tnF').textContent='Bir tel çal (ses çok düşük veya karışık)'; return; }
+    TS.hist.push(f); if(TS.hist.length>5) TS.hist.shift(); const s=TS.hist.slice().sort((a,b)=>a-b), fm=s[Math.floor(s.length/2)]; // ani sıçramaları yumuşat
+    const nn=12*Math.log2(fm/440)+69, r=Math.round(nn), cents=Math.round((nn-r)*100), ok=Math.abs(cents)<6;
+    N.textContent=NOTE[(r%12+12)%12]; N.style.color=ok?'var(--ac)':'var(--tx)'; $('#tnF').textContent=`${NOTE_EN[(r%12+12)%12]}${Math.floor(r/12)-1} · ${num(fm,1)} Hz${ok?' · ✓ Akortlu':cents<0?' · biraz sık (tiz yap)':' · biraz gevşet (pes yap)'}`;
+    $('#tnI').style.left=(50+cents)+'%'; $('#tnI').style.background=ok?'var(--ac)':'var(--warn)'; $('#tnC').textContent=(cents>0?'+':'')+cents+' sent'; },
+  stop(){ TS.on=false; sync('sensorStop'); }, pause(){ TS.on=false; }, onPerm(){ vTool(true); }});
 
 // ---------------- Uyku sesleri ----------------
 const SOUNDS=[['white','Beyaz gürültü','Fan sesi gibi, dikkat dağıtan sesleri örter'],['pink','Pembe gürültü','Daha yumuşak, uyku için'],['brown','Kahverengi gürültü','Derin uğultu, şelale gibi'],['rain','Yağmur','Hafif dalgalanan yağmur'],['ocean','Okyanus','Gelip giden dalgalar']];

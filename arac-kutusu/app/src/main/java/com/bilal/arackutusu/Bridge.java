@@ -132,6 +132,7 @@ public class Bridge {
             case "sensorStart": return a.hw.start(in.optString("kind"));
             case "sensorStop": a.hw.stop(); return true;
             case "soundMeter": return a.hw.soundMeter();
+            case "tuner": return a.hw.tuner();
             case "micTest": return a.hw.micTest();
             case "vibrate": a.hw.vibrate(in.optJSONArray("p") == null ? new JSONArray().put(400) : in.optJSONArray("p")); return true;
             case "screen": return a.hw.screen();
@@ -208,6 +209,31 @@ public class Bridge {
                 return start(new Intent(Intent.ACTION_VIEW, Uri.parse("geo:" + q + "?q=" + q + "(" + Uri.encode(in.optString("label", "Konum")) + ")")))
                         || start(new Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=" + q + "&mode=w")));
             }
+            case "notifLog": {
+                JSONObject o = new JSONObject().put("enabled", NotifLog.enabled(a)).put("paused", NotifLog.paused(a));
+                return o.put("items", in.optBoolean("items") ? NotifLog.read(a) : new JSONArray());
+            }
+            case "screenBoost": { // sadece bu uygulama açıkken: ekranı en parlak yap ve kapanmasın
+                boolean on = in.optBoolean("on");
+                a.runOnUiThread(() -> {
+                    android.view.WindowManager.LayoutParams lp = a.getWindow().getAttributes();
+                    lp.screenBrightness = on ? 1f : android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE;
+                    a.getWindow().setAttributes(lp);
+                    if (on) a.getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                    else a.getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                });
+                return true;
+            }
+            case "notifLogClear": NotifLog.write(a, new JSONArray()); return true;
+            case "notifLogPause": a.getSharedPreferences(Toggles.PREFS, 0).edit().putBoolean("notifLogPaused", in.optBoolean("on")).apply(); return true;
+            case "notifLogOpen":
+                if (Build.VERSION.SDK_INT >= 30 && start(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                        .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, new ComponentName(a, NotifLog.class).flattenToString()))) return true;
+                return start(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
+            case "shareText": {
+                Intent i = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, in.optString("text"));
+                return start(Intent.createChooser(i, in.optString("title", "Paylaş")));
+            }
             case "installed":
                 try { a.getPackageManager().getPackageInfo(in.optString("pkg"), 0); return true; }
                 catch (Exception e) { return false; }
@@ -245,6 +271,8 @@ public class Bridge {
             case "addTile": return addTile(id, in.optInt("slot", 1));
             case "backupApk": return a.hw.backupApk(in.optString("pkg"));
             case "screenTime": return Extras.screenTime(a);
+            case "dataUsage": return Extras.dataUsage(a, in.optLong("start"));
+            case "folderSizes": return FileOps.folderSizes(in.optString("path"));
             case "fsDelete": return FileOps.delete(a, in.getJSONArray("paths"));
             case "makePdf": return new JSONObject().put("path", a.hw.makePdf(in.getJSONArray("pages"), in.optString("name")));
             case "bench": return a.hw.storageBench(t -> progress(id, t));

@@ -139,6 +139,33 @@ final class FileOps {
         try { return !f.getCanonicalPath().equals(f.getAbsolutePath()); } catch (Exception e) { return true; }
     }
 
+    /** Klasördeki alt klasörlerin toplam boyutları (en fazla ~8 sn). */
+    static JSONObject folderSizes(String path) throws Exception {
+        File d = safe(path);
+        File[] kids = d.listFiles();
+        JSONObject o = new JSONObject();
+        long deadline = System.currentTimeMillis() + 8000;
+        if (kids != null) for (File k : kids) {
+            if (!k.isDirectory()) continue;
+            long[] sz = {0};
+            boolean full = sizeOf(k, sz, deadline);
+            o.put(k.getPath(), full ? sz[0] : -sz[0] - 1);
+        }
+        return o;
+    }
+
+    private static boolean sizeOf(File f, long[] sz, long deadline) {
+        if (System.currentTimeMillis() > deadline) return false;
+        File[] k = f.listFiles();
+        if (k == null) return true;
+        boolean ok = true;
+        for (File x : k) {
+            if (x.isDirectory()) { if (!isLink(x) && !sizeOf(x, sz, deadline)) ok = false; }
+            else sz[0] += x.length();
+        }
+        return ok;
+    }
+
     // ---------------- Fotoğraf küçültme ----------------
     /** Fotoğrafı en uzun kenar maxPx olacak şekilde küçültür ve JPEG kalitesiyle yeniden kaydeder. replace=true ise orijinalin yerine yazar. */
     static JSONObject compress(Context c, String p, int maxPx, int quality, boolean replace) throws Exception {

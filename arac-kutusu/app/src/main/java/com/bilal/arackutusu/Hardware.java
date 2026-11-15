@@ -156,6 +156,65 @@ final class Hardware implements SensorEventListener {
         return true;
     }
 
+    // ---------------- Akort: ses perdesi (Hz) bulma ----------------
+    boolean tuner() {
+        if (a.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return false;
+        stop();
+        meterOn = true;
+        new Thread(() -> {
+            int rate = 44100, n = 4096;
+            AudioRecord r;
+            try {
+                int min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                r = new AudioRecord(MediaRecorder.AudioSource.MIC, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, Math.max(min, n * 4));
+                r.startRecording();
+                if (r.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) throw new Exception("mic");
+            } catch (Exception ex) {
+                meterOn = false;
+                a.js("window.__sensor&&window.__sensor('pitch',[-2,0])");
+                return;
+            }
+            short[] s = new short[n];
+            float[] x = new float[n];
+            float[] d = new float[n / 2];
+            while (meterOn) {
+                int got = 0;
+                while (got < n && meterOn) { int k = r.read(s, got, n - got); if (k <= 0) break; got += k; }
+                if (got < n) continue;
+                double rms = 0;
+                for (int i = 0; i < n; i++) { x[i] = s[i] / 32768f; rms += x[i] * x[i]; }
+                rms = Math.sqrt(rms / n);
+                double f = rms < 0.008 ? -1 : yin(x, d, rate);
+                a.js("window.__sensor&&window.__sensor('pitch',[" + String.format(Locale.US, "%.2f,%.4f", f, rms) + "])");
+            }
+            try { r.stop(); r.release(); } catch (Exception ignored) { }
+        }).start();
+        return true;
+    }
+
+    /** YIN perde bulma algoritması (sade hali). 40 Hz – 1500 Hz arası. Bulamazsa -1. */
+    private static double yin(float[] x, float[] d, int rate) {
+        int W = d.length, tauMin = rate / 1500, tauMax = Math.min(W - 1, rate / 40);
+        d[0] = 1;
+        float run = 0;
+        for (int tau = 1; tau <= tauMax; tau++) {
+            float sum = 0;
+            for (int i = 0; i < W; i++) { float df = x[i] - x[i + tau]; sum += df * df; }
+            run += sum;
+            d[tau] = run == 0 ? 1 : sum * tau / run; // birikimli ortalamaya göre normalize fark
+        }
+        int tau = -1;
+        for (int t = Math.max(2, tauMin); t < tauMax; t++) {
+            if (d[t] < 0.15f) { while (t + 1 < tauMax && d[t + 1] < d[t]) t++; tau = t; break; }
+        }
+        if (tau < 0) return -1;
+        // parabolik ara değer
+        float s0 = d[tau - 1], s1 = d[tau], s2 = d[tau + 1];
+        double better = tau + (s2 - s0) / (2.0 * (2 * s1 - s2 - s0));
+        if (Double.isNaN(better) || Double.isInfinite(better)) better = tau;
+        return rate / better;
+    }
+
     // ---------------- Mikrofon testi: 5 sn kaydet, sonra çal ----------------
     boolean micTest() {
         if (micBusy || a.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return false;

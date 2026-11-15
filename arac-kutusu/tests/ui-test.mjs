@@ -80,6 +80,8 @@ await page.addInitScript(() => {
       case 'recList': return [{ id: 1, name: 'Toplantı 2026-11-15 10.30.m4a', dur: 754000, size: 6.1 * MB, date: now - 3600e3 }];
       case 'reminders': return rem;
       case 'saveReminders': rem = a.list; return true;
+      case 'notifLog': return { enabled: true, paused: false, items: [{ p: 'com.whatsapp', a: 'WhatsApp', t: 'Ahmet', b: 'Akşam maç var mı?', at: now - 600000 }, { p: 'com.whatsapp', a: 'WhatsApp', t: 'Annem', b: 'Eve gelirken ekmek al', at: now - 300000 }, { p: 'com.android.vending', a: 'Google Play', t: 'Güncellendi', b: '3 uygulama güncellendi', at: now - 100000 }] };
+      case 'tuner': setTimeout(() => window.__sensor('pitch', [109.2, 0.05]), 100); return true;
       case 'saveText': return 'İndirilenler/AracKutusu/notlar.txt';
       default: return true;
     }
@@ -103,6 +105,8 @@ await page.addInitScript(() => {
       case 'birthdays': return [{ name: 'Annem', date: '1968-11-20', cid: 1 }, { name: 'Mehmet', date: '--03-05', cid: 2 }];
       case 'bench': return { write: 812, read: 1650, iops: 4200 };
       case 'cpuBench': return { single: 4120, multi: 21900, cores: 8 };
+      case 'dataUsage': return { mobile: 6.2 * GB, wifi: 41 * GB, apps: [{ label: 'Instagram', pkg: 'com.instagram.android', mobile: 3.1 * GB, wifi: 12 * GB }, { label: 'YouTube', pkg: 'com.google.android.youtube', mobile: 1.4 * GB, wifi: 20 * GB }, { label: 'Android sistemi', pkg: '', mobile: 300 * MB, wifi: 2 * GB }] };
+      case 'folderSizes': return { '/storage/emulated/0/DCIM': 30 * GB, '/storage/emulated/0/Download': 6 * GB };
       case 'permAudit': return { groups: [{ k: 'camera', t: 'Kamera', apps: [{ pkg: 'com.instagram.android', label: 'Instagram' }] }, { k: 'mic', t: 'Mikrofon', apps: [] }] };
       case 'appList': return { usage: true, total: 30 * GB, cache: 2 * GB, apps: [
         { pkg: 'com.whatsapp', label: 'WhatsApp', app: 120 * MB, data: 4 * GB, cache: 300 * MB, lastUsed: Date.now(), installed: Date.now() - 900 * d, enabled: true },
@@ -157,7 +161,9 @@ await tap('Güvenlik kontrolü'); await tap('İzin denetimi'); await page.waitFo
 await tap('Gizli ayarlar'); await page.waitForTimeout(300); await page.locator('.search input').fill('pil'); await shot('19-gizli-arama'); await back();
 await tap('Tek tık ayarlar'); await tap('Zamanlama ekle'); await shot('20-zamanlayici'); await back(); await back();
 await tap('Araçlar'); await shot('21-araclar');
-for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35'],['prayer','36'],['counter','37'],['water','38'],['banner','39'],['metronome','40'],['sleep','41'],['breath','42'],['numwords','43'],['validate','44'],['fuel','45'],['contacts','46'],['compress','47'],['wifisig','48'],['morse','49'],['holidays','50'],['nightclock','51'],['recorder','52'],['reminders','53'],['money','54'],['ice','55'],['parking','56'],['birthdays','57'],['deadlines','58'],['subs','59'],['speedo','60'],['barometer','61'],['bench','62'],['worldclock','63'],['snippets','64'],['deposit','65'],['docscan','66']]) {
+for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35'],['prayer','36'],['counter','37'],['water','38'],['banner','39'],['metronome','40'],['sleep','41'],['breath','42'],['numwords','43'],['validate','44'],['fuel','45'],['contacts','46'],['compress','47'],['wifisig','48'],['morse','49'],['holidays','50'],['nightclock','51'],['recorder','52'],['reminders','53'],['money','54'],['ice','55'],['parking','56'],['birthdays','57'],['deadlines','58'],['subs','59'],['speedo','60'],['barometer','61'],['bench','62'],['worldclock','63'],['snippets','64'],['deposit','65'],['docscan','66'],['tuner','67'],['datausage','68'],['notiflog','69'],['shopping','70'],['debts','71'],['score','72'],['screenlight','73']]) {
+  if (id === 'shopping') await page.evaluate(() => localStorage.setItem('ak-shop', JSON.stringify([{ t: '2 kg domates', d: false }, { t: 'Süt', d: false }, { t: 'Ekmek', d: true }])));
+  if (id === 'debts') await page.evaluate(() => localStorage.setItem('ak-debts', JSON.stringify([{ id: 1, who: 'Mehmet', amt: 500, dir: 'verdim', note: 'Yemek', paid: false }, { id: 2, who: 'Ayşe', amt: 200, dir: 'aldım', note: '', paid: false }])));
   if (id === 'deadlines') await page.evaluate(() => localStorage.setItem('ak-deadlines', JSON.stringify([{ id: 1, emoji: '🚗', t: 'Araç muayenesi', date: '2027-01-10', before: 7 }, { id: 2, emoji: '🛡️', t: 'Trafik sigortası', date: '2026-11-25', before: 7, note: '34 ABC 123' }, { id: 3, emoji: '🛂', t: 'Pasaport', date: '2026-11-01', before: 30 }])));
   if (id === 'subs') await page.evaluate(() => localStorage.setItem('ak-subs', JSON.stringify([{ id: 1, emoji: '🎬', name: 'Netflix', amt: 229.99, cycle: 'ay', day: 20 }, { id: 2, emoji: '🎵', name: 'Spotify', amt: 99, cycle: 'ay', day: 3 }, { id: 3, emoji: '☁️', name: 'iCloud', amt: 480, cycle: 'yıl', day: 5, month: 2 }])));
   if (id === 'snippets') await page.evaluate(() => localStorage.setItem('ak-snips', JSON.stringify([{ t: 'IBAN — Ziraat', v: 'TR00 0001 0000 0000 0000 0000 00' }, { t: 'Ev adresi', v: 'Örnek Mah. 1. Sk. No:5 Kadıköy/İstanbul' }])));
@@ -178,6 +184,14 @@ for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge',
 }
 await back();
 const stillHome = await page.evaluate(() => window.__onBack());
+await page.evaluate(() => go('tools')); await page.waitForTimeout(200);
+await page.evaluate(() => window.scrollTo(0, 1500)); await page.waitForTimeout(100);
+const before = await page.evaluate(() => window.scrollY);
+await page.evaluate(() => go('tool', 'bmi')); await page.waitForTimeout(200); await back(); await page.waitForTimeout(400);
+const after = await page.evaluate(() => window.scrollY);
+if (Math.abs(before - after) > 5) errors.push(`Geri dönünce kaydırma konumu kayboldu: ${before} → ${after}`);
+console.log('kaydırma konumu', before, '→', after);
+await page.evaluate(() => go('files')); await page.waitForTimeout(200); await page.click('#fsz'); await page.waitForTimeout(300); await shot('74-klasor-boyutlari'); await back(); await back();
 console.log('anasayfada geri =', stillHome, '(false olmalı)');
 console.log('errors', errors);
 await browser.close();

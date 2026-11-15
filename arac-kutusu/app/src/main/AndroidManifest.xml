@@ -25,6 +25,8 @@
     <!-- Araçlar: QR okuyucu (kamera), ses ölçer/mikrofon testi, titreşim testi -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Uygulama içi web görünümünün mikrofonu açabilmesi için gerekli -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
@@ -101,6 +103,11 @@
             android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Kullanıcının açtığı pil/şarj izleyici: şarj sınırı, düşük pil ve aşırı ısınma uyarıları" />
+        </service>
+
+        <service android:name=".NotifLog" android:exported="true" android:label="Araç Kutusu: bildirim geçmişi"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
         </service>
 
         <service android:name=".RecorderService" android:exported="false"

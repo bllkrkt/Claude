@@ -113,6 +113,55 @@ final class Extras {
         return a;
     }
 
+    // ---------------- Veri kullanımı (uygulama başına) ----------------
+    static JSONObject dataUsage(Context c, long start) throws Exception {
+        if (!AppScanner.usageAccess(c)) return new JSONObject().put("error", "nousage");
+        android.app.usage.NetworkStatsManager nsm = c.getSystemService(android.app.usage.NetworkStatsManager.class);
+        PackageManager pm = c.getPackageManager();
+        long end = System.currentTimeMillis();
+        Map<Integer, long[]> by = new HashMap<>();
+        long[] tot = new long[2];
+        int[] types = {android.net.ConnectivityManager.TYPE_MOBILE, android.net.ConnectivityManager.TYPE_WIFI};
+        for (int k = 0; k < 2; k++) {
+            try {
+                android.app.usage.NetworkStats st = nsm.querySummary(types[k], null, start, end);
+                android.app.usage.NetworkStats.Bucket b = new android.app.usage.NetworkStats.Bucket();
+                while (st.hasNextBucket()) {
+                    st.getNextBucket(b);
+                    long v = b.getRxBytes() + b.getTxBytes();
+                    long[] x = by.get(b.getUid());
+                    if (x == null) by.put(b.getUid(), x = new long[2]);
+                    x[k] += v; tot[k] += v;
+                }
+                st.close();
+            } catch (Exception ignored) { }
+        }
+        List<JSONObject> l = new ArrayList<>();
+        for (Map.Entry<Integer, long[]> e : by.entrySet()) {
+            long[] v = e.getValue();
+            if (v[0] + v[1] < 100 * 1024) continue;
+            int uid = e.getKey();
+            String label, pkg = "";
+            if (uid == -4) label = "Kaldırılmış uygulamalar";
+            else if (uid == -5) label = "Erişim noktası (hotspot)";
+            else if (uid == 1000 || uid == 0) label = "Android sistemi";
+            else {
+                String[] ps = pm.getPackagesForUid(uid);
+                if (ps == null || ps.length == 0) label = "Diğer (" + uid + ")";
+                else {
+                    pkg = ps[0];
+                    try { label = String.valueOf(pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0))); } catch (Exception ex) { label = pkg; }
+                    if (ps.length > 1) label += " +" + (ps.length - 1);
+                }
+            }
+            l.add(new JSONObject().put("label", label).put("pkg", pkg).put("mobile", v[0]).put("wifi", v[1]));
+        }
+        l.sort((x, y) -> Long.compare(y.optLong("mobile") + y.optLong("wifi"), x.optLong("mobile") + x.optLong("wifi")));
+        JSONArray a = new JSONArray();
+        for (JSONObject o : l) a.put(o);
+        return new JSONObject().put("apps", a).put("mobile", tot[0]).put("wifi", tot[1]);
+    }
+
     // ---------------- Rehber ----------------
     static JSONObject contactsInfo(Context c) throws Exception {
         ContentResolver cr = c.getContentResolver();

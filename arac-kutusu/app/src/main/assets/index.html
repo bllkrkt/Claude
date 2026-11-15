@@ -258,10 +258,17 @@ function refreshInfo(){ INFO=sync('info')||{}; }
 const stack=['home'];
 const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',tools:'Araçlar',tool:'',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Ayarlar ve hakkında',usage:'Ekran süresi',xtips:'Xiaomi rehberi',files:'Dosya yöneticisi',checkup:'Telefon Check-up'};
 let viewArg=null;
-function go(v,arg){ closeSheet(); stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
+// Her ekranın kaydırma konumu ve parametresi saklanır: geri dönünce kaldığın yere döner
+const scrollMem=[], argMem=[];
+function go(v,arg){ closeSheet(); scrollMem[stack.length-1]=window.scrollY; argMem[stack.length-1]=viewArg; stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
+function restoreScroll(y){
+  let n=0;
+  const f=()=>{ window.scrollTo(0,y); if(Math.abs(window.scrollY-y)>2&&n++<30) setTimeout(f,60); }; // içerik geç yüklenirse tekrar dene
+  requestAnimationFrame(f);
+}
 function goBack(){
   if(sheetOpen()){ closeSheet(); return true; }
-  if(stack.length>1){ stack.pop(); viewArg=null; render(); window.scrollTo(0,0); return true; }
+  if(stack.length>1){ stack.pop(); const i=stack.length-1; viewArg=argMem[i]??null; render(true); restoreScroll(scrollMem[i]||0); return true; }
   return false;
 }
 window.__onBack=goBack;
@@ -1016,6 +1023,7 @@ refreshInfo();
 <script src="tools3.js"></script>
 <script src="tools4.js"></script>
 <script src="tools5.js"></script>
+<script src="tools6.js"></script>
 <script>render();</script>
 </body>
 </html>
