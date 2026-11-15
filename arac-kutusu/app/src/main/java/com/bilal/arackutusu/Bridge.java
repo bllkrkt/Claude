@@ -139,12 +139,46 @@ public class Bridge {
             case "hasPerm": return a.checkSelfPermission(in.optString("perm")) == android.content.pm.PackageManager.PERMISSION_GRANTED;
             case "askPerm": {
                 String perm = in.optString("perm");
-                if (!perm.equals("android.permission.CAMERA") && !perm.equals("android.permission.RECORD_AUDIO")) return false;
+                if (!java.util.Arrays.asList("android.permission.CAMERA", "android.permission.RECORD_AUDIO",
+                        "android.permission.READ_CONTACTS", "android.permission.ACCESS_COARSE_LOCATION").contains(perm)) return false;
                 a.runOnUiThread(() -> a.requestPermissions(new String[]{perm}, 9));
                 return true;
             }
             case "saveText": return a.hw.saveText(in.optString("name"), in.optString("text"));
             case "addCaffeine": return addTileCls(CaffeineTile.class, "Kafein", R.drawable.ic_coffee);
+            case "charge": {
+                android.content.SharedPreferences p = a.getSharedPreferences(Toggles.PREFS, 0);
+                return new JSONObject().put("on", ChargeService.enabled(a)).put("limit", p.getInt("chargeLimit", 80))
+                        .put("low", p.getInt("chargeLow", 20)).put("hot", p.getInt("chargeHot", 45));
+            }
+            case "setCharge": {
+                android.content.SharedPreferences.Editor e = a.getSharedPreferences(Toggles.PREFS, 0).edit();
+                if (in.has("limit")) e.putInt("chargeLimit", in.getInt("limit"));
+                if (in.has("low")) e.putInt("chargeLow", in.getInt("low"));
+                if (in.has("hot")) e.putInt("chargeHot", in.getInt("hot"));
+                e.apply();
+                if (in.has("on")) ChargeService.setEnabled(a, in.getBoolean("on"));
+                return true;
+            }
+            case "pinWidget": {
+                android.appwidget.AppWidgetManager wm = android.appwidget.AppWidgetManager.getInstance(a);
+                return wm.isRequestPinAppWidgetSupported() && wm.requestPinAppWidget(new ComponentName(a, StatusWidget.class), null, null);
+            }
+            case "setBars": {
+                int col = android.graphics.Color.parseColor(in.optString("color", "#0E1116"));
+                boolean light = in.optBoolean("light");
+                a.runOnUiThread(() -> {
+                    a.getWindow().setStatusBarColor(col);
+                    a.getWindow().setNavigationBarColor(col);
+                    a.webView.setBackgroundColor(col);
+                    if (Build.VERSION.SDK_INT >= 30) {
+                        int f = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                        a.getWindow().getInsetsController().setSystemBarsAppearance(light ? f : 0, f);
+                    }
+                });
+                return true;
+            }
+            case "pickFile": a.runOnUiThread(a::pickFile); return true;
             case "installed":
                 try { a.getPackageManager().getPackageInfo(in.optString("pkg"), 0); return true; }
                 catch (Exception e) { return false; }
@@ -181,6 +215,11 @@ public class Bridge {
             }
             case "addTile": return addTile(id, in.optInt("slot", 1));
             case "backupApk": return a.hw.backupApk(in.optString("pkg"));
+            case "screenTime": return Extras.screenTime(a);
+            case "contacts": return Extras.contactsInfo(a);
+            case "exportVcf": return new JSONObject().put("path", Extras.exportVcf(a, a.hw));
+            case "location": return Extras.location(a);
+            case "saveFile": return new JSONObject().put("path", a.hw.saveText(in.optString("name"), in.optString("text")));
             default: throw new IllegalArgumentException("Bilinmeyen metot: " + m);
         }
     }

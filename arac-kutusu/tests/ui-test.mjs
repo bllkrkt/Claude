@@ -68,6 +68,8 @@ await page.addInitScript(() => {
       case 'screen': return { xdpi: 440, ydpi: 440, density: 2.75 };
       case 'sensors': return { light: true, mag: true, orient: true, level: true, flash: true, vibrator: true };
       case 'battery': return { level: 54, charging: true, plug: 'Adaptör', currentMa: 2900, voltage: 4300, fullInMin: 48 };
+      case 'charge': return { on: true, limit: 80, low: 20, hot: 45 };
+      case 'setBars': case 'setCharge': case 'pickFile': case 'pinWidget': return true;
       case 'saveText': return 'İndirilenler/AracKutusu/notlar.txt';
       default: return true;
     }
@@ -83,6 +85,10 @@ await page.addInitScript(() => {
         { label: 'Parlaklık', ok: true, msg: 'Parlaklık %8' }, { label: 'Ekran zaman aşımı', ok: true, msg: 'Ekran 30 sn sonra kapanacak' },
         { label: 'Zil modu', ok: true, msg: 'Zil: titreşim' }, { label: 'Rahatsız etmeyin', ok: false, need: 'dnd', msg: '"Rahatsız etmeyin erişimi" izni gerekli' }] };
       case 'addTile': return { result: 'added' };
+      case 'screenTime': return { days: Array.from({ length: 7 }, (_, i) => ({ start: Date.now() - (6 - i) * 864e5, ms: (2 + i % 3) * 3600e3, unlocks: 40 + i })),
+        today: [{ pkg: 'com.instagram.android', label: 'Instagram', ms: 5400e3 }, { pkg: 'com.whatsapp', label: 'WhatsApp', ms: 2400e3 }], week: [{ pkg: 'com.whatsapp', label: 'WhatsApp', ms: 9e6 }] };
+      case 'contacts': return { total: 412, noNumber: 3, dupes: [{ num: '5321234567', names: ['Ahmet', 'Ahmet İş'] }] };
+      case 'location': return { lat: 41.01, lon: 28.98 };
       case 'permAudit': return { groups: [{ k: 'camera', t: 'Kamera', apps: [{ pkg: 'com.instagram.android', label: 'Instagram' }] }, { k: 'mic', t: 'Mikrofon', apps: [] }] };
       case 'appList': return { usage: true, total: 30 * GB, cache: 2 * GB, apps: [
         { pkg: 'com.whatsapp', label: 'WhatsApp', app: 120 * MB, data: 4 * GB, cache: 300 * MB, lastUsed: Date.now(), installed: Date.now() - 900 * d, enabled: true },
@@ -96,7 +102,10 @@ await page.addInitScript(() => {
   };
 });
 await page.goto('file://' + path.resolve(html));
-const shot = async n => { await page.waitForTimeout(250); await page.screenshot({ path: path.join(out, n + '.png'), fullPage: true }); };
+const shot = async n => { await page.waitForTimeout(250);
+  const ov = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  if (ov > 1) errors.push('Yatay taşma ' + n + ' (' + ov + ' px)');
+  await page.screenshot({ path: path.join(out, n + '.png'), fullPage: true }); };
 const tap = async t => { await page.getByText(t, { exact: false }).first().click(); await page.waitForTimeout(200); };
 const back = async () => { await page.evaluate(() => window.__onBack()); await page.waitForTimeout(150); };
 await shot('01-ana');
@@ -121,16 +130,22 @@ await back(); await back();
 await tap("Android'in izin vermedikleri"); await shot('13-sinirlar');
 await back();
 await tap('Telefon durumu'); await shot('14-telefon'); await back();
-await tap('Hakkında ve güncelleme'); await shot('15-hakkinda'); await back();
+await tap('Ayarlar, yedek ve hakkında'); await shot('15-ayarlar'); await page.evaluate(() => setTheme('light')); await page.evaluate(() => go('home')); await shot('15b-acik-tema'); await page.evaluate(() => { setTheme('dark'); }); await back(); await back();
+await tap('Ekran süresi'); await page.waitForTimeout(300); await shot('15c-ekran-suresi'); await back();
+await page.evaluate(() => go('xtips')); await shot('15d-xiaomi'); await back();
 await tap('Temizlik'); await tap('Yeniden tara'); await page.waitForTimeout(300); await tap('Çöp dosyalar'); await shot('16-cop');
 await tap('Uygulama yöneticisi'); await page.waitForTimeout(300); await page.locator('.chk').nth(1).click(); await shot('17-uygulamalar'); await back(); await back();
 await tap('Güvenlik kontrolü'); await tap('İzin denetimi'); await page.waitForTimeout(300); await page.locator('.app .head').first().click(); await shot('18-izinler'); await back(); await back();
 await tap('Gizli ayarlar'); await page.waitForTimeout(300); await page.locator('.search input').fill('pil'); await shot('19-gizli-arama'); await back();
 await tap('Tek tık ayarlar'); await tap('Zamanlama ekle'); await shot('20-zamanlayici'); await back(); await back();
 await tap('Araçlar'); await shot('21-araclar');
-for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35']]) {
+for (const [id, n] of [['compass','22'],['level','23'],['sound','24'],['charge','25'],['qrgen','26'],['loan','27'],['password','28'],['units','29'],['timer','30'],['torch','31'],['notes','32'],['random','33'],['ruler','34'],['dates','35'],['prayer','36'],['counter','37'],['water','38'],['banner','39'],['metronome','40'],['sleep','41'],['breath','42'],['numwords','43'],['validate','44'],['fuel','45'],['contacts','46']]) {
+  if (id === 'prayer') await page.evaluate(() => localStorage.setItem('ak-loc', JSON.stringify({ name: 'İstanbul', lat: 41.01, lon: 28.98 })));
   await page.evaluate(i => go('tool', i), id); await page.waitForTimeout(350);
   if (id === 'qrgen') { await page.fill('#qS', 'EvWifi'); await page.fill('#qP', 'şifre123'); await page.waitForTimeout(100); }
+  if (id === 'numwords') await page.fill('#nw', '12.750,50');
+  if (id === 'validate') { await page.fill('#vI', 'TR33 0006 1005 1978 6457 8413 26'); await page.fill('#vT', '10000000146'); }
+  if (id === 'fuel') { await page.fill('#fk', '450'); await page.fill('#fc', '6,5'); await page.fill('#fp', '44,9'); await page.fill('#fn', '3'); }
   if (id === 'loan') { await page.fill('#a', '100000'); await page.fill('#r', '3,59'); await page.fill('#n', '24'); }
   if (id === 'notes') { await page.evaluate(() => { TS.edit = -1; vTool(true); }); await page.fill('#nT', 'Alışveriş'); await page.fill('#nB', 'süt, ekmek'); await page.evaluate(() => TOOL.save()); }
   await shot(n + '-' + id); await back();

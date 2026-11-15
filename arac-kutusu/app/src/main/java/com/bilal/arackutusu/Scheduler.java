@@ -97,6 +97,8 @@ public class Scheduler extends BroadcastReceiver {
                 || "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED".equals(a)
                 || Intent.ACTION_TIME_CHANGED.equals(a) || Intent.ACTION_TIMEZONE_CHANGED.equals(a)) {
             rescheduleAll(c);
+            if (ChargeService.enabled(c)) try { c.startForegroundService(new Intent(c, ChargeService.class)); } catch (Exception ignored) { }
+            StatusWidget.updateAll(c);
             return;
         }
         if (!ACTION.equals(a)) return;

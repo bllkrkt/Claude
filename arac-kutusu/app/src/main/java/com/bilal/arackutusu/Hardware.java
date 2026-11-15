@@ -182,6 +182,10 @@ final class Hardware implements SensorEventListener {
         return saveStream(name, "text/plain", new java.io.ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)));
     }
 
+    String saveBytes(String name, String mime, byte[] data) throws Exception {
+        return saveStream(name, mime, new java.io.ByteArrayInputStream(data));
+    }
+
     private String saveStream(String name, String mime, InputStream in) throws Exception {
         ContentValues cv = new ContentValues();
         cv.put(MediaStore.Downloads.DISPLAY_NAME, name);

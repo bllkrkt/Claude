@@ -77,8 +77,11 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     boolean cam = checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
                     java.util.List<String> ok = new java.util.ArrayList<>();
-                    for (String r : req.getResources())
+                    boolean mic = checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+                    for (String r : req.getResources()) {
                         if (android.webkit.PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r) && cam) ok.add(r);
+                        if (android.webkit.PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(r) && mic) ok.add(r);
+                    }
                     if (ok.isEmpty()) req.deny(); else req.grant(ok.toArray(new String[0]));
                 });
             }
@@ -107,6 +110,30 @@ public class MainActivity extends Activity {
         super.onResume();
         // İzin ekranından dönünce arayüz durumu yenilesin
         if (webView != null) webView.evaluateJavascript("window.__onResume&&window.__onResume()", null);
+    }
+
+    static final int PICK = 31;
+
+    void pickFile() {
+        Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*");
+        try { startActivityForResult(i, PICK); } catch (Exception e) { js("window.__onPicked&&window.__onPicked(null)"); }
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req != PICK) return;
+        String text = null;
+        if (res == RESULT_OK && data != null && data.getData() != null) {
+            try (java.io.InputStream in = getContentResolver().openInputStream(data.getData())) {
+                java.io.ByteArrayOutputStream o = new java.io.ByteArrayOutputStream();
+                byte[] b = new byte[8192]; int n; long tot = 0;
+                while ((n = in.read(b)) > 0 && (tot += n) < 20_000_000) o.write(b, 0, n);
+                text = o.toString("UTF-8");
+            } catch (Exception ignored) { }
+        }
+        js("window.__onPicked&&window.__onPicked(" + (text == null ? "null" : org.json.JSONObject.quote(text)) + ")");
     }
 
     @Override

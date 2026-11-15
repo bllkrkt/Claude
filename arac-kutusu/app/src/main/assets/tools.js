@@ -76,7 +76,7 @@ const DIRS=['K','KKD','KD','DKD','D','DGD','GD','GGD','G','GGB','GB','BGB','B','
 const DIRN={K:'Kuzey',KD:'Kuzeydoğu',D:'Doğu',GD:'Güneydoğu',G:'Güney',GB:'Güneybatı',B:'Batı',KB:'Kuzeybatı'};
 T('compass','olcum','🧭','Pusula','Yön ve derece',{sensor:'orient',
   view(){
-    V(`<div class="card" style="text-align:center">
+    V(`<div class="card" style="text-align:center;overflow:hidden">
       <div style="position:relative;width:280px;height:280px;margin:10px auto">
         <svg id="cDial" viewBox="0 0 200 200" style="width:100%;height:100%;transition:transform .12s linear">
           <circle cx="100" cy="100" r="96" fill="var(--card2)" stroke="var(--line)" stroke-width="2"/>

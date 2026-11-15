@@ -14,6 +14,19 @@
   --blue:#6AA8FF; --bluebg:rgba(106,168,255,.12);
   --r:18px;
 }
+:root[data-theme=light]{
+  --bg:#F2F4F7; --bg2:#E8ECF1; --card:#FFFFFF; --card2:#EDF0F4; --line:#DCE1E8;
+  --tx:#121820; --tx2:#566273; --tx3:#8A95A4;
+  --ac:#0F9C74; --ac2:#0C8462; --acbg:rgba(15,156,116,.12);
+  --warn:#B26F12; --warnbg:rgba(245,170,50,.16); --bad:#D23F3F; --badbg:rgba(210,63,63,.11);
+  --blue:#2D6BD2; --bluebg:rgba(45,107,210,.10);
+}
+:root[data-theme=light] header{background:rgba(242,244,247,.94)}
+:root[data-theme=light] .note.warn,:root[data-theme=light] .note.info,:root[data-theme=light] .note.bad,:root[data-theme=light] .note.ok{color:var(--tx)}
+:root[data-theme=light] #toast{background:#1E2630;color:#fff}
+:root[data-theme=light] .btn.pri{color:#fff} :root[data-theme=light] .btn.red{color:#fff}
+:root[data-theme=light] .tile.hl{background:linear-gradient(135deg,#DCEBFA,#FFFFFF)!important}
+:root[data-theme=light] .app,:root[data-theme=light] .card,:root[data-theme=light] .list,:root[data-theme=light] .tile,:root[data-theme=light] .set,:root[data-theme=light] .mode,:root[data-theme=light] .stat{box-shadow:0 1px 3px rgba(20,30,50,.07)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 body{min-height:100vh;padding-bottom:110px}
@@ -231,11 +244,19 @@ function closeSheet(){ $('#sheet').classList.remove('show'); $('#sheetBg').style
 const sheetOpen=()=>$('#sheet').classList.contains('show');
 
 let INFO={};
+function applyTheme(){
+  let t='dark'; try{ t=JSON.parse(localStorage.getItem('ak-theme')||'"dark"'); }catch(e){}
+  if(t==='system') t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';
+  document.documentElement.dataset.theme=t;
+  sync('setBars',{color:t==='light'?'#F2F4F7':'#0E1116',light:t==='light'});
+}
+applyTheme();
+try{ matchMedia('(prefers-color-scheme: light)').addEventListener('change',applyTheme); }catch(e){}
 function refreshInfo(){ INFO=sync('info')||{}; }
 
 // ================= Gezinme =================
 const stack=['home'];
-const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',tools:'Araçlar',tool:'',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Hakkında'};
+const TITLES={home:'Araç Kutusu',clean:'Temizlik',sec:'Güvenlik kontrolü',hidden:'Gizli ayarlar',quick:'Tek tık ayarlar',mode:'Modu düzenle',shizuku:'Shizuku kurulumu',limits:'Android\'in sınırları',device:'Telefon durumu',tools:'Araçlar',tool:'',apps:'Uygulama yöneticisi',perms:'İzin denetimi',about:'Ayarlar ve hakkında',usage:'Ekran süresi',xtips:'Xiaomi rehberi'};
 let viewArg=null;
 function go(v,arg){ closeSheet(); stack.push(v); viewArg=arg; render(); window.scrollTo(0,0); }
 function goBack(){
@@ -248,7 +269,7 @@ window.__onResume=()=>{
   refreshInfo(); const v=stack[stack.length-1];
   if(v==='sec') checkUninstalled();
   if(v==='apps'&&AP.queue) { nextUninstall(); return; }
-  if(['home','clean','sec','quick','shizuku','device','tool'].includes(v)) render(true);
+  if(['home','clean','sec','quick','shizuku','device','tool','about','usage'].includes(v)) render(true);
 };
 function render(soft){
   const v=stack[stack.length-1];
@@ -258,7 +279,7 @@ function render(soft){
   $('#dock').classList.remove('show');
   if(devTimer&&v!=='device'){ clearInterval(devTimer); devTimer=null; }
   if(v!=='tool'&&typeof stopTool==='function'&&TOOL) stopTool();
-  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,tools:vTools,tool:vTool,apps:vApps,perms:vPerms,about:vAbout})[v](soft);
+  ({home:vHome,clean:vClean,sec:vSec,hidden:vHidden,quick:vQuick,mode:vMode,shizuku:vShizuku,limits:vLimits,device:vDevice,tools:vTools,tool:vTool,apps:vApps,perms:vPerms,about:vAbout,usage:vUsage,xtips:vXtips})[v](soft);
 }
 const V=h=>{ $('#view').innerHTML=h; };
 
@@ -285,12 +306,13 @@ function vHome(){
     <button class="tile c2" onclick="go('sec')"><div class="ic">${ic('shield')}</div><b>Güvenlik kontrolü</b><span>Güvenlik puanı, riskli izinler, izin denetimi</span></button>
     <button class="tile c3" onclick="go('hidden')"><div class="ic">${ic('key')}</div><b>Gizli ayarlar</b><span>Xiaomi / HyperOS'un saklı ekranları</span></button>
     <button class="tile c4" onclick="go('quick')"><div class="ic">${ic('zap')}</div><b>Tek tık ayarlar</b><span>Modlar, zamanlayıcı, kutucuklar</span></button>
-    <button class="tile" style="grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(135deg,#1F3A4A,#1A2029)" onclick="go('tools')"><div class="ic" style="background:rgba(106,168,255,.15);color:#8FC1FF">${ic('grid')}</div><div><b>Araçlar</b><br><span>${typeof TOOLS==='object'?Object.keys(TOOLS).length:'30'}+ araç: pusula, QR, fener, ses ölçer, testler, hesaplayıcılar, notlar…</span></div></button>
+    <button class="tile hl" style="grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;gap:14px;background:linear-gradient(135deg,#1F3A4A,#1A2029)" onclick="go('tools')"><div class="ic" style="background:rgba(106,168,255,.15);color:#8FC1FF">${ic('grid')}</div><div><b>Araçlar</b><br><span>${typeof TOOLS==='object'?Object.keys(TOOLS).length:'30'}+ araç: pusula, QR, fener, ses ölçer, testler, hesaplayıcılar, notlar…</span></div></button>
   </div>
   <div class="list" style="margin-top:16px">
     <button class="item" onclick="go('device')"><div class="th" style="width:40px;height:40px;color:var(--ac)">${ic('phone')}</div><div class="grow"><b>Telefon durumu</b><div class="muted tiny">Pil sağlığı, işlemci, ekran, sistem</div></div>${ic('chev')}</button>
     <button class="item" onclick="go('limits')"><div class="th" style="width:40px;height:40px;color:var(--warn)">${ic('lock')}</div><div class="grow"><b>Android'in izin vermedikleri</b><div class="muted tiny">Neyi neden yapamıyoruz</div></div>${ic('chev')}</button>
-    <button class="item" onclick="go('about')"><div class="th" style="width:40px;height:40px;color:var(--blue)">${ic('info')}</div><div class="grow"><b>Hakkında ve güncelleme</b><div class="muted tiny">Sürüm ${esc(INFO.version||'')}, gizlilik</div></div>${ic('chev')}</button>
+    <button class="item" onclick="go('usage')"><div class="th" style="width:40px;height:40px;color:#C39BFF">${ic('clock')}</div><div class="grow"><b>Ekran süresi</b><div class="muted tiny">Bugün ve son 7 gün, en çok kullanılanlar</div></div>${ic('chev')}</button>
+    <button class="item" onclick="go('about')"><div class="th" style="width:40px;height:40px;color:var(--blue)">${ic('info')}</div><div class="grow"><b>Ayarlar, yedek ve hakkında</b><div class="muted tiny">Tema, şarj alarmı, widget, yedekleme · v${esc(INFO.version||'')}</div></div>${ic('chev')}</button>
   </div>`);
 }
 
@@ -511,7 +533,7 @@ async function vHidden(){
   let h=`<div class="search">${ic('search')}<input type="text" placeholder="Ayar ara (ör. pil, kilit, DNS)" value="${esc(SHQ)}" oninput="SHQ=this.value;$('#shList').innerHTML=shList()"></div>
     <div class="note info">${ic('info')}<div class="small">Sadece <b>bu telefonda gerçekten açılabilen</b> ekranlar gösteriliyor. Bunlar telefonun kendi ayar ekranları; değişikliği sen yaparsın.</div></div>`;
   if(!INFO.xiaomi) h+=`<div class="note warn">${ic('warn')}<div class="small">Bu telefon Xiaomi görünmüyor; Xiaomi'ye özel kısayollar büyük ihtimalle gizlendi.</div></div>`;
-  h+=`<div id="shList">${shList()}</div>`;
+  h+=`<button class="btn" style="margin-bottom:12px" onclick="go('xtips')">📘 Xiaomi rehberi: reklamları kapat, gizli özellikler</button><div id="shList">${shList()}</div>`;
   if(SH.hidden.length) h+=`<details><summary>Bu telefonda bulunamadığı için gizlenen ${SH.hidden.length} kısayol</summary><div class="list">${SH.hidden.map(it=>`<div class="item" style="min-height:52px"><div class="grow"><div class="small" style="font-weight:600">${esc(it.title)}</div><div class="muted tiny">${esc(it.group)}</div></div></div>`).join('')}</div><p class="muted tiny" style="margin:0 4px">Bu ekranlar HyperOS sürümüne göre kaldırılmış, adı değişmiş veya dışarıdan açılmaya kapatılmış olabilir.</p></details>`;
   V(h);
 }
@@ -875,12 +897,108 @@ async function vPerms(){
 
 // ================= Hakkında =================
 function vAbout(){
-  V(`<div class="card" style="text-align:center;padding:26px 16px"><div class="tile c4" style="min-height:0;padding:0;background:none;align-items:center"><div class="ic" style="width:68px;height:68px">${ic('zap')}</div></div>
-      <h2 style="margin:12px 0 4px">Araç Kutusu</h2><p class="muted">Sürüm ${esc(INFO.version||'?')}</p></div>
+  let th='dark'; try{ th=JSON.parse(localStorage.getItem('ak-theme')||'"dark"'); }catch(e){}
+  const ch=sync('charge')||{};
+  V(`<h3 style="margin-top:6px">Görünüm</h3><div class="card"><b>Tema</b><div class="seg" style="margin-top:10px">${[['dark','🌙 Koyu'],['light','☀️ Açık'],['system','📱 Telefona göre']].map(([k,t])=>`<button class="${th===k?'on':''}" onclick="setTheme('${k}')">${t}</button>`).join('')}</div></div>
+
+  <h3>Şarj izleyici</h3><div class="card">
+    <div class="row" style="justify-content:space-between" onclick="chSet({on:${!ch.on}})"><div><b>Şarj ve pil uyarıları</b><p class="muted tiny">Şarj sınırına gelince, pil azalınca, aşırı ısınınca bildirir</p></div><div class="sw ${ch.on?'on':''}"></div></div>
+    ${ch.on?`<div style="margin-top:14px"><div class="row" style="justify-content:space-between"><span class="small">Şarj sınırı</span><b>%${ch.limit}</b></div><input type="range" min="60" max="100" step="5" value="${ch.limit}" onchange="chSet({limit:+this.value})">
+      <div class="row" style="justify-content:space-between"><span class="small">Düşük pil uyarısı</span><b>%${ch.low}</b></div><input type="range" min="5" max="40" step="5" value="${ch.low}" onchange="chSet({low:+this.value})">
+      <div class="row" style="justify-content:space-between"><span class="small">Sıcaklık uyarısı</span><b>${ch.hot} °C</b></div><input type="range" min="38" max="50" step="1" value="${ch.hot}" onchange="chSet({hot:+this.value})"></div>
+      <p class="muted tiny" style="margin-top:6px">Android bu tür izlemeye ancak bildirim çubuğunda sürekli duran küçük bir bildirimle izin veriyor. Xiaomi kapatmasın diye: <button class="link tiny" style="padding:0" onclick="sync('openPerm',{which:'autostart'})">Otomatik başlatma</button> · <button class="link tiny" style="padding:0" onclick="sync('openPerm',{which:'batteryApps'})">Pil: Kısıtlama yok</button></p>`:''}
+    ${ch.on&&!INFO.notif?`<div class="note warn" style="margin:12px 0 0">${ic('warn')}<div class="small">Uyarıları gösterebilmem için bildirim izni gerekli. <button class="link tiny" style="padding:0" onclick="askNotif()">İzin ver</button></div></div>`:''}</div>
+
+  <h3>Ana ekran widget'ı</h3><div class="card"><p class="small muted" style="margin-bottom:12px">Pil, sıcaklık, boş alan ve 3 mod butonu (Tek tık → kutucuklara atadığın modlar).</p>
+    <button class="btn" onclick="if(!sync('pinWidget'))widgetHelp()">Widget'ı ana ekrana ekle</button></div>
+
+  <h3>Yedek</h3><div class="card"><p class="small muted" style="margin-bottom:12px">Modlar, zamanlamalar, kutucuk seçimleri, notlar, yapılacaklar, sayaçlar ve ayarlar tek dosyaya kaydedilir (İndirilenler/AracKutusu). Telefon değiştirirken veya uygulamayı silmeden önce al.</p>
+    <div class="btns"><button class="btn pri" onclick="backupAll()">Yedek al</button><button class="btn" onclick="sync('pickFile')">Yedekten geri yükle</button></div></div>
+
+  <h3>Hakkında</h3><div class="card" style="text-align:center;padding:22px 16px"><div style="font-size:44px">🧰</div><h2 style="margin:8px 0 4px">Araç Kutusu</h2><p class="muted">Sürüm ${esc(INFO.version||'?')}</p></div>
     <button class="btn pri" style="margin-bottom:12px" onclick="sync('openUrl',{url:'https://github.com/bllkrkt/Claude/releases'})||toast('Tarayıcı açılamadı')">Güncellemeleri kontrol et</button>
-    <div class="note ok">${ic('lock')}<div class="small"><b>Gizlilik:</b> Bu uygulamanın internet izni yok; hiçbir veriyi hiçbir yere gönderemez. Taramalar sadece telefonunda yapılır.</div></div>
-    <div class="card small"><b>Güncelleme nasıl kurulur?</b><p class="muted" style="margin-top:6px">Yukarıdaki butonla sürüm sayfasını aç → en üstteki <b>AracKutusu-vX.apk</b> dosyasını indir → aç → <b>Güncelle</b>. Modların ve zamanlamaların korunur.</p><p class="muted" style="margin-top:8px">"Uygulama yüklenmedi / paket çakışıyor" hatası alırsan eski sürüm farklı bir imzayla derlenmiştir: eskisini kaldırıp yenisini kur.</p></div>`);
+    <div class="note ok">${ic('lock')}<div class="small"><b>Gizlilik:</b> Bu uygulamanın internet izni yok; hiçbir veriyi hiçbir yere gönderemez. Her şey sadece telefonunda yapılır.</div></div>
+    <div class="card small"><b>Güncelleme nasıl kurulur?</b><p class="muted" style="margin-top:6px">Sürüm sayfasını aç → en üstteki <b>AracKutusu-vX.apk</b> dosyasını indir → aç → <b>Güncelle</b>. Verilerin korunur.</p><p class="muted" style="margin-top:8px">"Uygulama yüklenmedi / paket çakışıyor" hatası alırsan eski sürüm farklı imzalıdır: önce <b>Yedek al</b>, eskisini kaldır, yenisini kur, <b>geri yükle</b>.</p></div>
+    <p class="muted tiny" style="text-align:center;margin:10px">Açık kaynak bileşenler: qrcode-generator (MIT), jsQR (Apache-2.0), Shizuku API (Apache-2.0)</p>`);
 }
+function setTheme(k){ try{ localStorage.setItem('ak-theme',JSON.stringify(k)); }catch(e){} applyTheme(); render(true); }
+function widgetHelp(){ openSheet(`<h4>Widget'ı elle ekle</h4><ol class="steps" style="margin-top:14px"><li><b>Ana ekranda boş yere basılı tut</b><p>Alt menü açılır.</p></li><li><b>Widget'lar'a dokun</b><p>Listede <b>Araç Kutusu</b>'nu bul.</p></li><li><b>Sürükleyip bırak</b><p>Boyutunu kenarlarından ayarlayabilirsin.</p></li></ol><button class="btn" onclick="closeSheet()">Tamam</button>`); }
+function chSet(o){ sync('setCharge',o); if(o.on&&!INFO.notif) askNotif(); render(true); }
+function backupAll(){
+  const ls={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k.startsWith('ak-')) ls[k]=localStorage.getItem(k); }
+  const m=sync('modes')||{};
+  const data={app:'arac-kutusu',v:1,at:new Date().toISOString(),modes:m.modes,tiles:m.tiles,schedules:sync('schedules'),charge:sync('charge'),ls};
+  call('saveFile',{name:'arac-kutusu-yedek-'+new Date().toISOString().slice(0,10)+'.json',text:JSON.stringify(data,null,1)}).then(r=>toast(r.error?'Kaydedilemedi: '+r.error:'Yedek kaydedildi: '+r.path));
+}
+window.__onPicked=text=>{
+  if(!text) return;
+  let d; try{ d=JSON.parse(text); }catch(e){ toast('Bu dosya bir Araç Kutusu yedeği değil'); return; }
+  if(!d||d.app!=='arac-kutusu'){ toast('Bu dosya bir Araç Kutusu yedeği değil'); return; }
+  openSheet(`<h4>Yedek geri yüklensin mi?</h4><p class="muted" style="margin-bottom:14px">${esc(new Date(d.at).toLocaleString('tr-TR'))} tarihli yedek. Şu anki modların, notların ve ayarların bununla değiştirilecek.</p>
+    <div class="btns"><button class="btn ghost" onclick="closeSheet()">Vazgeç</button><button class="btn pri" id="rsGo">Geri yükle</button></div>`);
+  $('#rsGo').onclick=()=>{
+    if(d.modes) sync('saveModes',{modes:d.modes,tiles:d.tiles||undefined});
+    if(d.schedules) sync('saveSchedules',{list:d.schedules});
+    if(d.charge) sync('setCharge',{limit:d.charge.limit,low:d.charge.low,hot:d.charge.hot});
+    for(const k in (d.ls||{})) if(k.startsWith('ak-')) localStorage.setItem(k,d.ls[k]);
+    MD=null; closeSheet(); applyTheme(); toast('Yedek geri yüklendi'); render();
+  };
+};
+
+// ================= Ekran süresi =================
+const hm=ms=>{ const m=Math.round(ms/60000); return m<60? m+' dk' : Math.floor(m/60)+' sa '+(m%60)+' dk'; };
+async function vUsage(){
+  if(!INFO.usage){ V(`<div class="card"><b>Kullanım erişimi gerekli</b><p class="muted small" style="margin:6px 0 12px">Hangi uygulamada ne kadar vakit geçirdiğini görmek için Android'in "Kullanım erişimi" iznini ver. Veriler telefondan çıkmaz.</p><button class="btn pri" onclick="sync('openPerm',{which:'usage'})">İzni ver</button></div>`); return; }
+  V(`<div class="card row"><div class="spin"></div><span class="muted">Hesaplanıyor…</span></div>`);
+  const r=await call('screenTime'); if(stack[stack.length-1]!=='usage') return;
+  if(r.error){ V(`<div class="note bad">${ic('warn')}<div>${esc(r.error)}</div></div>`); return; }
+  const D=r.days, max=Math.max(...D.map(d=>d.ms),1), today=D[6], avg=D.slice(0,6).reduce((a,d)=>a+d.ms,0)/6;
+  const dn=t=>new Date(t).toLocaleDateString('tr-TR',{weekday:'short'});
+  const tab=UT||'today', L=r[tab]; const tot=L.reduce((a,x)=>a+x.ms,0)||1;
+  V(`<div class="card">${big(hm(today.ms).replace(/ (sa|dk)/g,'<span style="font-size:22px;color:var(--tx2)">$1</span>'),'',`Bugün · ${today.unlocks} kez kilit açıldı${avg?` · haftalık ortalamanın ${today.ms>avg?'<b style="color:var(--warn)">üstünde</b>':'<b style="color:var(--ac)">altında</b>'}`:''}`)}
+      <div style="display:flex;align-items:flex-end;gap:8px;height:130px;margin-top:16px">${D.map((d,i)=>`<div style="flex:1;text-align:center"><div class="muted tiny" style="margin-bottom:4px">${d.ms?Math.round(d.ms/3600000*10)/10:''}</div><div style="height:${Math.max(3,d.ms/max*90)}px;border-radius:8px 8px 4px 4px;background:${i===6?'var(--ac)':'var(--card2)'}"></div><div class="tiny ${i===6?'':'muted'}" style="margin-top:6px">${i===6?'Bugün':dn(d.start)}</div></div>`).join('')}</div>
+      <p class="muted tiny" style="margin-top:6px;text-align:center">saat cinsinden</p></div>
+    <div class="seg" style="margin-bottom:12px"><button class="${tab==='today'?'on':''}" onclick="UT='today';vUsage()">Bugün</button><button class="${tab==='week'?'on':''}" onclick="UT='week';vUsage()">Son 7 gün</button></div>
+    ${L.length?`<div class="list">${L.map(x=>`<button class="item" onclick="sync('appSettings',{pkg:'${esc(x.pkg)}'})"><img class="th" style="width:40px;height:40px" loading="lazy" src="/icon/${esc(x.pkg)}" onerror="this.style.visibility='hidden'"><div class="grow"><div class="ellip" style="font-weight:700">${esc(x.label)}</div><div class="bar" style="height:6px;margin-top:6px"><i style="width:${x.ms/tot*100}%"></i></div></div><div class="sz">${hm(x.ms)}</div></button>`).join('')}</div>`:'<div class="card empty">Kayıt yok.</div>'}
+    <p class="muted tiny" style="margin:4px">Telefonun kendi kayıtlarından hesaplanır; Xiaomi'nin "Ekran süresi" ekranından birkaç dakika farklı olabilir.</p>`);
+}
+let UT='today';
+
+// ================= Xiaomi rehberi =================
+const XT=[
+ ['🚫','Sistem uygulamalarındaki reklamları kapat',[
+   'Ayarlar → Şifreler ve güvenlik → Yetkilendirme ve iptal → <b>msa</b> anahtarını kapat (birkaç kez "İptal et" demen gerekebilir).',
+   'Güvenlik, Dosya yöneticisi, Müzik, Video, Temalar, GetApps, İndirmeler uygulamalarının her birinde: sağ üst ⚙️ → "Öneriler / Önerilen içerik" seçeneklerini kapat.',
+   'Ayarlar → Ana ekran → "Uygulama önerileri"ni kapat. Klasörlerdeki "Önerilen uygulamalar"ı klasör adına basıp kapat.',
+   'Ayarlar → Kilit ekranı → "Kilit ekranı Glance / Duvar kağıdı karuseli"ni kapat (kilit ekranı reklamları).'],'my_app'],
+ ['🔔','Geç gelen bildirimleri düzelt',[
+   'Gizli ayarlar → <b>Otomatik başlatma</b>: WhatsApp, Telegram, banka uygulamaları için aç.',
+   'Gizli ayarlar → <b>Uygulama başına pil kısıtlaması</b>: aynı uygulamalar için "Kısıtlama yok".',
+   'Son uygulamalar ekranında uygulamaya basılı tut → 🔒 kilit simgesi: Xiaomi temizlerken o uygulamayı kapatmaz.'],'autostart'],
+ ['🔋','Pili uzatmak için',[
+   'Ayarlar → Pil → <b>Pil koruması / Akıllı şarj</b>: şarjı %80\'de bekletir (modele göre adı değişir).',
+   'Araç Kutusu → Ayarlar → <b>Şarj izleyici</b>: %80\'de seni uyarır.',
+   'Ayarlar → Ekran → <b>Yenileme hızı</b>: 60 Hz pil tasarrufu sağlar.',
+   'Karanlık mod OLED ekranlarda pil tasarrufu sağlar.'],'power'],
+ ['✨','Az bilinen HyperOS özellikleri',[
+   '<b>Üç parmakla aşağı kaydır</b>: ekran görüntüsü. Üç parmakla basılı tut: kısmi ekran görüntüsü (Ayarlar → Ek ayarlar → Hareket kısayolları).',
+   '<b>Arka tarafa iki kez vur</b> (destekleyen modellerde): fener, ekran görüntüsü vb. (Ek ayarlar → Hareket kısayolları → Arkaya dokun).',
+   '<b>Kayan pencereler</b>: son uygulamalarda uygulamaya basılı tut → kayan pencere simgesi.',
+   '<b>İkinci alan</b>: aynı telefonda ayrı bir kullanıcı alanı (Gizli ayarlar → İkinci alan).',
+   '<b>Uygulama klonlama</b>: iki WhatsApp/Instagram hesabı (Ayarlar → Uygulamalar → İkili uygulamalar).',
+   '<b>Gizli klasör</b>: Galeri\'de albümler ekranında aşağı çek → gizli albüm.'],null],
+ ['🛡️','Güvenlik için',[
+   'Ayarlar → Şifreler ve güvenlik → <b>Bul</b> (Cihazımı Bul) açık olsun.',
+   'Mi hesabına giriş yap: telefon çalınırsa kilitlenebilir ve silinebilir.',
+   'Bilinmeyen kaynak izni sadece kullandığın tarayıcı/dosya yöneticisinde açık kalsın (Güvenlik kontrolü bunu gösterir).',
+   '"USB hata ayıklama"yı kullanmadığında kapat.'],'unknown_src'],
+];
+function vXtips(){
+  V(`<p class="muted small" style="margin:4px 4px 14px">Xiaomi/HyperOS için en çok işe yarayan ayarlar. Menü adları sürüme göre biraz farklı olabilir; bulamazsan Ayarlar'ın üstündeki arama kutusunu kullan.</p>
+    ${XT.map(([e,t,L,sc],i)=>`<div class="app ${XO===i?'open':''}"><button class="head" onclick="XO=XO===${i}?null:${i};render(true)"><div style="font-size:26px">${e}</div><div class="grow"><b>${t}</b></div>${ic('chev')}</button>
+      <div class="body"><ol class="steps" style="margin-top:6px">${L.map(x=>`<li><p style="color:var(--tx)">${x}</p></li>`).join('')}</ol>${sc?`<button class="btn sm" onclick="sync('openShortcut',{id:'${sc}'})||toast('Bu telefonda açılamadı')">${ic('ext')} İlgili ayarı aç</button>`:''}</div></div>`).join('')}`);
+}
+let XO=0;
 
 // ================= Başlat =================
 refreshInfo();
@@ -888,6 +1006,7 @@ refreshInfo();
 <script src="lib/qrcode.js"></script>
 <script src="lib/jsQR.js"></script>
 <script src="tools.js"></script>
+<script src="tools2.js"></script>
 <script>render();</script>
 </body>
 </html>

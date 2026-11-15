@@ -343,6 +343,7 @@ final class Toggles {
             }
         }
         c.getSharedPreferences(PREFS, 0).edit().putString("lastMode", mode.optString("id")).apply();
+        StatusWidget.updateAll(c);
         try {
             out.put("name", mode.optString("name"));
             out.put("results", res);
