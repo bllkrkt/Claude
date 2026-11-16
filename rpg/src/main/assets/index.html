@@ -317,6 +317,15 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
 #frz{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;background:radial-gradient(circle,#bfeaff22,#5fc3ff55 70%,#bfeaffaa);box-shadow:inset 0 0 60px #dff6ff;border-radius:24px;animation:frzIn .25s ease}
 #frz[hidden]{display:none}#frz b{font-size:30px;color:#fff;text-shadow:0 2px 0 #1d6a9a,0 0 18px #7fd8ff;letter-spacing:2px}#frz small{font-weight:800;color:#e6f8ff;text-shadow:0 1px 3px #0009}
 #frz.hit{animation:frzHit .12s}@keyframes frzIn{from{opacity:0;transform:scale(1.05)}}@keyframes frzHit{50%{transform:scale(.97);filter:brightness(1.4)}}
+#mName{pointer-events:auto;cursor:pointer}#mName .mi,#pSt .mi{display:inline-grid;place-items:center;width:17px;height:17px;margin-left:5px;border-radius:50%;background:#ffffff26;font-size:11px;font-weight:800;vertical-align:2px;color:#fff}
+#pSt{cursor:pointer}#pSt .mi{margin:0;background:#ffffff18;color:var(--mut)}
+.dl{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}.dl:last-child{border-bottom:0}.dl>i{font-style:normal;width:24px;text-align:center;font-size:17px}.dl>span{flex:1}.dl>span small{display:block;color:var(--mut);font-size:11.5px;margin-top:1px}.dl>b{color:#fff;white-space:nowrap}
+.mhead{display:flex;gap:14px;align-items:center;margin-bottom:8px}.mhead .e{font-size:58px;width:78px;height:78px;display:grid;place-items:center;border-radius:20px;background:radial-gradient(circle,#ffffff1c,#ffffff05);border:1px solid var(--line2)}
+.mhead h2{margin:0 0 4px}.chips{display:flex;flex-wrap:wrap;gap:5px}.chips span{font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:99px;background:#ffffff14;border:1px solid var(--line2)}
+.verdict{text-align:center;font-weight:800;padding:9px;border-radius:14px;margin:8px 0 2px}
+.zone .zi{margin-left:6px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#0005;border:1px solid #fff3;font-size:15px;flex:none}
+.mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.mgrid div{display:flex;gap:8px;align-items:center;background:#ffffff0d;border-radius:12px;padding:7px 9px;font-size:13px}.mgrid div i{font-style:normal;font-size:22px}.mgrid div small{display:block;color:var(--gold);font-size:10.5px;letter-spacing:1px}
+.elog div{display:flex;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}.elog div:last-child{border:0}.elog small{margin-left:auto;color:var(--mut);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -349,7 +358,7 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
       <div id="stage">
         <div id="sky"></div><div id="far"></div><div id="parts"></div><div id="ground"></div>
         <div id="top">
-          <div id="mName"></div>
+          <div id="mName" data-a="monInfo"></div>
           <div class="hbar" id="mBar"><i class="gh" id="mGh"></i><i class="fg" id="mHp"></i><span id="mHpT"></span></div>
           <div class="abar"><i id="mAt"></i></div>
           <div id="bTime"></div>
@@ -369,7 +378,7 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
         <div id="vigS"></div>
         <button id="defBtn" hidden><i data-t style="font-style:normal">🛡️ SAVUN!</i><small id="defN"></small></button>
       </div>
-      <div id="pbox"><div class="php"><i id="pHp"></i><span id="pHpT"></span></div><div id="pSt"></div></div>
+      <div id="pbox"><div class="php"><i id="pHp"></i><span id="pHpT"></span></div><div id="pSt" data-a="statInfo"></div></div>
       <div id="skills"></div>
       <div id="hitRow"><div id="autoCol"><button id="aaBtn" data-a="aa">⚔️ OTO</button><button id="asBtn" data-a="as">✨ OTO</button></div><button id="bHit"><span>⚔️</span><b data-t style="font-weight:inherit">VUR</b></button></div>
     </section>
@@ -402,7 +411,7 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
 <script>
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='15.0';let titleOn=false;
+const VER='16.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -649,7 +658,7 @@ function dur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h?h+T(' 
 function fresh(){return {v:2,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
   zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSp:1,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
   cls:null,skl:[1,1,1,1],pets:{},pet:null,ach:{},bossFirst:{},daily:{day:'',claimed:false,streak:0,last:'',q:[],bonus:false},
-  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,invX:0,tu:{},tut:{},perfAsk:0,advDay:'',fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),fx:detFx(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
+  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,invX:0,elog:[],tu:{},tut:{},perfAsk:0,advDay:'',fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),fx:detFx(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
 let S=fresh();
 /* bozuk kayıt oyunu kilitlemesin: okunamayan kaydı ayrı anahtara sakla, temiz başla */
 function load(){let r=null;try{r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){try{if(r)localStorage.setItem(SAVE_KEY+'-bozuk',r)}catch(x){}S=fresh()}}
@@ -671,7 +680,7 @@ function sanitize(){for(const g of ['st','tot'])for(const k in S[g]){S[g][k]=Mat
   if(!(S.zone>=0&&S.zone<ZONES.length)||!S.maxF[S.zone])S.zone=0;S.zone=S.zone|0;
   if(!Array.isArray(S.daily.q))S.daily.q=[];S.daily.q=S.daily.q.filter(q=>q&&QUESTS[q.k]&&q.n>0);if(!S.dung.left||typeof S.dung.left!=='object')S.dung.left={gold:DUNG_N,ess:DUNG_N,rune:DUNG_N};if(!S.dung.best||typeof S.dung.best!=='object')S.dung.best={};
   if(!Array.isArray(S.duel.opp)||S.duel.opp.some(o=>!o||!CLS[o.cls]||!(o.q>0)))S.duel.opp=null;S.tower.best=Math.max(0,S.tower.best|0);S.reb.n=Math.max(0,S.reb.n|0);S.reb.souls=Math.max(0,+S.reb.souls||0);
-  S.aaSp=Math.max(0,Math.min(4,S.aaSp|0));if(S.hp!=null&&!(S.hp>0))S.hp=null}
+  S.aaSp=Math.max(0,Math.min(4,S.aaSp|0));if(!Array.isArray(S.elog))S.elog=[];S.elog=S.elog.filter(e=>e&&typeof e.x==='string'&&e.t>0).slice(0,25);if(S.hp!=null&&!(S.hp>0))S.hp=null}
 function applySave(o){const f=fresh();const old=!o.v||o.v<2;S=Object.assign(f,o);
   for(const k of ['st','tot','set','daily','arena','reb','dung','duel','tower','fate'])S[k]=Object.assign(fresh()[k],o[k]&&typeof o[k]==='object'&&!Array.isArray(o[k])?o[k]:{});S.reb.up=Object.assign({},S.reb.up&&typeof S.reb.up==='object'?S.reb.up:{});
   if(!Array.isArray(S.inv))S.inv=[];if(!S.eq||typeof S.eq!=='object')S.eq={};if(!Array.isArray(S.floors))S.floors=[];if(!Array.isArray(S.maxF))S.maxF=[];S.inv=S.inv.filter(it=>it&&typeof it==='object');for(const k of Object.keys(S.eq))if(!S.eq[k]||typeof S.eq[k]!=='object')delete S.eq[k];
@@ -859,7 +868,7 @@ function spawn(){clearTimeout(spawnT);const z=ZONES[S.zone],f=S.floors[S.zone],g
   if(D3)D3.spawn(M.n.replace(/^Elit /,''),M.e,{boss:M.boss&&!M.arena,elite:M.elite,arena:M.arena,hero:M.duel?M.cls:null,skin:M.duel?duelOn.sk:null,gear:M.duel?duelOn.gear:null,aura:M.afx?AFX[M.afx[0]].h:null,scale:M.afx&&M.afx.includes('giant')?1.25:1});
   if(D3){if(D3.shieldFx)D3.shieldFx(M.sh>0);if(D3.packCount)D3.packCount(M.pack||0)}
   const el=$('mon');el.textContent=M.e;el.className=(M.boss?'boss ':'')+(M.elite?'elite ':'')+'in';setTimeout(()=>el.classList.remove('in'),350);
-  $('mName').innerHTML=(M.fate?T('<span class="tag boss" style="background:#7b3df0">🔮 KADER ')+fateF+'</span>':'')+(M.tr?'<span class="tag" style="background:'+TRT[M.tr].c+'">'+TRT[M.tr].i+' '+TRT[M.tr].n+(M.pack?' <b id="pkN">'+M.pack+'</b>':'')+'</span>':'')+(M.fate?'':M.tower?T('<span class="tag boss">🗼 KAT ')+(S.tower.best+1)+'</span>':M.arena?'<span class="tag boss">ARENA</span>':M.duel?T('<span class="tag elite">DÜELLO</span>'):M.dung?T('<span class="tag elite" style="background:#1f7fb8">ZİNDAN</span>'):M.boss?'<span class="tag boss">BOSS</span>':M.elite?T('<span class="tag elite">ELİT</span>'):'')+esc(tn(M.n))+T('<span class="mlv">Sv ')+M.lv+'</span>'+(M.afx?'<div class="afx">'+M.afx.map(k=>'<span style="border-color:'+AFX[k].c+';color:'+AFX[k].c+'">'+AFX[k].i+' '+AFX[k].n+'</span>').join('')+'</div>':M.tr?'<div class="afx"><span style="border-color:'+TRT[M.tr].c+';color:#fff">'+TRT[M.tr].tip+'</span></div>':'');
+  $('mName').innerHTML=(M.fate?T('<span class="tag boss" style="background:#7b3df0">🔮 KADER ')+fateF+'</span>':'')+(M.tr?'<span class="tag" style="background:'+TRT[M.tr].c+'">'+TRT[M.tr].i+' '+TRT[M.tr].n+(M.pack?' <b id="pkN">'+M.pack+'</b>':'')+'</span>':'')+(M.fate?'':M.tower?T('<span class="tag boss">🗼 KAT ')+(S.tower.best+1)+'</span>':M.arena?'<span class="tag boss">ARENA</span>':M.duel?T('<span class="tag elite">DÜELLO</span>'):M.dung?T('<span class="tag elite" style="background:#1f7fb8">ZİNDAN</span>'):M.boss?'<span class="tag boss">BOSS</span>':M.elite?T('<span class="tag elite">ELİT</span>'):'')+esc(tn(M.n))+'<span class="mi">i</span>'+T('<span class="mlv">Sv ')+M.lv+'</span>'+(M.afx?'<div class="afx">'+M.afx.map(k=>'<span style="border-color:'+AFX[k].c+';color:'+AFX[k].c+'">'+AFX[k].i+' '+AFX[k].n+'</span>').join('')+'</div>':M.tr?'<div class="afx"><span style="border-color:'+TRT[M.tr].c+';color:#fff">'+TRT[M.tr].tip+'</span></div>':'');
   const b=$('mBar');b.classList.add('nt');updMon();void b.offsetWidth;b.classList.remove('nt');
   updTimer();
   if(M.boss&&QUOTE[M.n])say(tn(M.n),QUOTE[M.n]);if(M.duel)say(tn(M.n),pick([T('Hazır mısın? Bakalım kim daha güçlü!'),T('Ligin zirvesi benim!'),T('Bu düelloyu kaybetmeyeceğim!'),T('Kılıcım seni bekliyordu.')]));
@@ -934,7 +943,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   S.gold+=gold+sgx;S.tot.gold+=gold+sgx;S.tot.kills++;qAdd('kill');if(R.streak===3||(R.streak>3&&R.streak%5===0)){shout(T('🔥 SERİ x')+R.streak,R.streak>=10?'#ff3d7f':'#ffb347')}if(R.streak>=3){if(sgx)setTimeout(()=>floatTxt('+'+fmt(sgx)+T(' 💰 seri'),'g',monPos().x,monPos().y-10),120)}
   const m=monPos();floatTxt('+'+fmt(gold)+' 💰','g',m.x-40,m.y+30);floatTxt('+'+fmt(xp)+' XP','x',m.x+40,m.y+30);fxCoins(boss?8:el?5:3);
   if(boss||(el&&Math.random()<.25)||Math.random()<.015){const rk=rollRune(boss?.08:0);giveRune(rk,1);setTimeout(()=>{floatTxt(runeLbl(rk),'d',m.x,m.y-70);toast(T('🔮 Rün düştü: ')+runeLbl(rk))},300)}
-  if(boss){S.tot.boss++;aaCheck();qAdd('boss');const key=z+'-'+f;if(!S.bossFirst[key]){S.bossFirst[key]=1;const gm=10+z*5;S.gems+=gm;setTimeout(()=>floatTxt('+'+gm+' 💎','d',m.x,m.y-40),200)}if(tab==='battle')confetti(50);else{bgSt.b++;toast('👑 '+tn(M.n)+T(' yenildi!'))}}
+  if(boss){S.tot.boss++;logEv('👑 '+tn(M.n)+T(' yenildi'));aaCheck();qAdd('boss');const key=z+'-'+f;if(!S.bossFirst[key]){S.bossFirst[key]=1;const gm=10+z*5;S.gems+=gm;setTimeout(()=>floatTxt('+'+gm+' 💎','d',m.x,m.y-40),200)}if(tab==='battle')confetti(50);else{bgSt.b++;toast('👑 '+tn(M.n)+T(' yenildi!'))}}
   if(el){S.tot.elite++;qAdd('elite');if(Math.random()<.35){S.gems++;floatTxt('+1 💎','d',m.x,m.y-40)}}
   if(boss||el||Math.random()<.1){const e=boss?5:el?2:1;S.ess+=e;setTimeout(()=>floatTxt('+'+e+' 💠','x',m.x,m.y+60),150)}
   addXp(xp);
@@ -946,14 +955,14 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   if(tab!=='battle')bgSt.k++;
   S.kills++;
   if(S.kills>=(boss?1:KPF)){S.kills=0;
-    if(!isLast(z)&&f>=ZF){const nw=!S.maxF[z+1];if(nw)S.maxF[z+1]=1;S.zone=z+1;S.auto=true;setStage();
+    if(!isLast(z)&&f>=ZF){const nw=!S.maxF[z+1];if(nw){S.maxF[z+1]=1;logEv('🗺️ '+T('Yeni bölge: {0}',ZONES[z+1].n))}S.zone=z+1;S.auto=true;setStage();
       banner((nw?T('🗺️ YENİ BÖLGE: '):'🗺️ ')+ZONES[z+1].n.toLocaleUpperCase(LANG),'zone');toast('🗺️ '+ZONES[z+1].e+' '+ZONES[z+1].n+(nw?T(' açıldı!'):'')+T(' Yolculuk devam ediyor'),'big');if(nw)confetti(60);storyCheck()}
     else{if(f>=S.maxF[z])S.maxF[z]=f+1;if(S.auto&&f<S.maxF[z])S.floors[z]=f+1}}
   if(!evOn&&TRAITS&&tab==='battle'&&g>4&&Math.random()<.03)evShow();
   if(tab==='battle')updAll();else{calc();updHud();updBattle();bgInfo()}save();spawnT=setTimeout(spawn,boss&&D3&&tab==='battle'?1350:480)}
 function addXp(x){S.xp+=x;let up=0;while(S.xp>=xpNeed(S.lvl)){S.xp-=xpNeed(S.lvl);S.lvl++;S.pts+=3;up++;if(S.lvl%5===0){S.gems+=5;toast(T('💎 Seviye ')+S.lvl+T(' hediyesi: +5 elmas'))}if(S.lvl===15&&!S.reb.n)toast(T('✨ Oto yetenek açıldı! Yetenekler kendiliğinden kullanılır'),'big');
     if(CLS[S.cls])CLS[S.cls].sk.forEach(s=>{if(s.lv===S.lvl)toast(T('✨ Yeni yetenek açıldı: ')+s.i+' '+s.n,'big')})}
-  if(up){calc();S.hp=P.hp;banner(T('⭐ SEVİYE ')+S.lvl+' ⭐','lv');if(tab==='battle'){if(D3)D3.levelUp();confetti(35);tune([523,659,784,1047],80);vib([30,30,30])}else toast(T('⭐ Seviye ')+S.lvl+'!');giftCheck();renderSkillBar()}}
+  if(up){if(S.lvl%5===0)logEv('⭐ '+T('Seviye {0}',S.lvl));calc();S.hp=P.hp;banner(T('⭐ SEVİYE ')+S.lvl+' ⭐','lv');if(tab==='battle'){if(D3)D3.levelUp();confetti(35);tune([523,659,784,1047],80);vib([30,30,30])}else toast(T('⭐ Seviye ')+S.lvl+'!');giftCheck();renderSkillBar()}}
 function giftCheck(){if(S.lvl>=3&&!S.pets.wolf){S.pets.wolf=1;if(!S.pet)S.pet='wolf';calc();
   enqueue(()=>openSheet(T('<div style="text-align:center"><div style="font-size:80px">🐺</div><h2>Yeni yoldaş: Kurt!</h2><p class="mut">Seviye 3 hediyesi. Kurt yanında savaşır, düşmana kendiliğinden saldırır ve kritik şansını artırır. Kahraman → Yoldaş bölümünden besleyip güçlendirebilir, başka yoldaşlar edinebilirsin.</p><button class="btn pri w100" data-a="close">Harika!</button></div>')))}}
 function lootMsg(it,drop){const c=RAR[it.r].c,d=document.createElement('div');d.style.borderColor=c;d.style.color=c;d.textContent=it.e+' '+itN(it)+' ('+RAR[it.r].n+')';
@@ -961,13 +970,13 @@ function lootMsg(it,drop){const c=RAR[it.r].c,d=document.createElement('div');d.
   if(D3&&it.r>=1&&tab==='battle')D3.lootBeam(RAR[it.r].c);
   if(it.r===3){if(tab==='battle'||!drop)legendary(it);else{pendLeg=it;toast(T('🌟 EFSANEVİ eşya düştü: ')+it.e+' '+itN(it),'big')}}else if(it.r===2&&tab==='battle'){tune([440,660],90);vib(40)}}
 let legAfter=null;
-function legendary(it,after){$('legE').textContent=it.e;$('legN').textContent=itN(it);$('leg').classList.add('on');legAfter=after||null;confetti(80);tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
+function legendary(it,after){logEv('🌟 '+itN(it));$('legE').textContent=it.e;$('legN').textContent=itN(it);$('leg').classList.add('on');legAfter=after||null;confetti(80);tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
 function monsterHit(mult){mult=mult||1;const h=heroPos();if(D3&&mult===1)D3.monAttack(R.dodge>0);
   if(R.dodge>0){floatTxt(T('ISKA'),'m',h.x+10,h.y-30);return}
   let d=M.atk*mult*rnd(.85,1.15)*dmgRed(M.lv);if(R.shield>0)d*=1-R.shV/100;if(M.afx&&M.afx.includes('vamp')){M.hp=Math.min(M.max,M.hp+M.max*.03);updMon()}d*=1-P.dr/100;d=Math.max(1,Math.round(d));S.hp-=d;if(P.e&&P.e.thorn&&S.hp>0)setTimeout(()=>attack(.5*P.e.thorn,{src:'pet',fx:1}),70);
   floatTxt('-'+fmt(d)+(R.shield>0?' 🛡':''),'p',h.x+10,h.y-30,mult>1?30:22);shake(mult>1);sfx('hurt');vib(mult>1?[40,30,60]:18);if(mult>1)scrFlash('r');
   if(S.hp<=0){if(tl('last')&&!R.last){R.last=true;S.hp=Math.round(P.hp*.25);banner(T('🕯️ SON NEFES!'),'lv');shout(T('🕯️ SON NEFES'),'#ffd56a');if(D3)D3.heal()}else{S.hp=0;die()}}updPl()}
-function die(){hideDef();if(M&&M.fate){fateEnd();return}if(M&&M.tower){towerEnd(false);return}if(M&&M.arena){S.hp=Math.max(1,Math.round(P.hp*.3));endArena(T('💀 Yenildin'));return}if(M&&M.duel){duelEnd(false);return}if(dungOn){S.hp=Math.max(1,Math.round(P.hp*.3));endDung(T('💀 Yenildin'));return}dead=true;keepUpd();bgInfo();const z=S.zone,f=S.floors[z];R.combo=0;showCombo();
+function die(){hideDef();if(M&&M.fate){fateEnd();return}if(M&&M.tower){towerEnd(false);return}if(M&&M.arena){S.hp=Math.max(1,Math.round(P.hp*.3));endArena(T('💀 Yenildin'));return}if(M&&M.duel){duelEnd(false);return}if(dungOn){S.hp=Math.max(1,Math.round(P.hp*.3));endDung(T('💀 Yenildin'));return}dead=true;logEv('💀 '+tn(M.n)+T(' seni yendi'));keepUpd();bgInfo();const z=S.zone,f=S.floors[z];R.combo=0;showCombo();
   S.floors[z]=Math.max(1,f-1);S.auto=false;S.kills=0;save();
   openSheet(T('<div style="text-align:center"><div style="font-size:64px">💀</div><h2>Yenildin!</h2><p class="mut">{0} seni alt etti. Hiçbir şey kaybetmedin; bir önceki kata dönüyorsun.<br><br>💡 Eşyalarını Demirci\'de geliştir, stat puanı dağıt, yeteneklerini güçlendir ya da iksir al. Hazır olunca <b>▶</b> ile tekrar ilerle.</p><button class="btn pri w100" data-a="revive">Devam et</button></div>',esc(tn(M.n))),true)}
 function usePotion(){if(dead||paused())return;if(S.potions<=0){toast(T('🧪 İksirin kalmadı — Dükkan\'dan alabilirsin'));return}
@@ -1167,7 +1176,7 @@ function updTimer(){const b=$('bTime');if(dungOn){b.textContent='⏱ '+tr(Math.m
 function bombGo(){const h=heroPos(),m=monPos(),d=Math.max(1,Math.round(P.hp*.45*(1-P.dr/100)));M.dead=true;S.hp=Math.max(1,S.hp-d);floatTxt('💥 -'+fmt(d),'p',h.x+10,h.y-30,30);fxBoom(m.x,m.y,'#ff5263');scrFlash('r');shake(true);sfx('hurt');vib([60,40,80]);
   if(D3)D3.die(true);$('mon').classList.add('dead');updTimer();updPl();spawnT=setTimeout(spawn,700)}
 function timeUp(){hideDef();if(M.bomb)return bombGo();if(M.tower)return towerEnd(false);if(M.arena)return endArena(T('⏱ Süre doldu'));if(M.duel)return duelEnd(M.hp/M.max<S.hp/P.hp);bossFail()}
-function bossFail(){dead=true;const z=S.zone;S.floors[z]=Math.max(1,S.floors[z]-1);S.auto=false;S.kills=0;R.combo=0;showCombo();updTimer();save();
+function bossFail(){dead=true;logEv('⏱️ '+tn(M.n)+T(' kaçtı'));const z=S.zone;S.floors[z]=Math.max(1,S.floors[z]-1);S.auto=false;S.kills=0;R.combo=0;showCombo();updTimer();save();
   openSheet(T('<div style="text-align:center"><div style="font-size:64px">⏱️</div><h2>Süre doldu!</h2><p class="mut">{0} 30 saniyede yenilemedi ve kaçtı. Bir kat geri döndün.<br><br>💡 Boss\'lar zamanlı: daha hızlı vurmak için eşyalarını geliştir, set topla, yetenek ve kombo kullan. Hazır olunca <b>▶</b> ile tekrar dene.</p><button class="btn pri w100" data-a="revive">Devam et</button></div>',esc(tn(M.n))),true)}
 function startArena(){if(S.arena.left<=0||dead||!S.cls||busyMode())return;S.arena.left--;arenaOn=true;arenaDmg=0;qAdd('arena');closeSheet();go('battle');spawn();save()}
 function endArena(why){const k=arenaLvl(),gb=gBest();arenaOn=false;M.dead=true;hideDef();updTimer();if(D3)D3.die(true);if(k>S.arena.best)S.arena.best=k;
@@ -1232,7 +1241,7 @@ function updHud(){$('hLv').textContent=S.lvl;$('hAva').style.setProperty('--p',S
   if(lastGold!=null&&S.gold>lastGold&&tab!=='battle')pillBump('.pill.g');if(lastGem!=null&&S.gems>lastGem)pillBump('.pill.d');lastGold=S.gold;lastGem=S.gems;tabCheck()}
 function updMon(){if(!M)return;if(M.arena){const k=arenaLvl(),lo=k?arenaTier(k):0,hi=arenaTier(Math.min(6,k+1)),p=k>=6?100:(arenaDmg-lo)/(hi-lo)*100;$('mHp').style.width=p+'%';$('mGh').style.width=p+'%';$('mHpT').textContent='💥 '+fmt(arenaDmg)+T(' · Kademe ')+k+'/6';return}const p=Math.max(0,M.hp/M.max*100)+'%';$('mHp').style.width=p;$('mGh').style.width=p;$('mHpT').textContent=(M.sh>0?'🛡️ '+fmt(M.sh)+' · ':M.hlC>0?T('💚 iyileşiyor… '):'')+fmt(Math.max(0,M.hp))+' / '+fmt(M.max);$('mBar').classList.toggle('shd',M.sh>0);$('mBar').classList.toggle('hl',M.hlC>0)}
 function updPl(){$('pHp').style.width=(S.hp/P.hp*100)+'%';$('pHpT').textContent='❤️ '+fmt(S.hp)+' / '+fmt(P.hp);$('vig').classList.toggle('on',tab==='battle'&&!dead&&S.hp<P.hp*.3&&!$('sheetBg').classList.contains('on'))}
-function updStats(){$('pSt').innerHTML='<span>⚔️ <b>'+fmt(atkNow())+'</b></span><span>🛡️ <b>'+fmt(P.def)+'</b></span><span>🎯 <b>%'+tr(critNow())+'</b></span><span>💢 <b>%'+Math.round(P.critDmg)+'</b></span>'}
+function updStats(){$('pSt').innerHTML='<span>⚔️ <b>'+fmt(atkNow())+'</b></span><span>🛡️ <b>'+fmt(P.def)+'</b></span><span>🎯 <b>%'+tr(critNow())+'</b></span><span>💢 <b>%'+Math.round(P.critDmg)+'</b></span><span class="mi">i</span>'}
 function updBattle(){const z=ZONES[S.zone],f=S.floors[S.zone];
   $('zName').textContent=z.e+' '+z.n+T(' · Kat ')+f+(isLast(S.zone)?'':' / '+ZF)+' 🗺️';
   $('zProg').innerHTML=f%10===0?T('<span class="bossT">⚠ BOSS KATI ⚠</span>'):Array.from({length:KPF},(_,i)=>'<b class="'+(i<S.kills?'k':'')+'"></b>').join('');
@@ -1353,7 +1362,7 @@ function renderShop(){const g=gBest(),pp=potPrice();
 function mapHtml(){let h=T('<h2>🗺️ Harita</h2>');
   ZONES.forEach((z,i)=>{const m=S.maxF[i],lock=!m;
     h+='<button class="zone '+(i===S.zone?'cur ':'')+(lock?'lock':'')+'" style="background:'+z.bg+'" data-a="zone" data-v="'+i+'"><span class="e">'+(lock?'🔒':z.e)+'</span><span class="grow"><b>'+z.n+'</b><small>'+
-      (lock?ZONES[i-1].n+T(' bölgesinin 30. kat boss\'unu yen'):T('Kat ')+S.floors[i]+T(' · En yüksek: ')+m+(isLast(i)?T(' (sonsuz)'):' / '+ZF)+T(' · Canavar sv. ')+G(i,1)+'+')+'</small></span>'+(i===S.zone?'<span>📍</span>':'')+'</button>'});
+      (lock?ZONES[i-1].n+T(' bölgesinin 30. kat boss\'unu yen'):T('Kat ')+S.floors[i]+T(' · En yüksek: ')+m+(isLast(i)?T(' (sonsuz)'):' / '+ZF)+T(' · Canavar sv. ')+G(i,1)+'+')+'</small></span>'+(i===S.zone?'<span>📍</span>':'')+(lock?'':'<span class="zi" data-a="zoneInfo" data-v="'+i+'">ℹ️</span>')+'</button>'});
   return h+arenaCard()+T('<p class="mut" style="text-align:center">Her 10. katta zamanlı boss var (30 sn). 30. kat boss\'u sonraki bölgeyi açar. Bazen mor parıltılı ELİT canavar çıkar: daha güçlü ama daha çok ödül verir.</p><button class="btn w100" data-a="close">Kapat</button>')}
 function renderAdv(){let h=T('<h2>🏰 Macera</h2>')+fateCard()+arenaCard()+towerCard()+bstCard()+T('<h3>Zindanlar · 45 saniye, günde ')+DUNG_N+T(' hak</h3>');
   for(const k in DUNG){const d=DUNG[k],l=S.dung.left[k];h+='<div class="card" style="background:'+d.g+'"><div class="row"><span style="font-size:40px">'+d.i+'</span><div class="grow"><b style="font-size:16px">'+d.n+'</b><div class="mut">'+d.d+T('</div><div class="mut" style="margin-top:3px">Kalan: <b style="color:')+d.c+'">'+l+'/'+DUNG_N+'</b>'+(S.dung.best[k]?T(' · En iyi: ')+S.dung.best[k]+' ☠️':'')+'</div></div></div><button class="btn w100 '+(l>0?'pri':'')+'" style="margin-top:10px" data-a="dung" data-v="'+k+'" '+(l>0&&S.cls&&!dead&&!busyMode()?'':'disabled')+T('>Gir</button></div>')}
@@ -1409,6 +1418,7 @@ function tutTick(){if(!S.cls||titleOn||busy()||dead||busyMode()){coachHide();ret
   if(tt.bag&&!tt.equip&&tab==='inv'){if(!better)coachDone('equip');else return coach('equip','[data-a=eqBest]',T('Tek dokunuşla en iyileri kuşan'))}
   if(!tt.hero&&S.pts>0&&tabOpen('hero')){if(tab==='hero')coachDone('hero');else if(tab==='battle')return coach('hero','#tabs [data-v=hero]',T('Stat puanların var! Güçlen'))}
   if(tt.hero&&!tt.stat&&tab==='hero'){if(!S.pts)coachDone('stat');else return coach('stat','#s-hero .plus[data-a=stat]',T('Puanını buraya ver'))}
+  if(tab==='battle'&&S.lvl>=4&&M&&!M.dead){if(!tt.mon)return coach('mon','#mName',T('Canavarın adına dokun: gücünü ve özelliklerini gör'));if(!tt.st&&S.lvl>=6)return coach('st','#pSt',T('Buraya dokun: bütün istatistiklerin ve etkin güçlerin'))}
   coachHide()}
 /* ===== zayıf telefon: kare hızını izle, gerekirse efektleri düşürmeyi öner ===== */
 let fpsN=0,fpsT=0,fpsLow=0;
@@ -1417,6 +1427,53 @@ function fpsLoop(t){requestAnimationFrame(fpsLoop);if(!D3||tab!=='battle'||pause
     if(fpsLow>=2&&(S.set.fx|0)>0&&!S.perfAsk&&!window.__noRnd){S.perfAsk=1;save();enqueue(()=>openSheet('<div style="text-align:center"><div style="font-size:56px">🐢</div><h2>'+T('Bu telefonda oyun biraz yavaş çalışıyor')+'</h2><p class="mut">'+T('Efekt yoğunluğunu düşürüp oyunu akıcılaştırayım mı? İstediğin zaman Ayarlar\'dan değiştirebilirsin.')+'</p></div><button class="btn pri w100" data-a="perfLow">'+T('Evet, akıcılaştır')+'</button><button class="btn w100" style="margin-top:8px" data-a="close">'+T('Böyle kalsın')+'</button>'))}}}
 let lastGold=null,lastGem=null;
 function pillBump(sel){const e=document.querySelector(sel);if(!e)return;e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump')}
+/* ===== ayrıntılar: canavar kartı, istatistik sayfası, bölge bilgisi, olay günlüğü ===== */
+const AFXD={armor:T('Aldığı hasar %40 azalır'),fast:T('Çok daha hızlı saldırır'),vamp:T('Vurdukça canının %3\'ünü yeniler'),giant:T('Canı %80 fazladır'),regen:T('Saniyede canının %2\'sini yeniler'),thorn:T('Vurdukça hasarının bir kısmını sana yansıtır')};
+function logEv(x){if(!S.elog)S.elog=[];S.elog.unshift({t:Date.now(),x});if(S.elog.length>25)S.elog.length=25}
+function ago(t){const s=(Date.now()-t)/1000;return s<60?T('az önce'):s<3600?T('{0} dk önce',Math.floor(s/60)):s<86400?T('{0} sa önce',Math.floor(s/3600)):T('{0} gün önce',Math.floor(s/86400))}
+function hitsPerSec(){return aaOpen()&&S.autoAtk?1000/aaMs():2.5}
+function petDps(){const p=S.pet&&PET[S.pet];if(!p)return 0;const l=S.pets[S.pet]||1;return P.atk*p.dm/100*(1+.1*(l-1))*(1+.25*petStage(l))*(1+P.petD/100)/1.5}
+function estDps(m){let a=atkNow()*(1+critNow()/100*(P.critDmg/100-1))*hitsPerSec();if(P.dbl)a*=1+P.dbl/100;if(m){if(m.afx&&m.afx.includes('armor'))a*=.6;if(m.boss&&P.bossD)a*=1+P.bossD/100}return a+petDps()}
+const dl=(i,l,v,n)=>'<div class="dl"><i>'+i+'</i><span>'+l+(n?'<small>'+n+'</small>':'')+'</span><b>'+v+'</b></div>';
+const pc=v=>'%'+tr(v);
+function stars(n){const t=bstTier(n);return '★'.repeat(t)+'<span style="opacity:.25">'+'★'.repeat(4-t)+'</span>'}
+function monInfo(){if(!M||M.dead)return;coachDone('mon');const base=M.n.replace(/^Elit /,''),kills=S.bst[base]||0,t=bstTier(kills),nx=BST_T[t];
+  const hit=Math.max(1,Math.round(M.atk*dmgRed(M.lv)*(1-P.dr/100))),dps=estDps(M),ttk=Math.max(0,M.hp)/Math.max(1,dps),hitsToKill=Math.ceil(Math.max(1,S.hp)/hit);
+  const chips=[];if(M.boss)chips.push('<span style="background:#e8334b">'+T('BOSS')+'</span>');if(M.elite)chips.push('<span style="background:#a63dff">'+T('ELİT')+'</span>');if(M.tr)chips.push('<span style="background:'+TRT[M.tr].c+'">'+TRT[M.tr].i+' '+TRT[M.tr].n+'</span>');
+  let h='<div class="mhead"><div class="e">'+M.e+'</div><div class="grow"><h2>'+esc(tn(M.n))+'</h2><div class="chips"><span>'+T('Sv')+' '+M.lv+'</span>'+chips.join('')+'</div></div></div>';
+  const ok=ttk*1.5<hitsToKill*M.int/1000,wr=M.timer!=null?ttk<=M.timer/1000:ok;
+  h+='<div class="verdict" style="background:'+(wr?'#1f7a4a55':'#a0242f55')+';border:1px solid '+(wr?'#3ddc8488':'#ff526388')+'">'+(wr?T('✅ Bu savaşı kazanabilirsin'):T('⚠️ Zorlu rakip: güçlenmen gerekebilir'))+'</div>';
+  h+='<div class="card">'+dl('❤️',T('Can'),fmt(Math.max(0,M.hp))+' / '+fmt(M.max))+dl('⚔️',T('Vuruşu'),'-'+fmt(hit),T('Savunman hesaba katıldı'))+dl('⏱️',T('Saldırı aralığı'),tr(M.int/1000)+T(' sn'))+
+    dl('🗡️',T('Seni yenmesi'),T('~{0} vuruş',hitsToKill))+dl('🏹',T('Senin onu yenmen'),T('~{0} sn',tr(ttk)),T('Saniyede ~{0} hasar veriyorsun',fmt(dps)))+'</div>';
+  const fx=[];if(M.afx)M.afx.forEach(k=>fx.push(dl(AFX[k].i,AFX[k].n,'',T(AFXD[k]))));if(M.tr)fx.push(dl(TRT[M.tr].i,TRT[M.tr].n,'',TRT[M.tr].tip));
+  if(M.zb){const ph=BPH[S.zone%BPH.length];fx.push(dl('⏱️',T('Zamanlı'),'30'+T(' sn'),T('Süre dolarsa bir kat geri düşersin')));fx.push(dl('💥',BSP[S.zone%BSP.length],'×3',T('Uyarı çıkınca 🛡️ SAVUN\'a bas')));
+    fx.push(dl(ph.i,T(ph.n),'%66 · %33',T(ph.t)));fx.push(dl('😡',T('Öfke'),'%50',T('Canı yarıya inince daha hızlı ve sert vurur')))}
+  if(fx.length)h+='<h3>'+T('Özellikler')+'</h3><div class="card">'+fx.join('')+'</div>';
+  h+='<h3>📖 '+T('Defter')+'</h3><div class="card">'+dl('☠️',T('Yenilen'),fmt(kills),nx?T('Sonraki ★ için {0}',fmt(nx)):T('Tamamlandı'))+dl('⭐',T('Yıldız'),stars(kills))+'</div>';
+  openSheet(h+'<button class="btn pri w100" style="margin-top:10px" data-a="close">'+T('Kapat')+'</button>')}
+function statInfo(){coachDone('st');const red=M&&!M.dead?(1-dmgRed(M.lv))*100:0,sb=setBonus(),pb=petBonus(),rb=runeBonus();
+  let h='<h2>📊 '+T('Ayrıntılı istatistikler')+'</h2><h3>⚔️ '+T('Saldırı')+'</h3><div class="card">'+dl('⚔️',T('Saldırı'),fmt(atkNow()))+dl('💥',T('Saniyedeki hasar'),'~'+fmt(estDps(M&&!M.dead?M:null)),T('Oto saldırı, kritik ve yoldaş dahil'))+
+    dl('🎯',T('Kritik şansı'),pc(critNow()))+dl('💢',T('Kritik hasarı'),pc(P.critDmg))+dl('🔥',T('Bitirici (3. vuruş)'),'×'+tr(P.fin))+dl('⚡',T('Saldırı hızı'),T('{0}/sn',tr(hitsPerSec())),aaOpen()&&S.autoAtk?T('Oto saldırı'):T('Dokunarak (tahmini)'))+
+    (P.bossD?dl('👑',T('Boss\'lara hasar'),'+'+pc(P.bossD)):'')+(P.skD?dl('✨',T('Yetenek hasarı'),'+'+pc(P.skD)):'')+(P.cdR?dl('⏳',T('Bekleme azalması'),pc(P.cdR)):'')+(P.dbl?dl('🏹',T('Çift vuruş şansı'),pc(P.dbl)):'')+(P.petD?dl('🐾',T('Yoldaş hasarı'),'+'+pc(P.petD)):'')+'</div>';
+  h+='<h3>🛡️ '+T('Dayanıklılık')+'</h3><div class="card">'+dl('❤️',T('Can'),fmt(P.hp))+dl('🛡️',T('Savunma'),fmt(P.def),red?T('Şu anki canavarın vuruşunu %{0} azaltır',Math.round(red)):'')+(P.dr?dl('🧱',T('Alınan hasar azalması'),pc(P.dr)):'')+
+    dl('💚',T('Can yenilenmesi'),T('{0}/sn',pc(P.regen||0)),T('Her öldürmede ayrıca canının %8\'i'))+dl('🩸',T('Can çalma'),pc(P.ls))+'</div>';
+  h+='<h3>💰 '+T('Ganimet')+'</h3><div class="card">'+dl('💰',T('Altın bonusu'),'+'+pc(P.gold))+dl('⭐',T('XP bonusu'),'+'+pc(P.xp))+dl('🎁',T('Eşya düşme şansı'),pc(P.drop))+dl('📖',T('Defter bonusu'),'+'+pc(bstBonus()),T('Saldırı ve can'))+'</div>';
+  const act=[];if(P.e)for(const k in P.e){if(LEGP[k])act.push(dl(LEGP[k].i,LEGP[k].n+(P.e[k]>1?' ×'+P.e[k]:''),'',LEGP[k].d))}
+  if(fateOn)for(const k in FB)act.push(dl(FBM[k].i,'🔮 '+FBM[k].n+(FB[k]>1?' ×'+FB[k]:''),'',FBM[k].d));
+  for(const k in sb.n){const st=SETS[k];const on=st.b.filter(b=>sb.n[k]>=b[0]);act.push(dl(st.i,st.n+' ('+sb.n[k]+'/6)','',on.length?on.map(b=>bTxt(b[1])).join(' · '):T('2 parçada ilk bonus')))}
+  if(S.pet&&PET[S.pet]){const ks=Object.keys(pb);act.push(dl(PET[S.pet].e,PET[S.pet].n+' · '+T('Sv')+' '+(S.pets[S.pet]||1),'',ks.map(k=>'+'+pc(pb[k])+' '+(SBN[k]||k)).join(' · ')))}
+  const rk=Object.keys(rb);if(rk.length)act.push(dl('🔮',T('Rünler'),'',rk.map(k=>'+'+pc(rb[k])+' '+(SBN[k]||k)).join(' · ')));
+  if(act.length)h+='<h3>✨ '+T('Etkin güçler')+'</h3><div class="card">'+act.join('')+'</div>';
+  h+='<h3>📜 '+T('Son olaylar')+'</h3><div class="card elog">'+(S.elog&&S.elog.length?S.elog.slice(0,12).map(e=>'<div><span>'+esc(e.x)+'</span><small>'+ago(e.t)+'</small></div>').join(''):'<div class="mut">'+T('Henüz kayda değer bir şey olmadı.')+'</div>')+'</div>';
+  openSheet(h+'<button class="btn pri w100" style="margin-top:10px" data-a="close">'+T('Kapat')+'</button>')}
+function zoneInfo(i){const z=ZONES[i];if(!z||!S.maxF[i])return;const q=S.zq[i]||{s:0,p:0},seen=z.mon.concat(z.boss).filter(m=>S.bst[m[1]]>0).length,tot=z.mon.length+z.boss.length;
+  const bh=mHp(G(i,30))*19,dps=estDps(null),r=dps*30/bh,lv=r>2?[T('Kolay'),'#3ddc84']:r>1?[T('Uygun'),'#ffcf4a']:r>.5?[T('Zor'),'#ff9a3d']:[T('Çok zor'),'#ff5263'],ph=BPH[i%BPH.length];
+  let h='<div class="mhead"><div class="e" style="background:'+z.bg+'">'+z.e+'</div><div class="grow"><h2>'+z.n+'</h2><div class="chips"><span>'+T('Canavar sv. {0}–{1}',G(i,1),isLast(i)?'∞':G(i,30))+'</span><span style="color:'+lv[1]+'">'+T('Zorluk: {0}',lv[0])+'</span></div></div></div>';
+  h+='<div class="card" style="font-size:13.5px;line-height:1.6;font-style:italic">“'+STORY[i]+'”</div>';
+  h+='<h3>'+T('Canavarlar')+'</h3><div class="mgrid">'+z.mon.map(m=>{const n=S.bst[m[1]]||0;return '<div><i>'+(n?m[0]:'❔')+'</i><span>'+(n?esc(tn(m[1])):'???')+(n?'<small>'+stars(n)+'</small>':'')+'</span></div>'}).join('')+'</div>';
+  h+='<h3>'+T('Boss\'lar')+'</h3><div class="card">'+z.boss.map((b,k)=>{const f=(k+1)*10,met=S.maxF[i]>f||S.bst[b[1]]>0;return dl(met?b[0]:'❔',(met?esc(tn(b[1])):'???'),kn?T('Kat')+' '+f:f,met?T(ph.n)+' · '+BSP[i%BSP.length]:T('Henüz karşılaşmadın'))}).join('')+'</div>';
+  h+='<div class="card">'+dl('📖',T('Defter'),seen+' / '+tot)+dl('📜',T('Bölge görevi'),Math.min(q.s,ZQ.length)+' / '+ZQ.length)+dl('🏔️',T('En yüksek kat'),S.maxF[i]+(isLast(i)?'':' / '+ZF))+'</div>';
+  openSheet(h+'<div class="row" style="margin-top:10px"><button class="btn grow" data-a="map">'+T('◀ Harita')+'</button><button class="btn pri grow" data-a="zone" data-v="'+i+'">'+T('Buraya git')+'</button></div>')}
 function renderTitle(){applyLang();document.querySelectorAll('.tlang button').forEach(b=>b.classList.toggle('on',b.dataset.v===LANG));
   $('tSub').textContent=T('Bir efsane doğuyor');$('tPlay').textContent=T(S.cls?T('▶ DEVAM ET'):T('▶ OYNA'));$('tSet').textContent=T('⚙️ Ayarlar');$('tAbout').textContent=T('ℹ️ Hakkında');$('tVer').textContent=T('Sürüm {0}',VER)+' · '+T('İnternet gerekmez');
   const c=CLS[S.cls],z=ZONES[S.zone];$('tCard').innerHTML=c?'<div class="tcard"><span class="e">'+c.e+'</span><div class="grow"><b>'+T(c.n)+T(' · Sv ')+S.lvl+'</b><small>'+z.e+' '+T(z.n)+' · '+T('Kat')+' '+S.floors[S.zone]+' · ⚡ '+fmt(cpow())+'</small></div></div>':'<div class="tsub" style="letter-spacing:1px;text-transform:none;font-size:14px">'+T('Ekrana dokun, maceraya başla')+'</div>'}
@@ -1482,6 +1539,7 @@ function classSheet(intro){openSheet((intro||T('<div style="text-align:center"><
 
 /* ======================= EYLEMLER ======================= */
 const ACT={
+  monInfo:()=>monInfo(),statInfo:()=>statInfo(),zoneInfo:v=>zoneInfo(+v),
   tab:v=>{if(!tabOpen(v)){beep(220,.08,'square',.03);toast(v==='adv'?T('🔒 İlk boss\'u yen ya da {0}. seviyeye ulaş',TABU[v]):T('🔒 {0}. seviyede açılır',TABU[v]));return}go(v)},
   perfLow:()=>{S.set.fx=Math.max(0,(S.set.fx|0)-1);if(S.set.fx>0&&fpsLow>2)S.set.fx=0;if(D3)D3.setQuality(S.set.fx);closeSheet();toast(T('✨ Efektler düşürüldü, oyun daha akıcı'));save()},close:()=>closeSheet(),map:()=>openSheet(mapHtml()),
   floor:v=>{const z=S.zone,f=S.floors[z]+ +v;if(dead||busyMode())return;if(f>ZF&&!isLast(z)&&S.maxF[z+1])return ACT.zone(z+1);if(f<1||f>S.maxF[z])return;S.floors[z]=f;S.kills=0;if(f===S.maxF[z]&&!S.auto){S.auto=true;toast(T('⏩ En yüksek kattasın: Oto ilerle yeniden açıldı'))}spawn();save()},

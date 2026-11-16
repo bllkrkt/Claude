@@ -22,7 +22,8 @@ const tabs = { inv: [null, 'rune'], hero: ['stat', 'skill', 'pet', 'tal', 'reb']
 for (const [t, segs] of Object.entries(tabs)) for (const sg of segs) { await p.evaluate(([t, sg]) => { go(t); if (sg && t === 'hero') ACT.heroSeg(sg); if (sg && t === 'inv') ACT.invSeg(sg); }, [t, sg]); await p.waitForTimeout(250);
   for (let y = 0; y < 4; y++) { await grab(t + (sg ? '/' + sg : '')); await p.evaluate(() => { const e = document.querySelector('.scr.on'); e.scrollTop += 700; }); await p.waitForTimeout(80); }
   await p.evaluate(() => { document.querySelector('.scr.on').scrollTop = 0; }); await sh(t + (sg ? '-' + sg : '')); }
-const sheets = ['settings', 'about', 'backup', 'map', 'bst', 'autoJ', 'invUp', 'aa', 'skin', 'reset', 'bulk'];
+const sheets = ['settings', 'about', 'backup', 'map', 'bst', 'autoJ', 'invUp', 'aa', 'skin', 'reset', 'bulk', 'monInfo', 'statInfo'];
+await p.evaluate(() => { closeSheet(); go('battle'); zoneInfo(1); }); await p.waitForTimeout(200); await grab('pencere/zoneInfo');
 for (const a of sheets) { await p.evaluate(a => { closeSheet(); go('battle'); try { ACT[a] && ACT[a](); } catch (e) { console.error('ACT ' + a + ' ' + e) } }, a); await p.waitForTimeout(200); await grab('pencere/' + a); }
 await p.evaluate(() => { closeSheet(); itemSheet(S.inv[0]); }); await p.waitForTimeout(150); await grab('esya'); await sh('esya');
 await p.evaluate(() => { closeSheet(); itemSheet(S.eq.weapon); }); await p.waitForTimeout(150); await grab('esya-efsanevi');
