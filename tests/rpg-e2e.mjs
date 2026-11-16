@@ -24,7 +24,7 @@ await p.waitForTimeout(400);
 // rastgele düşen efsanevi eşya kutlaması tıklamayı engellemesin
 const _click = p.click.bind(p);
 const _leg = () => p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); });
-p.click = async (sel, o = {}) => { await _leg(); try { return await _click(sel, { ...o, timeout: 12000 }); } catch (e) { await _leg(); return _click(sel, o); } };
+p.click = async (sel, o = {}) => { await _leg(); if (!String(sel).includes('#tPlay') && await p.evaluate(q => { const e = document.querySelector(q); return !!e && !e.closest('#sheetBg'); }, sel)) { try { await clear(); } catch (e) { } } try { return await _click(sel, { ...o, timeout: 12000 }); } catch (e) { await _leg(); return _click(sel, o); } };
 const shot = n => HIZLI ? Promise.resolve() : p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
 const check = (c, msg) => { if (!c) errors.push(msg); };
 if (!HIZLI) check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
@@ -82,6 +82,7 @@ const autoGear = () => p.evaluate(() => {
 });
 await play(2500); await shot('03-savas');
 await play(20000); for (let k = 0; k < 8 && await p.evaluate(() => S.lvl < 3); k++) await play(3000); await clear(); await autoGear(); await p.waitForTimeout(300); await clear();
+await p.evaluate(() => { while (S.lvl < 3) addXp(xpNeed(S.lvl)); }); await p.waitForTimeout(300); await clear();
 check(await p.evaluate(() => S.lvl >= 3 && !!S.pets.wolf), 'kurt hediyesi gelmedi');
 await play(1500); await shot('04-savas-yoldas');
 

@@ -9,6 +9,8 @@ const HIZLI = !!process.env.HIZLI;
 if (HIZLI) await p.addInitScript(() => { Object.defineProperty(window, 'S3D', { get() { return undefined }, set() { } }); });const errors = [];p.on('pageerror', e => errors.push(String(e)));p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 await p.addInitScript(() => { window.__noRnd = 1; });
 await p.goto('file://' + path.resolve(html));await p.waitForTimeout(1200);
+const _click = p.click.bind(p);
+p.click = async (sel, o = {}) => { await p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); }); return _click(sel, o); };
 const sh = n => HIZLI ? Promise.resolve() : p.screenshot({ path: path.join(out, n + '.png') });const ev = f => p.evaluate(f);const res = {};
 const waitFor = async (fn, ms) => { const e = Date.now() + ms; while (Date.now() < e) { if (await p.evaluate(fn)) return true; await p.waitForTimeout(150); } return false; };
 await p.click('#tPlay');await p.waitForTimeout(600);await sh('1-karsilama');

@@ -241,14 +241,14 @@ function crab(o){const g=G(),u=g.userData,bm=mat(o.c||0xd0482a),am=mat(o.c2||0xf
   S(M(sph(.6,14,9),bm,0,.66,0,g),1.25,.55,.95);S(M(sph(.5,12,8),am,0,.52,.06,g),1.1,.35,.85);
   for(let i=0;i<5;i++)M(cone(.06,.17,4),dm,-.4+i*.2,.97,-.12,g);
   for(const s of[-1,1]){seg(V(.15*s,.82,.4),V(.2*s,1.17,.45),.035,.03,bm,g);M(sph(.075,8,6),mat(0x111111),.2*s,1.21,.46,g);M(sph(.032,6,5),glow(o.eye||0xffd000,1.4),.2*s,1.23,.53,g)}
-  u.legs=[];for(let i=0;i<4;i++)for(const s of[-1,1]){const L=G(g);L.position.set(.55*s,.58,.3-i*.22);const k=V(.45*s,.25,.1-i*.08),f=V(.78*s,-.58,.15-i*.12);seg(V(0,0,0),k,.06,.05,bm,L);seg(k,f,.05,.02,dm,L);u.legs.push(L)}
-  u.pinch=[];for(const s of[-1,1]){const A=G(g);A.position.set(.55*s,.68,.45);const e=V(.35*s,.25,.45);seg(V(0,0,0),e,.09,.08,bm,A);const C=G(A);C.position.copy(e);
-    S(M(sph(.27,10,8),bm,0,0,.16,C),.85,.75,1.2);Rz(M(cone(.1,.44,5),am,0,-.05,.5,C),PI/2);const J=G(C);J.position.set(0,.08,.26);Rz(M(cone(.09,.42,5),am,0,0,.22,J),PI/2);u.pinch.push(J);
+  u.legs=[];for(let i=0;i<4;i++)for(const s of[-1,1]){const L=G(g);L.position.set(.55*s,.58,.3-i*.22);const k=V(.32*s,.18,.08-i*.06),f=V(.5*s,-.56,.12-i*.1);seg(V(0,0,0),k,.07,.06,bm,L);seg(k,f,.06,.025,dm,L);u.legs.push(L)}
+  u.pinch=[];for(const s of[-1,1]){const A=G(g);A.position.set(.55*s,.68,.45);const e=V(.3*s,.22,.4);seg(V(0,0,0),e,.11,.1,bm,A);const C=G(A);C.position.copy(e);
+    S(M(sph(.36,10,8),bm,0,0,.2,C),.85,.75,1.2);Rz(M(cone(.13,.56,5),am,0,-.07,.64,C),PI/2);const J=G(C);J.position.set(0,.1,.34);Rz(M(cone(.12,.54,5),am,0,0,.28,J),PI/2);u.pinch.push(J);
     if(s>0)u.armR=A;else u.armL=A}
   return g}
 /* deniz yılanı / leviathan: kumdan çıkan kamburlar + yükselen boyun ve yelpaze yüzgeçli baş */
-function serpent(o){const g=G(),u=g.userData,bm=mat(o.c||0x2a7a8a),am=mat(o.c2||0x9ae8d8),fm=mat(o.fin||0x3ab0c0,{side:T.DoubleSide}),sp=mat(o.spike||0xe8f0e0),gl=o.glow?glow(o.glow,1.5):null,B=o.boss?1.25:1;
-  const hs=o.boss?[[-1,.5,.17],[-2,.42,.15],[-2.85,.33,.12],[-3.55,.24,.09]]:[[-.95,.42,.15],[-1.85,.34,.12],[-2.6,.25,.09]];
+function serpent(o){const g=G(),u=g.userData,bm=mat(o.c||0x2a7a8a),am=mat(o.c2||0x9ae8d8),fm=mat(o.fin||0x3ab0c0,{side:T.DoubleSide}),sp=mat(o.spike||0xe8f0e0),gl=o.glow?glow(o.glow,1.5):null,B=o.boss?1.4:1.3;
+  const hs=o.boss?[[-.95,.5,.17],[-1.85,.42,.15],[-2.6,.33,.12],[-3.2,.24,.09]]:[[-.8,.38,.14],[-1.5,.3,.11],[-2.05,.22,.08]];
   hs.forEach(([z,r,tb])=>{const h=M(new T.TorusGeometry(r,tb,7,12,PI),bm,0,0,z,g);h.rotation.y=PI/2;
     for(let k=0;k<5;k++){const a=PI*(k+.5)/5,c=M(cone(tb*.55,tb*(o.boss?2.4:1.6),4),o.boss?sp:fm,0,(r+tb*.8)*Math.sin(a),z+(r+tb*.8)*Math.cos(a),g);c.rotation.x=PI/2-a}
     if(gl)for(const s of[-1,1])M(sph(tb*.32,6,4),gl,tb*.9*s,r,z,g)});
@@ -410,7 +410,7 @@ const ZD=[
   {top:0x05030c,bot:0x2a1650,fog:0x1a0f30,gnd:0x221a2e,g2:0x302444,plat:0x3a3048,hs:0xb59aff,hg:0x150c22,sun:0xc0acff,si:.6,hi:.6,pt:'wisp',fn:10,ff:32,rim:0xa080ff},
   {top:0x2a7ae8,bot:0xffe0b0,fog:0xbcd4f4,gnd:0xa8c0e4,g2:0xc8d8f4,plat:0xcfc4a4,hs:0xdfeaff,hg:0x7a90b8,sun:0xfff0c8,si:.95,hi:.6,pt:'gold',fn:14,ff:42,rim:0xfff0c4},
   /* 7: Batık Şehir (deniz dibi) */
-  {top:0x2a9ab8,bot:0x041a30,fog:0x0b3a55,gnd:0xb8a67a,g2:0x8a8a6a,plat:0x6a8088,hs:0x8fe8ff,hg:0x0a2a3a,sun:0x9fe8ff,si:.85,hi:.75,pt:'bubble',fn:7,ff:26,rim:0x5fe8ff},
+  {top:0x2a9ab8,bot:0x041a30,fog:0x0b3a55,gnd:0xb8a67a,g2:0x8a8a6a,plat:0x4a5c64,hs:0x8fe8ff,hg:0x0a2a3a,sun:0x9fe8ff,si:.72,hi:.72,pt:'bubble',fn:7,ff:26,rim:0x5fe8ff},
   /* 8: Hiçlik */
   {top:0x020108,bot:0x1e0a3a,fog:0x0e061c,gnd:0x140c24,g2:0x22133e,plat:0x2a1a44,hs:0x9a7aff,hg:0x0a0614,sun:0xb090ff,si:.5,hi:.6,pt:'star',fn:10,ff:33,rim:0xc860ff}];
 function pine(p,x,z,s,c,snow){const g=G(p);g.position.set(x,0,z);M(cyl(.12,.16,.8,6),mat(0x5a3a1a),0,.4,0,g);for(let i=0;i<3;i++){M(cone(.9-i*.22,1.1,7),mat(c||0x2f6a3a),0,1.0+i*.6,0,g);if(snow)M(cone(.45-i*.11,.4,7),mat(0xffffff),0,1.45+i*.6,0,g)}S(g,s);return g}
@@ -530,7 +530,7 @@ function backdrop(e,z,d){const b=BD[z],tk=e.userData.tk;
     e.add(im);stars(e,60,0x8fe8ff,.6,tk)}
   if(b.ek==='batik'){/* yukarıdan süzülen ışık huzmeleri: ışık değil, yarı saydam düzlemler; parlaklıkları yavaşça dalgalanır */
     const n=Math.max(3,Math.round(7*QF)),rm=new T.MeshBasicMaterial({map:dot(),color:0x9ff4ff,transparent:true,opacity:.14,blending:T.AdditiveBlending,depthWrite:false,fog:false,side:T.DoubleSide}),rs=[];rm.userData.keepMap=1;
-    for(let i=0;i<n;i++){const m=i?rm.clone():rm,o=N(new T.PlaneGeometry(rnd(1.6,3.2),26),m,-11+22*(i+.5)/n+rnd(-1,1),9,rnd(-18,-5),e);o.rotation.z=rnd(.12,.3);m.userData.b=rnd(.08,.17);rs.push(m)}
+    for(let i=0;i<n;i++){const m=i?rm.clone():rm,o=N(new T.PlaneGeometry(rnd(1.6,3.2),26),m,-11+22*(i+.5)/n+rnd(-1,1),9,rnd(-18,-5),e);o.rotation.z=rnd(.12,.3);m.userData.b=rnd(.14,.26);rs.push(m)}
     tk.push(()=>{for(let i=0;i<rs.length;i++)rs[i].opacity=rs[i].userData.b*(.6+.4*Math.sin(t*.4+i*1.7))})}
   if(b.ek==='hiclik'){/* yıldızlar + ağır ağır süzülen kaya parçaları */
     stars(e,200,0xffffff,.75,tk);const n=Math.max(4,Math.round(12*QF)),im=new T.InstancedMesh(rockGeo,new T.MeshLambertMaterial({color:0x3e2670,flatShading:true,fog:false}),n),by=new Float32Array(n),a=im.instanceMatrix.array;im.frustumCulled=false;
@@ -704,7 +704,7 @@ function legBuild(){const ad={transparent:true,blending:T.AdditiveBlending,depth
     for(let i=1;i<4;i++){const a=t*3+i*2.1;c[i].position.set(TB.x+Math.sin(a)*.3,TB.y+.34+Math.sin(t*4+i)*.05,TB.z+Math.cos(a)*.3);c[i].rotation.y=a}});
    N(pq,gm,0,0,0,g);for(let i=0;i<3;i++)N(oc,sm,0,0,0,g)}
   /* pack: kahramanın yanında soluk altın kurt silueti + pati parıltıları */
-  {const wm=B(0xffd56a,.3),em=B(0xfff4c0,.9),pm=D(0xffd56a,.8),g=mk('pack',(g,x,y,z,u,dt,hm,hr)=>{g.position.set(x+.85,Math.abs(Math.sin(t*2.6))*.05,z+.3);g.rotation.y=hr.rotation.y;wm.opacity=.24+.08*Math.sin(t*3);
+  {const wm=B(0xffa020,.3),em=B(0xfff4c0,.9),pm=D(0xffc040,.8),g=mk('pack',(g,x,y,z,u,dt,hm,hr)=>{g.position.set(x+.85,Math.abs(Math.sin(t*2.6))*.05,z+.3);g.rotation.y=hr.rotation.y;wm.opacity=.24+.08*Math.sin(t*3);
     LQ.copy(g.quaternion).invert().multiply(cam.quaternion);const sp=g.userData.sp;for(let i=0;i<sp.length;i++){const k=(t*.8+i/3)%1,s=sp[i];s.position.set(Math.sin(i*2.3)*.3,.04+k*.45,Math.cos(i*2.3)*.35-.05);s.scale.setScalar(.16*(1-k)+.01);s.quaternion.copy(LQ)}});
    const w=G(g);w.scale.setScalar(.6);S(N(dod(.5),wm,0,.42,0,w),1,.85,1.2);N(ico(.3,0),wm,0,.86,.42,w);Rz(N(cone(.1,.55,4),wm,0,.55,-.6,w),-1.9);
    for(const s of[-1,1]){N(cone(.09,.26,4),wm,.16*s,1.14,.36,w);N(oct(.05),em,.11*s,.9,.69,w);for(const q of[-1,1])N(cyl(.07,.06,.42,5),wm,.2*s,.2,.3*q,w)}
