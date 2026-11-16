@@ -472,6 +472,11 @@ check(await p.evaluate(() => /HAFTANIN ETKİNLİĞİ/i.test(document.getElementB
 check(await p.evaluate(() => { S.maxF[1] = Math.max(1, S.maxF[1]); titleCheck(); ACT.titleSet('orman'); updHud(); const ok = S.titles.orman === 1 && S.title === 'orman' && /Orman Fatihi/.test(document.getElementById('hName').innerText); closeSheet(); return ok; }), 'unvan hatalı');
 await p.evaluate(() => { ACT.titles(); }); await p.waitForTimeout(200); await shot('101-unvanlar'); await p.evaluate(() => closeSheet()); await clear();
 await p.click('#tabs [data-v=battle]');
+// ---- v19: Batık Şehir kayıt geçişi ve Suikastçı ----
+check(await p.evaluate(() => { const bk = JSON.stringify(S); const o = JSON.parse(bk); delete o.zv; o.floors = [30, 30, 30, 30, 30, 30, 30, 12]; o.maxF = [30, 30, 30, 30, 30, 30, 30, 15]; o.zone = 7; o.zq = { 7: { s: 2, p: 1 } }; o.story = { 7: 1 }; o.bossFirst = { '7-10': 1, '2-10': 1 };
+  applySave(o); const r = S.zone === 8 && S.maxF[7] === 30 && S.maxF[8] === 15 && S.floors[8] === 12 && S.zq[8] && S.zq[8].s === 2 && S.story[7] === 1 && S.story[8] === 1 && S.bossFirst['8-10'] === 1 && S.bossFirst['2-10'] === 1 && S.floors.length === ZONES.length && ZONES[7].n === 'Batık Şehir';
+  applySave(JSON.parse(bk)); calc(); setStage(); spawn(); return r; }), 'bölge kaydı geçişi hatalı: ' + await p.evaluate(() => JSON.stringify({ n: ZONES.length })));
+check(await p.evaluate(() => { const c = S.cls; hpKeep(() => { S.cls = 'war' }); const a = P.crit, d = P.critDmg; hpKeep(() => { S.cls = 'asn' }); const ok = (P.crit === Math.min(85, a + 12) || P.crit === 85) && P.critDmg === d + 40 && CLS.asn.sk.length === 4; hpKeep(() => { S.cls = c }); renderSkillBar(); return ok; }), 'suikastçı bonusları hatalı');
 // bozuk kayıt: oyun açılmalı, bozuk veri saklanmalı
 const good = await p.evaluate(() => { save(true); const g = localStorage.getItem(SAVE_KEY); save = () => {}; localStorage.setItem(SAVE_KEY, '{bozuk'); return g; });
 await p.reload(); await p.waitForTimeout(600);

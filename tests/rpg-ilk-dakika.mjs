@@ -35,10 +35,11 @@ res.allOpen = await ev(() => !document.querySelector('#tabs .lk') && S.tu.adv ==
 res.advDot1 = await ev(() => !document.getElementById('dAdv').hidden);await p.click('#tabs [data-v=adv]');await p.waitForTimeout(300);await p.click('#tabs [data-v=battle]');await p.waitForTimeout(200);
 res.advDot2 = await ev(() => document.getElementById('dAdv').hidden);
 // baloncuğa dokununca kapanır ve gösterdiği pencereyi açar
-await ev(() => { closeSheet(); Q.length = 0; S.tut.mon = 0; go('battle'); spawn(); M.int = 1e9; });
+await ev(() => { closeSheet(); Q.length = 0; S.tut.mon = 0; S.autoAtk = false; go('battle'); spawn(); M.int = 1e9; M.max = M.hp = 1e9; });
 res.coachMon = await waitFor(() => coachK === 'mon', 3000);
 await p.click('#coach .cb');await p.waitForTimeout(300);
 res.coachTap = await ev(() => S.tut.mon === 1 && !!document.querySelector('#sheetBg.on') && /defter|bestiary/i.test(document.getElementById('sheet').innerText));
+if (!res.coachTap) console.log('DBG', await ev(() => JSON.stringify({ m: S.tut.mon, on: !!document.querySelector('#sheetBg.on'), tx: document.getElementById('sheet').innerText.slice(0, 80), ck: coachK })));
 for (const [k, v] of Object.entries(res)) if (k !== 'locks' && k !== 'heroOpen' && v !== true) errors.push(k + ' hatalı');
 if (!res.locks.every(Boolean)) errors.push('sekmeler başta kilitli değil');
 console.log('durum', JSON.stringify(res));console.log('errors', JSON.stringify(errors));await b.close();process.exit(errors.length ? 1 : 0);
