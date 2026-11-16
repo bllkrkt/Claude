@@ -10,6 +10,9 @@ const errors = [];
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true, locale: 'tr-TR' });
 const p = await ctx.newPage();
+// HIZLI=1: 3B çizim ve ekran görüntüsü yok (oyun mantığının tamamı yine denetlenir; görsel değişiklikte tam modu çalıştır)
+const HIZLI = !!process.env.HIZLI;
+if (HIZLI) await p.addInitScript(() => { Object.defineProperty(window, 'S3D', { get() { return undefined }, set() { } }); });
 p.on('pageerror', e => errors.push(String(e)));
 p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 const url = 'file://' + path.resolve(html);
@@ -22,9 +25,9 @@ await p.waitForTimeout(400);
 const _click = p.click.bind(p);
 const _leg = () => p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); });
 p.click = async (sel, o = {}) => { await _leg(); try { return await _click(sel, { ...o, timeout: 12000 }); } catch (e) { await _leg(); return _click(sel, o); } };
-const shot = n => p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
+const shot = n => HIZLI ? Promise.resolve() : p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
 const check = (c, msg) => { if (!c) errors.push(msg); };
-check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
+if (!HIZLI) check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
 // açılış ekranı: ilk açılışta görünür, oyun durur, Oyna'ya basınca kalkar
 check(await p.evaluate(() => titleOn && paused() && !document.querySelector('#sheetBg.on') && LANG === 'tr'), 'açılış ekranı hatalı');
 await shot('00-acilis'); await p.click('#tPlay'); await p.waitForTimeout(700);
@@ -206,7 +209,7 @@ await p.reload(); await p.waitForTimeout(600); await clear();
 check(await p.evaluate(() => !D3 && !document.getElementById('c3d')), '2B moda geçilemedi');
 await shot('37-2b-mod');
 await p.evaluate(() => { S.set.d3 = true; save(true); }); await p.reload(); await p.waitForTimeout(600); await clear();
-check(await p.evaluate(() => !!D3), '3B moda dönülemedi');
+if (!HIZLI) check(await p.evaluate(() => !!D3), '3B moda dönülemedi');
 
 // ===== v7: 30. kat boss'u sonraki bölgeye geçirir
 await clear();
@@ -251,7 +254,7 @@ check(await p.evaluate(a => S.eq.weapon.sock[0] === 'atk:2' && P.atk > a, a0), '
 await p.evaluate(() => { ACT.unsock(S.eq.weapon.id + '|0'); closeSheet(); });
 check(await p.evaluate(() => S.runes['atk:2'] === 2 && !S.eq.weapon.sock[0]), 'rün çıkarma çalışmadı');
 await p.evaluate(() => { ACT.sockSet(S.eq.weapon.id + '|0|atk:2'); closeSheet(); ACT.invSeg('items'); }); await p.waitForTimeout(500); await shot('54-canta-vitrin');
-check(await p.evaluate(() => !!document.querySelector('#vitrin canvas')), 'karakter vitrini çizilmedi');
+if (!HIZLI) check(await p.evaluate(() => !!document.querySelector('#vitrin canvas')), 'karakter vitrini çizilmedi');
 
 // zindan
 await p.click('[data-v=adv]'); await p.waitForTimeout(300); await shot('55-macera');

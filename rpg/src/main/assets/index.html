@@ -310,7 +310,7 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
 #tabs button.lk{opacity:.32;filter:grayscale(1)}#tabs button.lk::after{content:'🔒';position:absolute;top:3px;right:20%;font-size:11px}
 #tabs button.nw>span{animation:tabNew 1.1s ease-in-out infinite}@keyframes tabNew{50%{transform:translateY(-4px) scale(1.18);filter:drop-shadow(0 0 8px #ffcf4a)}}
 #coach{position:fixed;inset:0;z-index:19;pointer-events:none}#coach[hidden]{display:none}
-#coach .cb{position:fixed;padding:10px 14px;border-radius:16px;background:linear-gradient(#fff6d6,#ffd96a);color:#2a1d00;font-weight:800;font-size:14px;line-height:1.35;text-align:center;box-shadow:0 8px 24px #0009,0 0 0 2px #fff8;animation:coachIn .3s cubic-bezier(.2,1.4,.4,1)}
+#coach .cb{pointer-events:auto;cursor:pointer;position:fixed;padding:10px 14px;border-radius:16px;background:linear-gradient(#fff6d6,#ffd96a);color:#2a1d00;font-weight:800;font-size:14px;line-height:1.35;text-align:center;box-shadow:0 8px 24px #0009,0 0 0 2px #fff8;animation:coachIn .3s cubic-bezier(.2,1.4,.4,1)}
 #coach .ch{position:fixed;font-size:36px;filter:drop-shadow(0 4px 6px #000a);animation:coachTap 1s ease-in-out infinite}
 @keyframes coachIn{from{opacity:0;transform:translateY(8px) scale(.9)}}@keyframes coachTap{50%{transform:translateY(-12px) rotate(-8deg)}}
 .pill.bump{animation:pillB .4s ease}@keyframes pillB{35%{transform:scale(1.14);box-shadow:0 0 16px #ffcf4a88}}
@@ -326,6 +326,7 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
 .zone .zi{margin-left:6px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#0005;border:1px solid #fff3;font-size:15px;flex:none}
 .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.mgrid div{display:flex;gap:8px;align-items:center;background:#ffffff0d;border-radius:12px;padding:7px 9px;font-size:13px}.mgrid div i{font-style:normal;font-size:22px}.mgrid div small{display:block;color:var(--gold);font-size:10.5px;letter-spacing:1px}
 .elog div{display:flex;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}.elog div:last-child{border:0}.elog small{margin-left:auto;color:var(--mut);white-space:nowrap}
+#coach .cb small{display:block;font-size:10.5px;font-weight:700;opacity:.6;margin-top:2px;letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -411,7 +412,7 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
 <script>
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='16.0';let titleOn=false;
+const VER='17.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -1403,11 +1404,15 @@ const tabOpen=t=>!TABU[t]||window.__allTabs||S.reb.n>0||S.lvl>=TABU[t]||(t==='ad
 function tabCheck(silent){document.querySelectorAll('#tabs button').forEach(b=>{const t=b.dataset.v,o=tabOpen(t);b.classList.toggle('lk',!o);
   if(o&&TABU[t]&&!S.tu[t]){S.tu[t]=1;if(!silent){b.classList.add('nw');toast(T('🔓 {0} açıldı!',T(TABN[t])),'big');beep(880,.12,'triangle',.06,1320)}}})}
 /* ===== ilk dakikalar için rehber işaretleri ===== */
-let coachK=null;
+let coachK=null,coachSel=null,coachAt=0;
 function coachHide(){if(!coachK&&$('coach').hidden)return;coachK=null;$('coach').hidden=true}
+/* baloncuğa dokununca: kapanır ve gösterdiği şeyi açar */
+function coachTap(e){e.preventDefault();e.stopPropagation();const k=coachK,sel=coachSel;if(!k)return;coachDone(k);const el=sel&&document.querySelector(sel);if(el&&el.dataset&&el.dataset.a&&ACT[el.dataset.a])ACT[el.dataset.a](el.dataset.v,el)}
 function coachDone(k){if(!S.tut[k]){S.tut[k]=1;save()}if(coachK===k)coachHide()}
 function coach(k,sel,txt){const el=document.querySelector(sel);if(!el||!el.offsetParent||el.disabled){if(coachK===k)coachHide();return}
-  const c=$('coach'),r=el.getBoundingClientRect(),W=innerWidth;if(coachK!==k){coachK=k;c.querySelector('.cb').textContent=txt}
+  const c=$('coach'),r=el.getBoundingClientRect(),W=innerWidth;if(coachK!==k){coachK=k;coachSel=sel;coachAt=Date.now();c.querySelector('.cb').innerHTML=esc(txt)+'<small>'+T('dokun · tamam')+'</small>'}
+  /* hiçbir işaret 15 saniyeden uzun kalmasın */
+  if(Date.now()-coachAt>15000){coachDone(k);return}
   const b=c.querySelector('.cb'),hd=c.querySelector('.ch'),cx=r.left+r.width/2;hd.style.left=(cx-18)+'px';hd.style.top=(r.top+r.height*.55)+'px';
   const bw=Math.min(250,W-24);b.style.width=bw+'px';b.style.left=Math.max(12,Math.min(W-bw-12,cx-bw/2))+'px';b.style.top=Math.max(8,r.top-b.offsetHeight-14)+'px';c.hidden=false}
 function tutTick(){if(!S.cls||titleOn||busy()||dead||busyMode()){coachHide();return}const tt=S.tut;
@@ -1723,7 +1728,7 @@ if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td'
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
 if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
-giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);$('weak').addEventListener('pointerdown',weakHit);$('evBtn').addEventListener('click',evOpen);
+giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
 save(true);setTimeout(autoBk,6000);if(!window.__noTitle)showTitle();requestAnimationFrame(fpsLoop);

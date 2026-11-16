@@ -4,7 +4,9 @@ import { createRequire } from 'module';import path from 'path';import fs from 'f
 const require = createRequire(import.meta.url);const { chromium } = require('playwright');
 const [html, out = '.'] = process.argv.slice(2);const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true, locale: 'en-US' });
-const p = await ctx.newPage();const errors = [];p.on('pageerror', e => errors.push(String(e)));p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
+const p = await ctx.newPage();
+const HIZLI = !!process.env.HIZLI;
+if (HIZLI) await p.addInitScript(() => { Object.defineProperty(window, 'S3D', { get() { return undefined }, set() { } }); });const errors = [];p.on('pageerror', e => errors.push(String(e)));p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 await p.addInitScript(() => { window.__noRnd = 1; window.__noTitle = 1; window.__allTabs = 1; });
 await p.goto('file://' + path.resolve(html));await p.waitForTimeout(900);
 const found = new Map();
@@ -13,7 +15,7 @@ async function grab(tag) { const t = await p.evaluate(() => { const vis = e => e
     for (const id of ['hud', 'tabs', 'pbox', 'skills', 'hitRow', 'top', 'sheet', 'toasts', 'bgInfo', 'banner', 'title']) { const e = document.getElementById(id); if (vis(e)) parts.push(e.innerText); }
     const sc = document.querySelector('.scr.on'); if (sc) parts.push(sc.innerText); return parts.join('\n'); });
   for (const line of t.split('\n')) { const l = line.trim(); if (l && TRW.test(l)) { if (!found.has(l)) found.set(l, tag); } } }
-const sh = n => p.screenshot({ path: path.join(out, 'en-' + n + '.png') });
+const sh = n => HIZLI ? Promise.resolve() : p.screenshot({ path: path.join(out, 'en-' + n + '.png') });
 await p.evaluate(() => { ACT.pickCls('war'); Q.length = 0; closeSheet(); S.lvl = 45; S.pts = 6; S.gold = 5e6; S.gems = 900; S.ess = 500; S.potions = 5; S.tot.boss = 9; S.reb.n = 1; S.reb.souls = 40;
   for (const sl of SLOTS) { const it = makeItem(60, 3, sl.k); S.eq[sl.k] = it; } for (let i = 0; i < 8; i++) S.inv.push(makeItem(55, i % 4)); S.pets.wolf = 12; S.pets.owl = 5; S.pet = 'wolf'; S.runes = { 'atk:2': 3, 'crit:1': 4 };
   S.maxF = ZONES.map((_, i) => i < 3 ? 30 : i === 3 ? 12 : 0); S.zone = 1; S.floors[1] = 14; S.bst = { 'Boz Kurt': 60, 'Yaban Domuzu': 12 }; calc(); S.hp = P.hp; setStage(); renderSkillBar(); spawn(); updAll(); });

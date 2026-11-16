@@ -1056,5 +1056,6 @@ window.EN_DICT={
 "Seviye {0}": "Level {0}",
 "Yeni bölge: {0}": "New region: {0}",
 "Canavarın adına dokun: gücünü ve özelliklerini gör": "Tap the monster's name to see its power and traits",
-"Buraya dokun: bütün istatistiklerin ve etkin güçlerin": "Tap here: all your stats and active powers"
+"Buraya dokun: bütün istatistiklerin ve etkin güçlerin": "Tap here: all your stats and active powers",
+"dokun · tamam": "tap · got it"
 };
