@@ -462,6 +462,16 @@ check(await p.evaluate(o => !fateOn && !dead && S.fate.best >= Math.max(o.best, 
 await p.evaluate(() => ACT.fateDone()); await waitFor(() => M && !M.dead && !M.fate, 4000);
 check(await p.evaluate(() => !busyMode() && !M.fate && document.getElementById('fateBar').innerHTML === ''), 'kader sonrası normale dönülmedi');
 await p.evaluate(() => { S.autoAtk = true; });
+// ---- v18: haftalık etkinlik ve unvanlar ----
+await clear();
+check(await p.evaluate(() => { const g0 = S.gems; S.wev = { wk: wkNo() - 1, tok: 30, cl: [] }; weekCheck(); return S.wev.wk === wkNo() && S.wev.tok === 0 && S.gems === g0 + 15; }), 'hafta dönümü hatalı');
+check(await p.evaluate(() => { S.wev.tok = 50; ACT.wevGet('0'); ACT.wevGet('5'); const ok = S.wev.cl.includes(0) && !S.wev.cl.includes(5); closeSheet(); return ok; }), 'etkinlik ödülü alınamadı');
+check(await p.evaluate(() => { const t = S.wev.tok; wevAdd(2); return S.wev.tok === t + 2 && !!curEv() && typeof evIs('gold') === 'boolean'; }), 'jeton eklenmedi');
+await p.click('#tabs [data-v=adv]'); await p.waitForTimeout(200); await shot('100-etkinlik-kart');
+check(await p.evaluate(() => /HAFTANIN ETKİNLİĞİ/i.test(document.getElementById('s-adv').innerText)), 'etkinlik kartı yok');
+check(await p.evaluate(() => { S.maxF[1] = Math.max(1, S.maxF[1]); titleCheck(); ACT.titleSet('orman'); updHud(); const ok = S.titles.orman === 1 && S.title === 'orman' && /Orman Fatihi/.test(document.getElementById('hName').innerText); closeSheet(); return ok; }), 'unvan hatalı');
+await p.evaluate(() => { ACT.titles(); }); await p.waitForTimeout(200); await shot('101-unvanlar'); await p.evaluate(() => closeSheet()); await clear();
+await p.click('#tabs [data-v=battle]');
 // bozuk kayıt: oyun açılmalı, bozuk veri saklanmalı
 const good = await p.evaluate(() => { save(true); const g = localStorage.getItem(SAVE_KEY); save = () => {}; localStorage.setItem(SAVE_KEY, '{bozuk'); return g; });
 await p.reload(); await p.waitForTimeout(600);
