@@ -134,7 +134,7 @@ await shot('40a-oto-acildi'); await clear();
 check(await p.evaluate(() => aaOpen() && S.autoAtk), 'oto saldırı açılmadı');
 await p.evaluate(() => { ACT.zone('0'); S.floors[0] = 3; S.kills = 0; spawn(); M.int = 1e9; M.max = M.hp = 1e9; S.autoSk = true; R.cd = [0, 0, 0, 0]; closeSheet(); });
 await p.waitForTimeout(2500);
-check(await p.evaluate(() => M.hp < 1e9 && S.tot.skills > 0), 'oto saldırı/oto yetenek vurmadı');
+check(await p.evaluate(() => M.hp < 1e9 && S.tot.skills > 0), 'oto saldırı/oto yetenek vurmadı: ' + await p.evaluate(() => JSON.stringify({ hp: M.hp, sk: S.tot.skills, dead, fr: R.frozen, pa: paused(), sh: document.getElementById('sheetBg').className, tx: document.getElementById('sheet').innerText.slice(0, 60), tab, title: titleOn })));
 await shot('40-oto-saldiri');
 await p.evaluate(() => { ACT.aa(); }); await p.waitForTimeout(300); await shot('40b-oto-hiz');
 await p.evaluate(() => { ACT.aaTog(); }); check(await p.evaluate(() => !S.autoAtk), 'oto saldırı kapatılamadı');
@@ -173,7 +173,7 @@ await p.click('#tabs [data-v=battle]');
 await p.evaluate(() => { S.zone = 0; S.maxF[0] = 30; S.floors[0] = 20; S.kills = 0; setStage(); spawn(); M.int = 1e9; M.max = M.hp = 1e12; });
 await p.waitForTimeout(900); await shot('28-zamanli-boss');
 await p.evaluate(() => { M.timer = 120; }); await waitFor(() => /Süre doldu/.test(document.getElementById('sheet').innerText), 5000);
-check(await p.evaluate(() => /Süre doldu/.test(document.getElementById('sheet').innerText) && S.floors[0] === 19), 'boss süresi dolunca kat geri gitmedi');
+check(await p.evaluate(() => /Süre doldu/.test(document.getElementById('sheet').innerText) && S.floors[0] === 19), 'boss süresi dolunca kat geri gitmedi: ' + await p.evaluate(() => JSON.stringify({ f: S.floors[0], tx: document.getElementById('sheet').innerText.slice(0, 60), dead, t: M.timer, fr: R.frozen })));
 await shot('29-boss-sure-doldu'); await clear();
 
 // boss arenası

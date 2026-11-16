@@ -958,5 +958,22 @@ window.EN_DICT={
 " kupa</p></div>": " trophies</p></div>",
 " saat</b></div></div></div>": " hours</b></div></div></div>",
 " puan</h3><div class=\"card\">": " pts</h3><div class=\"card\">",
-" hak</h3>": " entries/day</h3>"
+" hak</h3>": " entries/day</h3>",
+"Kök Kalkanı": "Root Shield",
+"Kalkanı kır!": "Break the shield!",
+"Kan Ayini": "Blood Ritual",
+"İyileşiyor, sert vur!": "Healing, hit hard!",
+"Çok hızlı saldırıyor!": "Attacking very fast!",
+"Buz Zinciri": "Ice Chains",
+"Dondun! Kırmak için dokun": "Frozen! Tap to break free",
+"Lav Zırhı": "Lava Armor",
+"Vampir Ayini": "Vampire Ritual",
+"Şimşek Öfkesi": "Lightning Fury",
+"Hiçlik Zinciri": "Void Chains",
+"🧊 BUZ KIRILDI!": "🧊 ICE SHATTERED!",
+"🧊 DONDUN!": "🧊 FROZEN!",
+"Buzu kırmak için 6 kez dokun": "Tap 6 times to break the ice",
+"Savaş artık daha zorlu!": "Battles are tougher now!",
+"Hazırım!": "I'm ready!",
+"💀 Canavarlar daha dayanıklı ve daha sert vuruyor; savunma hâlâ çok işe yarıyor ama canavarı zararsız yapmıyor.<br>👑 Boss'lar gerçek bir sınav: her bölge boss'u canı azalınca özel bir hamle yapıyor (kalkan, iyileşme ayini, çılgınlık, dondurma).<br>🧊 Dondurulursan ekrana 6 kez dokunup buzu kır!<br>💡 Zorlanırsan: eşyalarını geliştir, set topla, yeteneklerini güçlendir ya da Yeniden Doğuş yap.": "💀 Monsters are tougher and hit harder; defense still helps a lot, but it no longer makes monsters harmless.<br>👑 Bosses are a real test: each region boss uses a special move when its HP drops (shield, healing ritual, frenzy, freeze).<br>🧊 If you get frozen, tap the screen 6 times to break the ice!<br>💡 Struggling? Upgrade your gear, collect sets, power up your skills or Rebirth."
 };
