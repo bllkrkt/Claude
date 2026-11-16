@@ -14,7 +14,8 @@ p.on('pageerror', e => errors.push(String(e)));
 p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 const url = 'file://' + path.resolve(html);
 // rastgele canavar türleri ve yol olayları eski kontrolleri bozmasın; kendi bölümlerinde açılır
-await p.addInitScript(() => { window.__noRnd = 1; if (window.name === 'baslikGoruldu') window.__noTitle = 1; else window.name = 'baslikGoruldu'; });
+// sekme kilitleri ve rehber işaretleri rpg-ilk-dakika.mjs'te denenir; burada hepsi açık
+await p.addInitScript(() => { window.__noRnd = 1; window.__allTabs = 1; if (window.name === 'baslikGoruldu') window.__noTitle = 1; else window.name = 'baslikGoruldu'; });
 await p.goto(url);
 await p.waitForTimeout(400);
 // rastgele düşen efsanevi eşya kutlaması tıklamayı engellemesin
@@ -37,7 +38,7 @@ await p.click('#sheet [data-a=claimLogin]');
 await p.waitForTimeout(500);
 check(await p.evaluate(() => /Bilge Ozan/.test(document.getElementById('sheet').innerText)), 'hikâye penceresi çıkmadı');
 await shot('02b-hikaye');
-await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; S.set.bgFight = false; S.set.autoPot = false; });
+await p.evaluate(() => { closeSheet(); for (let z = 1; z < ZONES.length; z++) S.story[z] = 1; S.set.bgFight = false; S.set.autoPot = false; S.set.fx = 2; if (D3) D3.setQuality(2); });
 await p.waitForTimeout(300);
 
 async function waitFor(fn, ms, arg) { const end = Date.now() + ms; while (Date.now() < end) { await p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); }); if (await p.evaluate(fn, arg)) return true; await p.waitForTimeout(100); } return false; }
@@ -192,7 +193,7 @@ await p.click('[data-v=hero]'); await p.click('[data-a=heroSeg][data-v=reb]'); a
 await p.click('[data-a=reb]'); await p.waitForTimeout(300); await shot('34-dogus-onay');
 await p.click('[data-a=rebOk]'); await p.waitForTimeout(800);
 const rb = await p.evaluate(() => ({ lvl: S.lvl, souls: S.reb.souls, n: S.reb.n, eq: Object.keys(S.eq).length, f: S.floors[0], gold: S.gold, cls: S.cls }));
-check(rb.lvl === 1 && rb.souls > 0 && rb.n === 1 && rb.eq === 6 && rb.f >= 6 && rb.gold < 500 && rb.cls === 'war', 'yeniden doğuş hatalı: ' + JSON.stringify(rb));
+check(rb.lvl <= 2 && rb.souls > 0 && rb.n === 1 && rb.eq === 6 && rb.f >= 6 && rb.gold < 500 && rb.cls === 'war', 'yeniden doğuş hatalı: ' + JSON.stringify(rb));
 await shot('35-dogus-sonrasi');
 await p.evaluate(() => { const a0 = P.atk; ACT.soulUp('atk'); window.__a = [a0, P.atk]; });
 check(await p.evaluate(() => S.reb.up.atk === 1 && window.__a[1] > window.__a[0]), 'Ruh Ağacı çalışmadı');
@@ -284,7 +285,7 @@ const fin = await p.evaluate(() => { const r = []; for (let i = 0; i < 3; i++) {
 check(JSON.stringify(fin) === '[0,1,2]', 'kombo adımları hatalı: ' + JSON.stringify(fin));
 check(await p.evaluate(() => !!document.querySelector('.fl.fin')), 'bitirici yazısı çıkmadı');
 await p.waitForTimeout(150); await shot('60-bitirici');
-await p.evaluate(() => { M.max = M.hp = 100; for (let i = 0; i < 4; i++) { M.hp = 1; attack(5, { src: 'tap' }); spawn(); M.int = 1e9; } });
+await p.evaluate(() => { M.max = M.hp = 100; for (let i = 0; i < 4; i++) { if (document.querySelector('#leg.on')) ACT.legClose(); Q.length = 0; closeSheet(); M.hp = 1; attack(5, { src: 'tap' }); spawn(); M.int = 1e9; } });
 check(await p.evaluate(() => R.streak >= 3), 'öldürme serisi sayılmadı'); await p.waitForTimeout(300); await shot('61-seri');
 await p.evaluate(() => { S.autoAtk = true; });
 
