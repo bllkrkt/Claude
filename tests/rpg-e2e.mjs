@@ -8,13 +8,13 @@ const { chromium } = require('playwright');
 const [html, out = '.'] = process.argv.slice(2);
 const errors = [];
 const b = await chromium.launch();
-const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true, locale: 'tr-TR' });
 const p = await ctx.newPage();
 p.on('pageerror', e => errors.push(String(e)));
 p.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 const url = 'file://' + path.resolve(html);
 // rastgele canavar türleri ve yol olayları eski kontrolleri bozmasın; kendi bölümlerinde açılır
-await p.addInitScript(() => { window.__noRnd = 1; });
+await p.addInitScript(() => { window.__noRnd = 1; if (window.name === 'baslikGoruldu') window.__noTitle = 1; else window.name = 'baslikGoruldu'; });
 await p.goto(url);
 await p.waitForTimeout(400);
 // rastgele düşen efsanevi eşya kutlaması tıklamayı engellemesin
@@ -24,6 +24,10 @@ p.click = async (sel, o = {}) => { await _leg(); try { return await _click(sel, 
 const shot = n => p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
 const check = (c, msg) => { if (!c) errors.push(msg); };
 check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
+// açılış ekranı: ilk açılışta görünür, oyun durur, Oyna'ya basınca kalkar
+check(await p.evaluate(() => titleOn && paused() && !document.querySelector('#sheetBg.on') && LANG === 'tr'), 'açılış ekranı hatalı');
+await shot('00-acilis'); await p.click('#tPlay'); await p.waitForTimeout(700);
+check(await p.evaluate(() => !titleOn && !!document.querySelector('#sheet [data-a=pickCls]')), 'Oyna sonrası karşılama çıkmadı');
 await shot('01-tanitim');
 await p.click('[data-a=pickCls][data-v=war]');
 await p.waitForTimeout(500);

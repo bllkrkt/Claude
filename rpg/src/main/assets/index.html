@@ -291,13 +291,39 @@ input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
 #vigS{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 85% 75% at 50% 52%,transparent 55%,#0008 100%),linear-gradient(#0003,transparent 22%,transparent 80%,#0005)}
 #mBar.shd{box-shadow:0 0 0 2px #6fc3ff,0 0 14px #6fc3ff}#mBar.shd .fg{filter:saturate(.4) brightness(.8)}#mBar.hl{box-shadow:0 0 0 2px #3ddc84,0 0 14px #3ddc84}
 .boon{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:14px;margin-top:10px;border-radius:18px;border:1.5px solid #7b3df088;background:linear-gradient(135deg,#2b1d52,#1e2136 75%);color:inherit;font:inherit}.boon i{font-style:normal;font-size:34px}.boon b{display:block;font-size:15.5px;color:#e6d8ff}.boon small{color:#b9b3d6;font-size:12.5px}.boon em{font-style:normal;margin-left:auto;color:var(--gold);font-weight:800;font-size:12px;white-space:nowrap}
+#title{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(34px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));text-align:center;overflow:hidden;
+  background:radial-gradient(ellipse 110% 60% at 50% 28%,#3b2f7ad9,#14123ae0 55%,#07081afa 100%);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+#title.on{display:flex}#title.out{animation:tOut .5s ease forwards;pointer-events:none}@keyframes tOut{to{opacity:0;transform:scale(1.08)}}
+#title .tray{position:absolute;left:50%;top:26%;width:900px;height:900px;margin:-450px 0 0 -450px;background:repeating-conic-gradient(from 0deg,#ffcf4a14 0 7deg,transparent 7deg 20deg);animation:tSpin 40s linear infinite;pointer-events:none;-webkit-mask:radial-gradient(circle,#000 0,transparent 62%);mask:radial-gradient(circle,#000 0,transparent 62%)}
+@keyframes tSpin{to{transform:rotate(360deg)}}
+#tEmb{position:absolute;inset:0;pointer-events:none}#tEmb i{position:absolute;bottom:-10px;width:5px;height:5px;border-radius:50%;background:#ffb347;box-shadow:0 0 8px #ff9a1f;animation:tEmber linear infinite;opacity:0}
+@keyframes tEmber{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(-100vh) translateX(30px);opacity:0}}
+.tlang{position:absolute;top:calc(12px + env(safe-area-inset-top));right:14px;display:flex;border:1px solid var(--line2);border-radius:99px;overflow:hidden;z-index:2}.tlang button{padding:6px 12px;font:800 12px inherit;color:var(--mut);background:#0006}.tlang button.on{background:var(--gold);color:#241a00}
+.ttop{position:relative;z-index:1;margin-top:4vh}.temb{width:118px;height:118px;filter:drop-shadow(0 6px 24px #ffcf4a66);animation:tFloat 3.6s ease-in-out infinite}@keyframes tFloat{50%{transform:translateY(-8px)}}
+.tname{margin:10px 0 0;line-height:.95;font-weight:800;letter-spacing:6px}.tname span{display:block;font-size:46px;background:linear-gradient(#fff6d0,#ffcf4a 55%,#e08a1c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #6b3a00) drop-shadow(0 0 22px #ff9a1f66)}
+.tname span+span{font-size:38px;letter-spacing:10px}.tsub{margin-top:10px;color:#cfc8ff;font-weight:700;letter-spacing:3px;text-transform:uppercase;font-size:12px;opacity:.85}
+.tmid{position:relative;z-index:1;width:100%;max-width:360px}.tcard{display:flex;gap:12px;align-items:center;text-align:left;padding:12px 14px;border-radius:18px;background:#0d0f24b3;border:1px solid var(--line2);backdrop-filter:blur(6px)}.tcard .e{font-size:38px}.tcard b{font-size:16px}.tcard small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px}
+.tbot{position:relative;z-index:1;width:100%;max-width:360px}.tplay{width:100%;height:64px;font-size:22px;letter-spacing:3px;background:var(--hot);border:0;box-shadow:0 6px 0 #8a1c2c,0 10px 30px #f0364f66;animation:tPulse 1.8s ease-in-out infinite}@keyframes tPulse{50%{box-shadow:0 6px 0 #8a1c2c,0 10px 44px #ff9a3daa}}
+.tver{margin-top:12px;color:var(--mut);font-size:11.5px;opacity:.8}
+body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
+.lic{white-space:pre-wrap;font:11px/1.45 ui-monospace,monospace;background:#0006;border-radius:12px;padding:10px;max-height:240px;overflow:auto;color:#c9cbe6}
 </style>
 </head>
 <body>
+<div id="title"><div class="tray"></div><div id="tEmb"></div>
+  <div class="tlang"><button data-a="lang" data-v="tr">TR</button><button data-a="lang" data-v="en">EN</button></div>
+  <div class="ttop"><svg class="temb" viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".5" stop-color="#ffcf4a"/><stop offset="1" stop-color="#d9861a"/></linearGradient><linearGradient id="ts" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3f7a"/><stop offset="1" stop-color="#1a1c38"/></linearGradient></defs>
+    <path d="M60 8 L102 22 L98 64 Q92 94 60 112 Q28 94 22 64 L18 22 Z" fill="url(#ts)" stroke="url(#tg)" stroke-width="5"/>
+    <g stroke="url(#tg)" stroke-width="6" stroke-linecap="round"><path d="M34 34 L86 86"/><path d="M86 34 L34 86"/></g>
+    <g fill="url(#tg)"><rect x="26" y="78" width="18" height="6" rx="3" transform="rotate(-45 35 81)"/><rect x="76" y="78" width="18" height="6" rx="3" transform="rotate(45 85 81)"/></g>
+    <circle cx="60" cy="60" r="9" fill="#ff5263" stroke="url(#tg)" stroke-width="3"/></svg>
+    <h1 class="tname"><span>EFSANE</span><span>AVCISI</span></h1><div class="tsub" id="tSub"></div></div>
+  <div class="tmid" id="tCard"></div>
+  <div class="tbot"><button class="btn tplay" data-a="titleGo" id="tPlay"></button><div class="row" style="margin-top:10px"><button class="btn grow" data-a="settings" id="tSet"></button><button class="btn grow" data-a="about" id="tAbout"></button></div><div class="tver" id="tVer"></div></div></div>
 <div id="app">
   <header id="hud">
     <div class="ava" id="hAva"><div id="hCls">🤺</div><b>Sv <span id="hLv">1</span></b></div>
-    <div class="hmid"><div class="t1" id="hName">Kahraman</div><div class="t2">⚡ Güç <b id="hPow">0</b> · XP <span id="hXpT"></span></div></div>
+    <div class="hmid"><div class="t1" id="hName">Kahraman</div><div class="t2">⚡ <i data-t style="font-style:normal">Güç</i> <b id="hPow">0</b> · XP <span id="hXpT"></span></div></div>
     <div class="pills"><div class="pill g">💰 <span id="hGold">0</span></div><div class="pill d">💎 <span id="hGem">0</span></div></div>
     <button class="gear" data-a="settings" aria-label="Ayarlar">⚙️</button>
   </header>
@@ -333,7 +359,7 @@ input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
       </div>
       <div id="pbox"><div class="php"><i id="pHp"></i><span id="pHpT"></span></div><div id="pSt"></div></div>
       <div id="skills"></div>
-      <div id="hitRow"><div id="autoCol"><button id="aaBtn" data-a="aa">⚔️ OTO</button><button id="asBtn" data-a="as">✨ OTO</button></div><button id="bHit"><span>⚔️</span>VUR</button></div>
+      <div id="hitRow"><div id="autoCol"><button id="aaBtn" data-a="aa">⚔️ OTO</button><button id="asBtn" data-a="as">✨ OTO</button></div><button id="bHit"><span>⚔️</span><b data-t style="font-weight:inherit">VUR</b></button></div>
     </section>
     <section id="s-inv" class="scr"></section>
     <section id="s-hero" class="scr"></section>
@@ -343,12 +369,12 @@ input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
   </main>
   <div id="bgInfo" data-a="tab" data-v="battle" hidden></div>
   <nav id="tabs">
-    <button data-a="tab" data-v="battle" class="on"><span>⚔️</span><small>Savaş</small></button>
-    <button data-a="tab" data-v="inv"><span>🎒</span><small>Çanta</small><i class="dot" id="dInv" hidden></i></button>
-    <button data-a="tab" data-v="hero"><span id="tabCls">🤺</span><small>Kahraman</small><i class="dot" id="dHero" hidden></i></button>
-    <button data-a="tab" data-v="adv"><span>🏰</span><small>Macera</small><i class="dot" id="dAdv" hidden></i></button>
-    <button data-a="tab" data-v="quest"><span>📜</span><small>Görev</small><i class="dot" id="dQuest" hidden></i></button>
-    <button data-a="tab" data-v="shop"><span>🏪</span><small>Dükkan</small></button>
+    <button data-a="tab" data-v="battle" class="on"><span>⚔️</span><small data-t>Savaş</small></button>
+    <button data-a="tab" data-v="inv"><span>🎒</span><small data-t>Çanta</small><i class="dot" id="dInv" hidden></i></button>
+    <button data-a="tab" data-v="hero"><span id="tabCls">🤺</span><small data-t>Kahraman</small><i class="dot" id="dHero" hidden></i></button>
+    <button data-a="tab" data-v="adv"><span>🏰</span><small data-t>Macera</small><i class="dot" id="dAdv" hidden></i></button>
+    <button data-a="tab" data-v="quest"><span>📜</span><small data-t>Görev</small><i class="dot" id="dQuest" hidden></i></button>
+    <button data-a="tab" data-v="shop"><span>🏪</span><small data-t>Dükkan</small></button>
   </nav>
 </div>
 <div id="vig"></div>
@@ -363,6 +389,29 @@ input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
 <script>
 'use strict';
 /* ======================= VERİ ======================= */
+const VER='12.0';let LANG='tr',titleOn=false;
+/* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
+const EN={'Savaş':'Battle','Çanta':'Bag','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
+  'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
+  'Orman':'Forest','Mağara':'Cave','Çöl':'Desert','Buzul':'Glacier','Volkan':'Volcano','Karanlık Kale':'Dark Castle','Gök Tapınağı':'Sky Temple','Hiçlik':'The Void',
+  '⚙️ Ayarlar':'⚙️ Settings','🔊 Ses açık':'🔊 Sound on','🔇 Ses kapalı':'🔇 Sound off','📳 Titreşim açık':'📳 Vibration on','📴 Titreşim kapalı':'📴 Vibration off',
+  '🧊 3B grafik açık':'🧊 3D graphics on','🧊 3B açık ama bu cihaz desteklemiyor':'🧊 3D on, but this device does not support it','🖼️ 2B grafik (yavaş telefonlar için)':'🖼️ 2D graphics (for slow phones)',
+  '🎵 Müzik açık':'🎵 Music on','🎵 Müzik kapalı':'🎵 Music off','🔊 Efekt sesi':'🔊 Effects','🎵 Müzik sesi':'🎵 Music','Görüntü ve oynanış':'Graphics and gameplay',
+  '✨ Efekt yoğunluğu: {0}':'✨ Effect quality: {0}','Düşük (en hızlı)':'Low (fastest)','Orta':'Medium','Yüksek':'High',
+  '⚡ Ekran parlaması açık':'⚡ Screen flashes on','⚡ Ekran parlaması kapalı':'⚡ Screen flashes off','⚔️ Menüdeyken savaş sürer':'⚔️ Keep fighting in menus','⏸️ Menüdeyken savaş durur':'⏸️ Pause fighting in menus',
+  '🧪 Oto iksir açık (can %30 altına inince)':'🧪 Auto potion on (below 30% health)','🧪 Oto iksir kapalı':'🧪 Auto potion off','💾 Haftalık otomatik yedek açık':'💾 Weekly auto backup on','💾 Otomatik yedek kapalı':'💾 Auto backup off',
+  'İstatistikler':'Statistics','☠️ Öldürülen':'☠️ Kills','👑 Boss':'👑 Bosses','💀 Elit':'💀 Elites','✨ Efsanevi':'✨ Legendaries','🎯 Kritik':'🎯 Crits','👆 Dokunuş':'👆 Taps','🔥 En iyi kombo':'🔥 Best combo','⚒️ En iyi +':'⚒️ Best +','🎁 Sandık':'🎁 Chests','💰 Kazanılan':'💰 Gold earned',
+  '💾 Kayıt yedeği':'💾 Save backup','🗑️ Sıfırla':'🗑️ Reset','Kapat':'Close','ℹ️ Hakkında':'ℹ️ About','Dil':'Language',
+  '▶ OYNA':'▶ PLAY','▶ DEVAM ET':'▶ CONTINUE','Bir efsane doğuyor':'A legend is born','İnternet gerekmez':'No internet needed','Ekrana dokun, maceraya başla':'Tap to begin your adventure',
+  'Sürüm {0}':'Version {0}','Tek elle oynanan, internetsiz bir aksiyon RPG.':'A one-handed, fully offline action RPG.',
+  'Gizlilik':'Privacy','Oyun internete hiç bağlanmaz ve hiçbir kişisel veri toplamaz. İlerlemen yalnızca bu cihazda saklanır.':'The game never connects to the internet and collects no personal data. Your progress is stored only on this device.',
+  'Android\'in kendi yedekleme özelliği açıksa telefonun, uygulama verilerini Google hesabına yedekleyebilir.':'If Android\'s own backup is turned on, your phone may back up app data to your Google account.',
+  'Yapım':'Credits','Bütün 3B modeller, efektler, sesler ve müzik oyunun kendi kodunda üretilir.':'All 3D models, effects, sounds and music are generated by the game\'s own code.',
+  'Açık kaynak lisansları':'Open source licenses','Simgeler cihazın kendi emoji yazı tipiyle çizilir.':'Icons are drawn with your device\'s own emoji font.','📄 Lisans metinlerini göster':'📄 Show license texts',
+  'Lisans dosyası bu sürümde okunamadı.':'The license file could not be read in this version.','English çeviri sürüyor: bazı yazılar şimdilik Türkçe.':'English translation in progress: some texts are still in Turkish.'};
+const T=(s,...a)=>{let r=(LANG==='en'&&EN[s])||s;for(let i=0;i<a.length;i++)r=r.split('{'+i+'}').join(a[i]);return r};
+const detLang=()=>{try{return /^tr/i.test(navigator.language||'tr')?'tr':'en'}catch(e){return 'tr'}};
+function applyLang(){LANG=S.set.lang==='en'?'en':'tr';document.documentElement.lang=LANG;document.querySelectorAll('[data-t]').forEach(e=>{if(e.dataset.tr==null)e.dataset.tr=e.textContent;e.textContent=T(e.dataset.tr)})}
 let fateOn=false,FB={},fateF=1,TRAITS=!window.__noRnd;
 const invMax=()=>50+(S.invX||0);
 const SAVE_KEY='efsane-avcisi-v1',INV_MAX=50,ZF=30,KPF=5,UPMAX=15,OFF_CAP=8*3600e3;
@@ -576,7 +625,7 @@ function dur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h?h+' sa
 function fresh(){return {v:2,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
   zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSp:1,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
   cls:null,skl:[1,1,1,1],pets:{},pet:null,ach:{},bossFirst:{},daily:{day:'',claimed:false,streak:0,last:'',q:[],bonus:false},
-  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,invX:0,fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,fx:2,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
+  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,invX:0,fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,fx:2,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
 let S=fresh();
 /* bozuk kayıt oyunu kilitlemesin: okunamayan kaydı ayrı anahtara sakla, temiz başla */
 function load(){let r=null;try{r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){try{if(r)localStorage.setItem(SAVE_KEY+'-bozuk',r)}catch(x){}S=fresh()}}
@@ -592,7 +641,7 @@ function sanitize(){for(const g of ['st','tot'])for(const k in S[g]){S[g][k]=Mat
   if(!CLS[S.cls])S.cls=null;if(!S.pets||typeof S.pets!=='object')S.pets={};for(const k in S.pets){if(!PET[k])delete S.pets[k];else S.pets[k]=Math.max(1,Math.min(30,S.pets[k]|0))}if(!S.pets[S.pet])S.pet=null;
   if(!S.runes||typeof S.runes!=='object')S.runes={};for(const k in S.runes){const [t,l]=k.split(':');if(!RUNES[t]||!(+l>=1&&+l<=5)||!(S.runes[k]>0))delete S.runes[k];else S.runes[k]=Math.floor(S.runes[k])}
   if(!S.tal||typeof S.tal!=='object')S.tal={};const tk={};TAL.forEach(b=>b.nodes.forEach(n=>tk[n.k]=n.max||5));for(const k in S.tal){if(!tk[k])delete S.tal[k];else S.tal[k]=Math.max(0,Math.min(tk[k],S.tal[k]|0))}
-  for(const k of ['story','ach','bossFirst','skins','bst','zq'])if(!S[k]||typeof S[k]!=='object'||Array.isArray(S[k]))S[k]={};for(const k in S.bst)if(!(S.bst[k]>0))delete S.bst[k];for(const k in S.zq){const q=S.zq[k];if(!q||typeof q!=='object'||!(q.s>=0))delete S.zq[k];else{q.s=q.s|0;q.p=Math.max(0,+q.p||0)}}S.fate.best=Math.max(0,S.fate.best|0);if(![0,1,2,3].includes(S.set.autoJ))S.set.autoJ=0;S.skins.def=1;if(!SKINS.some(k=>k.k===S.skin)||!S.skins[S.skin])S.skin='def';
+  for(const k of ['story','ach','bossFirst','skins','bst','zq'])if(!S[k]||typeof S[k]!=='object'||Array.isArray(S[k]))S[k]={};for(const k in S.bst)if(!(S.bst[k]>0))delete S.bst[k];for(const k in S.zq){const q=S.zq[k];if(!q||typeof q!=='object'||!(q.s>=0))delete S.zq[k];else{q.s=q.s|0;q.p=Math.max(0,+q.p||0)}}S.fate.best=Math.max(0,S.fate.best|0);if(![0,1,2,3].includes(S.set.autoJ))S.set.autoJ=0;if(S.set.lang!=='en'&&S.set.lang!=='tr')S.set.lang='tr';S.skins.def=1;if(!SKINS.some(k=>k.k===S.skin)||!S.skins[S.skin])S.skin='def';
   S.skl=[0,1,2,3].map(i=>Math.max(1,Math.min(20,(Array.isArray(S.skl)?S.skl[i]:1)|0)));
   if(!Array.isArray(S.floors))S.floors=[];if(!Array.isArray(S.maxF))S.maxF=[];S.maxF=ZONES.map((_,i)=>Math.max(i?0:1,S.maxF[i]|0));S.floors=ZONES.map((_,i)=>Math.max(1,Math.min(Math.max(1,S.maxF[i]),S.floors[i]|0)));
   if(!(S.zone>=0&&S.zone<ZONES.length)||!S.maxF[S.zone])S.zone=0;S.zone=S.zone|0;
@@ -917,7 +966,7 @@ function petSkill(){const k=S.pet,p=PET[k],sk=PSK[k];if(!sk||!M||M.dead)return;c
     case'shell':if(!(R.shield>0)||R.shV<40){R.shield=4000;R.shV=40;updBuffs()}break;
     case'heal':{const hh=Math.round(P.hp*.12);S.hp=Math.min(P.hp,S.hp+hh);floatTxt('+'+fmt(hh),'h',h.x+10,h.y-30);updPl();break}
     case'fire':setTimeout(()=>attack(m*4,{src:'pet',pow:1.5}),400);break}}
-const paused=()=>(tab!=='battle'&&(S.set.bgFight===false||busyMode()))||bg||document.hidden||$('sheetBg').classList.contains('on')||$('leg').classList.contains('on');
+const paused=()=>titleOn||(tab!=='battle'&&(S.set.bgFight===false||busyMode()))||bg||document.hidden||$('sheetBg').classList.contains('on')||$('leg').classList.contains('on');
 let lastT=performance.now(),lastWall=Date.now(),dayT=0;
 let keepT=0,potT=0;
 setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=now;music();
@@ -1134,7 +1183,7 @@ const questReady=()=>S.daily.q.filter(q=>!q.c&&q.p>=q.n).length+(S.cls&&!S.daily
 /* ======================= ÇİZİM ======================= */
 function updHud(){$('hLv').textContent=S.lvl;$('hAva').style.setProperty('--p',S.xp/xpNeed(S.lvl)*100);$('hXpT').textContent=fmt(S.xp)+'/'+fmt(xpNeed(S.lvl));
   $('hGold').textContent=fmt(S.gold);$('hGem').textContent=fmt(S.gems);$('hPow').textContent=fmt(cpow());
-  const c=CLS[S.cls];$('hCls').textContent=c?c.e:'❔';$('tabCls').textContent=c?c.e:'🧝';$('hName').textContent=c?c.n:'Kahraman';
+  const c=CLS[S.cls];$('hCls').textContent=c?c.e:'❔';$('tabCls').textContent=c?c.e:'🧝';$('hName').textContent=T(c?c.n:'Kahraman');
   const dot=(id,n)=>{const d=$(id);d.hidden=!n;d.textContent='!'};
   dot('dHero',S.pts+tpFree());dot('dInv',S.inv.filter(it=>power(it)>power(S.eq[it.slot])).length);dot('dQuest',questReady()+achReady());dot('dAdv',S.cls?(S.arena.left===3)+(S.duel.left===DUEL_N)+Object.values(S.dung.left).filter(x=>x===DUNG_N).length:0)}
 function updMon(){if(!M)return;if(M.arena){const k=arenaLvl(),lo=k?arenaTier(k):0,hi=arenaTier(Math.min(6,k+1)),p=k>=6?100:(arenaDmg-lo)/(hi-lo)*100;$('mHp').style.width=p+'%';$('mGh').style.width=p+'%';$('mHpT').textContent='💥 '+fmt(arenaDmg)+' · Kademe '+k+'/6';return}const p=Math.max(0,M.hp/M.max*100)+'%';$('mHp').style.width=p;$('mGh').style.width=p;$('mHpT').textContent=(M.sh>0?'🛡️ '+fmt(M.sh)+' · ':M.hlC>0?'💚 iyileşiyor… ':'')+fmt(Math.max(0,M.hp))+' / '+fmt(M.max);$('mBar').classList.toggle('shd',M.sh>0);$('mBar').classList.toggle('hl',M.hlC>0)}
@@ -1151,7 +1200,7 @@ function updBattle(){const z=ZONES[S.zone],f=S.floors[S.zone];
 function renderSkillBar(){let h='';const c=CLS[S.cls];
   for(let i=0;i<4;i++){if(!c){h+='<div></div>';continue}const s=c.sk[i],lk=S.lvl<s.lv;
     h+='<button class="skb'+(lk?' lk':'')+'" data-sk="'+i+'" aria-label="'+s.n+'">'+(lk?'🔒':s.i)+'<i class="cd"></i><em>'+(lk?'Sv'+s.lv:s.n.split(' ')[0])+'</em></button>'}
-  h+='<button class="skb" data-sk="p" aria-label="İksir">🧪<i class="cd"></i><em>İksir</em><i class="n">'+S.potions+'</i></button>';
+  h+='<button class="skb" data-sk="p" aria-label="İksir">🧪<i class="cd"></i><em>'+T('İksir')+'</em><i class="n">'+S.potions+'</i></button>';
   $('skills').innerHTML=h;updSkillCd()}
 function updSkillCd(){if(!S.cls)return;document.querySelectorAll('.skb[data-sk]').forEach(b=>{const i=b.dataset.sk;if(i==='p')return;const s=skInfo(+i);
   const p=R.cd[i]>0?R.cd[i]/s.cdMs*100:0;b.querySelector('.cd').style.setProperty('--p',p);b.classList.toggle('rdy',!p&&S.lvl>=s.lv)})}
@@ -1284,7 +1333,7 @@ function go(t){if(t!=='battle'&&tab==='battle'){bgSt={k:0,it:0,b:0};document.que
 function toast(msg,cls){for(const t of $('toasts').children)if(t.textContent===msg)return;const d=document.createElement('div');d.className=cls||'';d.textContent=msg;$('toasts').appendChild(d);setTimeout(()=>d.remove(),2600);while($('toasts').children.length>3)$('toasts').firstChild.remove()}
 /* panel kuyruğu: açılışta birden fazla pencere sırayla gelir */
 let sheetLock=false;const Q=[];
-const busy=()=>$('sheetBg').classList.contains('on')||$('leg').classList.contains('on');
+const busy=()=>titleOn||$('sheetBg').classList.contains('on')||$('leg').classList.contains('on');
 function enqueue(fn){Q.push(fn);if(!busy())nextQ()}
 function nextQ(){if(busy())return;const f=Q.shift();if(f)f()}
 function openSheet(html,lock){sheetLock=!!lock;$('sheet').innerHTML=html;$('sheetBg').classList.add('on');$('sheet').scrollTop=0;$('vig').classList.remove('on')}
@@ -1295,6 +1344,15 @@ function wake(){setTimeout(autoBk,3000);const w=Date.now();if(w-lastWall>120e3)o
 /* ======================= YEDEK ======================= */
 const BR=window.AndroidBridge||null;
 const bkCode=()=>btoa(unescape(encodeURIComponent(JSON.stringify(S))));
+function renderTitle(){applyLang();document.querySelectorAll('.tlang button').forEach(b=>b.classList.toggle('on',b.dataset.v===LANG));
+  $('tSub').textContent=T('Bir efsane doğuyor');$('tPlay').textContent=T(S.cls?'▶ DEVAM ET':'▶ OYNA');$('tSet').textContent=T('⚙️ Ayarlar');$('tAbout').textContent=T('ℹ️ Hakkında');$('tVer').textContent=T('Sürüm {0}',VER)+' · '+T('İnternet gerekmez');
+  const c=CLS[S.cls],z=ZONES[S.zone];$('tCard').innerHTML=c?'<div class="tcard"><span class="e">'+c.e+'</span><div class="grow"><b>'+T(c.n)+' · Sv '+S.lvl+'</b><small>'+z.e+' '+T(z.n)+' · '+T('Kat')+' '+S.floors[S.zone]+' · ⚡ '+fmt(cpow())+'</small></div></div>':'<div class="tsub" style="letter-spacing:1px;text-transform:none;font-size:14px">'+T('Ekrana dokun, maceraya başla')+'</div>'}
+function showTitle(){titleOn=true;document.body.classList.add('ttl');const e=$('title');e.classList.remove('out');e.classList.add('on');
+  const em=$('tEmb');if(!em.children.length)for(let i=0;i<18;i++){const d=document.createElement('i');d.style.left=rnd(2,98)+'%';d.style.animationDuration=rnd(5,11)+'s';d.style.animationDelay=(-rnd(0,10))+'s';const z=rnd(3,7);d.style.width=d.style.height=z+'px';em.appendChild(d)}
+  renderTitle();d3Act()}
+function titleGo(){if(!titleOn)return;titleOn=false;closeSheet();document.body.classList.remove('ttl');const e=$('title');e.classList.add('out');touched=true;
+  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(x){}
+  setTimeout(()=>{e.classList.remove('on','out');$('tEmb').innerHTML=''},520);lastT=performance.now();lastWall=Date.now();d3Act();updAll();setTimeout(nextQ,350)}
 function clearModes(){fateOn=false;FB={};fateBar();evHide();weakHide();if(D3&&D3.setAura)D3.setAura(null);arenaOn=false;dungOn=null;duelOn=null;towerOn=false;dead=false;offPend=null;clearTimeout(spawnT);hideDef();updTimer()}
 function bkFile(auto){const name='EfsaneAvcisi-'+(auto?'oto-':'')+'yedek-'+today()+'.txt',code=bkCode();
   if(BR&&BR.saveFile){let r='';try{r=BR.saveFile(name,code)}catch(e){}if(r){S.lastBk=Date.now();save();if(auto&&BR.pruneBackups)try{BR.pruneBackups('EfsaneAvcisi-oto-yedek-',3)}catch(e){}if(!auto)toast('💾 Yedek kaydedildi: '+r,'big');return true}if(!auto)toast('❌ Yedek dosyası kaydedilemedi');return false}
@@ -1469,18 +1527,30 @@ const ACT={
   offTake:v=>{const o=offPend;if(!o)return;const m=+v;if(m===2){if(S.gems<15)return;S.gems-=15}offPend=null;
     S.gold+=o.gold*m;S.tot.gold+=o.gold*m;S.ess+=o.ess*m;closeSheet();addXp(o.xp*m);toast('+'+fmt(o.gold*m)+' 💰 · +'+fmt(o.xp*m)+' XP','big');fxCoins(8);updAll();save()},
   zone:v=>{v=+v;if(!S.maxF[v]){toast('🔒 Bu bölge henüz kilitli');return}if(dead||busyMode())return;S.zone=v;S.kills=0;closeSheet();setStage();spawn();go('battle');banner(ZONES[v].e+' '+ZONES[v].n.toLocaleUpperCase('tr'),'zone');storyCheck();save()},
-  settings:()=>openSheet('<h2>⚙️ Ayarlar</h2><div class="row"><button class="btn grow" data-a="set" data-v="sound">'+(S.set.sound?'🔊 Ses açık':'🔇 Ses kapalı')+'</button><button class="btn grow" data-a="set" data-v="vib">'+(S.set.vib?'📳 Titreşim açık':'📴 Titreşim kapalı')+'</button></div>'+
-    '<button class="btn w100" style="margin-top:8px" data-a="set3d">'+(S.set.d3?(D3?'🧊 3B grafik açık':'🧊 3B açık ama bu cihaz desteklemiyor'):'🖼️ 2B grafik (yavaş telefonlar için)')+'</button>'+
-    '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="music">'+(S.set.music?'🎵 Müzik açık':'🎵 Müzik kapalı')+'</button>'+
-    '<div class="rng"><span>🔊 Efekt sesi</span><input type="range" min="0" max="100" step="5" value="'+Math.round((S.set.vol==null?.8:S.set.vol)*100)+'" data-rng="vol"><b>%'+Math.round((S.set.vol==null?.8:S.set.vol)*100)+'</b></div>'+
-    '<div class="rng"><span>🎵 Müzik sesi</span><input type="range" min="0" max="100" step="5" value="'+Math.round((S.set.mvol==null?.6:S.set.mvol)*100)+'" data-rng="mvol"><b>%'+Math.round((S.set.mvol==null?.6:S.set.mvol)*100)+'</b></div>'+
-    '<h3>Görüntü ve oynanış</h3><button class="btn w100" data-a="setFx">✨ Efekt yoğunluğu: '+['Düşük (en hızlı)','Orta','Yüksek'][S.set.fx==null?2:S.set.fx]+'</button>'+
-    '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="flash">'+(S.set.flash!==false?'⚡ Ekran parlaması açık':'⚡ Ekran parlaması kapalı')+'</button>'+
-    '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="bgFight">'+(S.set.bgFight!==false?'⚔️ Menüdeyken savaş sürer':'⏸️ Menüdeyken savaş durur')+'</button>'+
-    '<button class="btn w100" style="margin-top:8px" data-a="set" data-v="autoPot">'+(S.set.autoPot!==false?'🧪 Oto iksir açık (can %30 altına inince)':'🧪 Oto iksir kapalı')+'</button>'+
-    (BR?'<button class="btn w100" style="margin-top:8px" data-a="set" data-v="autoBk">'+(S.set.autoBk!==false?'💾 Haftalık otomatik yedek açık':'💾 Otomatik yedek kapalı')+'</button>':'')+
-    '<h3>Macera</h3><div class="card"><div class="dg">'+[['☠️ Öldürülen',S.tot.kills],['👑 Boss',S.tot.boss],['💀 Elit',S.tot.elite],['✨ Efsanevi',S.tot.leg],['🎯 Kritik',S.tot.crits],['👆 Dokunuş',S.tot.taps],['🔥 En iyi kombo',S.tot.maxCombo],['⚒️ En iyi +',S.tot.maxUp],['🎁 Sandık',S.tot.chests],['💰 Kazanılan',S.tot.gold]].map(r=>'<div><span>'+r[0]+'</span><b>'+fmt(r[1])+'</b></div>').join('')+'</div></div>'+
-    '<div class="row"><button class="btn grow" data-a="backup">💾 Kayıt yedeği</button><button class="btn warn grow" data-a="reset">🗑️ Sıfırla</button></div><button class="btn w100" style="margin-top:8px" data-a="close">Kapat</button>'),
+  settings:()=>{const on=(k,a,b)=>T(S.set[k]!==false?a:b),vol=Math.round((S.set.vol==null?.8:S.set.vol)*100),mv=Math.round((S.set.mvol==null?.6:S.set.mvol)*100),bt=(a,v,t,st)=>'<button class="btn w100" style="margin-top:8px" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+'>'+t+'</button>';
+    openSheet('<h2>'+T('⚙️ Ayarlar')+'</h2>'+
+    '<div class="row" style="margin-bottom:8px"><span class="grow" style="font-weight:800">🌐 '+(LANG==='tr'?'Dil / Language':'Language / Dil')+'</span><button class="btn sm" data-a="lang" data-v="tr" style="'+(LANG==='tr'?'border-color:var(--gold);color:var(--gold)':'')+'">Türkçe</button><button class="btn sm" data-a="lang" data-v="en" style="margin-left:6px;'+(LANG==='en'?'border-color:var(--gold);color:var(--gold)':'')+'">English</button></div>'+
+    (LANG==='en'?'<div class="mut" style="font-size:12px;margin:-2px 0 8px">'+T('English çeviri sürüyor: bazı yazılar şimdilik Türkçe.')+'</div>':'')+
+    '<div class="row"><button class="btn grow" data-a="set" data-v="sound">'+T(S.set.sound?'🔊 Ses açık':'🔇 Ses kapalı')+'</button><button class="btn grow" data-a="set" data-v="vib">'+T(S.set.vib?'📳 Titreşim açık':'📴 Titreşim kapalı')+'</button></div>'+
+    bt('set3d','',T(S.set.d3?(D3?'🧊 3B grafik açık':'🧊 3B açık ama bu cihaz desteklemiyor'):'🖼️ 2B grafik (yavaş telefonlar için)'))+
+    bt('set','music',T(S.set.music?'🎵 Müzik açık':'🎵 Müzik kapalı'))+
+    '<div class="rng"><span>'+T('🔊 Efekt sesi')+'</span><input type="range" min="0" max="100" step="5" value="'+vol+'" data-rng="vol"><b>%'+vol+'</b></div>'+
+    '<div class="rng"><span>'+T('🎵 Müzik sesi')+'</span><input type="range" min="0" max="100" step="5" value="'+mv+'" data-rng="mvol"><b>%'+mv+'</b></div>'+
+    '<h3>'+T('Görüntü ve oynanış')+'</h3><button class="btn w100" data-a="setFx">'+T('✨ Efekt yoğunluğu: {0}',T(['Düşük (en hızlı)','Orta','Yüksek'][S.set.fx==null?2:S.set.fx]))+'</button>'+
+    bt('set','flash',on('flash','⚡ Ekran parlaması açık','⚡ Ekran parlaması kapalı'))+bt('set','bgFight',on('bgFight','⚔️ Menüdeyken savaş sürer','⏸️ Menüdeyken savaş durur'))+
+    bt('set','autoPot',on('autoPot','🧪 Oto iksir açık (can %30 altına inince)','🧪 Oto iksir kapalı'))+(BR?bt('set','autoBk',on('autoBk','💾 Haftalık otomatik yedek açık','💾 Otomatik yedek kapalı')):'')+
+    (titleOn?'':'<h3>'+T('İstatistikler')+'</h3><div class="card"><div class="dg">'+[['☠️ Öldürülen',S.tot.kills],['👑 Boss',S.tot.boss],['💀 Elit',S.tot.elite],['✨ Efsanevi',S.tot.leg],['🎯 Kritik',S.tot.crits],['👆 Dokunuş',S.tot.taps],['🔥 En iyi kombo',S.tot.maxCombo],['⚒️ En iyi +',S.tot.maxUp],['🎁 Sandık',S.tot.chests],['💰 Kazanılan',S.tot.gold]].map(r=>'<div><span>'+T(r[0])+'</span><b>'+fmt(r[1])+'</b></div>').join('')+'</div></div>')+
+    '<div class="row" style="margin-top:8px"><button class="btn grow" data-a="backup">'+T('💾 Kayıt yedeği')+'</button>'+(titleOn?'':'<button class="btn warn grow" data-a="reset">'+T('🗑️ Sıfırla')+'</button>')+'</div>'+
+    bt('about','',T('ℹ️ Hakkında'))+'<button class="btn pri w100" style="margin-top:8px" data-a="close">'+T('Kapat')+'</button>')},
+  about:()=>openSheet('<div style="text-align:center"><svg viewBox="0 0 120 120" width="76" height="76">'+$('title').querySelector('svg').innerHTML+'</svg><h2 style="margin:6px 0 2px">Efsane Avcısı</h2><div class="mut">'+T('Sürüm {0}',VER)+'</div><p class="mut" style="margin-top:8px">'+T('Tek elle oynanan, internetsiz bir aksiyon RPG.')+'</p></div>'+
+    '<h3>🔒 '+T('Gizlilik')+'</h3><div class="card" style="font-size:13.5px;line-height:1.6">'+T('Oyun internete hiç bağlanmaz ve hiçbir kişisel veri toplamaz. İlerlemen yalnızca bu cihazda saklanır.')+'<div class="mut" style="margin-top:6px;font-size:12.5px">'+T('Android\'in kendi yedekleme özelliği açıksa telefonun, uygulama verilerini Google hesabına yedekleyebilir.')+'</div></div>'+
+    '<h3>🛠️ '+T('Yapım')+'</h3><div class="card" style="font-size:13.5px;line-height:1.6">'+T('Bütün 3B modeller, efektler, sesler ve müzik oyunun kendi kodunda üretilir.')+'</div>'+
+    '<h3>📜 '+T('Açık kaynak lisansları')+'</h3><div class="card" style="font-size:13px;line-height:1.7"><b>three.js</b> r149 · MIT License<br><span class="mut">Copyright © 2010–2023 three.js authors</span><br><b>Plus Jakarta Sans</b> · SIL Open Font License 1.1<br><span class="mut">Copyright 2020 The Plus Jakarta Sans Project Authors</span><div class="mut" style="margin-top:6px;font-size:12px">'+T('Simgeler cihazın kendi emoji yazı tipiyle çizilir.')+'</div></div>'+
+    '<div id="licBox"></div><button class="btn w100" style="margin-top:8px" data-a="licShow">'+T('📄 Lisans metinlerini göster')+'</button><button class="btn pri w100" style="margin-top:8px" data-a="close">'+T('Kapat')+'</button>'),
+  licShow:()=>{const box=$('licBox');if(!box)return;const get=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.text()}).catch(()=>T('Lisans dosyası bu sürümde okunamadı.'));
+    Promise.all([get('lib/three-LICENSE.txt'),get('fonts/OFL.txt')]).then(([a,b])=>{const e=$('licBox');if(e)e.innerHTML='<div class="lic">three.js\n\n'+esc(a)+'</div><div class="lic" style="margin-top:8px">Plus Jakarta Sans\n\n'+esc(b)+'</div>'})},
+  lang:v=>{S.set.lang=v==='en'?'en':'tr';applyLang();save();renderSkillBar();updAll();if(titleOn)renderTitle();if($('sheetBg').classList.contains('on')&&$('sheet').querySelector('[data-a=lang]'))ACT.settings()},
+  titleGo:()=>titleGo(),
   backup:()=>{const code=bkCode();
     openSheet('<h2>💾 Kayıt yedeği</h2><p class="mut">Bu kodu kopyalayıp bir yere (ör. kendine mesaj) saklarsan, telefon değiştirince ya da oyunu silince ilerlemeni geri yükleyebilirsin.</p><div class="row"><button class="btn ok grow" data-a="bkFile">📁 Dosyaya kaydet</button><button class="btn grow" data-a="bkPick">📂 Dosyadan yükle</button></div><input type="file" id="bkPick" accept=".txt,text/plain,*/*" hidden><div class="mut" style="margin:6px 0 12px;font-size:12px">Dosya telefonun İndirilenler klasörüne yazılır. '+(BR?'Otomatik yedek açıksa haftada bir kendiliğinden kaydedilir.':'')+(S.lastBk?' Son yedek: '+dstr(new Date(S.lastBk)):'')+'</div><p class="mut">Ya da kodu kopyala:</p><textarea id="bkOut" readonly>'+code+'</textarea><button class="btn w100" style="margin:8px 0 16px" data-a="copy">📋 Kodu kopyala</button>'+
      '<p class="mut">Geri yüklemek için kodu buraya yapıştır:</p><textarea id="bkIn" placeholder="Kayıt kodunu yapıştır"></textarea><button class="btn warn w100" style="margin-top:8px" data-a="restore">Kodu yükle (şimdiki kaydın üzerine yazar)</button><button class="btn w100" style="margin-top:8px" data-a="close">Kapat</button>')},
@@ -1497,7 +1567,7 @@ const ACT={
 const bulkF=()=>[i=>!i.lk&&!i.up&&i.r===0,i=>!i.lk&&!i.up&&i.r<=1&&power(i)<=power(S.eq[i.slot]),i=>!i.lk&&!i.up&&i.r<=1];
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.disabled)return;const f=ACT[t.dataset.a];if(f)f(t.dataset.v,t)});
 document.addEventListener('contextmenu',e=>{if(e.target.tagName!=='TEXTAREA')e.preventDefault()});
-window.__onBack=()=>{if($('leg').classList.contains('on')){ACT.legClose();return true}
+window.__onBack=()=>{if(titleOn){if($('sheetBg').classList.contains('on')){closeSheet();return true}return false}if($('leg').classList.contains('on')){ACT.legClose();return true}
   if($('sheetBg').classList.contains('on')){if(!sheetLock)closeSheet();return true}
   if(tab!=='battle'){go('battle');return true}return false};
 
@@ -1515,7 +1585,7 @@ function news8(){S.nv=8;save();openSheet('<div style="text-align:center"><div st
   '⚔️ <b>3\'lü kombo</b>: 3. vuruş güçlü bir BİTİRİCİ<br>🏹 Okçu gerçek ok, 🧙 Büyücü büyü küresi atıyor<br>💥 Vuruşta donma, savrulma, kılıç izi, yeni sesler<br>🪨 Canavarlar parçalanarak ölüyor, boss\'ta ağır çekim<br>🔥 Kombo nidaları ve öldürme serisi bonusu<br>🌳 <b>Ustalık ağacı</b> (Kahraman sekmesi)<br>🗼 <b>Sonsuz Kule</b> (Macera sekmesi)<br>🐾 Yoldaşlara <b>özel yetenek</b><br>🎲 Demirci\'de <b>stat yeniden zar atma</b></div><button class="btn pri w100" data-a="close">Hadi deneyelim!</button>')}
 function news7(){S.nv=7;save();openSheet('<div style="text-align:center"><div style="font-size:56px">🎉</div><h2>Dev güncelleme!</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
   '🏰 <b>Macera sekmesi</b>: Boss Arenası, 3 Zindan, Düello Ligi<br>🛡️ <b>Boss özel saldırıları</b>: uyarı gelince SAVUN\'a bas, karşı saldır!<br>😡 Canı yarıya inen boss <b>öfkelenir</b><br>💀 Elit canavarlara <b>özellik</b>: Zırhlı, Hızlı, Vampir, Dev…<br>🔮 <b>Rün sistemi</b>: eşyalara rün tak, birleştir<br>🧙‍♂️ <b>Hikâye</b> ve boss replikleri<br>🧍 Çanta\'da dönen <b>3B karakter vitrini</b><br>🐛 30. kat boss\'u artık seni sonraki bölgeye geçiriyor</div><button class="btn pri w100" data-a="close">Hadi başlayalım!</button>')}
-load();calc();
+load();calc();applyLang();if(!window.__noTitle){titleOn=true;document.body.classList.add('ttl')}
 if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td');D3.setQuality(S.set.fx==null?2:S.set.fx)}}catch(e){D3=null}}
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
@@ -1523,7 +1593,7 @@ if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
 giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);$('weak').addEventListener('pointerdown',weakHit);$('evBtn').addEventListener('click',evOpen);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
-save(true);setTimeout(autoBk,6000);
+save(true);setTimeout(autoBk,6000);if(!window.__noTitle)showTitle();
 </script>
 </body>
 </html>
