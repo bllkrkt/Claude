@@ -336,6 +336,41 @@ body.ttl #sheetBg{z-index:70}body.ttl #toasts{z-index:71}
 #wave .wv.el{border-color:#c58bff;box-shadow:0 0 8px #a63dff99}#wave .wv i{font-style:normal;line-height:1}
 #wave .wv b{position:absolute;left:3px;bottom:2px;height:3px;max-width:24px;background:linear-gradient(90deg,#ff5263,#ff8a5a);border-radius:2px}
 @keyframes wvIn{from{transform:scale(.4);opacity:0}}
+
+/* ===================== v21 TEMA KATMANI: daha "oyun gibi" arayüz (düzen aynı, sadece görünüm) ===================== */
+:root{--pan:linear-gradient(170deg,#262a48 0%,#1b1e36 55%,#161830 100%);--line:rgba(255,255,255,.075);--line2:rgba(255,214,130,.16)}
+body{background:radial-gradient(ellipse 120% 55% at 50% -12%,#3a2a7a 0,transparent 62%),radial-gradient(ellipse 90% 45% at 100% 110%,#4a1630 0,transparent 60%),radial-gradient(circle at 0% 60%,#10304a55 0,transparent 45%),#090a16}
+.card{position:relative;border:1px solid rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(0,0,0,.35),0 8px 22px #0007}
+.card::before{content:'';position:absolute;left:16px;right:16px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,#ffd98a66,transparent);pointer-events:none}
+h2{letter-spacing:.3px;text-shadow:0 2px 10px #0008}
+h3{display:flex;align-items:center;gap:10px}
+h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,#ffd98a40)}h3::after{background:linear-gradient(90deg,#ffd98a40,transparent)}
+.btn{position:relative;overflow:hidden;background:linear-gradient(#323758,#23263f 60%,#1e2136);border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 4px 0 #0b0c18,0 6px 14px #0006;text-shadow:0 1px 2px #0008}
+.btn::after{content:'';position:absolute;left:8%;right:8%;top:3px;height:38%;border-radius:12px 12px 40% 40%;background:linear-gradient(#ffffff26,#ffffff00);pointer-events:none}
+.btn.pri{background:linear-gradient(#ffb04a,#ff6a3d 45%,#e8334b);box-shadow:inset 0 1px 0 #ffe0a080,0 4px 0 #8a1c2c,0 6px 18px #f0364f55}
+.btn.ok{background:linear-gradient(#5be38f,#2fbf6f 45%,#1b8c4d);box-shadow:inset 0 1px 0 #c8ffd880,0 4px 0 #0e5a30,0 6px 16px #2fbf6f44}
+.btn.gem{background:linear-gradient(#7fe3ff,#3fc9ec 45%,#1f7fb8);box-shadow:inset 0 1px 0 #d8f8ff90,0 4px 0 #134c70,0 6px 16px #3fc9ec44}
+.btn.ess{background:linear-gradient(#c79bff,#a56bff 45%,#6b35c9);box-shadow:inset 0 1px 0 #efe0ff80,0 4px 0 #3d1b7a,0 6px 16px #a56bff44}
+.btn.warn{background:linear-gradient(#8a3345,#6a2836 50%,#4c1c27);border-color:#b04a5e}
+.btn:active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 1px 0 #0b0c18}
+.btn.pri:not(:disabled)::before{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,#ffffff55,transparent);animation:shine 3.2s ease-in-out infinite;pointer-events:none}
+@keyframes shine{0%,60%{left:-60%}100%{left:130%}}
+#hud{background:linear-gradient(#15172ccc,#0f1122aa);border-bottom:1px solid rgba(255,214,130,.12);box-shadow:0 4px 16px #0006}
+.ava{box-shadow:0 0 0 2px #0b0c18,0 0 14px #5ab0ff55}
+.pill{background:linear-gradient(#0a0b18cc,#14162ccc);border:1px solid rgba(255,214,130,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 6px #0006}
+#tabs{background:linear-gradient(#171a32f2,#0c0d1cf8);border-top:1px solid rgba(255,214,130,.16);box-shadow:0 -6px 20px #0008}
+#tabs button.on{background:radial-gradient(ellipse 80% 90% at 50% 100%,#ffcf4a2e,transparent 70%),linear-gradient(#2c3054,#1c1f38);box-shadow:inset 0 -2px 0 #ffcf4a,inset 0 1px 0 rgba(255,255,255,.08)}
+#tabs button.on>span{filter:drop-shadow(0 0 6px #ffcf4a99)}
+.skb{background:radial-gradient(circle at 35% 28%,#4a5090,#232748 62%,#151730);border:2px solid #ffffff2a;box-shadow:inset 0 2px 6px #ffffff18,inset 0 -4px 10px #0008,0 5px 12px #0008}
+.skb.rdy{border-color:#ffd56a;animation:skPulse 1.6s ease-in-out infinite}
+@keyframes skPulse{50%{box-shadow:0 0 18px #ffcf4a99,inset 0 0 10px #ffcf4a44,0 5px 12px #0008}}
+#bHit{box-shadow:inset 0 2px 0 #ffe0a099,inset 0 -6px 14px #8a1c2c88,0 7px 0 #7a1828,0 10px 26px #f0364f66}
+#bHit::after{content:'';position:absolute;top:0;bottom:0;width:30%;left:-40%;background:linear-gradient(100deg,transparent,#ffffff40,transparent);animation:shine 4s ease-in-out infinite;pointer-events:none;border-radius:22px}
+#stage{box-shadow:0 0 0 1px rgba(255,214,130,.14),0 12px 34px #000a,inset 0 0 0 1px #ffffff0a}
+#sheet{border-top:1px solid rgba(255,214,130,.28);box-shadow:0 -14px 40px #000b}
+#sheet::before{content:'';display:block;position:sticky;top:-10px;height:2px;margin:-10px -16px 8px;background:linear-gradient(90deg,transparent,#ffcf4a88,transparent)}
+#toasts>div{border:1px solid rgba(255,214,130,.35)!important;box-shadow:0 6px 18px #000a}
+.zone{box-shadow:inset 0 1px 0 #ffffff30,inset 0 -30px 40px #0006,0 6px 16px #0007}
 </style>
 </head>
 <body>
@@ -813,13 +848,35 @@ let GS=null,GM=null;
 function outS(){if(!GS){GS=AC.createGain();GS.connect(AC.destination)}GS.gain.value=(S.set.vol==null?.8:S.set.vol)*1.25;return GS}
 function outM(){if(!GM){GM=AC.createGain();GM.connect(AC.destination)}GM.gain.value=(S.set.mvol==null?.6:S.set.mvol)*1.7;return GM}
 function tone(f,d,type,vol,mus){try{const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(mus?outM():outS());o.start(t);o.stop(t+d+.02)}catch(e){}}
-function music(){if(!S.set.music||!AC||AC.state!=='running'||bg||document.hidden)return;const now=performance.now();if(now<musNext)return;
-  const z=MUS[S.zone%MUS.length],st=60000/z.tp/2;musNext=now+st;const i=musI++%32,n=z.sc.length;
-  const deg=d=>z.r*Math.pow(2,(z.sc[((d%n)+n)%n]+12*Math.floor(d/n))/12);
-  if(i%8===0)tone(deg(MBASS[(i/8)%4])/2,st*7.6/1000,'sine',.045,1);
-  if(i%4===2)tone(deg(MBASS[Math.floor(i/8)%4]+2),st*1.5/1000,'sine',.014,1);
-  const p=MPAT[(i+(i>=16?5:0))%16];if(p>=0)tone(deg(p+(i>=24?1:0))*2,st*1.9/1000,'triangle',.02,1);
-  if(M&&M.boss&&!M.dead&&i%2===0)tone(z.r/2,.07,'square',.012,1)}
+/* ===== MÜZİK MOTORU: akor yürüyüşü + pad + bas + arpej + bölge melodisi + davul; ses kartı saatine göre zamanlanır ===== */
+const MZ=[{r:196,m:[0,2,4,5,7,9,11],pr:[0,5,3,4],tp:100,ld:'triangle',dr:1},   // Orman: neşeli majör
+  {r:147,m:[0,2,3,5,7,8,10],pr:[0,5,6,4],tp:88,ld:'triangle',dr:1},               // Mağara: minör
+  {r:165,m:[0,1,4,5,7,8,10],pr:[0,1,0,6],tp:96,ld:'sawtooth',dr:2},               // Çöl: doğu esintili
+  {r:220,m:[0,2,3,5,7,9,10],pr:[0,3,6,4],tp:84,ld:'sine',dr:0},                   // Buzul: sakin dorian
+  {r:131,m:[0,1,3,5,7,8,10],pr:[0,1,5,4],tp:116,ld:'sawtooth',dr:2},              // Volkan: ağır ve hızlı
+  {r:139,m:[0,2,3,5,7,8,11],pr:[0,5,3,4],tp:80,ld:'square',dr:1},                 // Kale: harmonik minör
+  {r:262,m:[0,2,4,6,7,9,11],pr:[0,1,4,0],tp:96,ld:'triangle',dr:0},               // Gök: aydınlık lidya
+  {r:110,m:[0,2,3,5,7,8,10],pr:[0,6,5,6],tp:72,ld:'sine',dr:0},                   // Batık Şehir: yavaş, derin
+  {r:117,m:[0,1,3,6,7,8,10],pr:[0,1,5,1],tp:70,ld:'sine',dr:3}];                  // Hiçlik: ürkütücü
+const MEL=MZ.map((_,zi)=>{let sd=zi*9301+49297;const r=()=>(sd=(sd*9301+49297)%233280)/233280,a=[];let d=4;for(let i=0;i<32;i++){if(i%2||r()<.35){a.push(null);continue}d+=Math.round((r()-.5)*3.2);d=Math.max(0,Math.min(9,d));a.push(d)}return a});
+const mdeg=(z,d)=>z.r*Math.pow(2,(z.m[((d%7)+7)%7]+12*Math.floor(d/7))/12);
+function note(f,t,d,type,vol,att,lp){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(vol,t+(att||.01));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  let n=o;if(lp){const fl=AC.createBiquadFilter();fl.type='lowpass';fl.frequency.value=lp;o.connect(fl);n=fl}n.connect(g).connect(outM());o.start(t);o.stop(t+d+.05)}
+function drum(k,t,v){v=v||1;if(k==='k'){const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(42,t+.18);g.gain.setValueAtTime(.075*v,t);g.gain.exponentialRampToValueAtTime(.0001,t+.22);o.connect(g).connect(outM());o.start(t);o.stop(t+.25);return}
+  const sr=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();sr.buffer=noiseBuf();fl.type=k==='h'?'highpass':'bandpass';fl.frequency.value=k==='h'?7000:1800;const d=k==='h'?.035:.13;
+  g.gain.setValueAtTime((k==='h'?.008:.028)*v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);sr.connect(fl).connect(g).connect(outM());sr.start(t,Math.random()*.2);sr.stop(t+d+.02);if(k==='s')note(190,t,.08,'triangle',.012*v)}
+function musStep(t,i,z,zi,boss,calm){const st=60/(z.tp*(boss?1.15:1))/4,bar=Math.floor(i/16)%4,s=i%16,c=z.pr[bar];
+  if(s===0)[0,2,4].forEach(k=>note(mdeg(z,c+k),t,st*15.5,'triangle',.008,.3,1500));                                   // pad
+  if(s===0||s===10||(s===6&&bar%2))note(mdeg(z,c)/2,t,st*(s===0?5:3),'sine',.05,.01,700);                             // bas
+  if(s%2===0&&z.dr!==3){const k=[0,2,4,2,5,4,2,4][(s/2+bar)%8];note(mdeg(z,c+k)*2,t,st*1.6,z.ld,.011,.005,2600)}        // arpej
+  if(bar>=2&&!calm){const md=MEL[zi][i%32];if(md!=null)note(mdeg(z,md)*2,t,st*1.8,z.ld==='sawtooth'?'square':z.ld,.015,.01,3200)} // melodi
+  if(z.dr===3&&s%8===4)note(mdeg(z,c+6)*2,t,st*6,'sine',.01,.4,1200);                                                   // Hiçlik: ürpertici tını
+  if(!calm&&(z.dr||boss)){if(s===0||s===8||(boss&&(s===10||s===14)))drum('k',t,boss?1.2:1);if(s===4||s===12)drum('s',t);if(s%2===1&&(z.dr>=1||boss))drum('h',t)}
+  if(boss&&s%2===0)note(mdeg(z,c)/2,t,st*.9,'sawtooth',.016,.005,520)}                                                   // boss bas eşliği
+let musT=0;
+function music(){if(!S.set.music||!AC||AC.state!=='running'||bg||document.hidden){musT=0;return}const now=AC.currentTime;if(musT<now)musT=now+.05;
+  const zi=titleOn?3:S.zone%MZ.length,z=MZ[zi],boss=!!(M&&M.boss&&!M.dead&&!titleOn&&tab==='battle'),calm=titleOn||tab!=='battle',st=60/(z.tp*(boss?1.15:1))/4;
+  while(musT<now+.2){try{musStep(musT,musI,z,zi,boss,calm)}catch(e){}musT+=st;musI++}}
 let NB=null;
 function noiseBuf(){if(NB)return NB;const n=Math.floor(AC.sampleRate*.4),b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return NB=b}
 function nz(dur,f,q,vol,type,f2){const t=AC.currentTime,sr=AC.createBufferSource(),fl=AC.createBiquadFilter(),g=AC.createGain();sr.buffer=noiseBuf();fl.type=type||'lowpass';fl.frequency.setValueAtTime(f,t);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,t+dur);fl.Q.value=q||1;
@@ -830,15 +887,20 @@ function sfx(k,v){if(!S.set.sound||!AC||AC.state!=='running'||tab!=='battle')ret
   case'swing':nz(.13,2600,2,.05*v,'bandpass',500);break;
   case'arrow':nz(.09,6000,5,.05*v,'bandpass',1500);break;
   case'magic':tone(660,.2,'sine',.03*v);tone(990,.15,'sine',.022*v);nz(.12,4000,3,.03*v,'bandpass',9000);break;
-  case'hit':nz(.07,1900,1,.13*v);thump(170,55,.1,.2*v);break;
+  case'hit':nz(.07,1900,1,.13*v);thump(170,55,.1,.2*v);clsHit(v);break;
   case'crit':nz(.1,3600,1,.15*v);thump(230,55,.15,.25*v);tone(1250,.2,'triangle',.05*v);tone(1880,.14,'sine',.03*v);break;
   case'heavy':nz(.18,1000,1,.2*v);thump(120,32,.28,.32*v);break;
   case'kill':nz(.24,1400,1,.17*v,'lowpass',180);thump(95,28,.32,.28*v);setTimeout(()=>tone(880,.12,'triangle',.04*v),70);setTimeout(()=>tone(1320,.15,'triangle',.04*v),140);break;
   case'block':tone(1500,.3,'square',.035);tone(1532,.3,'square',.035);nz(.16,5200,1,.13,'highpass');thump(320,120,.12,.16);break;
   case'hurt':nz(.12,700,1,.12);thump(150,55,.16,.2);break;
+  case'coin':tone(1568,.08,'sine',.02*v);setTimeout(()=>tone(2093,.12,'sine',.018*v),60);break;
+  case'bossIn':tone(110,1.1,'sawtooth',.03*v);tone(165,1.1,'sawtooth',.022*v);thump(70,30,.9,.25*v);nz(1,300,1,.05*v,'lowpass',1500);break;
   case'phase':thump(90,40,.6,.3*v);nz(.7,300,1,.08*v,'lowpass',2400);setTimeout(()=>tone(220,.5,'sawtooth',.025*v),120);setTimeout(()=>tone(330,.4,'sawtooth',.02*v),260);break}}catch(e){}}
+/* sınıfa göre vuruş tınısı */
+function clsHit(v){switch(S.cls){case'war':tone(1850,.06,'square',.008*v);tone(2470,.05,'square',.006*v);break;case'arc':thump(320,120,.05,.08*v);break;
+  case'mag':tone(1320,.12,'sine',.012*v);tone(1760,.1,'sine',.01*v);break;case'asn':nz(.04,8000,2,.05*v,'highpass');break}}
 /* menülerde de çalan ödül/açılma sesleri */
-function fanfare(k){if(!S.set.sound)return;if(k==='reward')tune([784,988,1175,1568],70,'triangle');else if(k==='unlock'){tune([523,659,784,1047],85,'sine');setTimeout(()=>beep(1568,.4,'sine',.04),360)}}
+function fanfare(k){if(!S.set.sound)return;if(k==='level'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>{beep(f,.22,'triangle',.06);beep(f*1.5,.2,'sine',.025)},i*85));setTimeout(()=>{beep(1047,.5,'sine',.05);beep(1319,.5,'sine',.035);beep(1568,.5,'sine',.03)},360);return}if(k==='reward')tune([784,988,1175,1568],70,'triangle');else if(k==='unlock'){tune([523,659,784,1047],85,'sine');setTimeout(()=>beep(1568,.4,'sine',.04),360)}}
 /* bölgeye göre ara sıra ortam sesi (kuş, damla, rüzgâr, çan, kabarcık…) */
 function amb(){if(!S.set.sound||!AC||AC.state!=='running'||tab!=='battle'||paused())return;try{switch(S.zone){
   case 0:beep(2400,.09,'sine',.012,3000);setTimeout(()=>beep(2700,.08,'sine',.01,3300),130);break;
@@ -927,6 +989,7 @@ function spawn(pre){clearTimeout(spawnT);const z=ZONES[S.zone],f=S.floors[S.zone
   if(!pre||M.hp==null)M.hp=M.max;M.t=M.boss?-1300:0;M.lv=M.fate?fateF:M.tower?towerG(S.tower.best+1):M.duel?duelOn.lvl:M.dung||M.arena?gBest():g;if(M.boss||M.duel){M.spT=M.duel?rnd(5000,7000):rnd(5500,7500);M.tele=0}hideDef();R.last=false;
   R.wkT=0;R.wkN=rnd(5000,8000);weakHide();unfreeze();
   if(D3)D3.spawn(M.n.replace(/^Elit /,''),M.e,{boss:M.boss&&!M.arena,elite:M.elite,arena:M.arena,hero:M.duel?M.cls:null,skin:M.duel?duelOn.sk:null,gear:M.duel?duelOn.gear:null,aura:M.afx?AFX[M.afx[0]].h:null,scale:M.afx&&M.afx.includes('giant')?1.25:1});
+  if(M.zb&&!pre)setTimeout(()=>sfx('bossIn'),200);
   if(D3){if(D3.shieldFx)D3.shieldFx(M.sh>0);if(D3.packCount)D3.packCount(M.pack||0)}
   const el=$('mon');el.textContent=M.e;el.className=(M.boss?'boss ':'')+(M.elite?'elite ':'')+'in';setTimeout(()=>el.classList.remove('in'),350);
   $('mName').innerHTML=(M.fate?T('<span class="tag boss" style="background:#7b3df0">🔮 KADER ')+fateF+'</span>':'')+(M.tr?'<span class="tag" style="background:'+TRT[M.tr].c+'">'+TRT[M.tr].i+' '+TRT[M.tr].n+(M.pack?' <b id="pkN">'+M.pack+'</b>':'')+'</span>':'')+(M.fate?'':M.tower?T('<span class="tag boss">🗼 KAT ')+(S.tower.best+1)+'</span>':M.arena?'<span class="tag boss">ARENA</span>':M.duel?T('<span class="tag elite">DÜELLO</span>'):M.dung?T('<span class="tag elite" style="background:#1f7fb8">ZİNDAN</span>'):M.boss?'<span class="tag boss">BOSS</span>':M.elite?T('<span class="tag elite">ELİT</span>'):'')+esc(tn(M.n))+'<span class="mi">i</span>'+T('<span class="mlv">Sv ')+M.lv+'</span>'+(M.afx?'<div class="afx">'+M.afx.map(k=>'<span style="border-color:'+AFX[k].c+';color:'+AFX[k].c+'">'+AFX[k].i+' '+AFX[k].n+'</span>').join('')+'</div>':M.tr?'<div class="afx"><span style="border-color:'+TRT[M.tr].c+';color:#fff">'+TRT[M.tr].tip+'</span></div>':'');
@@ -1012,7 +1075,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   if(boss||Math.random()*100<(el?Math.min(100,P.drop*2.5):P.drop*(evIs('loot')?1.5:1))){const lk=S.st.luck*.05;
     const it=makeItem(g,rollRar(boss?[25,42,25,8+lk]:el?[30,45,20,5+lk]:[Math.max(34,62-g*.12),27,9+lk+g*.03,2+lk/2+g*.008]));if(giveItem(it,true))lootMsg(it,true)}
   S.hp=Math.min(P.hp,S.hp+Math.round(P.hp*.08));
-  if(D3&&!M.wd)D3.die(boss);const me=$('mon');me.classList.remove('hit','in');me.classList.add('dead');fxBoom(m.x,m.y,boss?'#ff5263':'#fff');sfx('kill',boss?1.3:1);if(boss)scrFlash('w');
+  if(D3&&!M.wd)D3.die(boss);const me=$('mon');me.classList.remove('hit','in');me.classList.add('dead');fxBoom(m.x,m.y,boss?'#ff5263':'#fff');sfx('kill',boss?1.3:1);setTimeout(()=>sfx('coin',boss?1.2:.8),110);if(boss)scrFlash('w');
   if(boss&&tab==='battle'){vib([40,40,80]);tune([392,523,659,784],90);shake(true)}
   if(tab!=='battle')bgSt.k++;
   S.kills++;
@@ -1024,7 +1087,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   if(tab==='battle')updAll();else{calc();updHud();updBattle();bgInfo()}save();spawnT=W.length?setTimeout(waveNext,M.wd?60:220):setTimeout(spawn,boss&&D3&&tab==='battle'?1350:480)}
 function addXp(x){S.xp+=x;let up=0;while(S.xp>=xpNeed(S.lvl)){S.xp-=xpNeed(S.lvl);S.lvl++;S.pts+=3;up++;if(S.lvl%5===0){S.gems+=5;toast(T('💎 Seviye ')+S.lvl+T(' hediyesi: +5 elmas'))}if(S.lvl===15&&!S.reb.n)toast(T('✨ Oto yetenek açıldı! Yetenekler kendiliğinden kullanılır'),'big');
     if(CLS[S.cls])CLS[S.cls].sk.forEach(s=>{if(s.lv===S.lvl)toast(T('✨ Yeni yetenek açıldı: ')+s.i+' '+s.n,'big')})}
-  if(up){if(S.lvl%5===0)logEv('⭐ '+T('Seviye {0}',S.lvl));calc();S.hp=P.hp;banner(T('⭐ SEVİYE ')+S.lvl+' ⭐','lv');if(tab==='battle'){if(D3)D3.levelUp();confetti(35);tune([523,659,784,1047],80);vib([30,30,30])}else toast(T('⭐ Seviye ')+S.lvl+'!');giftCheck();renderSkillBar()}}
+  if(up){if(S.lvl%5===0)logEv('⭐ '+T('Seviye {0}',S.lvl));calc();S.hp=P.hp;banner(T('⭐ SEVİYE ')+S.lvl+' ⭐','lv');if(tab==='battle'){if(D3)D3.levelUp();confetti(35);fanfare('level');vib([30,30,30])}else toast(T('⭐ Seviye ')+S.lvl+'!');giftCheck();renderSkillBar()}}
 function giftCheck(){if(S.lvl>=3&&!S.pets.wolf){S.pets.wolf=1;if(!S.pet)S.pet='wolf';calc();
   enqueue(()=>openSheet(T('<div style="text-align:center"><div style="font-size:80px">🐺</div><h2>Yeni yoldaş: Kurt!</h2><p class="mut">Seviye 3 hediyesi. Kurt yanında savaşır, düşmana kendiliğinden saldırır ve kritik şansını artırır. Kahraman → Yoldaş bölümünden besleyip güçlendirebilir, başka yoldaşlar edinebilirsin.</p><button class="btn pri w100" data-a="close">Harika!</button></div>')))}}
 function lootMsg(it,drop){const c=RAR[it.r].c,d=document.createElement('div');d.style.borderColor=c;d.style.color=c;d.textContent=it.e+' '+itN(it)+' ('+RAR[it.r].n+')';
