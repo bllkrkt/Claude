@@ -626,35 +626,38 @@ function idle(dt){
     if(u.head){u.head.rotation.y=Math.sin(t*.6)*.1;u.head.rotation.x=Math.sin(t*2.4+.5)*.03}}
   if(petM){const u=petM.userData;petM.position.y=u.y0+(u.fly?.7+Math.sin(t*3)*.12:Math.abs(Math.sin(t*3))*.05);if(u.wings)u.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.6);
     petM.scale.y=u.s*(1+Math.sin(t*3.1)*.02);if(u.fly)petM.rotation.z=Math.sin(t*1.7)*.07;else petM.rotation.x=Math.sin(t*3)*.03;if(u.head)u.head.rotation.y=Math.sin(t*.9+1)*.22}
-  if(monM&&!monM.userData.dying){const u=monM.userData;
-    u.kb=(u.kb||0)*Math.pow(.0008,dt);u.sq=(u.sq||0)*Math.pow(.0005,dt);u.tl=(u.tl||0)*Math.pow(.002,dt);
-    monM.position.y=u.y0+(u.fly?.55+Math.sin(t*2.2)*.15:0);monM.position.z=-u.kb;monM.rotation.x=(u.rx||0)-u.tl;
-    monM.scale.set(u.s*(1+u.sq*.6),u.s*(1+Math.sin(t*2)*.025)*(1-u.sq),u.s*(1+u.sq*.6));
-    if(u.wings)u.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*(u.fast?14:u.fly?7:2.2))*.5);
-    if(u.spin)u.spin.rotation.y+=dt*1.4;if(u.flames)u.flames.forEach((f,i)=>f.scale.y=1+Math.sin(t*11+i*1.7)*.28);
-    if(u.neck)u.neck.rotation.z=Math.sin(t*1.6)*.15;if(u.chomp)u.chomp.rotation.x=-.3-Math.abs(Math.sin(t*3.2))*.5;if(u.enr)monM.position.x=(Math.random()-.5)*.04;if(u.tail)u.tail.rotation.x=Math.sin(t*2.5)*.08;
-    if(u.legs)u.legs.forEach((l,i)=>l.rotation.x=Math.sin(t*6+i)*.08);
-    /* dokunaçlar dalga gibi kıvrılır, yengeç kıskaçlarını açıp kapar */
-    if(u.tj)for(let i=0;i<u.tj.length;i++){const j=u.tj[i];j.g.rotation.x=j.x0+Math.sin(t*1.7+j.ph)*j.a;j.g.rotation.z=Math.cos(t*1.25+j.ph)*j.a*.5}
-    if(u.pinch)for(let i=0;i<u.pinch.length;i++)u.pinch[i].rotation.x=-.12-Math.abs(Math.sin(t*2.2+i*1.3))*.4;if(u.head&&!u.neck)u.head.rotation.y=Math.sin(t*1.1)*.18;
-    /* türe göre küçük farklar: uçanlar süzülüp yalpalar, insansılar/golemler kollarını tartar, dört ayaklılar başını eğip koklar; iriler daha ağır */
-    const q=u.h>2.6?.7:1;monM.rotation.y=Math.sin(t*.7*q+1)*.05;monM.rotation.z=Math.sin(t*1.3*q)*(u.fly?.05:.018);if(u.fly&&!u.enr)monM.position.x=Math.sin(t*1.1*q)*.07;
-    if(u.armR){u.armR.rotation.x=(u.wep?-.35:0)+Math.sin(t*1.7*q)*.09;if(u.armL)u.armL.rotation.x=-Math.sin(t*1.7*q)*.09}
-    if(u.head)u.head.rotation.x=Math.sin(t*1.9*q+.7)*(u.armR?.03:.06);if(u.neck)u.neck.rotation.x=Math.sin(t*1.1)*.07}
+  if(monM&&!monM.userData.dying)monIdle(monM,dt,t);
   if(eliteFx){eliteFx.rotation.z+=dt;const s=1+Math.sin(t*4)*.06;eliteFx.scale.set(s,s,1)}
   if(buff.shield&&buff.shield.visible){buff.shield.rotation.y+=dt;const s=1+Math.sin(t*5)*.03;buff.shield.scale.setScalar(s)}
   if(buff.buff&&buff.buff.visible)buff.buff.rotation.z+=dt*2;if(buff.crit&&buff.crit.visible)buff.crit.rotation.z-=dt*2.5}
+/* canavar bekleme animasyonu (ana canavar ve dalgadakiler ortak); tt = kendi zaman fazı */
+function monIdle(m,dt,tt){const u=m.userData;
+    u.kb=(u.kb||0)*Math.pow(.0008,dt);u.sq=(u.sq||0)*Math.pow(.0005,dt);u.tl=(u.tl||0)*Math.pow(.002,dt);
+    m.position.y=u.y0+(u.fly?.55+Math.sin(tt*2.2)*.15:0);m.position.z=-u.kb;m.rotation.x=(u.rx||0)-u.tl;
+    m.scale.set(u.s*(1+u.sq*.6),u.s*(1+Math.sin(tt*2)*.025)*(1-u.sq),u.s*(1+u.sq*.6));
+    if(u.wings)u.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(tt*(u.fast?14:u.fly?7:2.2))*.5);
+    if(u.spin)u.spin.rotation.y+=dt*1.4;if(u.flames)u.flames.forEach((f,i)=>f.scale.y=1+Math.sin(tt*11+i*1.7)*.28);
+    if(u.neck)u.neck.rotation.z=Math.sin(tt*1.6)*.15;if(u.chomp)u.chomp.rotation.x=-.3-Math.abs(Math.sin(tt*3.2))*.5;if(u.enr)m.position.x=(Math.random()-.5)*.04;if(u.tail)u.tail.rotation.x=Math.sin(tt*2.5)*.08;
+    if(u.legs)u.legs.forEach((l,i)=>l.rotation.x=Math.sin(tt*6+i)*.08);
+    /* dokunaçlar dalga gibi kıvrılır, yengeç kıskaçlarını açıp kapar */
+    if(u.tj)for(let i=0;i<u.tj.length;i++){const j=u.tj[i];j.g.rotation.x=j.x0+Math.sin(tt*1.7+j.ph)*j.a;j.g.rotation.z=Math.cos(tt*1.25+j.ph)*j.a*.5}
+    if(u.pinch)for(let i=0;i<u.pinch.length;i++)u.pinch[i].rotation.x=-.12-Math.abs(Math.sin(tt*2.2+i*1.3))*.4;if(u.head&&!u.neck)u.head.rotation.y=Math.sin(tt*1.1)*.18;
+    /* türe göre küçük farklar: uçanlar süzülüp yalpalar, insansılar/golemler kollarını tartar, dört ayaklılar başını eğip koklar; iriler daha ağır */
+    const q=u.h>2.6?.7:1;m.rotation.y=Math.sin(tt*.7*q+1)*.05;m.rotation.z=Math.sin(tt*1.3*q)*(u.fly?.05:.018);if(u.fly&&!u.enr)m.position.x=Math.sin(tt*1.1*q)*.07;
+    if(u.armR){u.armR.rotation.x=(u.wep?-.35:0)+Math.sin(tt*1.7*q)*.09;if(u.armL)u.armL.rotation.x=-Math.sin(tt*1.7*q)*.09}
+    if(u.head)u.head.rotation.x=Math.sin(tt*1.9*q+.7)*(u.armR?.03:.06);if(u.neck)u.neck.rotation.x=Math.sin(tt*1.1)*.07}
 function tickParts(dt){if(!parts)return;const k=parts.userData.k,p=parts.geometry.attributes.position,a=p.array;
   for(let i=0;i<a.length;i+=3){a[i]+=((k.vx||0)+Math.sin(t*1.5+i)*k.sway*.4)*dt;a[i+1]+=k.vy*dt;a[i+2]+=Math.cos(t+i)*k.sway*.1*dt;
     if(a[i+1]<0)a[i+1]=9;if(a[i+1]>9)a[i+1]=0;if(a[i]>10)a[i]=-10}p.needsUpdate=true}
 function loop(){const rdt=Math.min(.05,clock.getDelta());if(SC.on)renderSC(rdt);if(!act)return;
   if(tsT>0){tsT-=rdt;if(tsT<=0)ts=1}let dt=rdt*ts;if(stopT>0){stopT-=rdt;dt=rdt*.04}t+=dt;
   for(let i=anims.length-1;i>=0;i--){const a=anims[i];a.t+=dt;const k=Math.min(1,a.t/a.d);try{a.f(k,dt)}catch(e){}if(k>=1){anims.splice(i,1);try{a.end&&a.end()}catch(e){}}}
-  idle(dt);tickParts(dt);if(env){const a=env.userData.tk;for(let i=0;i<a.length;i++)a[i](dt)}tickFx(dt);shk=Math.max(0,shk-rdt*2.4);
+  idle(dt);wvTick(dt);tickParts(dt);if(env){const a=env.userData.tk;for(let i=0;i<a.length;i++)a[i](dt)}tickFx(dt);shk=Math.max(0,shk-rdt*2.4);
   for(let i=0;i<ML.length;i++){const l=ML[i],m=mk[i];if(m&&m.parent){m.getWorldPosition(l.position);if(l.userData.m!==m){l.userData.m=m;l.color.set(m.userData.pl.c);l.distance=m.userData.pl.d}l.intensity=m.userData.pl.i}else l.intensity=0}punch=Math.max(0,punch-rdt*5);focus=Math.max(0,focus-rdt*1.6);
   const fz=Math.min(1,focus),cx=.35+Math.sin(t*.35)*.15+(Math.random()-.5)*shk*.4,cy=2.1+Math.sin(t*.27)*.06+(Math.random()-.5)*shk*.4;
-  cam.position.set(cx+(MP.x-cx)*fz*.3,cy-fz*.3,camZ-fz*1.4);const nf=46-punch*7;if(Math.abs(cam.fov-nf)>.01){cam.fov=nf;cam.updateProjectionMatrix()}
-  cam.lookAt(LOOK.x+(MP.x-LOOK.x)*fz*.6,LOOK.y,LOOK.z+(MP.z-LOOK.z)*fz*.5);
+  const wp=WV.cz*.4;/* dalga varken kamera biraz geri çekilir ve sağa kayar: sıradakiler sağda görünür */
+  cam.position.set(cx+wp+(MP.x-cx-wp)*fz*.3,cy+WV.cz*.35-fz*.3,camZ+WV.cz*1.2-fz*1.4);const nf=46-punch*7;if(Math.abs(cam.fov-nf)>.01){cam.fov=nf;cam.updateProjectionMatrix()}
+  cam.lookAt(LOOK.x+wp+(MP.x-LOOK.x-wp)*fz*.6,LOOK.y,LOOK.z+(MP.z-LOOK.z)*fz*.5);
   ren.render(scene,cam)}
 
 /* ---------------- kalıcı efekt nesneleri: bir kez kurulur, karede yeni nesne üretilmez ---------------- */
@@ -743,7 +746,7 @@ function tickFx(dt){if(!FX.shield)return;legTick(dt);const B=FX.blob,op=QL>0?.3:
   const sh=FX.shield;sh.visible=FX.sOn&&live;if(sh.visible){const p=Math.sin(t*4.5);sh.position.set(mx,my,mz);sh.scale.setScalar(Math.max(u.h*.62,Math.min(u.w||1,u.h*1.3)*.6)*(1+p*.035)*monRoot.scale.x);sh.rotation.y+=dt*.5;sh.material.opacity=.17+p*.07}
   const wk=FX.weak;wk.visible=FX.wOn&&live;if(wk.visible){if(!FX.wSet)placeWeak();const p=Math.sin(t*7);wk.position.set(mx+FX.wx,my+FX.wy,mz+.2);wk.quaternion.copy(cam.quaternion);wk.scale.setScalar(FX.ws*(1+p*.14));wk.userData.in.rotation.z+=dt*2.5;wk.userData.m.opacity=.82+p*.18}
   const au=FX.aura;au.visible=FX.aOn&&!!heroRoot;if(au.visible){au.position.set(heroRoot.position.x,.1,heroRoot.position.z);au.userData.a.rotation.z+=dt*1.2;au.userData.b.rotation.z-=dt*1.8;const s=.86+Math.sin(t*3)*.035;au.scale.set(s,1,s)}
-  const n=live?FX.pN-1:0;if(n>0&&FX.pFor!==monM){FX.pFor=monM;FX.pm.color.set(monColors(monM)[0]).lerp(TC.set(ZD[Math.max(0,zoneI)].fog),.5).multiplyScalar(.7);FX.pe.color.copy(RIM.value).multiplyScalar(1.6)}
+  const n=live&&!WV.n?FX.pN-1:0;if(n>0&&FX.pFor!==monM){FX.pFor=monM;FX.pm.color.set(monColors(monM)[0]).lerp(TC.set(ZD[Math.max(0,zoneI)].fog),.5).multiplyScalar(.7);FX.pe.color.copy(RIM.value).multiplyScalar(1.6)}
   for(let i=0;i<2;i++){const g=FX.pack[i];g.visible=i<n;if(g.visible){const s=Math.max(.55,Math.min(1.25,u.h*.4))*monRoot.scale.x;g.position.set(MP.x+PKO[i][0],.07+Math.abs(Math.sin(t*2.6+i*1.9))*.07,MP.z+PKO[i][1]);g.rotation.y=monRoot.rotation.y;g.scale.set(s,s*(1+Math.sin(t*2.2+i)*.03),s)}}}
 /* yeni, isteğe bağlı API'ler asla hata fırlatmaz */
 const safe=f=>function(){try{return f.apply(null,arguments)}catch(e){return null}};
@@ -771,6 +774,49 @@ API.bolt=safe(()=>{if(!act||!monM||!monRoot||monM.userData.dying||!FX.bolt.lengt
   light(TB,0x9fe8ff,3.5,.3,8);burst(TB,0xbff6ff,10,1.2);ring(TB,0x9fe8ff,.3,2.6,.4,.08,.08);flash(monM,0xbff6ff,.2);shk=Math.max(shk,.45)});
 
 /* ---------------- dış arayüz ---------------- */
+/* ---------------- dalga savaşı: ana canavarın arkasında sıradaki düşmanlar (en fazla 4, düşük kalitede 2) ----------------
+   modeller ada göre önbellekte kalır, sadece değişenler kurulur/kaldırılır; gölge atmazlar, model ışığı (PL) havuzuna girmezler
+   (relight yalnızca ana canavar/kahraman/yoldaşı tarar). Karede yeni nesne üretilmez. */
+const WV={pool:[],idx:[],list:[],n:0,cz:0,rg:null};
+const WSL=[[1.55,-1.3],[2.3,-2.9],[-.55,-3.1],[1.1,-4.6]];/* MP'ye göre (x,z) yuvalar: sağ-arka, uzak sağ, sol-arka, en arka; düşük kalitede ilk ikisi (ikisi de sağda, açıkta) */
+function wvShared(){if(WV.rg)return;WV.rg=KEEP(new T.TorusGeometry(1,.05,6,40));WV.rm=KEEP(new T.MeshBasicMaterial({color:0xc45bff,transparent:true,opacity:.8,blending:T.AdditiveBlending,depthWrite:false}));
+  WV.pg=KEEP(new T.PlaneGeometry(1,1).rotateX(-PI/2));WV.gm=KEEP(new T.MeshBasicMaterial({map:dot(),color:0xb050ff,transparent:true,opacity:.5,blending:T.AdditiveBlending,depthWrite:false}))}
+const wvKey=it=>String(it.name||'')+'|'+(MON[it.name]?'':String(it.emoji||''))+'|'+(it.elite?1:0);
+function wvMake(it,tx,tz){const f=MON[it.name],m=f?f():emojiSprite(it.emoji);prep(m);const r=G(scene),el=!!it.elite,k=el?.86:.8;r.add(m);fit(m,2.1*k,2.8*k);
+  m.traverse(n=>{n.castShadow=false;n.receiveShadow=false});
+  if(el){wvShared();const s=Math.max(.85,Math.min(1.4,(m.userData.w||1)*.55)),a=new T.Mesh(WV.rg,WV.rm),g=new T.Mesh(WV.pg,WV.gm);a.rotation.x=PI/2;a.position.y=.08;a.scale.set(s,s,1);g.position.y=.06;g.scale.setScalar(s*2.5);r.add(a);r.add(g);r.userData.ring=a;
+    /* elit: malzemelere hafif mor parıltı (aynı çizim programı, sadece renk) */
+    TC.set(0x8a3aff);m.traverse(n=>{const d=n.isMesh&&n.material.userData;if(d&&d.e0){d.e0=d.e0.clone().lerp(TC,.35);d.i0=Math.max(d.i0,.45);n.material.emissive.copy(d.e0);n.material.emissiveIntensity=d.i0}})}
+  const e={key:wvKey(it),r,m,ph:rnd(0,6),bx:MP.x+tx,bz:MP.z+tz,tx,tz,lx:0,ly:0,lz:0,dead:false,pi:-1};r.position.set(e.bx,0,e.bz);face(r,HP);
+  /* giriş: yerden büyüyerek belirir */
+  r.scale.setScalar(.01);anim(.35,q=>{const s=q<.7?q/.7*1.1:1.1-(q-.7)/.3*.1;r.scale.setScalar(Math.max(.01,s))},()=>r.scale.setScalar(1));return e}
+function wvApply(){if(!scene)return;const L=WV.list,max=QL?4:2,old=WV.pool.slice(),out=[],idx=[],want=[];let s=0;
+  for(let i=0;i<L.length;i++){const it=L[i];want.push(it&&typeof it==='object'&&!it.dead&&s<max?{it,key:wvKey(it),s:s++}:null)}
+  const take=(w,i,same)=>{for(let j=0;j<old.length;j++){const e=old[j];if(e&&e.key===w.key&&(!same||e.pi===i)){old[j]=null;return e}}return null};
+  for(let i=0;i<want.length;i++)if(want[i])idx[i]=take(want[i],i,true);
+  for(let i=0;i<want.length;i++)if(want[i]&&!idx[i])idx[i]=take(want[i],i,false);
+  for(const e of old)if(e)remove(e.r);
+  for(let i=0;i<want.length;i++){const w=want[i];if(!w){idx[i]=null;continue}const sl=WSL[w.s];let e=idx[i];
+    if(e){e.tx=sl[0];e.tz=sl[1]}else{try{e=wvMake(w.it,sl[0],sl[1])}catch(x){e=null}idx[i]=e}if(e){e.pi=i;out.push(e)}}
+  WV.pool=out;WV.idx=idx}
+function wvC(e){const u=e.m.userData;return V(e.r.position.x,e.r.position.y+(e.m.position.y-u.y0)+u.h*.5*e.r.scale.y,e.r.position.z)}
+function wvTick(dt){let n=0;const k=1-Math.pow(.02,dt);
+  for(const e of WV.pool){if(e.dead)continue;n++;const x=MP.x+e.tx,z=MP.z+e.tz;e.bx+=(x-e.bx)*k;e.bz+=(z-e.bz)*k;const r=e.r;r.position.set(e.bx+e.lx,e.ly,e.bz+e.lz);
+    r.rotation.y=Math.atan2(HP.x-r.position.x,HP.z-r.position.z);if(!e.m.userData.dying)monIdle(e.m,dt,t+e.ph);if(r.userData.ring)r.userData.ring.rotation.z+=dt}
+  WV.n=n;WV.cz+=((n?1:0)-WV.cz)*Math.min(1,dt*2.2)}
+/* ana canavar öldüğünde sıradaki öne geçer: oyun spawn(aynı ad) çağırınca 0. dalga modelinin yerinden yürüyerek gelir */
+function wvTake(name){const e=WV.idx[0];if(!e||e.dead||e.key.split('|')[0]!==String(name))return null;const p={x:e.r.position.x,z:e.r.position.z};
+  WV.idx[0]=null;const i=WV.pool.indexOf(e);if(i>=0)WV.pool.splice(i,1);remove(e.r);return p}
+API.wave=safe(list=>{WV.list=Array.isArray(list)?list.slice(0,16):[];wvApply()});
+API.waveHit=safe((i,crit)=>{const e=WV.idx[i|0];if(!e||e.dead)return;const m=e.m,u=m.userData,c=wvC(e);flash(m,crit?0xffe14a:0xffffff,crit?.22:.14);
+  u.kb=Math.min(.8,(u.kb||0)+(crit?.4:.2));u.sq=Math.min(.3,(u.sq||0)+(crit?.2:.1));u.tl=Math.min(.5,(u.tl||0)+(crit?.3:.15));
+  burst(c,crit?0xffd23d:0xffffff,crit?12:6,crit?1.15:.85);if(crit){debris(c,monColors(m),3,.9);shk=Math.max(shk,.3)}});
+API.waveDie=safe(i=>{i=i|0;const e=WV.idx[i];if(!e||e.dead)return;e.dead=true;WV.idx[i]=null;const p=WV.pool.indexOf(e);if(p>=0)WV.pool.splice(p,1);
+  const m=e.m,r=e.r,c=wvC(e),u=m.userData;u.dying=1;burst(c,0xffffff,10,1);burst(c,0x8a8a8a,6,.5);ring(V(c.x,0,c.z),0xffffff,.3,1.8,.45);debris(c,monColors(m),9,1);flash(m,0xffffff,.12);
+  anim(.18,k=>{m.scale.setScalar(u.s*(1+k*.25));m.position.y=u.y0-k*.1},()=>remove(r))});
+API.waveAtk=safe(i=>{const e=WV.idx[i|0];if(!e||e.dead)return;const dx=HP.x-e.bx,dz=HP.z-e.bz,L=Math.hypot(dx,dz)||1,D=Math.min(1.5,L*.32),u=e.m.userData;
+  anim(.32,k=>{const s=Math.sin(k*PI);e.lx=dx/L*D*s;e.lz=dz/L*D*s;e.ly=s*.22;u.rx=.25*s},()=>{e.lx=e.lz=e.ly=0;u.rx=0});
+  setTimeout(()=>{try{if(!heroM||e.dead)return;const c=heroC();flash(heroM,0xff4040,.18);burst(c,0xff6040,4,.55);slashArc(c,0xff7050,false)}catch(x){}},150)});
 API.init=function(stage){if(!webglOk())return false;
   try{ren=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch(e){return false}
   ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;
@@ -802,13 +848,15 @@ API.setPet=function(k,st){st=st||0;const id=k?k+'/'+st:null;if(id===petK)return;
   if(st>=1){const a=new T.Mesh(new T.TorusGeometry(.55+.1*st,.035,6,32),new T.MeshBasicMaterial({color:st>=2?0xffd56a:0x9fe8ff,transparent:true,opacity:.85,blending:T.AdditiveBlending}));a.rotation.x=PI/2;a.position.y=.06;petRoot.add(a);
     if(st>=2){const l=PL(0xffd56a,1.2,3.5);l.position.y=.9;petRoot.add(l)}}
   relight();const pr=petRoot;anim(.4,q=>{const s=q<.7?q/.7*1.15:1.15-(q-.7)/.3*.15;pr.scale.setScalar(s)})};
-API.spawn=function(name,emoji,o){o=o||{};remove(monRoot);eliteFx=null;FX.sOn=false;FX.wSet=false;
+API.spawn=function(name,emoji,o){o=o||{};let fw=null;try{if(!o.boss&&!o.arena&&!o.hero)fw=wvTake(name)}catch(e){}remove(monRoot);eliteFx=null;FX.sOn=false;FX.wSet=false;
   const f=o.hero?()=>(HERO[o.hero]||HERO.war)(o.skin||'def',o.gear):MON[name];monM=f?f():emojiSprite(emoji);prep(monM);monRoot=G(scene);monRoot.position.copy(MP);monRoot.add(monM);
   const big=o.boss||o.arena;fit(monM,(o.arena?3.4:big?3.0:o.hero?1.85:2.1)*(o.scale||1),(big?4.2:2.8)*(o.scale||1));face(monRoot,HP);
   if(o.elite||big){const c=o.elite?(o.aura||0xc45bff):o.arena?0xffcf4a:0xff3040;eliteFx=new T.Mesh(new T.TorusGeometry(big?2:1.4,.06,6,48),new T.MeshBasicMaterial({color:c,transparent:true,opacity:.85,blending:T.AdditiveBlending}));
     eliteFx.rotation.x=PI/2;eliteFx.position.y=.1;monRoot.add(eliteFx);const l=PL(c,o.elite?1.6:2.2,6);l.position.set(0,1.5,.8);monRoot.add(l)}
-  const r=monRoot;r.scale.setScalar(.01);r.position.y=big?3:1.5;
-  anim(big?.6:.35,k=>{const e=k<.7?k/.7*1.12:1.12-(k-.7)/.3*.12;r.scale.setScalar(Math.max(.01,e));r.position.y=(big?3:1.5)*(1-k)*(1-k)},()=>{r.position.y=0;r.scale.setScalar(1);if(big){ring(MP,0xff6040,.5,4,.6);shk=.8}});
+  const r=monRoot;if(fw){/* dalgadan öne yürüyüş */const fx=fw.x,fz=fw.z;r.position.set(fx,0,fz);r.scale.setScalar(.8);
+    anim(.45,k=>{const e=k*k*(3-2*k);r.position.set(fx+(MP.x-fx)*e,Math.abs(Math.sin(k*PI*2))*.12,fz+(MP.z-fz)*e);r.scale.setScalar(.8+.2*e)},()=>{r.position.copy(MP);r.scale.setScalar(1)})}
+  else{r.scale.setScalar(.01);r.position.y=big?3:1.5;
+  anim(big?.6:.35,k=>{const e=k<.7?k/.7*1.12:1.12-(k-.7)/.3*.12;r.scale.setScalar(Math.max(.01,e));r.position.y=(big?3:1.5)*(1-k)*(1-k)},()=>{r.position.y=0;r.scale.setScalar(1);if(big){ring(MP,0xff6040,.5,4,.6);shk=.8}})}
   relight();if(big)light(V(MP.x,2,MP.z+1),o.arena?0xffcf4a:0xff2020,5,1.2,10)};
 API.hit=function(crit,src,pow){if(!monM||monM.userData.dying)return;pow=pow||1;const pet=src==='pet',u=monM.userData,c=monC();
   flash(monM,crit?0xffe14a:pet?0x9fd8ff:0xffffff,crit?.22:.14);
@@ -886,7 +934,7 @@ API.shake=b=>{shk=Math.max(shk,b?.8:.3)};
 /* efekt yoğunluğu: 0 düşük (gölge yok, düşük çözünürlük, az parçacık) · 1 orta · 2 yüksek */
 API.setQuality=function(q){q=Math.max(0,Math.min(2,q|0));if(q===QL&&ren.userData)return;QL=q;QF=[.35,.7,1][q];ren.userData=1;ren.setPixelRatio(Math.min(window.devicePixelRatio||1,[1,1.5,2][q]));
   const sh=q>0;if(ren.shadowMap.enabled!==sh){ren.shadowMap.enabled=sh;lights.sun.castShadow=sh;scene.traverse(n=>{if(n.material)(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{m.needsUpdate=true})})}
-  resize();if(zoneI>=0){const z=zoneI;zoneI=-1;API.setZone(z)}};
+  resize();if(zoneI>=0){const z=zoneI;zoneI=-1;API.setZone(z)}try{wvApply()}catch(e){}};
 API.hitStop=s=>{stopT=Math.max(stopT,s)};
 API.petSkill=function(kind){if(!petRoot)return;const pc=V(petRoot.position.x,.8,petRoot.position.z),c=monC();ring(V(pc.x,0,pc.z),0xffd56a,.2,1.6,.4,.06,.06);light(pc,0xffd56a,3,.4);
   if(kind==='fire'){for(let i=0;i<10;i++)setTimeout(()=>{const f=new T.Mesh(ico(.18,0),glow(pick([0xff6a10,0xffb347,0xff3d10]),2,{transparent:true}));f.position.copy(pc);scene.add(f);const e=c.clone().add(V(rnd(-.4,.4),rnd(-.4,.4),0));

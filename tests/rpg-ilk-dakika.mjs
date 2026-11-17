@@ -23,7 +23,8 @@ for (let i = 0; i < 8; i++) { await p.click('#bHit'); await p.waitForTimeout(90)
 res.hitDone = await waitFor(() => S.tut.hit === 1, 2000);
 await ev(() => { S.tot.kills = Math.max(S.tot.kills, 3); R.cd[0] = 0; });res.coachSkill = await waitFor(() => coachK === 'skill', 3000);await sh('3-rehber-yetenek');
 await p.click('#skills .skb[data-sk="0"]');res.skillDone = await waitFor(() => S.tut.skill === 1, 2000);
-await ev(() => { const it = makeItem(3, 1, 'weapon'); it.st.atk = 999; S.inv.push(it); updAll(); });res.coachBag = await waitFor(() => coachK === 'bag', 3000);await sh('4-rehber-canta');
+await ev(() => { S.tut.bag = 0; S.tut.equip = 0; const it = makeItem(3, 1, 'weapon'); it.st.atk = 999; S.inv.push(it); updAll(); });res.coachBag = await waitFor(() => { if (document.querySelector('#sheetBg.on')) { Q.length = 0; closeSheet(); } if (document.querySelector('#leg.on')) ACT.legClose(); if (tab !== 'battle') go('battle'); return coachK === 'bag'; }, 6000);
+if (!res.coachBag) console.log('DBG', await ev(() => JSON.stringify({ ck: coachK, tut: S.tut, dead, busy: busy(), bm: busyMode(), tab, title: titleOn, better: S.inv.some(it => power(it) > power(S.eq[it.slot])), inv: S.inv.length, cls: S.cls })));await sh('4-rehber-canta');
 await p.click('#tabs [data-v=inv]');await p.waitForTimeout(500);res.coachEq = await waitFor(() => coachK === 'equip', 3000);await sh('5-rehber-kusan');
 await p.click('[data-a=eqBest]');await p.waitForTimeout(300);res.eqDone = await ev(() => S.tut.equip === 1);
 await p.click('#tabs [data-v=battle]');

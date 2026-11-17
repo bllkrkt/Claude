@@ -1145,5 +1145,7 @@ window.EN_DICT={
 "Batık Şehir'i bitir": "Clear the Sunken City",
 "Yeni bölge, yeni sınıf!": "New region, new class!",
 "🔱 <b>Batık Şehir</b>: Gök Tapınağı ile Hiçlik arasında yeni bölge — Kraken, Deniz Cadısı ve Leviathan seni bekliyor<br>🥷 <b>Suikastçı</b>: kritik ustası yeni sınıf (Kahraman → Stat → Değiştir)<br>✨ Efsanevi güçlerin artık karakterinin üstünde görünüyor<br>🎵 Bölgelere göre ortam sesleri ve yeni ödül sesleri": "🔱 <b>Sunken City</b>: a new region between the Sky Temple and the Void — the Kraken, the Sea Witch and Leviathan await<br>🥷 <b>Assassin</b>: a new crit-master class (Hero → Stats → Change)<br>✨ Your legendary powers now show on your character<br>🎵 Ambient sounds for each region and new reward sounds",
-"Hadi bakalım!": "Let's go!"
+"Hadi bakalım!": "Let's go!",
+"Dalga savaşı!": "Wave battles!",
+"👥 Normal katlarda canavarlar artık <b>dalga hâlinde</b> geliyor: aynı anda 2–5 düşman. Öndeki ölünce sıradaki hemen öne çıkar.<br>⚔️ Arkadaki ilk iki düşman da sana saldırır, dikkat!<br>🌪️ Çok vuruşlu yetenekler (Kasırga, Ok Yağmuru, Bin Kesik) bütün dalgaya dağılır.<br>💪 İleri bölgelerde normal canavarlar daha dayanıklı.": "👥 On normal floors monsters now come in <b>waves</b>: 2–5 enemies at once. When the front one falls, the next steps up right away.<br>⚔️ The first two enemies behind it attack you too, watch out!<br>🌪️ Multi-hit skills (Whirlwind, Arrow Rain, Thousand Cuts) spread across the whole wave.<br>💪 In later regions normal monsters are tougher."
 };

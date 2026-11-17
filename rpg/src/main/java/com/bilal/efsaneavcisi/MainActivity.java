@@ -53,18 +53,23 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(0xFF0E0F1A);
         web.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
-        setContentView(web);
+        // WebView kendi iç boşluğunu (padding) yok sayar; bu yüzden onu bir çerçeveye koyup boşluğu çerçeveye veriyoruz.
+        // Böylece oyun saat/şarj çubuğunun ve alttaki gezinme çizgisinin altına girmez.
+        final android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+        root.setBackgroundColor(0xFF0E0F1A);
+        root.addView(web, new android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(root);
 
-        // Kenardan kenara ekran: oyun durum/gezinme çubuğunun altında kalmasın
-        web.setOnApplyWindowInsetsListener((v, insets) -> {
-            int top, bottom;
+        // Kenardan kenara ekran: durum çubuğu, gezinme çubuğu ve kamera çentiği boşlukları
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top, bottom, left = 0, right = 0;
             if (Build.VERSION.SDK_INT >= 30) {
-                android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars());
-                top = i.top; bottom = i.bottom;
+                android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                top = i.top; bottom = i.bottom; left = i.left; right = i.right;
             } else {
                 top = insets.getSystemWindowInsetTop(); bottom = insets.getSystemWindowInsetBottom();
             }
-            v.setPadding(0, top, 0, bottom);
+            v.setPadding(left, top, right, bottom);
             return insets;
         });
 

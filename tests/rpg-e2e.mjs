@@ -132,8 +132,8 @@ await p.evaluate(() => closeSheet());
 await p.evaluate(() => { ACT.zone('6'); }); await p.waitForTimeout(400); await clear(); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(900); await shot('38-gok-tapinagi');
 await p.evaluate(() => { ACT.zone('7'); }); await p.waitForTimeout(400); await clear(); await p.evaluate(() => { M.int = 1e9; }); await p.waitForTimeout(1100); await shot('39-hiclik-boss');
 // oto saldırı: dokunmadan canavarın canı azalmalı
-await p.evaluate(() => { S.tot.boss = Math.max(1, S.tot.boss); aaCheck(); }); await p.waitForTimeout(300);
-check(await p.evaluate(() => /Oto saldırı açıldı/.test(document.getElementById('sheet').innerText)), 'oto saldırı penceresi çıkmadı');
+await clear(); await p.evaluate(() => { Q.length = 0; S.aaSeen = false; S.tot.boss = Math.max(1, S.tot.boss); aaCheck(); });
+check(await waitFor(() => /Oto saldırı açıldı/.test(document.getElementById('sheet').innerText), 3000), 'oto saldırı penceresi çıkmadı');
 await shot('40a-oto-acildi'); await clear();
 check(await p.evaluate(() => aaOpen() && S.autoAtk), 'oto saldırı açılmadı');
 await p.evaluate(() => { ACT.zone('0'); S.floors[0] = 3; S.kills = 0; spawn(); M.int = 1e9; M.max = M.hp = 1e9; S.autoSk = true; R.cd = [0, 0, 0, 0]; closeSheet(); });
@@ -351,7 +351,7 @@ check(san.ok && san.g === 0 && san.z === 0 && san.c === null && san.w === 30 && 
 await p.evaluate(c => { closeSheet(); Q.length = 0; restoreCode(c); }, code); await p.waitForTimeout(300); await clear();
 // baykuş: uzun süren etkiyi kısaltmamalı
 await p.evaluate(() => { spawn(); }); await waitFor(() => M && !M.dead, 4000);
-check(await p.evaluate(() => { const pp = S.pet, own = S.pets.owl; S.pets.owl = own || 1; S.pet = 'owl'; M.max = M.hp = 1e9; R.bcrit = 9000; R.bcritV = 10; petSkill(); const r = R.bcrit >= 9000 && R.bcritV === 15; R.bcrit = 0; R.bcritV = 40; petSkill(); const r2 = R.bcrit === 5000 && R.bcritV === 15; const dbg = JSON.stringify([r, r2, R.bcrit, R.bcritV, M.dead, S.pet]); S.pet = pp; if (!own) delete S.pets.owl; R.bcrit = 0; M.hp = 1; window.__owl = dbg; return r && r2; }), 'baykuş etkisi hatalı: ' + await p.evaluate(() => window.__owl));
+check(await p.evaluate(() => { const pp = S.pet, own = S.pets.owl; S.pets.owl = own || 1; S.pet = 'owl'; S.autoAtk = false; spawn(); M.int = 1e9; M.max = M.hp = 1e9; R.bcrit = 9000; R.bcritV = 10; petSkill(); const r = R.bcrit >= 9000 && R.bcritV === 15; R.bcrit = 0; R.bcritV = 40; petSkill(); const r2 = R.bcrit === 5000 && R.bcritV === 15; const dbg = JSON.stringify([r, r2, R.bcrit, R.bcritV, M.dead, S.pet]); S.pet = pp; if (!own) delete S.pets.owl; R.bcrit = 0; M.hp = 1; window.__owl = dbg; return r && r2; }), 'baykuş etkisi hatalı: ' + await p.evaluate(() => window.__owl));
 // menüdeyken savaş: açıkken öldürme sürer, sahneye efekt sızmaz
 await p.evaluate(() => { S.set.bgFight = true; S.autoAtk = true; ACT.tab('inv'); }); await p.waitForTimeout(600);
 const bg0 = await p.evaluate(() => ({ k: S.tot.kills, n: document.getElementById('stage').childElementCount }));
@@ -478,6 +478,18 @@ check(await p.evaluate(() => { const bk = JSON.stringify(S); const o = JSON.pars
   applySave(o); const r = S.zone === 8 && S.maxF[7] === 30 && S.maxF[8] === 15 && S.floors[8] === 12 && S.zq[8] && S.zq[8].s === 2 && S.story[7] === 1 && S.story[8] === 1 && S.bossFirst['8-10'] === 1 && S.bossFirst['2-10'] === 1 && S.floors.length === ZONES.length && ZONES[7].n === 'Batık Şehir';
   applySave(JSON.parse(bk)); calc(); setStage(); spawn(); return r; }), 'bölge kaydı geçişi hatalı: ' + await p.evaluate(() => JSON.stringify({ n: ZONES.length })));
 check(await p.evaluate(() => { const c = S.cls; hpKeep(() => { S.cls = 'war' }); const a = P.crit, d = P.critDmg; hpKeep(() => { S.cls = 'asn' }); const ok = (P.crit === Math.min(85, a + 12) || P.crit === 85) && P.critDmg === d + 40 && CLS.asn.sk.length === 4; hpKeep(() => { S.cls = c }); renderSkillBar(); return ok; }), 'suikastçı bonusları hatalı');
+// ---- v20: dalga savaşı ----
+await clear(); await p.click('#tabs [data-v=battle]');
+const wv = await p.evaluate(() => { S.autoAtk = false; S.zone = 1; S.floors[1] = 5; S.kills = 0; setStage(); spawn(); M.int = 1e9; W.forEach(w => w.int = 1e9);
+  const r = { n: W.length, want: Math.min(waveSize(G()), KPF) - 1, chips: document.querySelectorAll('#wave .wv').length };
+  const nx = W[0]; M.hp = 1; attack(5, { src: 'tap' }); r.k0 = S.tot.kills; return r; });
+check(wv.n === wv.want && wv.n >= 1 && wv.chips === wv.n, 'dalga oluşmadı: ' + JSON.stringify(wv));
+await waitFor(n => !M.dead && W.length === n - 1, 4000, wv.n);
+check(await p.evaluate(n => !M.dead && W.length === n - 1, wv.n), 'sıradaki öne geçmedi: ' + await p.evaluate(() => JSON.stringify({ d: M.dead, w: W.length })));
+check(await p.evaluate(() => { if (!W.length) { S.kills = 0; spawn(); } M.int = 1e9; const w = W[W.length - 1]; const k = S.tot.kills; hitW(w, 1e6, true); const dead1 = w.dead; for (const x of W) if (!x.dead) x.int = 1e9; return dead1 && document.querySelectorAll('#wave .wv').length === W.filter(x => !x.dead).length; }), 'arkadaki düşman ölmedi');
+check(await p.evaluate(() => { spawn(); const w = W[0]; if (!w) return true; const h = S.hp; waveHit(w); return S.hp < h; }), 'arkadaki düşman saldırmadı');
+check(await p.evaluate(() => { S.floors[1] = 10; S.kills = 0; spawn(); const ok = W.length === 0 && M.boss; S.floors[1] = 5; spawn(); return ok; }), 'boss katında dalga olmamalı');
+await shot('110-dalga');
 // bozuk kayıt: oyun açılmalı, bozuk veri saklanmalı
 const good = await p.evaluate(() => { save(true); const g = localStorage.getItem(SAVE_KEY); save = () => {}; localStorage.setItem(SAVE_KEY, '{bozuk'); return g; });
 await p.reload(); await p.waitForTimeout(600);
