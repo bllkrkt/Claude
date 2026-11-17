@@ -1172,4 +1172,11 @@ window.EN_DICT={
 "Derinlerden yenilikler!": "News from the deep!",
 "🔱 <b>Batık Mabet</b>: Batık Şehir'e ulaşınca Macera'da yeni zindan. Her öldürme 🫧 süre kazandırır, Batık Sandık kesin Epik+ eşya verir<br>🐾 Yoldaşlar <b>Ulu</b> (Sv10) ve <b>Efsanevi</b> (Sv20) evrimde 3B olarak büyüyor, parlıyor, görünüşü değişiyor<br>🥷 Suikastçıya özel <b>Gölge</b> ustalık dalı: Pusu, Zehirli Bıçak, İnfaz, Kaybolma<br>🛠️ Birçok küçük hata düzeltmesi": "🔱 <b>Sunken Sanctum</b>: a new dungeon in Adventure once you reach the Sunken City. Every kill earns 🫧 time, and the Sunken Chest always gives an Epic+ item<br>🐾 Companions now grow, glow and change their look in 3D when they evolve to <b>Elder</b> (Lv10) and <b>Legendary</b> (Lv20)<br>🥷 Assassin-only <b>Shadow</b> mastery branch: Ambush, Poisoned Blade, Execute, Vanish<br>🛠️ Lots of small bug fixes",
 "⚔️ <b>Canlı savaş</b>: kahramanla canavar artık sahnede dönüp adım atıyor; canavarlar koşarak geliyor, türüne göre sıçrayıp çakılıyor, dalıyor, pençe atıyor; ölenler savrulup parçalanıyor": "⚔️ <b>Living battles</b>: your hero and the monster now circle and step around the arena; monsters charge in and attack by type — leaping slams, dives, claws — and the fallen go flying and shatter",
+"{0} sandık açıldı!": "{0} chests opened!",
+"▲ = kuşandığından güçlü": "▲ = stronger than what you wear",
+"Tamam": "OK",
+"⚡ En iyileri kuşan": "⚡ Equip the best",
+"🔁 {0}× aç": "🔁 Open {0}×",
+"📳 Ekran sarsıntısı açık": "📳 Screen shake on",
+"📳 Ekran sarsıntısı kapalı": "📳 Screen shake off",
 };

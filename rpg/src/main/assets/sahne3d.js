@@ -706,14 +706,14 @@ const anims=[],buff={};const lights={};
 /* ===== v22 CANLI SAVAŞ: ikili sahnede ağır ağır döner, mesafe açılıp kapanır, boşta duranlar adım atar, kamera izler.
    HP/MP/PP her karede güncellenir; eski kod bunları okuduğu için her şey yeni yerleri izler (oyun mantığı değişmez) ===== */
 const B0={hp:HP.clone(),mp:MP.clone(),pp:PP.clone(),lk:LOOK.clone()},B0C=V((HP.x+MP.x)/2,0,(HP.z+MP.z)/2);
-const LV={a:0,aT:0,g:0,gT:0,x:0,xT:0,tm:1.5,ox:0};
+const LV={a:0,aT:0,g:0,gT:0,x:0,xT:0,tm:1.5,ox:0};let SHK=1;
 function lvNudge(da,dg){LV.aT=Math.max(-.45,Math.min(.45,LV.aT+(da||0)));LV.gT=Math.max(-.25,Math.min(.38,LV.gT+(dg||0)));LV.tm=Math.max(LV.tm,1.4)}
 function lvRot(b,a,sc,o){const c=B0C,dx=b.x-c.x,dz=b.z-c.z,ca=Math.cos(a),sa=Math.sin(a);o.set(c.x+(dx*ca+dz*sa)*sc+LV.x,0,c.z+(-dx*sa+dz*ca)*sc)}
 function turnTo(o,tg,dt){const a=Math.atan2(tg.x-o.position.x,tg.z-o.position.z);let d=a-o.rotation.y;while(d>PI)d-=PI*2;while(d<-PI)d+=PI*2;o.rotation.y+=d*Math.min(1,dt*7)}
 function dust(at,n){if(!act||QL<1)return;burst(V(at.x+rnd(-.15,.15),.06,at.z+rnd(-.15,.15)),0xd8c8a8,n,.32)}
 function liveTick(dt){if((LV.tm-=dt)<=0){LV.tm=rnd(1.8,3.4);LV.aT=rnd(-.32,.32);LV.xT=rnd(-.32,.32);LV.gT=rnd(-.12,.24)}
   const k=1-Math.pow(.3,dt);LV.a+=(LV.aT-LV.a)*k;LV.g+=(LV.gT-LV.g)*k;LV.x+=(LV.xT-LV.x)*k*.7;
-  lvRot(B0.hp,LV.a,1+LV.g*.45,HP);lvRot(B0.mp,LV.a,1+LV.g,MP);lvRot(B0.pp,LV.a,1+LV.g*.3,PP);LOOK.set(B0.lk.x+LV.x*.85,B0.lk.y,B0.lk.z);LV.ox=LV.x*.8+LV.a*1.1;
+  lvRot(B0.hp,LV.a,1+LV.g*.45,HP);lvRot(B0.mp,LV.a,1+LV.g,MP);lvRot(B0.pp,LV.a,1+LV.g*.3,PP);LOOK.set(B0.lk.x+LV.x*.85,B0.lk.y,B0.lk.z);LV.ox=LV.x*.8+LV.a*.55;
   const kk=1-Math.pow(.02,dt);
   if(heroRoot&&heroM){const u=heroM.userData,p=heroRoot.position;if(!u.busy){const d=Math.hypot(p.x-HP.x,p.z-HP.z);p.x+=(HP.x-p.x)*kk;p.z+=(HP.z-p.z)*kk;p.y*=.8;turnTo(heroRoot,monRoot?monRoot.position:MP,dt);
     const amp=Math.min(1,d*5),w0=u.wk||0;u.wk=w0+amp*dt*15;heroM.position.y=u.y0+Math.abs(Math.sin(u.wk))*.07*amp;if(amp>.3&&Math.floor(u.wk/PI)!==Math.floor(w0/PI))dust(p,2)}}
@@ -820,9 +820,9 @@ function loop(){const rdt=Math.min(.05,clock.getDelta());if(SC.on)renderSC(rdt);
   for(let i=anims.length-1;i>=0;i--){const a=anims[i];a.t+=dt;const k=Math.min(1,a.t/a.d);try{a.f(k,dt)}catch(e){}if(k>=1){anims.splice(i,1);try{a.end&&a.end()}catch(e){}}}
   liveTick(dt);idle(dt);wvTick(dt);tickParts(dt);if(env){const a=env.userData.tk;for(let i=0;i<a.length;i++)a[i](dt)}tickFx(dt);shk=Math.max(0,shk-rdt*2.4);
   for(let i=0;i<ML.length;i++){const l=ML[i],m=mk[i];if(m&&m.parent){m.getWorldPosition(l.position);if(l.userData.m!==m){l.userData.m=m;l.color.set(m.userData.pl.c);l.distance=m.userData.pl.d}l.intensity=m.userData.pl.i}else l.intensity=0}punch=Math.max(0,punch-rdt*5);focus=Math.max(0,focus-rdt*1.6);
-  const fz=Math.min(1,focus),cx=LV.ox+.35+Math.sin(t*.35)*.15+(Math.random()-.5)*shk*.4,cy=2.1+Math.sin(t*.27)*.06+(Math.random()-.5)*shk*.4;
+  const fz=Math.min(1,focus),cx=LV.ox+.35+Math.sin(t*.35)*.15+Math.sin(t*41)*shk*.13*SHK,cy=2.1+Math.sin(t*.27)*.06+Math.cos(t*37)*shk*.1*SHK;
   const wp=WV.cz*.4;/* dalga varken kamera biraz geri çekilir ve sağa kayar: sıradakiler sağda görünür */
-  cam.position.set(cx+wp+(MP.x-cx-wp)*fz*.3,cy+WV.cz*.35-fz*.3,camZ+WV.cz*1.2-fz*1.4);const nf=46-punch*7;if(Math.abs(cam.fov-nf)>.01){cam.fov=nf;cam.updateProjectionMatrix()}
+  cam.position.set(cx+wp+(MP.x-cx-wp)*fz*.3,cy+WV.cz*.35-fz*.3,camZ+WV.cz*1.2-fz*1.4);const nf=46-punch*3*SHK;if(Math.abs(cam.fov-nf)>.01){cam.fov=nf;cam.updateProjectionMatrix()}
   cam.lookAt(LOOK.x+wp+(MP.x-LOOK.x-wp)*fz*.6,LOOK.y,LOOK.z+(MP.z-LOOK.z)*fz*.5);
   ren.render(scene,cam)}
 
@@ -1152,7 +1152,8 @@ API.buffs=function(f){if(!heroRoot)return;
   if(!buff.crit){buff.crit=new T.Mesh(new T.TorusGeometry(.7,.04,6,6),new T.MeshBasicMaterial({color:0xffd23d,transparent:true,opacity:.9,blending:T.AdditiveBlending}));buff.crit.rotation.x=PI/2;buff.crit.position.y=1.9;heroRoot.add(buff.crit)}
   buff.shield.visible=!!f.shield;buff.buff.visible=!!f.buff;buff.crit.visible=!!f.crit;
   if(heroM&&heroM.userData.ghost!==!!f.dodge){heroM.userData.ghost=!!f.dodge;heroM.traverse(n=>{if(n.isMesh&&!n.material.userData.fx){n.material.transparent=!!f.dodge;n.material.opacity=f.dodge?.4:1}})}};
-API.shake=b=>{shk=Math.max(shk,b?.8:.3)};
+API.shake=b=>{shk=Math.max(shk,b?.6:.15)};
+API.setShake=v=>{SHK=v?1:0};
 /* efekt yoğunluğu: 0 düşük (gölge yok, düşük çözünürlük, az parçacık) · 1 orta · 2 yüksek */
 API.setQuality=function(q){q=Math.max(0,Math.min(2,q|0));if(q===QL&&ren.userData)return;QL=q;QF=[.35,.7,1][q];ren.userData=1;ren.setPixelRatio(Math.min(window.devicePixelRatio||1,[1,1.5,2][q]));
   const sh=q>0;if(ren.shadowMap.enabled!==sh){ren.shadowMap.enabled=sh;lights.sun.castShadow=sh;scene.traverse(n=>{if(n.material)(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{m.needsUpdate=true})})}
