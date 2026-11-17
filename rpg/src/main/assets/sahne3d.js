@@ -768,7 +768,7 @@ function tickParts(dt){if(!parts)return;const k=parts.userData.k,p=parts.geometr
 function loop(){const rdt=Math.min(.05,clock.getDelta());if(SC.on)renderSC(rdt);if(!act)return;
   if(tsT>0){tsT-=rdt;if(tsT<=0)ts=1}let dt=rdt*ts;if(stopT>0){stopT-=rdt;dt=rdt*.04}t+=dt;
   for(let i=anims.length-1;i>=0;i--){const a=anims[i];a.t+=dt;const k=Math.min(1,a.t/a.d);try{a.f(k,dt)}catch(e){}if(k>=1){anims.splice(i,1);try{a.end&&a.end()}catch(e){}}}
-  idle(dt);wvTick(dt);tickParts(dt);if(env){const a=env.userData.tk;for(let i=0;i<a.length;i++)a[i](dt)}tickFx(dt);shk=Math.max(0,shk-rdt*2.4);
+  idle(dt);if(petRoot&&petRoot.userData.evo)petRoot.userData.evo(dt);wvTick(dt);tickParts(dt);if(env){const a=env.userData.tk;for(let i=0;i<a.length;i++)a[i](dt)}tickFx(dt);shk=Math.max(0,shk-rdt*2.4);
   for(let i=0;i<ML.length;i++){const l=ML[i],m=mk[i];if(m&&m.parent){m.getWorldPosition(l.position);if(l.userData.m!==m){l.userData.m=m;l.color.set(m.userData.pl.c);l.distance=m.userData.pl.d}l.intensity=m.userData.pl.i}else l.intensity=0}punch=Math.max(0,punch-rdt*5);focus=Math.max(0,focus-rdt*1.6);
   const fz=Math.min(1,focus),cx=.35+Math.sin(t*.35)*.15+(Math.random()-.5)*shk*.4,cy=2.1+Math.sin(t*.27)*.06+(Math.random()-.5)*shk*.4;
   const wp=WV.cz*.4;/* dalga varken kamera biraz geri çekilir ve sağa kayar: sıradakiler sağda görünür */
@@ -998,11 +998,43 @@ API.setZone=function(z){if(z===zoneI)return;zoneI=z;remove(env);if(parts){scene.
 const HK=.85,SKL=1.05,RK=1.1,BK=.7;
 API.setHero=function(k,sk,gear){const id=k+'/'+(sk||'def')+'/'+(gear?JSON.stringify(gear):'');if(id===heroId&&heroRoot)return;heroId=id;heroK=k;remove(heroRoot);heroRoot=G(scene);heroRoot.position.copy(HP);face(heroRoot,MP);
   heroM=(HERO[k]||HERO.war)(sk||"def",gear);prep(heroM);heroRoot.add(heroM);fit(heroM,1.75,1.6);relight();for(const b in buff){buff[b].parent&&buff[b].parent.remove(buff[b]);delete buff[b]}};
+/* v22 yoldaş evrim görselleri: Ulu (st1) dönen kristaller + ince parıltı; Efsanevi (st2) taç, ruh kanatları, altın zerreler, zemin halesi.
+   Kökün (root) userData.evo(dt) her karede çağrılır. Model boyutundan bağımsız: sınırlayıcı kutuya göre yerleşir. */
+function petEvo(root,pm,st){if(!root||!pm||!st)return;root.updateMatrixWorld(true);const b=new T.Box3().setFromObject(pm),sz=b.getSize(V(0,0,0)),c=b.getCenter(V(0,0,0));root.worldToLocal(c);
+  const top=c.y+sz.y/2,rad=Math.max(sz.x,sz.z)*.5+.18,col=st>=2?0xffd56a:0x7fe8ff,ad={transparent:true,blending:T.AdditiveBlending,depthWrite:false},tk=[];
+  /* model rengine hafif ışıltı */
+  pm.traverse(n=>{if(n.isMesh&&n.material&&n.material.emissive){const m=n.material;m.emissive.lerp(new T.Color(col),st>=2?.22:.12);m.emissiveIntensity=Math.max(m.emissiveIntensity||0,st>=2?.35:.2);if(m.userData.e0){m.userData.e0=m.emissive.clone();m.userData.i0=m.emissiveIntensity}}});
+  /* dönen kristaller */
+  const og=G(root);og.position.set(c.x,c.y,c.z);const n=st>=2?4:3;
+  for(let i=0;i<n;i++){const k=N(oct(.075+.02*st),glow(col,1.6,{roughness:.2,metalness:.3}),Math.cos(i/n*PI*2)*rad,0,Math.sin(i/n*PI*2)*rad,og);k.userData.ph=i}
+  let tt=0;tk.push(dt=>{tt+=dt;og.rotation.y+=dt*1.4;og.children.forEach(k=>{k.position.y=Math.sin(tt*2.2+k.userData.ph*1.7)*.12;k.rotation.y+=dt*3})});
+  if(st>=2){
+    /* taç */
+    const cr=G(root);cr.position.set(c.x,top+.05,c.z);const gm=metal(0xe8b83a),gem=glow(0xff4a7a,1.8,{roughness:.15});
+    N(new T.CylinderGeometry(.16,.14,.07,SQ(16),1,true),Object.assign(gm.clone(),{side:T.DoubleSide}),0,0,0,cr);
+    for(let i=0;i<5;i++){const a=i/5*PI*2,x=Math.cos(a)*.15,z=Math.sin(a)*.15;N(cone(.035,.12,5),gm,x,.09,z,cr);N(sph(.022,6,4),i%2?gem:glow(0x5fe3ff,1.8),x,.16,z,cr)}
+    let ct=0;tk.push(dt=>{ct+=dt;cr.position.y=top+.05+Math.sin(ct*2)*.025;cr.rotation.y+=dt*.6});
+    /* ruh kanatları (kendi kanadı olmayanlara) */
+    if(!pm.userData.wings){const wm=new T.MeshBasicMaterial(Object.assign({color:0xffe9a8,opacity:.42,side:T.DoubleSide},ad)),wg=[];
+      for(const s of[-1,1]){const g=G(root);g.position.set(c.x+s*.08,c.y+sz.y*.2,c.z-.05);g.rotation.y=-s*.5;const w=N(wingGeo(.55+sz.y*.25,.4+sz.y*.2),wm,0,0,0,g);if(s<0)w.scale.x=-1;wg.push(g)}
+      let wt=0;tk.push(dt=>{wt+=dt;wg.forEach((g,i)=>g.rotation.z=(i?1:-1)*(.25+Math.sin(wt*3.2)*.22))})}
+    /* sarmal altın zerreler */
+    const mg=G(root);mg.position.set(c.x,0,c.z);const dm=new T.MeshBasicMaterial(Object.assign({color:0xffe08a,map:dot()},ad)),pg=new T.PlaneGeometry(.11,.11),ms=[];
+    for(let i=0;i<8;i++){const d=N(pg,dm,0,0,0,mg);d.userData.o=i/8;ms.push(d)}
+    let mt=0;tk.push(dt=>{mt+=dt;for(const d of ms){const q=(mt*.35+d.userData.o)%1,a=q*PI*4+d.userData.o*6;d.position.set(Math.cos(a)*rad*.9,q*(top+.3),Math.sin(a)*rad*.9);d.material.opacity=Math.sin(q*PI);d.quaternion.copy(cam?cam.quaternion:d.quaternion)}});
+    /* zemin halesi */
+    const hl=N(new T.PlaneGeometry(1,1).rotateX(-PI/2),new T.MeshBasicMaterial(Object.assign({color:0xffc84a,map:dot(),opacity:.55},ad)),c.x,.05,c.z,root);hl.scale.setScalar(rad*3.2);
+    let ht=0;tk.push(dt=>{ht+=dt;hl.material.opacity=.38+Math.sin(ht*2.4)*.16})}
+  root.userData.evo=dt=>{for(let i=0;i<tk.length;i++)tk[i](dt)}}
+/* evrim anı: beyaz patlama, halkalar, kıvılcım, büyüyüp küçülme */
+API.petEvolve=function(st){if(!petRoot)return;const p=petRoot.position,col=st>=2?0xffd56a:0x7fe8ff;try{pop(V(p.x,.7,p.z),0xffffff,4,.6);pop(V(p.x,.7,p.z),col,3,.5,1)}catch(e){}
+  for(let i=0;i<3;i++)setTimeout(()=>{try{const r=ring(V(p.x,0,p.z),col,.6,2.2,.7,.1,.06);anim(.7,k=>{r.position.y=.1+k*1.8})}catch(e){}},i*140);
+  try{burst(V(p.x,.8,p.z),col,26,4)}catch(e){}const pr=petRoot;anim(.9,q=>{pr.scale.setScalar(1+Math.sin(q*PI)*.35)})};
 API.setPet=function(k,st){st=st||0;const id=k?k+'/'+st:null;if(id===petK)return;petK=id;remove(petRoot);petRoot=petM=null;relight();if(!k||!PETM[k])return;petRoot=G(scene);petRoot.position.copy(PP);face(petRoot,MP);
   petM=PETM[k]();prep(petM);petRoot.add(petM);fit(petM,(petM.userData.fly?.75:.95)*(1+.22*st),1.3*(1+.22*st));
   if(st>=1){const a=new T.Mesh(new T.TorusGeometry(.55+.1*st,.035,6,32),new T.MeshBasicMaterial({color:st>=2?0xffd56a:0x9fe8ff,transparent:true,opacity:.85,blending:T.AdditiveBlending}));a.rotation.x=PI/2;a.position.y=.06;petRoot.add(a);
     if(st>=2){const l=PL(0xffd56a,1.2,3.5);l.position.y=.9;petRoot.add(l)}}
-  relight();const pr=petRoot;anim(.4,q=>{const s=q<.7?q/.7*1.15:1.15-(q-.7)/.3*.15;pr.scale.setScalar(s)})};
+  try{petEvo(petRoot,petM,st)}catch(e){}relight();const pr=petRoot;anim(.4,q=>{const s=q<.7?q/.7*1.15:1.15-(q-.7)/.3*.15;pr.scale.setScalar(s)})};
 API.spawn=function(name,emoji,o){o=o||{};let fw=null;try{if(!o.boss&&!o.arena&&!o.hero)fw=wvTake(name)}catch(e){}remove(monRoot);eliteFx=null;FX.sOn=false;FX.wSet=false;
   const f=o.hero?()=>(HERO[o.hero]||HERO.war)(o.skin||'def',o.gear):MON[name];monM=f?f():emojiSprite(emoji);prep(monM);monRoot=G(scene);monRoot.position.copy(MP);monRoot.add(monM);
   const big=o.boss||o.arena;fit(monM,(o.arena?3.4:big?3.0:o.hero?1.85:2.1)*(o.scale||1),(big?4.2:2.8)*(o.scale||1));face(monRoot,HP);
@@ -1115,7 +1147,7 @@ API.enrage=function(){if(!monM||!monRoot)return;const m=monM,red=new T.Color(0x6
   flash(m,0xff2020,.5);const l=PL(0xff2020,2.5,6);l.position.set(0,2,1);monRoot.add(l);relight();ring(MP,0xff2020,.5,4.5,.7,.1,.1);shk=.8};
 /* karakter vitrini: Çanta/Kahraman ekranında dönen 3B kahraman */
 const SC={on:false};
-function renderSC(dt){SC.root.rotation.y+=dt*.55;if(SC.hm&&SC.hm.userData.orb)SC.hm.userData.orb.rotation.y+=dt*2.2;if(SC.pm&&SC.pm.userData.wings)SC.pm.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.5);SC.ren.render(SC.scene,SC.cam)}
+function renderSC(dt){SC.root.rotation.y+=dt*.55;if(SC.hm&&SC.hm.userData.orb)SC.hm.userData.orb.rotation.y+=dt*2.2;if(SC.pm&&SC.pm.userData.wings)SC.pm.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.5);if(SC.pg&&SC.pg.userData.evo)SC.pg.userData.evo(dt);SC.ren.render(SC.scene,SC.cam)}
 API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.WebGLRenderer({antialias:true,alpha:true});SC.ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));SC.ren.outputEncoding=T.sRGBEncoding;SC.ren.toneMapping=T.ACESFilmicToneMapping;SC.ren.toneMappingExposure=1.1;
     SC.scene=new T.Scene();SC.cam=new T.PerspectiveCamera(30,1,.1,60);SC.cam.position.set(0,1.45,5.6);SC.cam.lookAt(0,.95,0);
     SC.scene.add(new T.HemisphereLight(0xffffff,0x3a3050,.95));const d=new T.DirectionalLight(0xfff4e0,1.15);d.position.set(3,5,4);SC.scene.add(d);const d2=new T.DirectionalLight(0x9fb4ff,.6);d2.position.set(-4,2,-3);SC.scene.add(d2);
@@ -1125,7 +1157,7 @@ API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.Web
   const w=el.clientWidth||300,h=el.clientHeight||240;SC.ren.setSize(w,h,false);SC.cam.aspect=w/h;SC.cam.updateProjectionMatrix();
   const id=JSON.stringify(o);if(id!==SC.id){SC.id=id;while(SC.root.children.length){const ch=SC.root.children[0];SC.root.remove(ch);dispose(ch)}
     SC.hm=bake((HERO[o.cls]||HERO.war)(o.skin||'def',o.gear));fit(SC.hm,1.8,1.5);SC.root.add(SC.hm);SC.pm=null;
-    if(o.pet&&PETM[o.pet]){const pg=G(SC.root);pg.position.set(1.0,0,.35);pg.rotation.y=-.5;SC.pm=bake(PETM[o.pet]());fit(SC.pm,.8*(1+.15*(o.st||0)),1.1);if(SC.pm.userData.fly)SC.pm.position.y+=.5;pg.add(SC.pm)}}
+    if(o.pet&&PETM[o.pet]){const pg=G(SC.root);pg.position.set(1.0,0,.35);pg.rotation.y=-.5;SC.pm=bake(PETM[o.pet]());fit(SC.pm,.8*(1+.15*(o.st||0)),1.1);if(SC.pm.userData.fly)SC.pm.position.y+=.5;pg.add(SC.pm);SC.pg=pg;try{petEvo(pg,SC.pm,o.st||0)}catch(e){}}else SC.pg=null}
   SC.on=true;return true}catch(e){return false}};
 API.showcaseStop=()=>{SC.on=false};
 window.S3D=API;

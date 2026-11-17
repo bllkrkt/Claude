@@ -371,6 +371,30 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
 #sheet::before{content:'';display:block;position:sticky;top:-10px;height:2px;margin:-10px -16px 8px;background:linear-gradient(90deg,transparent,#ffcf4a88,transparent)}
 #toasts>div{border:1px solid rgba(255,214,130,.35)!important;box-shadow:0 6px 18px #000a}
 .zone{box-shadow:inset 0 1px 0 #ffffff30,inset 0 -30px 40px #0006,0 6px 16px #0007}
+
+/* v22 sandıklar */
+.odds{display:flex;height:7px;border-radius:5px;overflow:hidden;margin:10px 0 4px;gap:2px}.odds i{display:block}
+.oddl{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;font-weight:700}
+.pity{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mut,#9aa0bd);margin-top:8px}.pity .bar{flex:1;height:6px;border-radius:4px;background:#ffffff14;overflow:hidden}.pity .bar i{display:block;height:100%;border-radius:4px;transition:width .4s}.pity b{color:#fff;font-variant-numeric:tabular-nums}
+.chrow{display:grid;grid-template-columns:1fr 1fr .8fr;gap:6px;margin-top:9px}.chrow .btn{padding:0 6px;font-size:12px;white-space:nowrap}.chrow em{font-style:normal;font-size:9.5px;margin-left:4px;color:#7dffb0;font-weight:800}
+.chfree.rdy{border-color:#7dffb088;animation:glowG 2s infinite}
+.chopen{text-align:center}.che{font-size:66px;display:inline-block;animation:chShake .7s ease-out;filter:drop-shadow(0 6px 10px #0009)}
+.chsum{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 12px;font-weight:800;font-size:13px;margin:-4px 0 10px}
+.chg .chi{opacity:0;animation:chIn .35s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes chShake{0%{transform:scale(.6) rotate(0)}20%{transform:scale(1.15) rotate(-12deg)}35%{transform:rotate(10deg)}50%{transform:rotate(-8deg)}65%{transform:rotate(5deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes chIn{from{opacity:0;transform:scale(.3) translateY(14px)}to{opacity:1;transform:none}}
+
+/* v22 sezon */
+.card.sea{background:linear-gradient(135deg,#4a3a10,#2a1f3e 60%,#1e2136);border-color:#ffcf4a55;cursor:pointer}
+.lb{padding:6px 10px}.lbr{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #ffffff0d;font-size:14px}.lbr:last-child{border:0}
+.lbr .rk{display:inline-block;width:22px;text-align:center;color:var(--mut,#9aa0bd);font-weight:800}.lbr>span:first-child,.lbr{font-variant-numeric:tabular-nums}.lbr .ce{font-size:20px}.lbr .pt{font-weight:800;color:var(--gold)}
+.lbr.me{background:linear-gradient(90deg,#ffcf4a26,transparent);border-radius:10px;box-shadow:inset 3px 0 0 var(--gold)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sgrid div{display:flex;flex-direction:column;background:#ffffff08;border-radius:12px;padding:8px 10px}.sgrid span{font-size:12px;color:var(--mut,#9aa0bd)}.sgrid b{font-size:18px}.sgrid small{font-size:10.5px;color:var(--mut,#9aa0bd)}
+
+/* v22 yerel his: basılı tutma/seçim yok, kaydırma çubuğu yok, düğmeye basınca hafif içe çökme */
+*{-webkit-touch-callout:none}img{-webkit-user-drag:none}::-webkit-scrollbar{display:none;width:0;height:0}*:focus{outline:none}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.btn,#tabs button,.plus,.seg button{transition:transform .08s ease-out,filter .08s}.btn:active:not([disabled]),#tabs button:active,.plus:active:not([disabled]),.seg button:active{transform:scale(.955);filter:brightness(1.15)}
 </style>
 </head>
 <body>
@@ -457,7 +481,7 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
 <script>
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='21.0';let titleOn=false;
+const VER='22.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -582,8 +606,11 @@ const TAL=[
   {k:'def',n:T('Savunma'),i:'🛡️',c:'#5fe3ff',nodes:[{k:'skin',n:T('Demir Deri'),i:'🧱',d:r=>'+%'+5*r+T(' can')},{k:'parry',n:T('Karşı Saldırı'),i:'⚡',d:r=>T('Savuşturma karşı saldırısı +%')+(20*r)},
     {k:'regen',n:T('Yenilenme'),i:'💚',d:r=>T('Saniyede canın %')+tr(.3*r)+T('\'i yenilenir')},{k:'last',n:T('Son Nefes'),i:'🕯️',max:1,d:r=>T('Ölümcül darbede savaş başına bir kez %25 canla kalkarsın')}]},
   {k:'mas',n:T('Ustalık'),i:'✨',c:'#c58bff',nodes:[{k:'quick',n:T('Çabuk El'),i:'⏱️',d:r=>T('Yetenek bekleme süresi -%')+4*r},{k:'arcane',n:T('Büyü Gücü'),i:'🔮',d:r=>'+%'+8*r+T(' yetenek hasarı')},
-    {k:'loot',n:T('Hazine Avcısı'),i:'💰',d:r=>'+%'+6*r+T(' altın, +%')+r+T(' eşya düşme')},{k:'bond',n:T('Yoldaş Bağı'),i:'🐾',d:r=>'+%'+15*r+T(' yoldaş hasarı')}]}];
-const tl=k=>S.tal[k]||0,tpTotal=()=>Math.floor(S.lvl/5),tpUsed=()=>Object.values(S.tal).reduce((a,b)=>a+b,0),tpFree=()=>Math.max(0,tpTotal()-tpUsed());
+    {k:'loot',n:T('Hazine Avcısı'),i:'💰',d:r=>'+%'+6*r+T(' altın, +%')+r+T(' eşya düşme')},{k:'bond',n:T('Yoldaş Bağı'),i:'🐾',d:r=>'+%'+15*r+T(' yoldaş hasarı')}]},
+  {k:'asn',cls:'asn',n:T('Gölge Yolu'),i:'🥷',c:'#8f7bff',nodes:[{k:'amb',n:T('Pusu'),i:'🗡️',d:r=>T('Her düşmana ilk vuruşun kesin kritik ve +%{0} hasar',30*r)},{k:'venom',n:T('Zehirli Kenar'),i:'🧪',d:r=>T('Kritik vuruşlar +%{0} zehir hasarı ekler',6*r)},
+    {k:'exe',n:T('İnfaz'),i:'⚰️',d:r=>T('Canı %25\'in altındaki düşmanlara +%{0} hasar',12*r)},{k:'shade',n:T('Gölge Dansı'),i:'🌑',max:3,d:r=>T('Düşman saldırılarından %{0} ihtimalle kaçarsın',4*r)}]}];
+const talOk=b=>!b.cls||b.cls===S.cls;
+const tl=k=>S.tal[k]||0,tpTotal=()=>Math.floor(S.lvl/5),tpUsed=()=>TAL.filter(talOk).reduce((a,b)=>a+b.nodes.reduce((x,n)=>x+tl(n.k),0),0),tpFree=()=>Math.max(0,tpTotal()-tpUsed());
 const brPts=b=>TAL[b].nodes.reduce((a,n)=>a+tl(n.k),0);
 const towerG=f=>8+f*5;
 const petStage=l=>l>=20?2:l>=10?1:0,PSN=['',T('Ulu '),T('Efsanevi ')];
@@ -649,7 +676,10 @@ const RUNES={atk:{n:T('Güç'),i:'🔥',c:'#ff6a3d',k:'atkP',v:[4,8,14,22,32]},d
 const RT=['I','II','III','IV','V'];
 const DUNG={gold:{n:T('Altın Mağarası'),i:'💰',d:T('Hazine canavarlarını avla, altına boğul!'),mon:[['🎁','Mimik'],['👺','Goblin']],c:'#ffcf4a',g:'linear-gradient(135deg,#5a4208,#1e2136 70%)'},
   ess:{n:T('Öz Madeni'),i:'💠',d:T('Kristal golemleri parçala, bolca Öz topla.'),mon:[['💎','Kristal Golem'],['🧊','Buz Elementali']],c:'#c58bff',g:'linear-gradient(135deg,#3a1a5a,#1e2136 70%)'},
-  rune:{n:T('Rün Tapınağı'),i:'🔮',d:T('Tapınak muhafızlarını yen, her biri rün düşürür.'),mon:[['🗿','Rün Muhafızı'],['🥷','Gölge Avcı']],c:'#5fe3ff',g:'linear-gradient(135deg,#0a3a5a,#1e2136 70%)'}};
+  rune:{n:T('Rün Tapınağı'),i:'🔮',d:T('Tapınak muhafızlarını yen, her biri rün düşürür.'),mon:[['🗿','Rün Muhafızı'],['🥷','Gölge Avcı']],c:'#5fe3ff',g:'linear-gradient(135deg,#0a3a5a,#1e2136 70%)'},
+  sea:{n:T('Batık Hazine'),i:'🔱',d:T('Oksijen 30 saniye; her av +1,5 sn kazandırır. Altın, Öz ve her 5 avda bir Derinlik Seti eşyası.'),mon:[['🐟','Balık Adam'],['🦀','Dev Yengeç'],['🐍','Deniz Yılanı'],['🪼','Zehirli Denizanası'],['🦈','Köpekbalığı Savaşçı']],c:'#5fd0ff',g:'linear-gradient(135deg,#06425e,#0a2a3a 55%,#1e2136)',zone:7,t:30000,req:T('Batık Şehir\'e ulaşınca açılır')}};
+const dungOpen=k=>k!=='sea'||(S.maxF[7]|0)>0;
+const dungLeft=()=>Object.fromEntries(Object.keys(DUNG).map(k=>[k,DUNG_N]));
 const DUNG_T=45000,DUNG_N=2,DUEL_N=5;
 const LEAGUES=[{n:T('Bronz'),i:'🥉',t:0},{n:T('Gümüş'),i:'🥈',t:150},{n:T('Altın'),i:'🥇',t:400},{n:T('Platin'),i:'💠',t:750},{n:T('Elmas'),i:'💎',t:1200},{n:T('Efsane'),i:'👑',t:1800}];
 const DNAMES=['Karabela','Demirpençe','Gölgekurt','Ateşyürek','Buzkalkan','Yıldırımkılıç','Kızılbaş','Kurtkan','Tunçyay','Akdoğan','Kara Şahin','Gökbörü','Alpaslan','Toygar','Ayyıldız','Bozkurt','Çelikbilek','Kılıçarslan','Tolga','Atilla','Börteçine','Oğuz','Kayra','Yağmur','Asena'];
@@ -675,16 +705,20 @@ const ACH=[
   {k:'tower',n:T('Kule Fatihi'),i:'🗼',d:n=>T('Kulede ')+kn(n)+T('. kata ulaş'),t:[5,15,30,50],g:[10,20,40,80]}];
 const ACHV={kills:()=>S.tot.kills,boss:()=>S.tot.boss,lvl:()=>S.lvl,zones:()=>S.maxF.filter(x=>x>0).length,leg:()=>S.tot.leg,forge:()=>S.tot.maxUp,
   pets:()=>Object.keys(S.pets).length,gold:()=>S.tot.gold,combo:()=>S.tot.maxCombo,elite:()=>S.tot.elite,reb:()=>S.reb.n,arena:()=>S.arena.best,duelW:()=>S.tot.duelW,league:()=>S.duel.lg,dungRuns:()=>S.tot.dungRuns,blocks:()=>S.tot.blocks,runeT:()=>S.tot.runeT,tower:()=>S.tower.best};
-const CHESTS=[{n:T('Tahta Sandık'),e:'📦',d:T('Çoğunlukla Sıradan, bazen Nadir'),w:[70,26,4,0],p:g=>20+8*g},
-  {n:T('Altın Sandık'),e:'🎁',d:T('En az Nadir · Epik şansı yüksek'),w:[0,62,32,6],p:g=>80+35*g},
-  {n:T('Efsane Sandığı'),e:'👑',d:T('En az Epik · %20 Efsanevi'),w:[0,0,80,20],p:g=>400+150*g,gem:50},
-  {n:T('Set Sandığı'),e:'🧩',d:T('Kesin set eşyası · En az Epik'),w:[0,0,75,25],p:null,gem:60,set:1}];
+const CHESTS=[{n:T('Tahta Sandık'),e:'📦',d:T('Çoğunlukla Sıradan, bazen Nadir'),w:[70,26,4,0],p:g=>20+8*g,pity:[2,20],g10:1},
+  {n:T('Altın Sandık'),e:'🎁',d:T('En az Nadir · Epik şansı yüksek'),w:[0,62,32,6],p:g=>80+35*g,pity:[3,40],g10:2},
+  {n:T('Efsane Sandığı'),e:'👑',d:T('En az Epik · %20 Efsanevi'),w:[0,0,80,20],p:g=>400+150*g,gem:50,pity:[3,15],g10:3},
+  {n:T('Set Sandığı'),e:'🧩',d:T('Kesin set eşyası · En az Epik'),w:[0,0,75,25],p:null,gem:60,set:1,pity:[3,15],g10:3}];
+const CH_FREE=4*3600e3,CH_DISC=.9,CH_MAX=50;
 const SETS={
   wolf:{n:T('Kurt Avcısı'),i:'🐺',b:[[2,{critDmg:15}],[4,{crit:8}],[6,{atkP:30}]]},
   iron:{n:T('Demir Kale'),i:'🏰',b:[[2,{defP:20}],[4,{hpP:20}],[6,{dr:25}]]},
   king:{n:T('Altın Kral'),i:'👑',b:[[2,{gold:25}],[4,{xp:20}],[6,{drop:10}]]},
   dragon:{n:T('Ejder Ateşi'),i:'🐉',b:[[2,{skD:20}],[4,{cdR:15}],[6,{atkP:40}]]},
-  shadow:{n:T('Gölge'),i:'🌑',b:[[2,{ls:3}],[4,{crit:10}],[6,{critDmg:60}]]}};
+  shadow:{n:T('Gölge'),i:'🌑',b:[[2,{ls:3}],[4,{crit:10}],[6,{critDmg:60}]]},
+  abyss:{n:T('Derinlik'),i:'🔱',ex:1,b:[[2,{hpP:15}],[4,{ls:4}],[6,{atkP:35,dr:10}]]}};
+/* rastgele set seçiminde sadece genel setler; Derinlik yalnızca Batık Hazine zindanında düşer */
+const SETK=Object.keys(SETS).filter(k=>!SETS[k].ex);
 const SBN={atkP:T('Saldırı'),hpP:T('Can'),defP:T('Savunma'),crit:T('Kritik Şansı'),critDmg:T('Kritik Hasarı'),gold:T('Altın'),xp:'XP',drop:T('Eşya Düşme'),skD:T('Yetenek Hasarı'),cdR:T('Bekleme Azalması'),ls:T('Can Çalma'),dr:T('Alınan Hasar Azalması')};
 const bTxt=b=>Object.keys(b).map(k=>'+%'+b[k]+' '+SBN[k]).join(', ');
 const SOUL=[
@@ -716,7 +750,7 @@ function dur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h?h+T(' 
 function fresh(){return {v:2,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
   zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSp:1,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
   cls:null,skl:[1,1,1,1],pets:{},pet:null,ach:{},bossFirst:{},daily:{day:'',claimed:false,streak:0,last:'',q:[],bonus:false},
-  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,zv:2,invX:0,elog:[],wev:{wk:0,tok:0,cl:[]},title:'',titles:{},tu:{},tut:{},perfAsk:0,advDay:'',fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),fx:detFx(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
+  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:dungLeft(),best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,zv:2,pity:{},chF:0,sea:null,invX:0,elog:[],wev:{wk:0,tok:0,cl:[]},title:'',titles:{},tu:{},tut:{},perfAsk:0,advDay:'',fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),fx:detFx(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,flash:true,bgFight:true,autoBk:true,autoPot:true,imm:true,hz:true,notif:false}}}
 let S=fresh();
 /* bozuk kayıt oyunu kilitlemesin: okunamayan kaydı ayrı anahtara sakla, temiz başla */
 function load(){let r=null;try{r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){try{if(r)localStorage.setItem(SAVE_KEY+'-bozuk',r)}catch(x){}S=fresh()}}
@@ -736,7 +770,7 @@ function sanitize(){for(const g of ['st','tot'])for(const k in S[g]){S[g][k]=Mat
   S.skl=[0,1,2,3].map(i=>Math.max(1,Math.min(20,(Array.isArray(S.skl)?S.skl[i]:1)|0)));
   if(!Array.isArray(S.floors))S.floors=[];if(!Array.isArray(S.maxF))S.maxF=[];S.maxF=ZONES.map((_,i)=>Math.max(i?0:1,S.maxF[i]|0));S.floors=ZONES.map((_,i)=>Math.max(1,Math.min(Math.max(1,S.maxF[i]),S.floors[i]|0)));
   if(!(S.zone>=0&&S.zone<ZONES.length)||!S.maxF[S.zone])S.zone=0;S.zone=S.zone|0;
-  if(!Array.isArray(S.daily.q))S.daily.q=[];S.daily.q=S.daily.q.filter(q=>q&&QUESTS[q.k]&&q.n>0);if(!S.dung.left||typeof S.dung.left!=='object')S.dung.left={gold:DUNG_N,ess:DUNG_N,rune:DUNG_N};if(!S.dung.best||typeof S.dung.best!=='object')S.dung.best={};
+  if(!Array.isArray(S.daily.q))S.daily.q=[];S.daily.q=S.daily.q.filter(q=>q&&QUESTS[q.k]&&q.n>0);for(const k in DUNG)if(S.dung&&S.dung.left&&typeof S.dung.left==='object'&&!(k in S.dung.left))S.dung.left[k]=DUNG_N;if(S.set){if(S.set.imm==null)S.set.imm=true;if(S.set.hz==null)S.set.hz=true;if(S.set.notif==null)S.set.notif=false}if(!S.pity||typeof S.pity!=='object'||Array.isArray(S.pity))S.pity={};if(!(S.chF>=0)||S.chF>Date.now())S.chF=0;if(!S.dung.left||typeof S.dung.left!=='object')S.dung.left=dungLeft();if(!S.dung.best||typeof S.dung.best!=='object')S.dung.best={};
   if(!Array.isArray(S.duel.opp)||S.duel.opp.some(o=>!o||!CLS[o.cls]||!(o.q>0)))S.duel.opp=null;S.tower.best=Math.max(0,S.tower.best|0);S.reb.n=Math.max(0,S.reb.n|0);S.reb.souls=Math.max(0,+S.reb.souls||0);
   S.aaSp=Math.max(0,Math.min(4,S.aaSp|0));if(!Array.isArray(S.elog))S.elog=[];if(!S.wev||typeof S.wev!=='object')S.wev={wk:0,tok:0,cl:[]};S.wev.tok=Math.max(0,+S.wev.tok||0);if(!Array.isArray(S.wev.cl))S.wev.cl=[];if(!S.titles||typeof S.titles!=='object')S.titles={};if(typeof S.title!=='string')S.title='';S.elog=S.elog.filter(e=>e&&typeof e.x==='string'&&e.t>0).slice(0,25);if(S.hp!=null&&!(S.hp>0))S.hp=null}
 function applySave(o){const f=fresh();const old=!o.v||o.v<2;S=Object.assign(f,o);
@@ -759,8 +793,8 @@ function save(now){if(now){clearTimeout(saveT);saveT=0;S.lastSeen=Date.now();try
 let bg=false;
 document.addEventListener('visibilitychange',()=>{if(document.hidden)save(true);else wake();d3Act()});
 window.addEventListener('pagehide',()=>save(true));
-window.__pause=()=>{bg=true;save(true);d3Act()};
-window.__resume=()=>{bg=false;wake();d3Act()};
+window.__pause=()=>{bg=true;save(true);d3Act();try{nat('schedule',JSON.stringify(natPlan()))}catch(e){}};
+window.__resume=()=>{bg=false;wake();d3Act();nat('schedule','[]');natApply()};
 
 /* ======================= HESAPLAR ======================= */
 let P={};
@@ -787,6 +821,7 @@ function calc(){const e={atk:0,def:0,hp:0,crit:0,critDmg:0,gold:0,ls:0};
      gold:t.luck*2+e.gold+(pb.gold||0)+(sb.gold||0)+15*(u.gold||0),ls:Math.min(25,e.ls+(sb.ls||0)),drop:Math.min(70,22+t.luck*.4+(sb.drop||0)),xp:(pb.xp||0)+(sb.xp||0)+15*(u.xp||0),regen:pb.regen||0,
      dbl:c==='arc'?15:0,skD:(c==='mag'?30:0)+(sb.skD||0),cdR:Math.min(50,(c==='mag'?20:0)+(sb.cdR||0)),dr:Math.min(60,sb.dr||0)};
   P.fin=1.5+.15*tl('fin');P.bossD=8*tl('butch');P.parry=20*tl('parry');P.petD=15*tl('bond');P.regen+=.3*tl('regen');P.cdR=Math.min(60,P.cdR+4*tl('quick'));P.skD+=8*tl('arcane');P.gold+=6*tl('loot');P.drop=Math.min(75,P.drop+tl('loot'));
+  const sa=c==='asn';P.amb=sa?30*tl('amb'):0;P.venom=sa?6*tl('venom'):0;P.exe=sa?12*tl('exe'):0;P.evade=sa?4*tl('shade'):0;
   const E={};for(const sl of SLOTS){const it=S.eq[sl.k];if(it&&it.leg&&LEGP[it.leg])E[it.leg]=(E[it.leg]||0)+1}
   if(fateOn)for(const k in FB)E[k]=(E[k]||0)+FB[k];P.e=E;
   if(E.giant)P.bossD+=35*E.giant;if(E.gold)P.gold+=40*E.gold;if(E.pack)P.petD+=80*E.pack;
@@ -815,7 +850,7 @@ function makeItem(L,r,slot,setK){slot=slot||pick(SLOTS).k;const d=SLOT[slot],st=
   const pool=Object.keys(STAT).filter(k=>!(k in st)).sort(()=>Math.random()-.5);
   for(let i=0;i<r&&pool.length;i++){const k=pool.pop();add(k,STAT[k].p?.5:.35)}
   const b=pick(d.names);
-  const it={id:S.nextId++,slot,r,L,up:0,n:pick(PRE[r])+' '+b[1],e:b[0],st};if(setK||(r>=2&&Math.random()<(r===3?.6:.35)))it.set=setK||pick(Object.keys(SETS));if(r===3)it.leg=pick(LEGK);return it}
+  const it={id:S.nextId++,slot,r,L,up:0,n:pick(PRE[r])+' '+b[1],e:b[0],st};if(setK||(r>=2&&Math.random()<(r===3?.6:.35)))it.set=setK||pick(SETK);if(r===3)it.leg=pick(LEGK);return it}
 function rollRar(w){let t=w.reduce((a,b)=>a+b,0),x=Math.random()*t;for(let i=0;i<w.length;i++){x-=w[i];if(x<0)return i}return 0}
 const power=it=>it?Math.round(Object.keys(it.st).reduce((a,k)=>a+sOf(it,k)*STAT[k].w,0)):0;
 const price=it=>Math.round((5+it.L*2)*RAR[it.r].sell*(1+.25*(it.up||0)));
@@ -916,7 +951,7 @@ function beep(f,d,type,vol,slide){if(!S.set.sound)return;try{AC=AC||new (window.
   const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
   g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(outS());o.start(t);o.stop(t+d)}catch(e){}}
 function tune(ns,gap,type){ns.forEach((f,i)=>setTimeout(()=>beep(f,.16,type||'triangle',.07),i*gap))}
-function vib(p){if(S.set.vib&&touched&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+function vib(p){if(!S.set.vib||!touched)return;const B=window.AndroidBridge;if(B&&B.vibe){try{B.vibe(Array.isArray(p)?p.join(','):String(p))}catch(e){}return}if(navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
 
 /* ======================= GÖRSEL EFEKTLER ======================= */
 const stage=$('stage');let D3=null;
@@ -971,7 +1006,7 @@ function hitW(w,mult,sure){if(!w||w.dead||dead||paused())return;let d=atkNow()*r
   if(D3&&D3.waveHit)try{D3.waveHit(i,c)}catch(x){}floatTxt(fmt(d)+(c?'!':''),c?'c':'sk',m.x+rnd(-110,110),m.y-50+rnd(-20,20),c?22:16);
   if(w.hp<=0){w.dead=true;w.hp=0;if(D3&&D3.waveDie)try{D3.waveDie(i)}catch(x){}sfx('kill',.55)}waveChips()}
 /* arkadaki ilk iki düşman da saldırır (yarım güçle) */
-function waveHit(w){const h=heroPos(),i=W.indexOf(w);if(D3&&D3.waveAtk)try{D3.waveAtk(i)}catch(x){}if(R.dodge>0){floatTxt(T('ISKA'),'m',h.x-14,h.y-14);return}
+function waveHit(w){const h=heroPos(),i=W.indexOf(w);if(D3&&D3.waveAtk)try{D3.waveAtk(i)}catch(x){}if(R.dodge>0||(P.evade>0&&Math.random()*100<P.evade)){floatTxt(T('ISKA'),'m',h.x-14,h.y-14);return}
   let d=w.atk*.7*rnd(.85,1.15)*dmgRed(w.lv);if(R.shield>0)d*=1-R.shV/100;d*=1-P.dr/100;d=Math.max(1,Math.round(d));S.hp-=d;floatTxt('-'+fmt(d),'p',h.x-24,h.y-8,17);sfx('hurt',.5);
   if(S.hp<=0){if(tl('last')&&!R.last){R.last=true;S.hp=Math.round(P.hp*.25);banner(T('🕯️ SON NEFES!'),'lv')}else{S.hp=0;die()}}updPl()}
 function spawn(pre){clearTimeout(spawnT);const z=ZONES[S.zone],f=S.floors[S.zone],g=G(),boss=f%10===0;if(!pre)W=[];
@@ -1003,7 +1038,8 @@ const critNow=()=>Math.min(95,P.crit+(R.bcrit>0?R.bcritV:0));
 const comboB=()=>Math.min(.5,R.combo*.005);
 function attack(mult,o){o=o||{};if(!M||M.dead||dead||paused())return 0;if(R.frozen>0&&o.src!=='pet')return 0;
   let d=atkNow()*rnd(.88,1.12)*mult;if(o.src==='tap')d*=1+comboB();if(M.afx&&M.afx.includes('armor'))d*=.6;if(M.stun>0)d*=1.5;if(o.src==='skill')d*=1+P.skD/100;if(M.boss&&P.bossD)d*=1+P.bossD/100;const E=P.e||{};if(E.exec&&M.hp<M.max*.3)d*=1+.6*E.exec;if(E.swift&&R.combo>=20)d*=1+.25*E.swift;
-  const c=o.sure||Math.random()*100<critNow();if(c){d*=P.critDmg/100;S.tot.crits++;qAdd('crit');if(E.vamp&&o.src!=='pet'&&S.hp<P.hp)S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(P.hp*.02*E.vamp)))}
+  let amb=false;if(P.amb&&!M.ambU&&o.src!=='pet'){M.ambU=1;amb=true;d*=1+P.amb/100}if(P.exe&&M.hp<M.max*.25)d*=1+P.exe/100;
+  const c=o.sure||amb||Math.random()*100<critNow();if(c){d*=P.critDmg/100;if(P.venom)d*=1+P.venom/100;S.tot.crits++;qAdd('crit');if(E.vamp&&o.src!=='pet'&&S.hp<P.hp)S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(P.hp*.02*E.vamp)))}
   d=Math.max(1,Math.round(d));if(M.arena){const k0=arenaLvl();arenaDmg+=d;const k1=arenaLvl();if(k1>k0){banner(T('⭐ KADEME ')+k1+' ⭐','lv');tune([523,784,1047],70);confetti(20)}}else if(M.sh>0){d=Math.max(1,Math.round(d*(o.src==='skill'||o.fin?2:.5)));M.sh=Math.max(0,M.sh-d);if(!M.sh){M.stun=1500;shout(T('🛡️ KALKAN KIRILDI!'),'#9fd8ff');scrFlash('w');if(D3&&D3.shieldFx)D3.shieldFx(false)}}else{M.hp-=d;if(M.hlC>0)M.hlD=(M.hlD||0)+d}
   if(!o.fx&&o.src!=='pet'){R.hitN=(R.hitN||0)+1;if(E.storm&&R.hitN%5===0)setTimeout(()=>{if(M&&!M.dead){if(D3&&D3.bolt&&tab==='battle')D3.bolt();attack(1.8*E.storm,{src:'pet',fx:1,sure:true})}},90);if(E.twin&&o.src!=='skill'&&Math.random()*100<15*E.twin)setTimeout(()=>attack(.6*mult,{src:'pet',fx:1}),130)}
   const m=monPos(),x=o.x!=null?o.x:m.x+rnd(-m.w*.3,m.w*.3),y=o.y!=null?o.y:m.y+rnd(-m.h*.3,m.h*.2);
@@ -1096,8 +1132,8 @@ function lootMsg(it,drop){const c=RAR[it.r].c,d=document.createElement('div');d.
   if(it.r===3){if(tab==='battle'||!drop)legendary(it);else{pendLeg=it;toast(T('🌟 EFSANEVİ eşya düştü: ')+it.e+' '+itN(it),'big')}}else if(it.r===2&&tab==='battle'){tune([440,660],90);vib(40)}}
 let legAfter=null;
 function legendary(it,after){logEv('🌟 '+itN(it));$('legE').textContent=it.e;$('legN').textContent=itN(it);$('leg').classList.add('on');legAfter=after||null;confetti(80);tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
-function monsterHit(mult){mult=mult||1;const h=heroPos();if(D3&&mult===1)D3.monAttack(R.dodge>0);
-  if(R.dodge>0){floatTxt(T('ISKA'),'m',h.x+10,h.y-30);return}
+function monsterHit(mult){mult=mult||1;const h=heroPos();const ev=R.dodge<=0&&P.evade>0&&Math.random()*100<P.evade;if(D3&&mult===1)D3.monAttack(R.dodge>0||ev);
+  if(R.dodge>0||ev){floatTxt(T('ISKA'),'m',h.x+10,h.y-30);return}
   let d=M.atk*mult*rnd(.85,1.15)*dmgRed(M.lv);if(R.shield>0)d*=1-R.shV/100;if(M.afx&&M.afx.includes('vamp')){M.hp=Math.min(M.max,M.hp+M.max*.03);updMon()}d*=1-P.dr/100;d=Math.max(1,Math.round(d));S.hp-=d;if(P.e&&P.e.thorn&&S.hp>0)setTimeout(()=>attack(.5*P.e.thorn,{src:'pet',fx:1}),70);
   floatTxt('-'+fmt(d)+(R.shield>0?' 🛡':''),'p',h.x+10,h.y-30,mult>1?30:22);shake(mult>1);sfx('hurt');vib(mult>1?[40,30,60]:18);if(mult>1)scrFlash('r');
   if(S.hp<=0){if(tl('last')&&!R.last){R.last=true;S.hp=Math.round(P.hp*.25);banner(T('🕯️ SON NEFES!'),'lv');shout(T('🕯️ SON NEFES'),'#ffd56a');if(D3)D3.heal()}else{S.hp=0;die()}}updPl()}
@@ -1259,20 +1295,58 @@ function evOpen(){const k=evOn;if(!k||dead||busyMode())return;evHide();S.ev=(S.e
   openSheet(T('<div style="text-align:center"><div style="font-size:60px">🧙</div><h2>Gezgin tüccar</h2><p class="mut">"Bunu başka yerde bulamazsın yolcu."</p></div><div class="card" style="text-align:center;border-color:')+RAR[it.r].c+'88"><div style="font-size:40px">'+it.e+'</div><b style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</b><div class="mut">'+RAR[it.r].n+' · '+SLOT[it.slot].n+T(' · Seviye ')+it.L+T('</div><div style="margin-top:6px">⚡ Güç <b>')+fmt(power(it))+T('</b> <span class="mut">(kuşandığın: ')+fmt(power(cur))+')</span></div>'+(it.leg?'<div style="margin-top:6px;color:#ffd9a0">'+LEGP[it.leg].i+' '+LEGP[it.leg].n+': '+LEGP[it.leg].d+'</div>':'')+'</div><div class="row"><button class="btn pri grow" data-a="evBuy" '+(S.gold<c?'disabled':'')+T('>Satın al · 💰 ')+fmt(c)+T('</button><button class="btn grow" data-a="close">Geç</button></div>'))}
 function towerCard(){const f=S.tower.best+1;return T('<div class="card" style="background:linear-gradient(135deg,#2a2a5a,#1e2136 70%);border-color:#9fb4ff55"><div class="row"><span style="font-size:44px">🗼</span><div class="grow"><b style="font-size:16px">Sonsuz Kule</b><div class="mut">Her katta güçlü bir muhafız, 40 saniye. İlk geçişte ödül; her 3 katta rün, her 5 katta 💎.</div><div class="mut" style="margin-top:3px">En yüksek: <b style="color:var(--gold)">')+kn(S.tower.best)+T('. kat</b> · Deneme sınırsız</div></div></div><button class="btn pri w100" style="margin-top:10px" data-a="tower" ')+(S.cls&&!dead&&!busyMode()?'':'disabled')+'>🗼 '+kn(f)+T('. kata çık</button>')+(S.cls&&!dead&&!busyMode()&&towerSkipN()?T('<button class="btn ok w100" style="margin-top:8px" data-a="towerSkip">⏩ Hızlı geç: ')+towerSkipN()+T(' kolay kat (ödülleriyle)</button>'):'')+'</div>'}
 
+/* ======================= SEZON REKOR TABLOSU (v22) =======================
+   Her takvim ayı bir sezon. Puan qAdd olaylarından gelir (SEA_P). 9 bilgisayar rakibi: sezon numarasından tohumlanır,
+   puanları ayın geçen kısmıyla büyür. Sezon bitince sıraya göre ödül (S.sea.cl ile bir kez). */
+const SEA_P={kill:1,elite:5,boss:25,tower:15,dung:10,arena:15,duel:10,chest:1,forge:2},SEA_PACE=12000,SEA_M=[3,2.2,1.7,1.3,1,.75,.5,.32,.18];
+const SEA_RW=[[1,250,2,2],[3,150,2,1],[6,80,1,1],[10,40,0,1]];/* [en kötü sıra, 💎, sandık türü, adet] */
+const seaId=(d=new Date())=>d.getFullYear()*12+d.getMonth(),seaNo=id=>id-(2026*12+10)+1;
+const seaEnd=id=>new Date(Math.floor(id/12),id%12+1,1).getTime(),seaStart=id=>new Date(Math.floor(id/12),id%12,1).getTime();
+const seaProg=id=>{const a=seaStart(id),b=seaEnd(id);return Math.max(.02,Math.min(1,(Date.now()-a)/(b-a)))};
+function seaRnd(id,i){let x=(id*2654435761+i*40503)>>>0;x^=x<<13;x>>>=0;x^=x>>17;x^=x<<5;return ((x>>>0)%10000)/10000}
+function seaRivals(id,prog){const nms=DNAMES.slice().sort((a,b)=>seaRnd(id,DNAMES.indexOf(a)+200)-seaRnd(id,DNAMES.indexOf(b)+200));return SEA_M.map((m,i)=>{const nm=nms[i%nms.length],j=.85+.3*seaRnd(id,i),w=.92+.16*seaRnd(id,i+(Math.floor(prog*30)));
+  return {n:nm,c:Object.keys(CLS)[Math.floor(seaRnd(id,i+90)*4)],p:Math.round(SEA_PACE*m*j*Math.pow(prog,.9)*(prog>=1?1:w))}})}
+function seaBoard(id,pts,prog){const r=seaRivals(id,prog);r.push({n:null,c:S.cls,p:pts,me:1});const used={};r.forEach(x=>{if(!x.me){while(used[x.n])x.n=x.n+' II';used[x.n]=1}});return r.sort((a,b)=>b.p-a.p||(a.me?-1:1))}
+const seaRank=(id,pts,prog)=>seaBoard(id,pts,prog).findIndex(x=>x.me)+1;
+const seaRw=rk=>SEA_RW.find(x=>rk<=x[0]);
+function seaNew(id){return {id,pts:0,rec:{},hist:(S.sea&&S.sea.hist)||[],best:(S.sea&&S.sea.best)||{}}}
+function seaCheck(){const id=seaId();if(!S.sea||typeof S.sea!=='object'||!(S.sea.id>0)){S.sea=seaNew(id);return}
+  if(S.sea.id===id)return;const o=S.sea,rk=seaRank(o.id,o.pts,1),rw=o.pts>0?seaRw(rk):null;
+  o.hist=[{id:o.id,pts:o.pts,rk}].concat(o.hist||[]).slice(0,6);S.sea=seaNew(id);S.sea.hist=o.hist;S.sea.best=o.best||{};
+  if(o.pts>0){if(rw)S.gems+=rw[1];save();
+    Q.push(()=>{openSheet('<div style="text-align:center"><div style="font-size:60px">🏆</div><h2>'+T('Sezon {0} bitti!',seaNo(o.id))+'</h2><p class="mut">'+T('{0} puanla {1}. oldun.',fmt(o.pts),rk)+'</p>'+
+      (rw?'<div class="card" style="font-size:16px;line-height:1.9">💎 +'+rw[1]+(rw[3]?'<br>'+CHESTS[rw[2]].e+' '+CHESTS[rw[2]].n+' ×'+rw[3]:'')+'</div>':'<p class="mut">'+T('Ödül için ilk 10\'a girmelisin. Yeni sezonda bol şans!')+'</p>')+
+      '<button class="btn pri w100" data-a="close">'+T('Harika!')+'</button></div>');if(rw){confetti(70);tune([523,659,784,1047],90);for(let i=0;i<rw[3];i++)Q.push(()=>openChest(rw[2],true))}});setTimeout(nextQ,400)}}
+function seaAdd(k,v){const p=SEA_P[k];if(!p)return;seaCheck();const e=S.sea;v=v||1;e.pts+=p*v;e.rec[k]=(e.rec[k]||0)+v;if(e.pts>(e.best.pts||0))e.best.pts=e.pts;if(e.rec[k]>(e.best[k]||0))e.best[k]=e.rec[k]}
+const SEA_L={pts:T('🏆 Sezon puanı'),kill:T('☠️ Canavar'),elite:T('💀 Elit'),boss:T('👑 Boss'),tower:T('🗼 Kule katı'),dung:T('🏰 Zindan'),arena:T('🐲 Arena'),duel:T('⚔️ Düello'),chest:T('🎁 Sandık'),forge:T('⚒️ Geliştirme')};
+function seaCard(){seaCheck();const e=S.sea,pr=seaProg(e.id),rk=seaRank(e.id,e.pts,pr),b=seaBoard(e.id,e.pts,pr),up=rk>1?b[rk-2]:null,left=seaEnd(e.id)-Date.now(),rw=seaRw(rk);
+  return '<div class="card sea" data-a="seaOpen"><div class="row"><span style="font-size:42px">🏆</span><div class="grow"><b style="font-size:16px">'+T('Sezon {0}',seaNo(e.id))+'</b> <span class="lvb">'+T('{0} gün kaldı',Math.max(1,Math.ceil(left/864e5)))+'</span>'+
+   '<div class="mut">'+T('Sıran')+': <b style="color:var(--gold)">#'+rk+'</b> · '+fmt(e.pts)+T(' puan')+(up?' · '+T('#{0} için {1} puan',rk-1,fmt(up.p-e.pts+1)):'')+'</div>'+
+   '<div class="mut" style="font-size:12px">'+(rw?T('Şu anki ödül: 💎 {0}',rw[1])+(rw[3]?' + '+CHESTS[rw[2]].e+'×'+rw[3]:''):T('İlk 10\'a gir, ödül kazan'))+'</div></div><span style="font-size:20px;opacity:.6">›</span></div></div>'}
+function seaSheet(){seaCheck();const e=S.sea,pr=seaProg(e.id),b=seaBoard(e.id,e.pts,pr);
+  let h='<h2 style="text-align:center">🏆 '+T('Sezon {0}',seaNo(e.id))+'</h2><p class="mut" style="text-align:center;margin-top:-6px">'+T('Her ay yeni sezon. Canavar, boss, kule, zindan, düello ve sandıklardan puan topla.')+'</p><div class="card lb">';
+  b.forEach((x,i)=>{const md=['🥇','🥈','🥉'][i]||'<span class="rk">'+(i+1)+'</span>';h+='<div class="lbr'+(x.me?' me':'')+'">'+md+'<span class="ce">'+(CLS[x.c]?CLS[x.c].e:'🤺')+'</span><b class="grow">'+(x.me?T('Sen'):tn(x.n))+'</b><span class="pt">'+fmt(x.p)+'</span></div>'});
+  h+='</div><h3>'+T('Sezon rekorların')+'</h3><div class="card"><div class="sgrid">';
+  for(const k in SEA_L){const v=k==='pts'?e.pts:(e.rec[k]|0),bb=e.best[k]|0;h+='<div><span>'+SEA_L[k]+'</span><b>'+fmt(v)+'</b><small>'+T('Tüm zamanlar: {0}',fmt(Math.max(bb,v)))+'</small></div>'}
+  h+='</div></div><h3>'+T('Sezon sonu ödülleri')+'</h3><div class="card">'+SEA_RW.map((r,i)=>{const a=i?SEA_RW[i-1][0]+1:1;return '<div class="row" style="padding:4px 0"><b style="width:64px">#'+(a===r[0]?a:a+'–'+r[0])+'</b><span class="grow">💎 '+r[1]+(r[3]?' · '+CHESTS[r[2]].e+' '+CHESTS[r[2]].n+' ×'+r[3]:'')+'</span></div>'}).join('')+'</div>';
+  if(e.hist&&e.hist.length)h+='<h3>'+T('Geçmiş sezonlar')+'</h3><div class="card">'+e.hist.map(x=>'<div class="row" style="padding:4px 0"><span class="grow">'+T('Sezon {0}',seaNo(x.id))+'</span><b>#'+x.rk+'</b><span class="mut" style="width:90px;text-align:right">'+fmt(x.pts)+'</span></div>').join('')+'</div>';
+  openSheet(h+'<button class="btn w100" data-a="close">'+T('Kapat')+'</button>')}
 /* ======================= ZİNDANLAR ======================= */
 let dungOn=null,dungT=0,dungKills=0,dungLoot=null;
-function startDung(k){if(!S.cls||dead||busyMode()||!(S.dung.left[k]>0))return;S.dung.left[k]--;dungOn=k;dungT=DUNG_T;dungKills=0;dungLoot={gold:0,ess:0,runes:{}};S.tot.dungRuns++;qAdd('dung');
+function startDung(k){if(!DUNG[k]||!dungOpen(k)||!S.cls||dead||busyMode()||!(S.dung.left[k]>0))return;S.dung.left[k]--;dungOn=k;dungT=DUNG[k].t||DUNG_T;dungKills=0;dungLoot={gold:0,ess:0,runes:{},items:[]};if(DUNG[k].zone!=null&&D3)D3.setZone(DUNG[k].zone);S.tot.dungRuns++;qAdd('dung');
   closeSheet();go('battle');banner(DUNG[k].i+' '+DUNG[k].n.toLocaleUpperCase(LANG),'zone');spawn();save()}
 function dungKill(){M.dead=true;M.hp=0;dungKills++;const gb=gBest(),m=monPos();
   if(dungOn==='gold'){const g=Math.round(gpk(gb)*(6+dungKills*.7)*(1+P.gold/100));dungLoot.gold+=g;S.gold+=g;S.tot.gold+=g;floatTxt('+'+fmt(g)+' 💰','g',m.x,m.y);fxCoins(6)}
   else if(dungOn==='ess'){const e=2+Math.floor(dungKills/3);dungLoot.ess+=e;S.ess+=e;floatTxt('+'+e+' 💠','x',m.x,m.y)}
+  else if(dungOn==='sea'){const g=Math.round(gpk(gb)*(3.5+dungKills*.45)*(1+P.gold/100)),e=1+Math.floor(dungKills/4);dungLoot.gold+=g;dungLoot.ess+=e;S.gold+=g;S.tot.gold+=g;S.ess+=e;dungT=Math.min(45000,dungT+1500);floatTxt('+1,5 sn 🫧','x',m.x,m.y-26);floatTxt('+'+fmt(g)+' 💰','g',m.x,m.y);
+    if(dungKills%5===0){const it=makeItem(gb,rollRar([0,0,78,22]),null,'abyss');if(giveItem(it)){dungLoot.items.push(it);if(it.r===3)toast('🔱 '+it.e+' '+itN(it),'big')}}}
   else{const k=rollRune(.06+dungKills*.008);giveRune(k,1);dungLoot.runes[k]=(dungLoot.runes[k]||0)+1;floatTxt(runeLbl(k),'d',m.x,m.y)}
   S.tot.kills++;qAdd('kill');addXp(Math.round((5+2*gb)*.5));if(D3)D3.die(false);fxBoom(m.x,m.y,DUNG[dungOn].c);beep(300,.12,'triangle',.05,600);
   updAll();setTimeout(()=>{if(dungOn)spawn()},320)}
-function endDung(why){const k=dungOn;if(!k)return;dungOn=null;hideDef();if(M&&!M.dead){M.dead=true;if(D3)D3.die(false)}if(dungKills>(S.dung.best[k]||0))S.dung.best[k]=dungKills;updTimer();save();const L=dungLoot,d=DUNG[k];
+function endDung(why){const k=dungOn;if(!k)return;dungOn=null;if(DUNG[k].zone!=null)try{setStage()}catch(e){}hideDef();if(M&&!M.dead){M.dead=true;if(D3)D3.die(false)}if(dungKills>(S.dung.best[k]||0))S.dung.best[k]=dungKills;updTimer();save();const L=dungLoot,d=DUNG[k];
   const rl=Object.keys(L.runes).sort((a,b)=>b.split(':')[1]-a.split(':')[1]).map(x=>runeLbl(x)+(L.runes[x]>1?' ×'+L.runes[x]:'')).join('<br>');
   openSheet('<div style="text-align:center"><div style="font-size:58px">'+d.i+'</div><h2>'+why+'!</h2><p class="mut">'+d.n+' · <b style="color:var(--gold)">'+dungKills+T('</b> canavar yendin · en iyi: ')+S.dung.best[k]+'</p></div>'+
-   '<div class="card" style="text-align:center;font-size:15px;line-height:1.8">'+(L.gold?'💰 +'+fmt(L.gold)+T(' altın'):'')+(L.ess?'💠 +'+fmt(L.ess)+T(' Öz'):'')+(rl||'')+(!L.gold&&!L.ess&&!rl?T('<span class="mut">Bu sefer ganimet yok</span>'):'')+'</div>'+
+   '<div class="card" style="text-align:center;font-size:15px;line-height:1.8">'+(L.gold?'💰 +'+fmt(L.gold)+T(' altın')+(L.ess?'<br>':''):'')+(L.ess?'💠 +'+fmt(L.ess)+T(' Öz'):'')+(rl||'')+(L.items&&L.items.length?'<div class="invg" style="margin-top:8px">'+L.items.map(itemTile).join('')+'</div>':'')+(!L.gold&&!L.ess&&!rl&&!(L.items&&L.items.length)?T('<span class="mut">Bu sefer ganimet yok</span>'):'')+'</div>'+
    T('<p class="mut" style="text-align:center">Bugün kalan hak: ')+S.dung.left[k]+'/'+DUNG_N+T('</p><button class="btn pri w100" data-a="dungDone">Devam</button>'),true);confetti(Math.min(60,dungKills*4));tune([523,659,784],90)}
 
 /* ======================= DÜELLO LİGİ ======================= */
@@ -1338,12 +1412,12 @@ function offSheet(){const o=offPend;if(!o)return nextQ();
    T('<div class="row"><button class="btn ok grow" data-a="offTake" data-v="1">Topla</button><button class="btn gem grow" data-a="offTake" data-v="2" ')+(S.gems<15?'disabled':'')+T('>2 katı · 💎 15</button></div>'),true)}
 
 /* ======================= GÜNLÜK / GÖREV / BAŞARIM ======================= */
-function dailyCheck(){const t=today(),D=S.daily;if(D.day===t)return false;
-  if(D.last!==yesterday()&&D.last!==t)D.streak=0;D.day=t;D.claimed=false;D.bonus=false;S.arena.left=3;S.dung.left={gold:DUNG_N,ess:DUNG_N,rune:DUNG_N};S.duel.left=DUEL_N;S.duel.opp=null;
+function dailyCheck(){try{seaCheck()}catch(e){}if(window.AndroidBridge&&!S.nAsk&&S.cls&&S.lvl>=5){S.nAsk=1;Q.push(()=>openSheet('<div style="text-align:center"><div style="font-size:56px">🔔</div><h2>'+T('Haber vereyim mi?')+'</h2><p class="mut">'+T('Sen yokken hazinen dolunca, ücretsiz sandık hazır olunca ve günlük ödülün beklerken kısa bir bildirim gönderirim. Ayarlar\'dan istediğin zaman kapatabilirsin.')+'</p></div><div class="row"><button class="btn grow" data-a="close">'+T('Şimdi değil')+'</button><button class="btn ok grow" data-a="notifYes">'+T('🔔 Evet, haber ver')+'</button></div>'));setTimeout(nextQ,600)}const t=today(),D=S.daily;if(D.day===t)return false;
+  if(D.last!==yesterday()&&D.last!==t)D.streak=0;D.day=t;D.claimed=false;D.bonus=false;S.arena.left=3;S.dung.left=dungLeft();S.duel.left=DUEL_N;S.duel.opp=null;
   const keys=Object.keys(QUESTS).sort(()=>Math.random()-.5).slice(0,3);D.q=keys.map(k=>({k,n:pick(QUESTS[k].n),p:0,c:false}));
   if(tab!=='battle'&&REND[tab])REND[tab]();if(S.cls)enqueue(loginSheet);save();return true}
 function qDone(k,q){if(q.p>=q.n)toast(T('📜 Görev tamam: ')+QUESTS[k].d(q.n)+T(' — ödülünü al!'))}
-function qAdd(k,v){for(const q of S.daily.q)if(q.k===k&&!q.c&&q.p<q.n){q.p=Math.min(q.n,q.p+(v||1));qDone(k,q)}}
+function qAdd(k,v){try{seaAdd(k,v)}catch(e){}for(const q of S.daily.q)if(q.k===k&&!q.c&&q.p<q.n){q.p=Math.min(q.n,q.p+(v||1));qDone(k,q)}}
 function qMax(k,v){for(const q of S.daily.q)if(q.k===k&&!q.c&&q.p<q.n&&v>q.p){q.p=Math.min(q.n,v);qDone(k,q)}}
 const qGold=()=>Math.round(gpk(gBest())*20);
 function loginRw(i){const r=LOGIN[i];return r.t==='gold'?'💰 '+fmt(gpk(gBest())*r.v):r.t==='pot'?'🧪 '+r.v+T(' iksir'):r.t==='gem'?'💎 '+r.v:r.v===2?T('👑 Efsane Sandığı'):T('🎁 Altın Sandık')}
@@ -1445,7 +1519,7 @@ function renderHero(){const c=CLS[S.cls];let h='<div class="seg s5">'+[['stat',T
     h+=T('<p class="mut" style="text-align:center">Her seviye yeteneğin etkisini artırır (en fazla 20).</p>')}
   else if(heroSeg==='tal'){
     h+=T('<div class="card"><div class="row"><div class="grow"><b>🌳 Ustalık puanları</b><div class="mut">Her 5 seviyede 1 puan. Yeniden doğunca sıfırlanır.</div></div><div style="font-size:28px;font-weight:800;color:var(--gold)">')+tpFree()+'</div></div>'+(tpUsed()?T('<button class="btn sm w100" style="margin-top:8px" data-a="talReset">↺ Puanları ücretsiz sıfırla</button>'):'')+'</div>';
-    TAL.forEach((b,bi)=>{const bp=brPts(bi);h+='<h3 style="color:'+b.c+'">'+b.i+' '+b.n+T(' dalı · ')+bp+T(' puan</h3><div class="card">');
+    TAL.forEach((b,bi)=>{if(!talOk(b))return;const bp=brPts(bi);h+='<h3 style="color:'+b.c+'">'+b.i+' '+b.n+T(' dalı · ')+bp+T(' puan</h3><div class="card">');
       b.nodes.forEach((n,ni)=>{const r=tl(n.k),mx=n.max||5,need=ni*3,lk=bp<need&&!r;h+='<div class="tnode '+(lk?'lk':'')+'"><span class="e" style="box-shadow:inset 0 0 0 2px '+(r?b.c:'#ffffff14')+'">'+n.i+'</span><div class="grow"><b>'+n.n+'</b> <span class="lvb">'+r+'/'+mx+'</span><div class="mut" style="font-size:12px">'+(lk?T('🔒 Bu dalda ')+need+T(' puan gerekli'):n.d(Math.max(1,r)))+'</div><div class="tpips">'+Array.from({length:mx},(_,i)=>'<i class="'+(i<r?'on':'')+'"></i>').join('')+'</div></div><button class="plus" data-a="talUp" data-v="'+bi+'|'+ni+'" '+(lk||r>=mx||!tpFree()?'disabled':'')+'>+</button></div>'});
       h+='</div>'})}
   else if(heroSeg==='reb'){const g=soulGain();
@@ -1483,7 +1557,7 @@ const potPrice=()=>10+3*gBest();
 function renderShop(){const g=gBest(),pp=potPrice();
   let h=T('<h2>🏪 Dükkan</h2><div class="card"><div class="shop"><span class="e">🧪</span><div class="grow"><b>Can İksiri</b><div class="mut">Canının %45\'ini doldurur · Sende: ')+S.potions+'</div></div></div>'+
   '<div class="row" style="margin-top:10px"><button class="btn grow" data-a="buyPot" data-v="1" '+(S.gold<pp?'disabled':'')+'>1 · 💰 '+fmt(pp)+'</button><button class="btn grow" data-a="buyPot" data-v="5" '+(S.gold<pp*5?'disabled':'')+'>5 · 💰 '+fmt(pp*5)+T('</button></div></div><h3>Sandıklar · eşya seviyesi ')+g+'</h3>';
-  CHESTS.forEach((c,i)=>{const p=c.p?c.p(g):0;h+='<div class="card shop"><span class="e">'+c.e+'</span><div class="grow"><b>'+c.n+'</b><div class="mut">'+c.d+'</div></div><div style="display:flex;flex-direction:column;gap:6px">'+(c.p?'<button class="btn pri sm" data-a="chest" data-v="'+i+'" '+(S.gold<p?'disabled':'')+'>💰 '+fmt(p)+'</button>':'')+(c.gem?'<button class="btn gem sm" data-a="chestGem" data-v="'+i+'" '+(S.gems<c.gem?'disabled':'')+'>💎 '+c.gem+'</button>':'')+'</div></div>'});
+  h+=chestCards(g);
   h+=T('<h3>Elmas teklifleri</h3><div class="card shop"><span class="e">💰</span><div class="grow"><b>Altın Kesesi</b><div class="mut">')+fmt(gpk(g)*60)+T(' altın</div></div><button class="btn gem sm" data-a="gemGold" ')+(S.gems<10?'disabled':'')+'>💎 10</button></div>'+
    T('<div class="card shop"><span class="e">🔮</span><div class="grow"><b>Rün Kesesi</b><div class="mut">3 rastgele rün</div></div><button class="btn gem sm" data-a="gemRune" ')+(S.gems<25?'disabled':'')+'>💎 25</button></div>'+
    T('<div class="card shop"><span class="e">🗝️</span><div class="grow"><b>Zindan Anahtarı</b><div class="mut">Her zindana +1 hak (bugün)</div></div><button class="btn gem sm" data-a="gemKey" ')+(S.gems<20?'disabled':'')+'>💎 20</button></div>'+
@@ -1495,8 +1569,8 @@ function mapHtml(){let h=T('<h2>🗺️ Harita</h2>');
     h+='<button class="zone '+(i===S.zone?'cur ':'')+(lock?'lock':'')+'" style="background:'+z.bg+'" data-a="zone" data-v="'+i+'"><span class="e">'+(lock?'🔒':z.e)+'</span><span class="grow"><b>'+z.n+'</b><small>'+
       (lock?ZONES[i-1].n+T(' bölgesinin 30. kat boss\'unu yen'):T('Kat ')+S.floors[i]+T(' · En yüksek: ')+m+(isLast(i)?T(' (sonsuz)'):' / '+ZF)+T(' · Canavar sv. ')+G(i,1)+'+')+'</small></span>'+(i===S.zone?'<span>📍</span>':'')+(lock?'':'<span class="zi" data-a="zoneInfo" data-v="'+i+'">ℹ️</span>')+'</button>'});
   return h+arenaCard()+T('<p class="mut" style="text-align:center">Her 10. katta zamanlı boss var (30 sn). 30. kat boss\'u sonraki bölgeyi açar. Bazen mor parıltılı ELİT canavar çıkar: daha güçlü ama daha çok ödül verir.</p><button class="btn w100" data-a="close">Kapat</button>')}
-function renderAdv(){let h=T('<h2>🏰 Macera</h2>')+(S.cls?wevCard():'')+fateCard()+arenaCard()+towerCard()+bstCard()+T('<h3>Zindanlar · 45 saniye, günde ')+DUNG_N+T(' hak</h3>');
-  for(const k in DUNG){const d=DUNG[k],l=S.dung.left[k];h+='<div class="card" style="background:'+d.g+'"><div class="row"><span style="font-size:40px">'+d.i+'</span><div class="grow"><b style="font-size:16px">'+d.n+'</b><div class="mut">'+d.d+T('</div><div class="mut" style="margin-top:3px">Kalan: <b style="color:')+d.c+'">'+l+'/'+DUNG_N+'</b>'+(S.dung.best[k]?T(' · En iyi: ')+S.dung.best[k]+' ☠️':'')+'</div></div></div><button class="btn w100 '+(l>0?'pri':'')+'" style="margin-top:10px" data-a="dung" data-v="'+k+'" '+(l>0&&S.cls&&!dead&&!busyMode()?'':'disabled')+T('>Gir</button></div>')}
+function renderAdv(){let h=T('<h2>🏰 Macera</h2>')+(S.cls?seaCard()+wevCard():'')+fateCard()+arenaCard()+towerCard()+bstCard()+T('<h3>Zindanlar · 45 saniye, günde ')+DUNG_N+T(' hak</h3>');
+  for(const k in DUNG){const d=DUNG[k],l=S.dung.left[k]|0;if(!dungOpen(k)){h+='<div class="card" style="background:'+d.g+';opacity:.7"><div class="row"><span style="font-size:40px">'+d.i+'</span><div class="grow"><b style="font-size:16px">'+d.n+'</b><div class="mut">🔒 '+d.req+'</div></div></div></div>';continue}h+='<div class="card" style="background:'+d.g+'"><div class="row"><span style="font-size:40px">'+d.i+'</span><div class="grow"><b style="font-size:16px">'+d.n+'</b><div class="mut">'+d.d+T('</div><div class="mut" style="margin-top:3px">Kalan: <b style="color:')+d.c+'">'+l+'/'+DUNG_N+'</b>'+(S.dung.best[k]?T(' · En iyi: ')+S.dung.best[k]+' ☠️':'')+'</div></div></div><button class="btn w100 '+(l>0?'pri':'')+'" style="margin-top:10px" data-a="dung" data-v="'+k+'" '+(l>0&&S.cls&&!dead&&!busyMode()?'':'disabled')+T('>Gir</button></div>')}
   const lg=league(S.duel.tr),nx=LEAGUES[lg+1];if(!S.duel.opp)genOpps();
   h+=T('<h3>Düello Ligi · günde ')+DUEL_N+T(' maç</h3><div class="card" style="background:linear-gradient(135deg,#3a1a1a,#1e2136 70%)"><div class="row"><span style="font-size:44px">')+LEAGUES[lg].i+'</span><div class="grow"><b style="font-size:17px">'+LEAGUES[lg].n+T(' Ligi</b><div class="mut">🏆 ')+S.duel.tr+T(' kupa · ')+S.duel.wins+T(' galibiyet · Kalan maç: <b style="color:var(--gold)">')+S.duel.left+'/'+DUEL_N+'</b></div>'+
    (nx?'<div class="lgbar"><i style="width:'+Math.min(100,(S.duel.tr-LEAGUES[lg].t)/(nx.t-LEAGUES[lg].t)*100)+T('%"></i></div><div class="mut" style="font-size:11px;margin-top:3px">Sonraki: ')+nx.i+' '+nx.n+' ('+nx.t+T(' kupa) · lig ödülü +')+(lg+1)*25+' 💎</div>':T('<div class="mut">Zirvedesin!</div>'))+'</div></div></div>';
@@ -1589,7 +1663,7 @@ function monInfo(){if(!M||M.dead)return;coachDone('mon');const base=M.n.replace(
 function statInfo(){coachDone('st');const red=M&&!M.dead?(1-dmgRed(M.lv))*100:0,sb=setBonus(),pb=petBonus(),rb=runeBonus();
   let h='<h2>📊 '+T('Ayrıntılı istatistikler')+'</h2><h3>⚔️ '+T('Saldırı')+'</h3><div class="card">'+dl('⚔️',T('Saldırı'),fmt(atkNow()))+dl('💥',T('Saniyedeki hasar'),'~'+fmt(estDps(M&&!M.dead?M:null)),T('Oto saldırı, kritik ve yoldaş dahil'))+
     dl('🎯',T('Kritik şansı'),pc(critNow()))+dl('💢',T('Kritik hasarı'),pc(P.critDmg))+dl('🔥',T('Bitirici (3. vuruş)'),'×'+tr(P.fin))+dl('⚡',T('Saldırı hızı'),T('{0}/sn',tr(hitsPerSec())),aaOpen()&&S.autoAtk?T('Oto saldırı'):T('Dokunarak (tahmini)'))+
-    (P.bossD?dl('👑',T('Boss\'lara hasar'),'+'+pc(P.bossD)):'')+(P.skD?dl('✨',T('Yetenek hasarı'),'+'+pc(P.skD)):'')+(P.cdR?dl('⏳',T('Bekleme azalması'),pc(P.cdR)):'')+(P.dbl?dl('🏹',T('Çift vuruş şansı'),pc(P.dbl)):'')+(P.petD?dl('🐾',T('Yoldaş hasarı'),'+'+pc(P.petD)):'')+'</div>';
+    (P.bossD?dl('👑',T('Boss\'lara hasar'),'+'+pc(P.bossD)):'')+(P.skD?dl('✨',T('Yetenek hasarı'),'+'+pc(P.skD)):'')+(P.cdR?dl('⏳',T('Bekleme azalması'),pc(P.cdR)):'')+(P.dbl?dl('🏹',T('Çift vuruş şansı'),pc(P.dbl)):'')+(P.evade?dl('🌑',T('Kaçınma'),pc(P.evade)):'')+(P.amb?dl('🗡️',T('Pusu (ilk vuruş)'),'+'+pc(P.amb)):'')+(P.petD?dl('🐾',T('Yoldaş hasarı'),'+'+pc(P.petD)):'')+'</div>';
   h+='<h3>🛡️ '+T('Dayanıklılık')+'</h3><div class="card">'+dl('❤️',T('Can'),fmt(P.hp))+dl('🛡️',T('Savunma'),fmt(P.def),red?T('Şu anki canavarın vuruşunu %{0} azaltır',Math.round(red)):'')+(P.dr?dl('🧱',T('Alınan hasar azalması'),pc(P.dr)):'')+
     dl('💚',T('Can yenilenmesi'),T('{0}/sn',pc(P.regen||0)),T('Her öldürmede ayrıca canının %8\'i'))+dl('🩸',T('Can çalma'),pc(P.ls))+'</div>';
   h+='<h3>💰 '+T('Ganimet')+'</h3><div class="card">'+dl('💰',T('Altın bonusu'),'+'+pc(P.gold))+dl('⭐',T('XP bonusu'),'+'+pc(P.xp))+dl('🎁',T('Eşya düşme şansı'),pc(P.drop))+dl('📖',T('Defter bonusu'),'+'+pc(bstBonus()),T('Saldırı ve can'))+'</div>';
@@ -1623,7 +1697,7 @@ function weekCheck(){const w=wkNo();if(S.wev.wk===w)return;if(S.wev.wk){let n=0;
 function wevAdd(v){if(!S.cls||busyMode())return;const a=S.wev.tok;S.wev.tok+=v;const i=WTR.findIndex(x=>a<x.t&&S.wev.tok>=x.t);if(i>=0)toast(T('🎪 Etkinlik ödülü hazır: {0}',wtrTxt(WTR[i])))}
 function wtrGive(i,quiet){const w=WTR[i];if(!w||S.wev.cl.includes(i))return;if(!quiet)fanfare('reward');S.wev.cl.push(i);const gb=gBest();
   if(w.g){const g=Math.round(gpk(gb)*w.g);S.gold+=g;S.tot.gold+=g}if(w.gm)S.gems+=w.gm;if(w.e)S.ess+=w.e;if(w.rk){const rk=rollRune(.2);giveRune(rk,1);if(!quiet)toast('🔮 '+runeLbl(rk))}
-  const it=w.ch?makeItem(gb,rollRar([0,0,75,25])):w.set?makeItem(gb,rollRar([0,0,60,40]),null,pick(Object.keys(SETS))):w.leg?makeItem(gb,3):null;if(it){if(giveItem(it)&&!quiet)lootMsg(it)}
+  const it=w.ch?makeItem(gb,rollRar([0,0,75,25])):w.set?makeItem(gb,rollRar([0,0,60,40]),null,pick(SETK)):w.leg?makeItem(gb,3):null;if(it){if(giveItem(it)&&!quiet)lootMsg(it)}
   if(w.ttl){S.titles.etk=1;if(!quiet)toast('🏷️ '+T('Yeni unvan: {0}',T('Etkinlik Şampiyonu')),'big')}save()}
 function wevCard(){const e=curEv(),nx=WTR.find((x,i)=>!S.wev.cl.includes(i)&&S.wev.tok<x.t)||WTR[WTR.length-1],rd=WTR.filter((x,i)=>S.wev.tok>=x.t&&!S.wev.cl.includes(i)).length,l=evLeft(),pc=Math.min(100,S.wev.tok/nx.t*100);
   return '<div class="card" style="background:'+e.g+';border-color:'+e.c+'66"><div class="row"><span style="font-size:44px">'+e.i+'</span><div class="grow"><div class="mut" style="font-size:11px;letter-spacing:1px;font-weight:800">🎪 '+T('HAFTANIN ETKİNLİĞİ')+' · '+T('{0} gün {1} sa kaldı',Math.floor(l/864e5),Math.floor(l%864e5/36e5))+'</div><b style="font-size:16px">'+T(e.n)+'</b><div class="mut">'+T(e.d)+'</div></div></div>'+
@@ -1683,9 +1757,48 @@ function itemSheet(it,title){const r=RAR[it.r],eq=isEq(it),cur=eq?null:S.eq[it.s
      :'<button class="btn ok w100" data-a="equip" data-v="'+it.id+T('">✅ Kuşan</button><div class="row" style="margin-top:8px"><button class="btn warn grow" data-a="sell" data-v="')+it.id+'" '+(it.lk?'disabled':'')+T('>Sat · 💰 ')+fmt(price(it))+'</button><button class="btn grow" data-a="melt" data-v="'+it.id+'" '+(it.lk?'disabled':'')+T('>Erit · 💠 ')+meltV(it)+'</button></div>';
   h+=T('<button class="btn w100" style="margin-top:8px" data-a="close">Kapat</button>');
   openSheet(h)}
+/* ======================= SANDIKLAR (v22): toplu açma, garanti sayacı, ücretsiz sandık, açılış ekranı ======================= */
+const chFreeLeft=()=>Math.max(0,(S.chF||0)+CH_FREE-Date.now());
+const chCost=(ci,n,k)=>{const c=CHESTS[ci],one=k==='g'?c.gem:c.p?c.p(gBest()):0;return Math.round(one*n*(n>=10?CH_DISC:1))};
+const chWallet=k=>k==='g'?S.gems:S.gold;
+/* "Maks": cüzdanın ve çantanın yettiği kadar (en fazla CH_MAX); 10 ve üstünde indirim hesaba katılır */
+function chMax(ci,k){const free=invMax()-S.inv.length;let n=Math.min(CH_MAX,free);while(n>0&&chCost(ci,n,k)>chWallet(k))n--;return Math.max(0,n)}
+function chOdds(c){const t=c.w.reduce((a,b)=>a+b,0);return '<div class="odds">'+c.w.map((w,r)=>w?'<i style="flex:'+w+';background:'+RAR[r].c+'"></i>':'').join('')+'</div><div class="oddl">'+c.w.map((w,r)=>w?'<span style="color:'+RAR[r].c+'">'+RAR[r].n+' %'+tr(w/t*100)+'</span>':'').join('')+'</div>'}
+function chestCards(g){let h='';const fl=chFreeLeft();
+  h+='<div class="card shop chfree'+(fl?'':' rdy')+'"><span class="e">📦</span><div class="grow"><b>'+T('Ücretsiz Sandık')+'</b><div class="mut">'+(fl?T('Sonraki: {0}',chDur(fl)):T('Hazır! 4 saatte bir yenilenir'))+'</div></div><button class="btn sm '+(fl?'':'ok')+'" data-a="chestFree" '+(fl?'disabled':'')+'>'+(fl?'⏳':T('🎁 Aç'))+'</button></div>';
+  CHESTS.forEach((c,i)=>{const pc=(S.pity&&S.pity[i])|0,pr=c.pity;
+    h+='<div class="card chest"><div class="shop"><span class="e">'+c.e+'</span><div class="grow"><b>'+c.n+'</b><div class="mut">'+c.d+'</div></div></div>'+chOdds(c)+
+     (pr?'<div class="pity"><span>'+T('{0} garantisi',RAR[pr[0]].n)+'</span><div class="bar"><i style="width:'+Math.min(100,pc/pr[1]*100)+'%;background:'+RAR[pr[0]].c+'"></i></div><b>'+pc+'/'+pr[1]+'</b></div>':'');
+    for(const k of (c.p?['o']:[]).concat(c.gem?['g']:[])){const ic=k==='g'?'💎':'💰',w=chWallet(k),m=chMax(i,k);
+      h+='<div class="chrow">'+[1,10].map(n=>{const co=chCost(i,n,k);return '<button class="btn sm '+(k==='g'?'gem':'pri')+'" data-a="chest" data-v="'+i+'|'+n+'|'+k+'" '+(w<co?'disabled':'')+'>×'+n+' · '+ic+' '+fmt(co)+(n>=10?'<em>-%10</em>':'')+'</button>'}).join('')+
+       '<button class="btn sm" data-a="chest" data-v="'+i+'|m|'+k+'" '+(m>1?'':'disabled')+'>'+T('Maks')+(m>1?' ×'+m:'')+'</button></div>'}
+    h+='</div>'});
+  return h+'<p class="mut" style="text-align:center;font-size:12px">'+T('10\'lu alımda %10 indirim ve en az bir {0}+ garanti. Garanti sayacı o nadirlik çıkınca sıfırlanır.',RAR[1].n)+'</p>'}
+const chDur=ms=>{const m=Math.ceil(ms/60000),hh=Math.floor(m/60);return hh?hh+T(' sa ')+(m%60)+T(' dk'):m+T(' dk')};
+function buyChests(i,n,k){const c=CHESTS[i];if(!c||(k==='g'?!c.gem:!c.p))return;if(n==='m')n=chMax(i,k);n=Math.max(1,Math.min(CH_MAX,n|0));
+  const free=invMax()-S.inv.length;if(free<=0){toast(T('🎒 Çanta dolu — önce eşya sat'));return}
+  if(n>free){toast(T('🎒 Çantada {0} yer var',free));return}
+  const co=chCost(i,n,k);if(chWallet(k)<co)return;if(k==='g')S.gems-=co;else S.gold-=co;chestBatch(i,n,k)}
+/* n sandığı açar: garanti sayacı, 10'luda en az bir g10 nadirliği, oto temizlik ayarına uyar; sonunda açılış ekranı */
+function chestBatch(i,n,k){const c=CHESTS[i],g=gBest(),pr=c.pity;S.pity=S.pity||{};const its=[];let junk=0,jg=0,je=0;
+  for(let j=0;j<n;j++){let r=rollRar(c.w);if(pr){S.pity[i]=(S.pity[i]|0)+1;if(S.pity[i]>=pr[1]&&r<pr[0])r=pr[0];if(r>=pr[0])S.pity[i]=0}
+    if(n>=10&&j===n-1&&c.g10!=null&&!its.some(x=>x.r>=c.g10)&&r<c.g10)r=c.g10;
+    const it=makeItem(g,r,null,c.set?pick(SETK):null);S.tot.chests++;qAdd('chest');
+    const g0=S.gold,e0=S.ess;if(giveItem(it,true))its.push(it);else{junk++;jg+=S.gold-g0;je+=S.ess-e0}}
+  updAll();save();its.sort((a,b)=>b.r-a.r||power(b)-power(a));const best=its[0];
+  const show=()=>chestShow(c,n,its,junk,jg,je);
+  if(best&&best.r===3)legendary(best,show);else{tune(best&&best.r===2?[440,660,880]:[440,550],90);if(best&&best.r>=2)confetti(30);if(busy())Q.unshift(show);else show()}}
+function chestShow(c,n,its,junk,jg,je){const cnt=[0,0,0,0];its.forEach(x=>cnt[x.r]++);
+  let h='<div class="chopen"><div class="che">'+c.e+'</div><h2>'+(n>1?T('{0} × {1} açıldı!',n,c.n):T('{0}\'tan çıktı!',c.n))+'</h2><div class="chsum">'+cnt.map((v,r)=>v?'<span style="color:'+RAR[r].c+'">'+v+' '+RAR[r].n+'</span>':'').join('')+'</div></div>';
+  if(n===1&&its[0])return itemSheet(its[0],c.e+' '+c.n+T('\'tan çıktı!'));
+  h+='<div class="invg chg">'+its.map((x,j)=>itemTile(x).replace('<button class="it','<button style="animation-delay:'+Math.min(1.6,j*.05)+'s" class="it chi')).join('')+'</div>';
+  if(junk)h+='<p class="mut" style="text-align:center">'+T('🧹 {0} zayıf eşya oto temizlendi',junk)+(jg?' · +'+fmt(jg)+' 💰':'')+(je?' · +'+fmt(je)+' 💠':'')+'</p>';
+  const nb=bestList().length;
+  h+='<div class="row" style="margin-top:10px"><button class="btn grow" data-a="close">'+T('Tamam')+'</button>'+(nb?'<button class="btn ok grow" data-a="eqBest">'+T('⚡ En iyileri kuşan')+'</button>':'')+'</div>';
+  openSheet(h);vib([20,30,20])}
 function openChest(ci,free){const c=CHESTS[ci],g=gBest();
   if(S.inv.length>=invMax()){if(free){const p=c.p?c.p(g):Math.round(gpk(g)*50);S.gold+=p;toast(T('🎒 Çanta dolu — sandık yerine +')+fmt(p)+' 💰')}else toast(T('🎒 Çanta dolu — önce eşya sat'));return false}
-  const it=makeItem(g,rollRar(c.w),null,c.set?pick(Object.keys(SETS)):null);giveItem(it);S.tot.chests++;qAdd('chest');updAll();save();
+  const it=makeItem(g,rollRar(c.w),null,c.set?pick(SETK):null);giveItem(it);S.tot.chests++;qAdd('chest');updAll();save();
   const show=()=>itemSheet(it,c.e+' '+c.n+T('\'tan çıktı!'));
   if(it.r===3)legendary(it,show);else{tune(it.r===2?[440,660,880]:[440,550],90);if(it.r===2)confetti(30);if(busy())Q.unshift(show);else show()}return true}
 /* tek tıkla: en iyileri kuşan / toplu geliştir */
@@ -1765,17 +1878,19 @@ const ACT={
   heroSeg:v=>{heroSeg=v;renderHero()},
   skUp:v=>{const i=+v,c=skCost(S.skl[i]);if(S.gold<c||S.skl[i]>=20)return;S.gold-=c;S.skl[i]++;tune([600,900],70);toast('✨ '+CLS[S.cls].sk[i].n+T(' Sv ')+S.skl[i]);updAll();save()},
   petFeed:()=>{const l=S.pets[S.pet],c=petCost(l);if(S.gold<c||l>=30)return;S.gold-=c;hpKeep(()=>{S.pets[S.pet]=l+1});
-    if(petStage(l+1)>petStage(l)){confetti(70);tune([523,659,784,1047,1319],90);vib([40,40,120]);toast(T('🌟 Evrim! ')+PET[S.pet].e+' '+pName(S.pet),'big');if(D3)D3.levelUp()}else{tune([500,750],70);toast('🍖 '+pName(S.pet)+T(' Sv ')+(l+1))}updAll();save()},
+    if(petStage(l+1)>petStage(l)){confetti(70);tune([523,659,784,1047,1319],90);vib([40,40,120]);toast(T('🌟 Evrim! ')+PET[S.pet].e+' '+pName(S.pet),'big');const es=petStage(l+1);setTimeout(()=>{if(D3&&D3.petEvolve)D3.petEvolve(es)},80)}else{tune([500,750],70);toast('🍖 '+pName(S.pet)+T(' Sv ')+(l+1))}updAll();save()},
   petSel:v=>{if(!S.pets[v])return;hpKeep(()=>{S.pet=v});toast(PET[v].e+' '+PET[v].n+T(' artık yanında'));updAll();save()},
   petBuy:v=>{const p=PET[v];if(S.pets[v]||!p.gem||S.gems<p.gem)return;S.gems-=p.gem;S.pets[v]=1;hpKeep(()=>{S.pet=v});confetti(40);tune([523,659,784,1047],80);toast(T('🐾 Yeni yoldaş: ')+p.e+' '+p.n,'big');updAll();save()},
   clsChange:()=>{if(!S.cls)return classSheet();openSheet(T('<h2>Sınıf değiştir</h2><p class="mut">Eşyaların, seviyen ve statların korunur; yeteneklerin yeni sınıfa göre değişir (yetenek seviyeleri korunur).</p><div class="row"><button class="btn grow" data-a="close">Vazgeç</button><button class="btn gem grow" data-a="clsChangeOk" ')+(S.gems<100?'disabled':'')+T('>💎 100 ile değiştir</button></div>'))},
   clsChangeOk:()=>{if(S.gems<100)return;S.gems-=100;S.cls=null;classSheet()},
   pickCls:v=>{hpKeep(()=>{S.cls=v});S.seen=true;R.cd=[0,0,0,0];closeSheet();renderSkillBar();updAll();banner(CLS[v].e+' '+CLS[v].n.toLocaleUpperCase(LANG),'lv');confetti(40);save(true);
     S.nv=20;if(!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);storyCheck()},
-  set:v=>{S.set[v]=!S.set[v];if(v==='vib')vib(40);if(v==='sound')beep(660,.1,'triangle',.06);ACT.settings();save()},
+  set:v=>{S.set[v]=!S.set[v];if(v==='notif'&&S.set.notif)natNotif();if(v==='imm'||v==='hz')natApply();if(v==='vib')vib(40);if(v==='sound')beep(660,.1,'triangle',.06);ACT.settings();save()},
   buyPot:v=>{const n=+v,p=potPrice()*n;if(S.gold<p)return;S.gold-=p;S.potions+=n;beep(600,.1,'triangle',.05);toast('🧪 +'+n+T(' iksir'));updAll();renderSkillBar();save()},
-  chest:v=>{const c=CHESTS[v];if(!c.p)return;const p=c.p(gBest());if(S.gold<p)return;if(S.inv.length>=invMax()){toast(T('🎒 Çanta dolu — önce eşya sat'));return}S.gold-=p;openChest(+v)},
-  chestGem:v=>{const c=CHESTS[v];if(S.gems<c.gem)return;if(S.inv.length>=invMax()){toast(T('🎒 Çanta dolu — önce eşya sat'));return}S.gems-=c.gem;openChest(+v)},
+  chest:v=>{const [i,n,k]=String(v).split('|');buyChests(+i,n==='m'?'m':+n||1,k==='g'?'g':'o')},
+  seaOpen:()=>seaSheet(),
+  notifYes:()=>{S.set.notif=true;save();closeSheet();natNotif();toast(T('🔔 Bildirimler açık'))},
+  chestFree:()=>{if(chFreeLeft()>0)return;if(S.inv.length>=invMax()){toast(T('🎒 Çanta dolu — önce eşya sat'));return}S.chF=Date.now();chestBatch(0,1,'free')},
   gemGold:()=>{if(S.gems<10)return;S.gems-=10;const g=Math.round(gpk(gBest())*60);S.gold+=g;toast('+'+fmt(g)+' 💰','big');updAll();save()},
   gemEss:()=>{if(S.gems<15)return;S.gems-=15;S.ess+=40;toast('+40 💠','big');updAll();save()},
   claimLogin:()=>claimLogin(),
@@ -1795,7 +1910,7 @@ const ACT={
   evBuy:()=>{const d=evD;if(!d||S.gold<d.c)return;if(S.inv.length>=invMax()){toast(T('🎒 Çanta dolu — önce yer aç'));return}S.gold-=d.c;evD=null;closeSheet();giveItem(d.it);lootMsg(d.it);updAll();save()},
   tower:()=>startTower(),
   towerDone:()=>{closeSheet();spawn();updAll()},
-  talUp:v=>{const [bi,ni]=v.split('|').map(Number),n=TAL[bi].nodes[ni];if(!n||!tpFree()||tl(n.k)>=(n.max||5)||(brPts(bi)<ni*3&&!tl(n.k)))return;hpKeep(()=>{S.tal[n.k]=tl(n.k)+1});tune([600,900],60);toast('🌳 '+n.i+' '+n.n+' '+tl(n.k));updAll();save()},
+  talUp:v=>{const [bi,ni]=v.split('|').map(Number),n=TAL[bi]&&talOk(TAL[bi])&&TAL[bi].nodes[ni];if(!n||!tpFree()||tl(n.k)>=(n.max||5)||(brPts(bi)<ni*3&&!tl(n.k)))return;hpKeep(()=>{S.tal[n.k]=tl(n.k)+1});tune([600,900],60);toast('🌳 '+n.i+' '+n.n+' '+tl(n.k));updAll();save()},
   talReset:()=>{hpKeep(()=>{S.tal={}});toast(T('🌳 Ustalık puanları geri alındı'));updAll();save()},
   reroll:v=>{const it=findAny(v);if(!it)return;const c=rrCost(it);if(S.gold<c.g||S.ess<c.e)return;S.gold-=c.g;S.ess-=c.e;const p0=power(it);hpKeep(()=>{it.st=makeItem(it.L,it.r,it.slot).st;S.nextId--});const d=power(it)-p0;
     tune(d>=0?[660,990]:[440,330],70);toast(T('🎲 Yeni statlar · Güç ')+(d>=0?'▲ +':'▼ ')+fmt(d),d>=0?'big':'');updAll();itemSheet(it);save()},
@@ -1840,7 +1955,7 @@ const ACT={
     '<div class="rng"><span>'+T('🔊 Efekt sesi')+'</span><input type="range" min="0" max="100" step="5" value="'+vol+'" data-rng="vol"><b>%'+vol+'</b></div>'+
     '<div class="rng"><span>'+T('🎵 Müzik sesi')+'</span><input type="range" min="0" max="100" step="5" value="'+mv+'" data-rng="mvol"><b>%'+mv+'</b></div>'+
     '<h3>'+T('Görüntü ve oynanış')+'</h3><button class="btn w100" data-a="setFx">'+T('✨ Efekt yoğunluğu: {0}',T([T('Düşük (en hızlı)'),T('Orta'),T('Yüksek')][S.set.fx==null?2:S.set.fx]))+'</button>'+
-    bt('set','flash',on('flash',T('⚡ Ekran parlaması açık'),T('⚡ Ekran parlaması kapalı')))+bt('set','bgFight',on('bgFight',T('⚔️ Menüdeyken savaş sürer'),T('⏸️ Menüdeyken savaş durur')))+
+    bt('set','flash',on('flash',T('⚡ Ekran parlaması açık'),T('⚡ Ekran parlaması kapalı')))+(BR?bt('set','imm',on('imm',T('📱 Tam ekran açık'),T('📱 Tam ekran kapalı (saat ve çubuklar görünür)')))+bt('set','hz',on('hz',T('🎞️ Akıcı ekran açık (90/120 Hz)'),T('🎞️ Akıcı ekran kapalı (pil tasarrufu)')))+bt('set','notif',S.set.notif?T('🔔 Bildirimler açık'):T('🔕 Bildirimler kapalı')):'')+bt('set','bgFight',on('bgFight',T('⚔️ Menüdeyken savaş sürer'),T('⏸️ Menüdeyken savaş durur')))+
     bt('set','autoPot',on('autoPot',T('🧪 Oto iksir açık (can %30 altına inince)'),T('🧪 Oto iksir kapalı')))+(BR?bt('set','autoBk',on('autoBk',T('💾 Haftalık otomatik yedek açık'),T('💾 Otomatik yedek kapalı'))):'')+
     (titleOn?'':'<h3>'+T('İstatistikler')+'</h3><div class="card"><div class="dg">'+[[T('☠️ Öldürülen'),S.tot.kills],[T('👑 Boss'),S.tot.boss],[T('💀 Elit'),S.tot.elite],[T('✨ Efsanevi'),S.tot.leg],[T('🎯 Kritik'),S.tot.crits],[T('👆 Dokunuş'),S.tot.taps],[T('🔥 En iyi kombo'),S.tot.maxCombo],[T('⚒️ En iyi +'),S.tot.maxUp],[T('🎁 Sandık'),S.tot.chests],[T('💰 Kazanılan'),S.tot.gold]].map(r=>'<div><span>'+T(r[0])+'</span><b>'+fmt(r[1])+'</b></div>').join('')+'</div></div>')+
     '<div class="row" style="margin-top:8px"><button class="btn grow" data-a="backup">'+T('💾 Kayıt yedeği')+'</button>'+(titleOn?'':'<button class="btn warn grow" data-a="reset">'+T('🗑️ Sıfırla')+'</button>')+'</div>'+
@@ -1870,6 +1985,30 @@ const ACT={
 const bulkF=()=>[i=>!i.lk&&!i.up&&i.r===0,i=>!i.lk&&!i.up&&i.r<=1&&power(i)<=power(S.eq[i.slot]),i=>!i.lk&&!i.up&&i.r<=1];
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t||t.disabled)return;const f=ACT[t.dataset.a];if(!f)return;const a=t.dataset.a;if(a!=='aa'&&a!=='as'&&!(a==='tab'&&!tabOpen(t.dataset.v)))beep(a==='tab'?1050:760,.035,'sine',.035);f(t.dataset.v,t)});
 document.addEventListener('contextmenu',e=>{if(e.target.tagName!=='TEXTAREA')e.preventDefault()});
+/* ======================= ANDROID YERLİ KATMAN (v22) =======================
+   MainActivity köprüsü: tam ekran, yüksek yenileme hızı, dokunsal titreşim, yerel bildirimler, açılış ekranını bırakma.
+   Tarayıcıda (köprü yokken) hepsi sessizce atlanır. */
+function nat(f){const B=window.AndroidBridge;if(!B||typeof B[f]!=='function')return null;try{return B[f].apply(B,[].slice.call(arguments,1))}catch(e){return null}}
+function natApply(){nat('setImmersive',S.set.imm!==false);nat('setHighFps',S.set.hz!==false)}
+function natNotif(){nat('askNotif')}
+/* oyundan çıkınca kurulacak hatırlatmalar; geri dönünce hepsi iptal */
+function natPlan(){if(!S.set.notif||!S.cls)return[];const n=Date.now(),L=[],at=(t,k,ti,b)=>{if(t>n+5*60e3)L.push({id:k,at:Math.round(t),t:ti,b})};
+  at(n+OFF_CAP,1,T('💰 Hazinen doldu!'),T('Kahramanın 8 saattir senin için avlanıyor. Ganimetini toplamaya gel!'));
+  at((S.chF||0)+CH_FREE,2,T('📦 Ücretsiz sandık hazır'),T('Dükkanda seni bir sandık bekliyor.'));
+  if(S.daily&&S.daily.claimed){const d=new Date(n);d.setDate(d.getDate()+1);d.setHours(12,7,0,0);at(d.getTime(),3,T('🎁 Günlük ödülün hazır'),T('Seriyi bozma! 7. günde Efsane Sandığı var.'))}
+  if(S.sea&&S.sea.pts>0){const e=seaEnd(S.sea.id)-24*3600e3;at(e,4,T('🏆 Sezon yarın bitiyor'),T('Son bir hamleyle sıralamada yüksel!'))}
+  return L}
+window.addEventListener('load',()=>setTimeout(()=>{natApply();nat('ready')},60));
+window.__duck=d=>{try{if(!AC)return;if(d)AC.suspend();else if(!bg)AC.resume()}catch(e){}};
+window.__notifRes=ok=>{if(!ok){S.set.notif=false;save();toast(T('🔕 Bildirim izni verilmedi'))}else toast(T('🔔 Bildirimler açık'));};
+/* dokunsal his: düğmelere basınca hafif tık */
+document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.btn,#tabs button,.plus,.seg button,.skb');if(b&&!b.disabled&&S&&S.set&&S.set.vib)nat('haptic',0)},{passive:true,capture:true});
+/* alt pencereyi aşağı çekerek kapatma (yerel uygulama hissi) */
+(function(){const sh=$('sheet');let y0=null,dy=0,on=false;
+  sh.addEventListener('touchstart',e=>{if(sheetLock||sh.scrollTop>0||e.touches.length>1){y0=null;return}y0=e.touches[0].clientY;dy=0;on=false},{passive:true});
+  sh.addEventListener('touchmove',e=>{if(y0==null)return;dy=e.touches[0].clientY-y0;if(!on&&dy>12&&sh.scrollTop<=0){on=true;sh.style.transition='none'}if(on){sh.style.transform='translateY('+Math.max(0,dy-12)+'px)';if(e.cancelable)e.preventDefault()}},{passive:false});
+  sh.addEventListener('touchend',()=>{if(y0==null)return;y0=null;if(!on)return;on=false;sh.style.transition='transform .22s cubic-bezier(.2,1,.4,1)';
+    if(dy>110&&!sheetLock){sh.style.transform='translateY(100%)';setTimeout(()=>{sh.style.transition='';sh.style.transform='';closeSheet()},170)}else{sh.style.transform='';setTimeout(()=>{sh.style.transition=''},230)}},{passive:true})})();
 window.__onBack=()=>{if(titleOn){if($('sheetBg').classList.contains('on')){closeSheet();return true}return false}if($('leg').classList.contains('on')){ACT.legClose();return true}
   if($('sheetBg').classList.contains('on')){if(!sheetLock)closeSheet();return true}
   if(tab!=='battle'){go('battle');return true}return false};

@@ -111,7 +111,19 @@ await p.click('[data-v=quest]'); await p.waitForTimeout(300); await shot('12-gor
 await p.evaluate(() => { for (const a of ACH) ACT.achClaim(a.k); S.daily.q.forEach((q, i) => { q.p = q.n; ACT.qClaim(String(i)); }); ACT.qBonus(); });
 await p.waitForTimeout(300); await clear(); await shot('13-gorevler-alindi');
 await p.click('[data-v=shop]'); await p.waitForTimeout(300); await shot('14-dukkan');
-await p.click('[data-a=chestGem][data-v="2"]'); await p.waitForTimeout(600); await clear();
+await p.click('[data-a=chest][data-v="2|1|g"]'); await p.waitForTimeout(600); await clear();
+// v22 sandıklar: ücretsiz, 10'lu (indirim + garanti), maks, garanti sayacı
+{ const r = await p.evaluate(() => { closeSheet(); Q.length = 0; S.gold += 1e7; S.gems += 2000; S.chF = 0; S.inv = S.inv.slice(0, 10); const n0 = S.inv.length, g0 = S.gold, c0 = S.tot.chests;
+    ACT.chestFree(); const free = S.tot.chests === c0 + 1 && S.gold === g0 && chFreeLeft() > 0; closeSheet(); Q.length = 0;
+    const c1 = S.tot.chests, g1 = S.gold, cost = chCost(1, 10, 'o'); ACT.chest('1|10|o'); const ten = S.tot.chests === c1 + 10 && g1 - S.gold === cost && cost === Math.round(CHESTS[1].p(gBest()) * 10 * .9);
+    const sheet = document.querySelectorAll('#sheet .chi').length; closeSheet(); Q.length = 0;
+    S.pity[2] = 14; ACT.chest('2|1|g'); const pity = S.pity[2] === 0; closeSheet(); Q.length = 0;
+    const m = chMax(0, 'o'); return { free, ten, sheet, pity, m, sea: S.sea && S.sea.pts > 0 }; });
+  await p.evaluate(() => { if ($('leg').classList.contains('on')) ACT.legClose(); closeSheet(); Q.length = 0; });
+  check(r.free && r.ten && r.pity && r.m > 1 && r.sea, 'v22 sandık/sezon: ' + JSON.stringify(r)); }
+await p.evaluate(() => { S.chF = 0; renderShop(); }); await p.waitForTimeout(200); await shot('14b-dukkan-sandik');
+await p.evaluate(() => { ACT.chest('0|10|o'); }); await p.waitForTimeout(1500); await shot('14c-sandik-acilis');
+await p.evaluate(() => { if ($('leg').classList.contains('on')) ACT.legClose(); closeSheet(); Q.length = 0; });
 await p.evaluate(() => legendary(makeItem(40, 3, 'weapon'))); await p.waitForTimeout(700); await shot('15-efsanevi');
 await p.evaluate(() => ACT.legClose());
 
@@ -266,6 +278,20 @@ await p.evaluate(() => { M.int = 1e9; M.hp = 1; attack(1, { src: 'tap' }); }); a
 await p.evaluate(() => { dungT = 50; }); await waitFor(() => !dungOn, 4000); await p.waitForTimeout(200);
 check(await p.evaluate(() => !dungOn && /Altın Mağarası/.test(document.getElementById('sheet').innerText) && S.dung.left.gold === 1), 'zindan bitişi hatalı');
 await shot('57-zindan-sonuc'); await clear();
+// v22 Batık Hazine zindanı (Batık Şehir'e ulaşınca), oksijen süresi ve Derinlik seti
+{ const r0 = await p.evaluate(() => { const lk = !dungOpen('sea') || S.maxF[7] > 0; S.maxF[7] = Math.max(1, S.maxF[7] | 0); S.dung.left.sea = 2; return lk; });
+  await p.click('[data-v=adv]'); await p.waitForTimeout(300); await p.click('[data-a=dung][data-v=sea]'); await p.waitForTimeout(800);
+  const r = await p.evaluate(() => { const ok = dungOn === 'sea' && M.dung && dungT <= 30000; let gain = 0; for (let i = 0; i < 5; i++) { if (!dungOn) break; const t0 = dungT; M.int = 1e9; M.hp = 1; attack(1, { src: 'tap' }); spawn(); if (dungT > t0) gain++; } return { ok, gain, items: dungLoot.items.length, set: dungLoot.items.every(x => x.set === 'abyss'), k: dungKills }; });
+  await p.waitForTimeout(400); await shot('57b-batik-zindan');
+  await p.evaluate(() => { dungT = 50; }); await waitFor(() => !dungOn, 4000); await p.waitForTimeout(200);
+  check(r0 && r.ok && r.gain >= 4 && r.items >= 1 && r.set, 'batık zindan hatalı: ' + JSON.stringify(r)); await shot('57c-batik-sonuc'); await clear(); }
+// v22 sezon tablosu
+await p.click('[data-v=adv]'); await p.waitForTimeout(300); await p.click('[data-a=seaOpen]'); await p.waitForTimeout(400); await shot('57d-sezon');
+check(await p.evaluate(() => document.querySelectorAll('#sheet .lbr').length === 10 && !!document.querySelector('#sheet .lbr.me')), 'sezon tablosu hatalı');
+{ const r = await p.evaluate(() => { const id = S.sea.id; S.sea.id = id - 1; S.sea.pts = 1e6; const g0 = S.gems; seaCheck(); return { gem: S.gems - g0, hist: S.sea.hist[0] && S.sea.hist[0].rk, cur: S.sea.id === id && S.sea.pts === 0 }; });
+  check(r.gem === 250 && r.hist === 1 && r.cur, 'sezon sonu ödülü hatalı: ' + JSON.stringify(r)); }
+await p.evaluate(() => { for (let i = 0; i < 6; i++) { closeSheet(); if ($('leg').classList.contains('on')) ACT.legClose(); nextQ(); } closeSheet(); Q.length = 0; });
+await clear();
 
 // düello
 await p.click('[data-v=adv]'); await p.waitForTimeout(300);
@@ -478,6 +504,10 @@ check(await p.evaluate(() => { const bk = JSON.stringify(S); const o = JSON.pars
   applySave(o); const r = S.zone === 8 && S.maxF[7] === 30 && S.maxF[8] === 15 && S.floors[8] === 12 && S.zq[8] && S.zq[8].s === 2 && S.story[7] === 1 && S.story[8] === 1 && S.bossFirst['8-10'] === 1 && S.bossFirst['2-10'] === 1 && S.floors.length === ZONES.length && ZONES[7].n === 'Batık Şehir';
   applySave(JSON.parse(bk)); calc(); setStage(); spawn(); return r; }), 'bölge kaydı geçişi hatalı: ' + await p.evaluate(() => JSON.stringify({ n: ZONES.length })));
 check(await p.evaluate(() => { const c = S.cls; hpKeep(() => { S.cls = 'war' }); const a = P.crit, d = P.critDmg; hpKeep(() => { S.cls = 'asn' }); const ok = (P.crit === Math.min(85, a + 12) || P.crit === 85) && P.critDmg === d + 40 && CLS.asn.sk.length === 4; hpKeep(() => { S.cls = c }); renderSkillBar(); return ok; }), 'suikastçı bonusları hatalı');
+// v22 Gölge Yolu: sadece Suikastçı görür ve puan harcar; etkiler P'ye yansır
+check(await p.evaluate(() => { const c = S.cls, lv = S.lvl, tal = S.tal; S.tal = {}; S.lvl = 200; hpKeep(() => { S.cls = 'asn' }); ACT.talUp('3|0'); ACT.talUp('3|0'); const ok1 = tl('amb') === 2 && P.amb === 60 && tpUsed() === 2;
+  heroSeg = 'tal'; renderHero(); const seen = /Gölge Yolu/.test(document.getElementById('s-hero').innerText); hpKeep(() => { S.cls = 'war' }); const ok2 = tpUsed() === 0 && P.amb === 0; ACT.talUp('3|1'); const ok3 = !tl('venom');
+  renderHero(); const hid = !/Gölge Yolu/.test(document.getElementById('s-hero').innerText); S.tal = tal; S.lvl = lv; hpKeep(() => { S.cls = c }); return ok1 && seen && ok2 && ok3 && hid; }), 'Gölge Yolu ustalık dalı hatalı');
 // ---- v20: dalga savaşı ----
 await clear(); await p.click('#tabs [data-v=battle]');
 const wv = await p.evaluate(() => { S.autoAtk = false; S.zone = 1; S.floors[1] = 5; S.kills = 0; setStage(); spawn(); M.int = 1e9; W.forEach(w => w.int = 1e9);

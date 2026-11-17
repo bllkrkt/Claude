@@ -1,8 +1,10 @@
 <resources>
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:windowBackground">@drawable/splash</item>
         <item name="android:statusBarColor">@color/bg</item>
         <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="28" xmlns:tools="http://schemas.android.com/tools">shortEdges</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="29" xmlns:tools="http://schemas.android.com/tools">false</item>
     </style>
     <color name="bg">#0e0f1a</color>
 </resources>

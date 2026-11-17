@@ -1,6 +1,26 @@
 package com.bilal.efsaneavcisi;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
+import android.view.Display;
+import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowInsetsController;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import android.content.ActivityNotFoundException;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -45,6 +65,22 @@ public class MainActivity extends Activity {
     private static long lastRecreate = 0;
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
+    private android.widget.FrameLayout root;
+    /** Oyun sayfası hazır olana kadar sistem açılış ekranı kalsın (en fazla SPLASH_MAX ms). */
+    private volatile boolean pageReady = false;
+    private static final long SPLASH_MAX = 3500;
+    private static final int NOTIF_REQ = 42;
+    private static final int[] NOTIF_IDS = {1, 2, 3, 4};
+    /** Tam ekran (sistem çubukları gizli, kenardan kaydırınca geçici görünür); oyun ayarından değişir. */
+    private boolean immersive = true;
+    private boolean highFps = true;
+    private AudioManager audio;
+    private AudioFocusRequest focusReq;
+    private final AudioManager.OnAudioFocusChangeListener focusL = f -> {
+        // Telefon araması, sesli mesaj vb. gelince oyun sesi susar; odak geri gelince açılır
+        final boolean duck = f == AudioManager.AUDIOFOCUS_LOSS || f == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT;
+        runOnUiThread(() -> js("window.__duck&&window.__duck(" + (duck ? 1 : 0) + ")"));
+    };
 
     @Override
     protected void onCreate(Bundle b) {
@@ -55,19 +91,48 @@ public class MainActivity extends Activity {
         web.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         // WebView kendi iç boşluğunu (padding) yok sayar; bu yüzden onu bir çerçeveye koyup boşluğu çerçeveye veriyoruz.
         // Böylece oyun saat/şarj çubuğunun ve alttaki gezinme çizgisinin altına girmez.
-        final android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+        root = new android.widget.FrameLayout(this);
         root.setBackgroundColor(0xFF0E0F1A);
         root.addView(web, new android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(root);
+        // Sayfa çizilmeye hazır olana kadar açılış ekranını tut (beyaz/boş kare görünmesin)
+        final long t0 = SystemClock.uptimeMillis();
+        root.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                if (pageReady || SystemClock.uptimeMillis() - t0 > SPLASH_MAX) {
+                    root.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+                return false;
+            }
+        });
+        root.postDelayed(() -> { pageReady = true; root.invalidate(); }, SPLASH_MAX);
+        // Yerel uygulama hissi: uzun basma menüsü/metin seçimi yok, kaydırma çubuğu yok, titreşimi oyun yönetir
+        web.setLongClickable(false);
+        web.setOnLongClickListener(v -> true);
+        web.setHapticFeedbackEnabled(false);
+        web.setVerticalScrollBarEnabled(false);
+        web.setHorizontalScrollBarEnabled(false);
+        if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true);
+        audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        NotifReceiver.channel(this);
+        applyImmersive();
 
         // Kenardan kenara ekran: durum çubuğu, gezinme çubuğu ve kamera çentiği boşlukları
         root.setOnApplyWindowInsetsListener((v, insets) -> {
             int top, bottom, left = 0, right = 0;
             if (Build.VERSION.SDK_INT >= 30) {
-                android.graphics.Insets i = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                // Tam ekranda yalnızca kamera çentiği kadar boşluk: çubuklar kaydırınca belirse de oyun yerinden oynamaz
+                android.graphics.Insets i = insets.getInsets(immersive ? WindowInsets.Type.displayCutout()
+                        : WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
                 top = i.top; bottom = i.bottom; left = i.left; right = i.right;
             } else {
-                top = insets.getSystemWindowInsetTop(); bottom = insets.getSystemWindowInsetBottom();
+                if (immersive) {
+                    top = 0; bottom = 0;
+                    if (Build.VERSION.SDK_INT >= 28 && insets.getDisplayCutout() != null) {
+                        top = insets.getDisplayCutout().getSafeInsetTop(); bottom = insets.getDisplayCutout().getSafeInsetBottom();
+                    }
+                } else { top = insets.getSystemWindowInsetTop(); bottom = insets.getSystemWindowInsetBottom(); }
             }
             v.setPadding(left, top, right, bottom);
             return insets;
@@ -85,6 +150,12 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setTextZoom(100);
         s.setMediaPlaybackRequiresUserGesture(false);
+        s.setOffscreenPreRaster(true);
+        // Android'in "koyu tema zorlaması" oyunun renklerini bozmasın
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING))
+                WebSettingsCompat.setAlgorithmicDarkeningAllowed(s, false);
+        } catch (Throwable ignored) { }
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
 
@@ -157,12 +228,20 @@ public class MainActivity extends Activity {
             try { w.evaluateJavascript("window.__pause&&window.__pause()", null); } catch (Exception ignored) { }
         }
         super.onPause();
+        abandonFocusAudio();
         if (w != null) {
             try { w.onPause(); } catch (Exception ignored) { }
         }
     }
+    @Override public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) applyImmersive();
+    }
+
     @Override protected void onResume() {
         super.onResume();
+        requestFocusAudio();
+        try { ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancelAll(); } catch (Exception ignored) { }
         final WebView w = web;
         if (w == null) return;
         try {
@@ -196,6 +275,97 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    private void js(String code) {
+        final WebView w = web;
+        if (w == null) return;
+        try { w.evaluateJavascript(code, null); } catch (Exception ignored) { }
+    }
+
+    /** Tam ekranı uygular ya da kaldırır; kenar boşlukları yeniden hesaplanır. */
+    private void applyImmersive() {
+        try {
+            Window win = getWindow();
+            if (Build.VERSION.SDK_INT >= 30) {
+                win.setDecorFitsSystemWindows(false);
+                WindowInsetsController c = win.getInsetsController();
+                if (c != null) {
+                    if (immersive) {
+                        c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                        c.hide(WindowInsets.Type.systemBars());
+                    } else c.show(WindowInsets.Type.systemBars());
+                }
+            } else {
+                int f = View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                if (immersive) f |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+                win.getDecorView().setSystemUiVisibility(f);
+            }
+            if (root != null) root.requestApplyInsets();
+        } catch (Exception ignored) { }
+    }
+
+    /** Ekranın desteklediği en yüksek yenileme hızını ister (90/120 Hz); kapalıysa sistem seçer. */
+    private void applyHz() {
+        try {
+            Display d = Build.VERSION.SDK_INT >= 30 ? getDisplay() : getWindowManager().getDefaultDisplay();
+            if (d == null) return;
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            int id = 0;
+            if (highFps) {
+                Display.Mode cur = d.getMode(), best = cur;
+                for (Display.Mode m : d.getSupportedModes())
+                    if (m.getPhysicalWidth() == cur.getPhysicalWidth() && m.getPhysicalHeight() == cur.getPhysicalHeight()
+                            && m.getRefreshRate() > best.getRefreshRate()) best = m;
+                id = best.getModeId();
+            }
+            if (lp.preferredDisplayModeId != id) { lp.preferredDisplayModeId = id; getWindow().setAttributes(lp); }
+        } catch (Exception ignored) { }
+    }
+
+    private void requestFocusAudio() {
+        try {
+            if (audio == null) return;
+            if (Build.VERSION.SDK_INT >= 26) {
+                if (focusReq == null) focusReq = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                        .setWillPauseWhenDucked(false).setOnAudioFocusChangeListener(focusL).build();
+                audio.requestAudioFocus(focusReq);
+            } else audio.requestAudioFocus(focusL, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+        } catch (Exception ignored) { }
+    }
+
+    private void abandonFocusAudio() {
+        try {
+            if (audio == null) return;
+            if (Build.VERSION.SDK_INT >= 26) { if (focusReq != null) audio.abandonAudioFocusRequest(focusReq); }
+            else audio.abandonAudioFocus(focusL);
+        } catch (Exception ignored) { }
+    }
+
+    private Vibrator vibrator() {
+        try {
+            if (Build.VERSION.SDK_INT >= 31) {
+                VibratorManager vm = (VibratorManager) getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+                return vm != null ? vm.getDefaultVibrator() : null;
+            }
+            return (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        } catch (Exception e) { return null; }
+    }
+
+    private PendingIntent notifPi(int id, String title, String body, int flags) {
+        Intent i = new Intent(this, NotifReceiver.class).putExtra("id", id);
+        if (title != null) i.putExtra("t", title).putExtra("b", body);
+        return PendingIntent.getBroadcast(this, id, i, flags | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        super.onRequestPermissionsResult(code, perms, res);
+        if (code != NOTIF_REQ) return;
+        boolean ok = res.length > 0 && res[0] == PackageManager.PERMISSION_GRANTED;
+        js("window.__notifRes&&window.__notifRes(" + ok + ")");
+    }
+
     /** Bekleyen dosya seçici isteği varsa boş sonuçla kapatır. */
     private void closeFileCallback() {
         final ValueCallback<Uri[]> cb = fileCallback;
@@ -215,6 +385,94 @@ public class MainActivity extends Activity {
     }
 
     private class Bridge {
+        /** Sayfa ilk kez çizildi: açılış ekranı kalkabilir. */
+        @JavascriptInterface
+        public void ready() {
+            pageReady = true;
+            runOnUiThread(() -> { if (root != null) root.invalidate(); });
+        }
+
+        @JavascriptInterface
+        public void setImmersive(final boolean on) {
+            runOnUiThread(() -> { if (isFinishing()) return; immersive = on; applyImmersive(); });
+        }
+
+        @JavascriptInterface
+        public void setHighFps(final boolean on) {
+            runOnUiThread(() -> { if (isFinishing()) return; highFps = on; applyHz(); });
+        }
+
+        /** Kısa dokunsal geri bildirim: 0 = tık (düğme), 1 = net tık, 2 = ağır vuruş. */
+        @JavascriptInterface
+        public void haptic(int kind) {
+            Vibrator v = vibrator();
+            if (v == null || !v.hasVibrator()) return;
+            try {
+                if (Build.VERSION.SDK_INT >= 29) {
+                    v.vibrate(VibrationEffect.createPredefined(kind <= 0 ? VibrationEffect.EFFECT_TICK
+                            : kind == 1 ? VibrationEffect.EFFECT_CLICK : VibrationEffect.EFFECT_HEAVY_CLICK));
+                } else if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(kind <= 0 ? 8 : 18, kind >= 2 ? 255 : 120));
+                else v.vibrate(kind <= 0 ? 8 : 18);
+            } catch (Exception ignored) { }
+        }
+
+        /** Oyunun titreşim deseni ("40" ya da "40,40,120": titret, bekle, titret...). Kısa olanlar keskin tık olur. */
+        @JavascriptInterface
+        public void vibe(String csv) {
+            Vibrator v = vibrator();
+            if (v == null || !v.hasVibrator() || csv == null) return;
+            try {
+                String[] p = csv.split(",");
+                long[] t = new long[p.length + 1];
+                int[] a = new int[p.length + 1];
+                for (int i = 0; i < p.length; i++) {
+                    long ms = Math.max(0, Math.min(1000, Math.round(Double.parseDouble(p[i].trim()))));
+                    t[i + 1] = ms;
+                    // tek sıralar titreşim; uzun titreşim daha güçlü
+                    a[i + 1] = i % 2 == 0 ? (int) Math.min(255, 90 + ms * 2) : 0;
+                }
+                if (p.length == 1 && t[1] <= 25 && Build.VERSION.SDK_INT >= 29) {
+                    v.vibrate(VibrationEffect.createPredefined(t[1] <= 12 ? VibrationEffect.EFFECT_TICK : VibrationEffect.EFFECT_CLICK));
+                } else if (Build.VERSION.SDK_INT >= 26) {
+                    if (v.hasAmplitudeControl()) v.vibrate(VibrationEffect.createWaveform(t, a, -1));
+                    else v.vibrate(VibrationEffect.createWaveform(t, -1));
+                } else v.vibrate(t, -1);
+            } catch (Exception ignored) { }
+        }
+
+        /** Bildirim izni: varsa true; Android 13+'ta yoksa izin penceresini açar ve false döner (sonuç __notifRes ile gelir). */
+        @JavascriptInterface
+        public boolean askNotif() {
+            try {
+                if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    runOnUiThread(() -> requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, NOTIF_REQ));
+                    return false;
+                }
+                NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                return nm == null || nm.areNotificationsEnabled();
+            } catch (Exception e) { return false; }
+        }
+
+        /** Hatırlatmaları kurar: [{id,at(ms),t,b}]; önce eskilerin hepsini iptal eder. "[]" = hepsini iptal. */
+        @JavascriptInterface
+        public void schedule(String json) {
+            try {
+                AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                if (am == null) return;
+                for (int id : NOTIF_IDS) {
+                    PendingIntent old = notifPi(id, null, null, PendingIntent.FLAG_NO_CREATE);
+                    if (old != null) { am.cancel(old); old.cancel(); }
+                }
+                JSONArray arr = new JSONArray(json == null ? "[]" : json);
+                for (int i = 0; i < arr.length() && i < 8; i++) {
+                    JSONObject o = arr.getJSONObject(i);
+                    int id = o.optInt("id", 1);
+                    long at = o.optLong("at", 0);
+                    if (at <= System.currentTimeMillis()) continue;
+                    am.set(AlarmManager.RTC, at, notifPi(id, o.optString("t"), o.optString("b"), PendingIntent.FLAG_UPDATE_CURRENT));
+                }
+            } catch (Exception ignored) { }
+        }
         /** Yedeği İndirilenler klasörüne yazar; yazılan yeri döndürür, olmazsa boş metin. */
         @JavascriptInterface
         public String saveFile(String name, String content) {

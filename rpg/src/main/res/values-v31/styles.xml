@@ -3,7 +3,10 @@
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:statusBarColor">@color/bg</item>
         <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowSplashScreenBackground">@color/bg</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/bg</item>
     </style>
 </resources>
