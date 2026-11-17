@@ -16,86 +16,12 @@ Instagram veri dışa aktarımını (ZIP / following.json / followers_1.json) ok
 - **Otomasyon / scraping yok.** Otomatik takipten çıkarma, hesap açık mı diye Instagram'a toplu istek atma, şifre isteme yok. Instagram Kullanım Şartları otomatik erişimi yasaklıyor ve hesap kısıtlaması riski var. Kullanıcı "kapalı hesapları otomatik kontrol et" istedi; reddedildi, yerine manuel "Hesap kapalı" butonu + profil sayısı farkından tahmin eklendi.
 - Güvenlik freni (günlük limit, bekleme süresi, ani hız uyarısı) kaldırılmamalı.
 
-## Mimari
-```
-app/src/main/assets/index.html   ← TÜM uygulama (tek dosya, vanilla JS + CSS, ~1100 satır)
-app/src/main/assets/fonts/       ← Plus Jakarta Sans (latin + latin-ext, Türkçe karakterler için ikisi de lazım)
-app/src/main/java/.../MainActivity.java     ← WebView kabuğu + JS köprüsü
-app/src/main/java/.../ReminderReceiver.java ← günlük bildirim (AlarmManager, açılışta yeniden kurulur)
-app/src/main/java/.../ProgressWidget.java   ← ana ekran widget'ı (res/layout/widget.xml, res/xml/widget_info.xml)
-app/src/main/res/                ← adaptive ikon (gradyan), bildirim ikonu, splash teması
-app/keystore/debug.keystore      ← İMZA ANAHTARI — silme/değiştirme (aşağıya bak)
-tests/                           ← Playwright uçtan uca test + sahte veri üretici
-```
-
-### WebView
-- Sayfa `WebViewAssetLoader` ile `https://appassets.androidplatform.net/assets/index.html` adresinden yüklenir (gerçek origin → localStorage kalıcı).
-- Dış linkler `shouldOverrideUrlLoading` ile Intent'e gider. `instagram://user?username=X` açılamazsa `https://www.instagram.com/X/`'e düşer.
-- Kenardan kenara (targetSdk 35): sistem çubuğu boşlukları WebView'a padding olarak verilir.
-
-### JS köprüsü (`window.AndroidBridge`)
-| Metot | Ne yapar |
-|---|---|
-| `saveFile(name, text)` → yol | Yedeği İndirilenler'e yazar (MediaStore) |
-| `takeSharedFiles()` → JSON | "Paylaş / Birlikte aç" ile gelen ZIP/JSON'dan çıkarılan takip dosyaları |
-| `setBars(hex, light)` | Durum/gezinme çubuğu rengi (tema) |
-| `ensureNotifications()` → bool | Android 13+ bildirim izni ister |
-| `setReminder(on,h,m,title,body)` | Günlük hatırlatıcıyı kurar/iptal eder |
-| `shareText(title, text)` | Paylaş menüsü |
-| `updateWidget(has, day, today, limit, left, pct)` | Widget verisini kaydeder ve yeniler (gün değişince widget bugünü 0 gösterir) |
-| `pinWidget()` → bool | Ana ekrana widget ekleme penceresi (desteklemiyorsa false → JS elle ekleme talimatı gösterir) |
-JS tarafı: `window.__onShared()` (yeni paylaşılan dosya), `window.__onBack()` (geri tuşu; true dönerse Activity kapanmaz).
-Tarayıcıda (köprü yokken) her şey çalışır; sadece Android'e özel özellikler gizlenir.
-
-### Veri modeli (localStorage anahtarı `takip-temizleme-v2`)
-- `people[u] = {u, at(sn, takip tarihi), followsMe: true|false|null, status: 'pending'|'keep'|'done'|'closed', doneAt, closedAt, again, lostAt, manualFollows, label?, note?}`
-  - `label`: `arkadas|aile|unlu|marka|is` (LABELS), `note`: en fazla 140 karakter. İkisi de isteğe bağlı; yoksa alan hiç yazılmaz.
-- `base = {following, followers, at}` — sayaç bu andan sonra bırakılan/kapalı işaretlenenleri düşer. `startFollowing` ilerleme yüzdesinin sabit başlangıcı.
-- `log['YYYY-MM-DD']` günlük bırakılan sayısı; `history` son 300 işlem; `changes` takipçi değişimleri (kaybedilen/kazanılan); `followerSnap` son takipçi listesi; `fans`; `requests`; `badges`; `milestones`; `importInfo`; `dismissed` (kapatılan uyarılar); `settings`.
-- Eski sürüm anahtarı `bilal-sade-final-v1` (Meta AI'ın yaptığı ilk araç) ilk açılışta taşınır (base 860/640, hedef 639).
-- **Veri formatını değiştirirsen geriye uyumluluk koru**: kullanıcının telefonunda gerçek veri var.
-
-### Instagram dosya formatı (parseEntries)
-Kullanıcı adı sırasıyla: `string_list_data[0].value` → `title` → `href` (son parça, `_u/` temizlenir). 2024+ formatında following kayıtlarında `value` yok, ad `title`'da. `following.json` = `{relationships_following:[...]}`, `followers_1.json` = düz dizi (`followers_2.json`… olabilir). `pending_follow_requests.json` = gönderilmiş istekler. ZIP tarayıcıda `DecompressionStream('deflate-raw')` ile, tamamı belleğe alınmadan okunur (ZIP64 destekli: 65.535+ dosya / 4 GB+). "Paylaş" ile gelen ZIP Java tarafında arka plan thread'inde okunur. HTML biçimli ZIP'te açık hata mesajı verilir.
-
-**Bilinen tuzak:** Veri indirmede varsayılan tarih aralığı "Son 1 yıl" → eski takipçiler dosyada yok → seni takip edenler "takip etmiyor" görünür. Uygulama bunu sezip uyarır; kullanıcıya "Tarih aralığı: Tüm zamanlar" seçmesini söyle.
-
-## Ekranlar (4 sekme)
-1. **Odak**: ilerleme halkası, kart destesi (sağa kaydır = bıraktım, sola = atla, yukarı = koru), "Hesap kapalı", "Beni takip ediyor", kuyruk filtresi (takip etmeyen / seni bırakan / hepsi), bekleme sayacı.
-2. **Kişiler**: arama, filtre çipleri (takip etmeyen, seni bırakan, bekleyen, karşılıklı, korunan, bırakılan, kapalı, hâlâ takipte, hayranların, istekler, geçmiş), sıralama, basılı tut → toplu seçim, listeyi paylaş.
-3. **Analiz**: 7/30 gün grafik, kartlar, takipçi değişimleri, dağılım, 12 rozet.
-4. **Ayarlar**: veri yükleme, profil sayıları, hedef, günlük limit / bekleme / yeni takipleri atla / ani hız, hatırlatıcı, tema, yedek, gizlilik, tümünü sil.
-
-## Derleme
-Gereken: JDK 17+, Android SDK (platform 35, build-tools 35). `local.properties` içinde `sdk.dir=...`.
-```bash
-./gradlew assembleDebug
-# çıktı: app/build/outputs/apk/debug/app-debug.apk → kullanıcıya TakipTemizleme-vN.apk adıyla ver
-```
-- Her sürümde `app/build.gradle` içindeki `versionCode`'u 1 artır, `versionName`'i güncelle (şu an 6 / "6.0").
-- **İmza:** APK `app/keystore/debug.keystore` ile imzalanır (SHA-256 `50b4d264…6b86`). Kullanıcının telefonundaki sürüm bu anahtarla imzalı. Anahtar değişirse güncelleme kurulmaz ve kullanıcı uygulamayı silmek zorunda kalır → **tüm verisi gider**. Asla değiştirme.
-- Emülatör yoksa APK'nın içinde sınıfların olduğunu doğrula (geçmişte Java dosyası yanlış klasöre yazıldığı için açılmayan bir APK gönderildi):
-  `dexdump app/build/outputs/apk/debug/app-debug.apk | grep "Class descriptor" | grep bilal`
-
-## Test
-```bash
-cd tests && python3 make-test-zips.py
-npm i -D playwright && npx playwright install chromium
-node e2e.mjs ../app/src/main/assets/index.html instagram-test.zip instagram-test-2.zip .
-```
-390×844 telefon boyutunda tanıtım → ZIP yükleme → kaydırma → toplu seçim → ikinci yükleme (30 takipten çıkan) → analiz → ayarlar → açık tema → geri tuşu → yenileme sonrası kalıcılık test edilir; ekran görüntüleri kaydedilir. `errors []` görmelisin. Değişiklikten sonra ekran görüntülerine bakarak görsel kontrol yap.
-
-## Sürüm geçmişi
-- **v1**: Meta AI aracının WebView'a sarılmış hali (bozuk: MainActivity yanlış klasördeydi).
-- **v2**: Baştan yazım — odak modu, geri takip etmeyenler, ZIP, limit, geri al, istatistik.
-- **v3**: Kapalı hesap durumu, "beni takip ediyor" düzeltmesi, eksik dosya uyarıları.
-- **v4**: Profesyonel yeniden tasarım — kart destesi + kaydırma, tanıtım, tema, takipten çıkanlar, hayranlar, toplu seçim, rozet/konfeti, hatırlatıcı bildirim, paylaşım, geçmiş, yeni ikon.
-- **v5**: Haftalık otomatik yedek (Android; açılışta son yedek 7 günden eskiyse İndirilenler'e yazar, Ayarlar → Yedek → "Otomatik yedek" ile kapatılabilir, `settings.autoBackup`, varsayılan açık). Kullanıcı v4'ü gerçek telefonda denedi.
-- **v6**: Kişilere etiket (Arkadaş/Aile/Ünlü/Marka/İş) + not; kartta, listede ve aramada görünür, "Etiketli" filtresi. Ana ekran widget'ı. Yukarı kaydırma = Koru dokunmatikte düzeldi (`.pcard` `touch-action:none`). Paylaş ile gelen büyük ZIP arka planda okunuyor. ZIP64 desteği.
-
-## Sıradaki fikirler (kullanıcı onaylamadı, öneri olarak sun)
-- Widget gerçek telefonda görsel olarak kontrol edilmedi; kullanıcıdan geri bildirim al
-- Release imzalı / küçültülmüş (R8) APK
+## Teknik özet (AYRINTI: `app/NOTLAR.md` — bu uygulamada çalışmadan önce oku)
+- Tüm uygulama `app/src/main/assets/index.html` (tek dosya); WebView kabuğu + JS köprüsü `MainActivity.java`; widget, hatırlatıcı.
+- Derleme `./gradlew assembleDebug` → kullanıcıya `TakipTemizleme-vN.apk`. versionCode her sürümde +1 (şu an 6).
+- **İmza:** `app/keystore/debug.keystore` (SHA-256 `50b4d264…6b86`) ASLA değişmez; değişirse kullanıcının verisi gider.
+- Veri formatında geriye uyumluluk şart (localStorage `takip-temizleme-v2`). Test: `tests/e2e.mjs`.
+- Sürümler v1–v6 (son: etiket/not, widget, ZIP64). Fikirler: widget telefonda doğrulanmadı; release/R8 APK.
 
 ---
 
@@ -139,27 +65,20 @@ Kararlar: **Google Play**'de yayın, **Türkçe + İngilizce**, **para kazanma y
 ## Denge (v15) — değiştirirsen simülasyonla ölç
 `tests/rpg-denge-sim.mjs` oyunu hızlandırılmış saatle sanal oyuncuyla oynatır (3B ve görsel efektler kapalı; 20 simüle dk ≈ 10 gerçek dk). v15 hedefi ve ölçülen: 1. bölge ~13 dk, rebirth eşiği (en iyi kat 50) ~22 dk, ölüm/boss başarısızlığı boss katlarında yığılır (20. ve 30. kat), 30 dk'da 3. bölge. ÖNCEKİ hâl: 20 dk'da 4 bölge, sıfır ölüm (oyuncu sıkılıyordu). Ders: canavar 1,8 sn'de bir vurur; canavar bundan hızlı ölürse saldırı formülü önemsizleşir — zorluğu can/hasar oranı belirler. Formüller: `mHp=(20+13g+g^1.85)*(1+.02*max(0,g-10))`, `mAtk=(4+1.25g+.026g²)*1.35`, savunma `dmgRed(lv)=k/(k+def)`, `k=60+6*lv`, boss canı ×(12+4*min(3,kat/10)) (v20), boss vuruşu ×1.45, `KPF`=8 (v20), normal canavar XP ×0,8 (v20), `xpNeed=24+14n+4.6n²`, ileri bölge normal canavar canı ×`nHp(g)=1+max(0,g-120)*.02` (v20). v20 dalgalı ölçüm (Altın Ay haftası): 1. bölge ~13 dk, 30. kat boss'unda 6 başarısız deneme, en iyi kat 50'ye 20. dk'da.
 
-## Sürüm geçmişi
-- **v20**: Kullanıcı ilk kez gerçek telefon ekran görüntüsü gönderdi. HATA: oyun durum çubuğunun altına giriyordu → `MainActivity` WebView'ı `FrameLayout` içine aldı, kenar boşluğunu (sistem çubukları + kamera çentiği) çerçeveye veriyor (WebView kendi padding'ini yok sayıyordu). DALGA SAVAŞI (kullanıcı seçti): normal katlarda `W` dizisi (öndeki `M`, arkadakiler `W`), boyut `waveSize(g)` 2/3/4/5 (g<15/60/150), kat başına `KPF`=8 öldürme; `mkMon` (canavar üretimi ayrıldı), `spawn(pre)` öne geçeni alır (`waveNext`, canı korunur; ölmüş olanın ödülü `M.wd` ile hemen), `hitW` (çoklu vuruşlu yetenekler h≥4 vuruşlarını dalgaya dağıtır), `waveHit` (arkadaki ilk 2 düşman %70 güçle saldırır; İLK 10 KATTA saldırmazlar), `#wave` simgeleri (can çizgili), 3B: `S3D.wave/waveHit/waveDie/waveAtk` (ayrı ajan; kamera dalga varken hafif geri çekilir). Boss katları ve modlar (arena/kule/zindan/düello/kader) dalgasız. Eski oyunculara `news20`. Kullanıcının bir sonraki istediği: görsel yenileme (daha detaylı 3B karakterler + menü/arayüz yeniden tasarımı) — yapılmadı, sıradaki iş.
-- **v19**: Kullanıcı "hepsini ekle" dedi (ses, yeni sınıf, yeni bölge, efsanevi görseller). 🔱 Batık Şehir: 7. indekse eklendi (Gök Tapınağı ile Hiçlik arası; Hiçlik artık 8., sonsuz). `STORY/MUS/BSP/BPH` dizilerine `splice(7,0,…)` ile eklendi; boss replikleri `QUOTE`. KAYIT GEÇİŞİ (`applySave`, `S.zv`=2): eski 8 bölgeli kayıtta `maxF/floors` 7'ye yeni değer eklenir (Hiçlik'e ulaşmışsa yeni bölge 30/30 tamam sayılır), `S.zone>=7` ise +1, `S.zq/S.story/S.bossFirst` anahtarları kaydırılır. Bölge indeksine bağlı YENİ BİR ŞEY eklersen bu kaymayı düşün. 🥷 Suikastçı sınıfı (`CLS.asn`: +12 kritik şansı, +40 kritik hasarı; yetenekler mevcut türlerden: hit/dodge/hit/bcrit). Efsanevi güç görselleri: `legUpd()` (updHud'da, değişince `S3D.legFx(keys)`; en fazla 3). Ses: `sfx('phase')` boss aşamasında, `fanfare('reward'|'unlock')` menülerde de çalar, `amb()` bölgeye göre 4–9 sn'de bir ortam sesi. Unvan `deniz` (Derinlerin Fatihi). 3B (ayrı ajan): Batık Şehir ortamı, 8 yeni canavar modeli, `HB/SK.asn`, `heroAttack` asn, `API.legFx`. Eski oyunculara `news19` (`S.nv`=19).
-- **v18**: Kullanıcı "tekrar tara, eksikleri hallet, takıl" dedi. 🎪 Haftalık etkinlik (`WEV` 4 etkinlik, `wkNo()` UTC hafta, `curEv/evIs`; Altın Ay altın +%50, Elit Avı elit 3× sık ve 3× jeton, Hazine Haftası düşme ×1,5, Boss Festivali boss canı -%20 ve 5 jeton; jeton `wevAdd` (normal ¼, elit 1, boss 3; çevrimdışı öldürme başına 0,08); 10 basamaklı ödül yolu `WTR`/`wtrGive`, `S.wev={wk,tok,cl}`; hafta dönünce `weekCheck` alınmamışları otomatik verir; Macera'da en üstte `wevCard`, Macera rozeti ödül hazırsa yanar). 🏷️ Unvanlar (`TTL` 15 unvan, `titleCheck` döngüde, `S.titles`, `S.title`; üst çubukta sınıf adının yanında, başlık ekranı kartında; Kahraman → Stat'ta seçim; sonuncusu etkinliği bitirince). Pencere kapanışı: `closeSheet` gölge kopyayı kaydırıp söndürür (`.sheetGhost`; mantık hemen kapanır, testleri etkilemez; `window.__noAnim` ile kapatılır).
-- **v17**: HATA (kullanıcı bildirdi): rehber baloncuğu VUR'un üstünde takılı kalıyordu (v16'daki "istatistiklerine dokun" işareti ince stat çubuğunu gösteriyordu, baloncuğa dokunmak bir şey yapmıyordu). Artık baloncuk dokunulabilir (`coachTap`: kapanır + gösterdiği pencereyi açar, "dokun · tamam" yazar) ve hiçbir işaret 15 sn'den uzun kalmaz (`coachAt`). Testlere hızlı mod (`HIZLI=1`) ve `tests/rpg-hepsi.sh`.
-- **v16**: Kullanıcı "oynanış güzel ama oyun içi detaylar yetersiz" dedi → bilgi katmanı. Canavar kartı (`monInfo`, canavar adına dokun `#mName[data-a=monInfo]`; can, vuruşu savunma dahil, saldırı aralığı, kaç vuruşta yener / kaç saniyede yenersin (`estDps`, `hitsPerSec`, `petDps`), kazanır/zorlu kararı, ekler `AFXD`, tür, boss: süre/özel saldırı `BSP`/aşama `BPH`/öfke, defter yıldızı). Ayrıntılı istatistik (`statInfo`, `#pSt` dokun; saldırı/dayanıklılık/ganimet, şu anki canavara karşı savunma yüzdesi, etkin güçler: efsanevi `P.e`, kader `FB`, setler, yoldaş, rünler; son olaylar). Olay günlüğü `S.elog` (son 25, `logEv`: boss, ölüm, kaçan boss, her 5 seviye, efsanevi, yeni bölge). Bölge bilgisi (`zoneInfo`, haritada ℹ️; hikâye `STORY`, canavarlar görülmemişse ???, boss'lar ve hamleleri, zorluk tahmini: 30 sn'de 30. kat boss'unu kesme oranı). Keşif için iki tek seferlik rehber (`S.tut.mon`, `S.tut.st`; eski oyuncularda da bir kez çıkar).
-- **v15**: Denge baştan (simülasyonla 4 tur ayar; yukarıdaki bölüm). Bölge boss'larına aşamalar (`BPH`, `bossPhase`, `M.zb`, `M.phN`; %66 ve %33 canda; bölgeye göre kalkan / şifa ayini (`M.hlP`,`M.hlB`, boss'ta bir kez) / çılgınlık (`M.frz`) / dondurma (`R.frozen`, `#frz`, 6 dokunuşla kırılır, `unfreeze`)). HATA: ölüm penceresi "Devam et" dışında kapanınca oyun ölü durumda takılıyordu → döngüde 0,6 sn sonra kendiliğinden diriliş (`deadT`). Eski oyunculara `news15` (`S.nv`=15).
-- **v14**: Profesyonelleştirme 3. aşama: tam İngilizce. Metinler araçla çıkarıldı (ekranda görünen ~940 dize), 4 ajana paralel çevirtildi (terim sözlüğüyle), koda `T()` olarak otomatik bağlandı; elle: şablon metinler, boşluklu tek kelimeler (" sn", " dk"…), sabit HTML (`data-t`), kat kalıpları (`kn`), rakip adları (İngilizce fantastik adlar). Ayarlardaki "çeviri sürüyor" notu kaldırıldı. Türkçe oyuncuda hiçbir şey değişmez (`T` Türkçede metni aynen döndürür). Yeni test `tests/rpg-ingilizce.mjs`.
-- **v13**: Profesyonelleştirme 2. aşama (cila, kullanıcı "kafana göre takıl" dedi). Sekmeler seviyeyle açılır (`TABU`: Kahraman Sv2, Görev Sv3, Dükkan Sv4, Macera Sv6 ya da ilk boss; `tabOpen`, `tabCheck`; kilitli sekme soluk + 🔒, dokununca uyarı; açılınca bir kez duyuru `S.tu`, simge zıplar `.nw`; eski oyuncularda açılışta sessizce açılır). Rehber işaretleri (`coach/coachDone/tutTick`, `#coach`, `S.tut`: hit→skill→bag→equip→hero→stat; eski oyuncularda hepsi tamam sayılır). Rozet: Macera "!" günde bir kez (`S.advDay`), kilitli sekmede rozet yok. Düğme tık sesi (tıklama dağıtıcısında), altın/elmas artınca sayaç zıplar (`pillBump`). Zayıf telefon: yeni oyuncuda `detFx()` (bellek/çekirdek) ile efekt seviyesi; savaşta kare hızı izlenir (`fpsLoop`), iki kez 22 fps altı → bir kez "akıcılaştırayım mı?" (`S.perfAsk`, `ACT.perfLow`; `__noRnd` iken kapalı). Karşılama penceresi kısaldı ve iki dilli.
-- **v12**: Profesyonelleştirme 1. aşama. Dil sistemi: `T(metin,...)` (anahtar Türkçe metnin kendisi, `{0}` yer tutucular; çevirisi yoksa Türkçe kalır), `EN` sözlüğü, `S.set.lang` (yeni oyuncuda telefon diline göre `detLang()`; eski kayıtlar da telefon diline göre alır), `applyLang()` sabit HTML'de `data-t` olanları çevirir. Açılış ekranı `#title` (`showTitle/renderTitle/titleGo`, `titleOn` iken `paused()` ve `busy()` doğru → sıradaki pencereler Oyna'ya basınca açılır; `body.ttl` iken pencereler başlığın üstünde çıkar; `window.__noTitle` ile kapatılır). Ayarlar iki dilli yeniden yazıldı + dil seçimi; `ACT.about` (gizlilik, yapım, lisanslar; `licShow` lisans dosyalarını okur: `lib/three-LICENSE.txt`, `fonts/OFL.txt`). `VER` sabiti. Mağaza: `rpg/magaza/gizlilik.html` (TR/EN), `rpg/magaza/magaza-metni.md`. Test: `locale: 'tr-TR'`, açılış ekranı yalnızca ilk yüklemede (`window.name`), sonra `__noTitle`.
-- **v11**: Kullanıcı "çanta çok çabuk doluyor, oyun basit ve sıkıcı, görüntüyü iyileştir" dedi. ÇANTA: `invMax()` (50 + `S.invX`, altın/💎 ile +10, en fazla 150; `INV_MAX` sabiti sadece temizlik sınırı), oto temizlik (`S.set.autoJ` 0–3 nadirlik eşiği, `S.set.autoJM` sell/melt, `isJunk`; set parçası ve kuşanılandan güçlü olan girer; sadece düşen eşyada: `giveItem(it,true)`), dolu çantada Epik+ en zayıf kilitsiz eşyanın yerine geçer, seviyeyle çöp oranı azalır. OYNANIŞ: 🔮 Kader Yolu (`fateOn`, `FB` güçler, `FBL`, `fateOffer/fatePick/fateEnd`, `fatePend` çift seçimi önler, `S.fate.best`; Sv8'de açılır, `busyMode` içinde), canavar türleri (`TRT`: kalkanlı `M.sh`, sürü `M.pack`, şifacı `M.hlC/hlT`, bombacı `M.bomb`+zamanlayıcı; `addTrait`, ödül `M.rwM`), efsanevi özel güçleri (`LEGP`, `it.leg`; eski efsanevilere `cleanItem` id'den güç atar; etkiler `P.e` üzerinden `calc/attack/monsterHit/useSkill`), 🎯 zayıf nokta (`weakShow/weakHit/weakFollow`, `#weak`; 3B'de halkayı `S3D.weakSpot` çizer, HTML düğmesi görünmez dokunma alanı), ❗ yol olayları (`evShow/evOpen`, `#evBtn`: tüccar/lanetli sandık/çeşme/demirci), 📖 Canavar Defteri (`S.bst`, `BST_T`, `bstBonus` kalıcı saldırı+can), 📜 bölge görev zinciri (`ZQ`, `S.zq[bölge]={s,p}`, Görev sekmesinin başında). Rastgele türler/olaylar `TRAITS` ile kapatılabilir: testte `window.__noRnd=1` (addInitScript). 3B (ayrı ajan): katmanlı arka plan siluetleri, güneş/ay, bulutlar, zemin süsleri (InstancedMesh), bölgeye göre sis/ışık, kenar ışığı, canlı bekleme animasyonları, temas gölgeleri; yeni isteğe bağlı API'ler `shieldFx(on)`, `bolt()`, `weakSpot(on)`, `weakPos()`, `setAura(renk)`, `packCount(n)` (spawn sıfırlamaz, oyun her doğuşta çağırır). Eski oyunculara `news11` (`S.nv`=11). Not: kullanıcının 5 saatlik kullanım sınırı bu sürümde doldu; çok ajan + uzun test sınırı hızlı tüketiyor.
-- **v10**: v9 sonrası ikinci tarama, 10 madde. Menüdeyken savaş pürüzleri: çanta eşya gelince 3 sn'de bir yenilenir (`menuDirty`), efsanevi kutlaması menüde açılmaz, savaşa dönünce gösterilir (`pendLeg`), sekme değişince boss uyarılı saldırısı iptal olur, menüde boss/seviye sessiz bildirim. Altta menü savaş özeti (`#bgInfo`, `bgSt`; testte sekme seçicisi `#tabs [data-v=...]` olmalı). 🧪 Oto iksir (`S.set.autoPot`, can <%30, varsayılan açık; testte kapalı başlanır). Ekran: `keepUpd()` — savaşta, ölü değilken ve (oto saldırı sürüyor ya da son 3 dk dokunulmuş) ise açık. Kayıt yazılamazsa bir kez uyarı (`saveWarn`). Otomatik yedekler `EfsaneAvcisi-oto-yedek-*` adıyla, son 3'ü kalır. Android: çökme toparlama sağlamlaştı (10 sn içinde ikinci çökmede kapanır), `onDestroy`. Eski oyunculara `news10` (`S.nv`=10). Kullanıcı hız için ajanlara bölmemi istedi: oyun tek dosya olduğundan sadece Android tarafı ayrı ajana verilebildi.
-- **v9**: Sistem taraması sonrası 13 madde (kullanıcı "hepsini ekle" dedi). HATALAR: mod (kule/arena/zindan/düello) sırasında yedek yükleme/sıfırlama modu temizler (`clearModes`); baykuş etkisi süreyi kısaltmaz; yedek/kayıt doğrulaması (`sanitize`, `cleanItem`; `restoreCode` bozuk kodda eski kayda döner; okunamayan kayıt `efsane-avcisi-v1-bozuk` anahtarına saklanır); 3B takılma (model ışıkları `PL` işaretçisi + `ML` havuzu/`relight`, açılışta "tutucu" meshlerle shader'lar önceden derlenir — YENİ malzeme türü eklersen tutucu da ekle); render süreci çökmesi toparlanır. YENİ: dosyaya yedek + dosyadan yükleme + haftalık otomatik yedek (`bkFile`, `autoBk`, `S.lastBk`, `S.set.autoBk`), efekt yoğunluğu (`S.set.fx` 0/1/2 → `S3D.setQuality`, `FXF()`), ekran parlaması anahtarı (`S.set.flash`), ayrı efekt/müzik ses seviyesi (`S.set.vol/mvol`, `outS/outM`), menüdeyken savaş sürer (`S.set.bgFight`, varsayılan açık; savaş sekmesi dışında görsel efekt/ses üretilmez, boss özel saldırısı beklemez, mod sırasında durur), ekran sadece savaşta açık kalır, Kule "Hızlı geç" (`towerSkipN`, `towerRw`), SERİ nidası sadece 3 ve 5'in katlarında, sekme rozetleri "!". Testte `S.set.bgFight=false` ile başlanır.
-- **v1**: İlk oynanabilir sürüm.
-- **v2**: Sınıflar, yetenekler, kombo, demirci, yoldaşlar, günlük ödül/görev/başarım, elmas, sen yokken kazanç, elit canavar, baştan görsel tasarım. v1 kayıtları korunur (açılışta sınıf seçtirilir).
-- **v8**: Vuruş hissi (kullanıcı "vuruş hissi basit" dedi): 3'lü kombo (`R.step`, `swing()` adımı döndürür; 3. vuruş BİTİRİCİ, `P.fin` çarpanı), sınıfa özel 3B saldırı (`S3D.heroAttack(step)`: Savaşçı kılıç izi `slashArc` + bitiricide zıplama, Okçu ok `shot('arrow')`, Büyücü küre `shot('orb')`), vuruş donması (`stopT`/`hitStop`), kamera FOV darbesi (`punch`), canavar geri savrulma/ezilme (idle'da `u.kb/u.sq/u.tl`, saldırı eğimi `u.rx`), parçalanarak ölüm (`debris`, `xpOrbs`), boss ölümünde ağır çekim (`ts/tsT/focus`) ve sonraki canavar 1350 ms sonra (`spawnT`, `spawn()` bekleyeni iptal eder), WebAudio gürültü+bas katmanlı sesler (`sfx`), hasara göre büyüyen/savrulan sayılar, ekran parlaması (`scrFlash`), kombo nidaları ve öldürme serisi altın bonusu (`shout`, `R.streak`). PERFORMANS: geçici ışıklar sabit 4'lü havuzdan (`LP`, `light()`); ışık sayısı değişirse three.js tüm shader'ları yeniden derler → takılma, yeni geçici PointLight EKLEME. YENİ: 🌳 Ustalık ağacı (`TAL`, her 5 seviyede 1 puan, dal kilidi 3/6/9 puan, doğuşta sıfırlanır), 🗼 Sonsuz Kule (`towerOn`, `towerEnd`, `S.tower.best`, sınırsız deneme, ilk geçiş ödülü), yoldaş özel yetenekleri (`PSK`, `petSkill`, `S3D.petSkill`), 🎲 stat yeniden zar (`rrCost`, `reroll`). Testte zamanlayıcıya bağlı adımlar `waitFor` ile bekler (yazılımsal 3B yavaş).
-- **v7**: HATA: 30. kat boss'u (ör. Orman Devi) sonrası oyun aynı katta kalıp boss'u tekrar doğuruyordu → artık sonraki bölgeye geçer (`kill()`), 30. katta ▶ sonraki bölgeye götürür, en yüksek kata ▶ ile çıkınca Oto ilerle yeniden açılır. YENİ: 6. sekme 🏰 Macera (`renderAdv`): Boss Arenası + 3 Zindan (`DUNG`, 45 sn, günde 2 hak; `dungOn`, `dungKill`, `endDung`) + Düello Ligi (`duelOn`, `genOpps`, `duelEnd`; gölge rakipler oyuncunun gücüne göre, `LEAGUES` kupa ligleri, günde 5 maç). Boss/düello özel saldırısı: uyarı + 🛡️ SAVUN düğmesi (`startTele`/`block`/`bossSpecial`, 3× hasar; savuşturunca 2 sn sersemletme + karşı saldırı), %50 canda öfke (`enrage`). Elit ekleri (`AFX`). Rünler (`RUNES` 7 tür × I–V; `it.sock`, yuva sayısı nadirliğe göre; `S.runes`; 3→1 birleştirme). Hikâye (`STORY`, Bilge Ozan) ve boss replikleri (`QUOTE`, `say()`). Çanta/Kahraman'da dönen 3B karakter vitrini (`S3D.showcase`). Eski oyunculara bir kez `news7` (`S.nv`). Kullanıcı "oyun hâlâ basit, aklına gelen her şeyi ekle" dedi.
-- **v6**: Kuşanılan eşyalar 3B karakterde görünür (`gearOf()` → `S3D.setHero(cls, skin, gear)` → `applyGear`): silah tipi eşyanın emojisinden (kılıç/balta/çekiç/mızrak/yay/asa), zırh (plaka/giysi/cübbe), kask (miğfer/taç/büyücü şapkası), eldiven, bot, yüzük (dönen mücevher). Klasik kostümde nadirlik rengi (`RC`/`RM`), Epik+ silah parlar; kostüm seçiliyse renk kostümden. Kahraman silahı yukarıda tutar.
-- **v5**: Oto saldırı hız ayarı (⚔️ OTO düğmesi → pencere; `AAS` 5 kademe: Sakin/Normal her zaman, Hızlı Sv20, Çok hızlı Sv40, Fırtına 1 doğuş; `S.aaSp`), Çanta'da tek tıkla "⚡ En iyileri kuşan" (`bestList`) ve "⚒️ Toplu geliştir" (`upPlan`: Güvenli = herkes +5'e kadar, Sonuna kadar = riskli denemeler dahil). Kullanıcı tek tıkla iş gören kolaylıkları seviyor.
-- **v4**: Oto saldırı (ilk boss'tan sonra; `aaOpen`, `AA_MS`=400 ms, titreşimsiz) ve oto yetenek (Sv15; `autoSkill`), WebAudio ile bölgeye göre üretilen müzik (`MUS`, `music()`), 2 yeni bölge (Gök Tapınağı, Hiçlik → 8 bölge, sonuncusu sonsuz; eski kayıtta Kale 30'u geçmişse sonraki bölge açılır), yoldaş evrimi (Sv10/Sv20, `petStage`), 3B kostümler (`SKINS`, `S.skin`). Kullanıcı isteği: "her saldırı için tuşa basmayayım".
-- **v3**: Gerçek 3B grafik (Three.js, koddan modeller), eşya setleri, zamanlı boss + Boss Arenası, yeniden doğuş + Ruh Ağacı, 2B/3B ayarı.
+## Sürüm geçmişi (kısa — AYRINTI: `rpg/GECMIS.md`, bir sistemi değiştirmeden önce oradan ilgili sürümü oku)
+- v1–v8: temel oyun, sınıflar, eşya/demirci, yoldaş, 3B (Three.js), set, boss/arena, doğuş, oto saldırı, müzik, 8 bölge, kostüm, Macera sekmesi (zindan/düello), rün, hikâye, vuruş hissi, ustalık, kule.
+- v9–v10: tarama düzeltmeleri, yedek dosyası/oto yedek, efekt/ses ayarları, menüde savaş, oto iksir.
+- v11: çanta (oto temizlik/büyütme), Kader Yolu, canavar türleri, efsanevi güçler, zayıf nokta, yol olayları, defter, bölge görevi.
+- v12–v14: profesyonelleştirme: açılış ekranı, dil sistemi `T()`, rehber/sekme kilitleri, tam İngilizce (`lang-en.js`).
+- v15: denge baştan (simülasyon), boss aşamaları. v16: canavar kartı/istatistik/bölge bilgisi. v17: rehber baloncuğu hatası, hızlı test. v18: haftalık etkinlik, unvanlar.
+- v19: Batık Şehir (indeks 7; kayıt geçişi `S.zv`), Suikastçı, efsanevi güç görselleri, ortam sesleri.
+- v20: ekran taşması (WebView FrameLayout içinde), DALGA SAVAŞI (`W`, `mkMon`, `waveNext`, `hitW`, `waveHit`, `S3D.wave*`), denge yeniden.
+- v21 (sürüyor): yeni müzik motoru (`MZ`, `musStep`, `note`, `drum`; ses kartı saatine göre), sınıf vuruş sesleri (`clsHit`), `sfx('coin'|'bossIn')`, `fanfare('level')`, arayüz tema katmanı (CSS sonunda "v21 TEMA"), 3B görsel yenileme (ajan).
+
+## TOKEN TASARRUFU (kullanıcı uyardı: konuşma çok uzayınca kullanım hızlı doluyor)
+- Uzun işten sonra kullanıcıya yeni oturum açmasını öner; bu dosya devir için yeterli olmalı.
+- Ekran görüntüsünü sadece görsel değişiklikte oku, birleşik ve küçük (deviceScaleFactor 1) al. Komut çıktılarını kısa tut (grep/cut). Testte `tests/rpg-hepsi.sh` (3 satır özet).
+- Ajanlara tam dosya yolu ve net kabul ölçütü ver; raporlarını kısa iste.
 
 ## Sıradaki fikirler (öneri olarak sun)
 - (Yapıldı: haftalık etkinlik v18, ustalık v8, yoldaş yetenekleri v8, bölge görev zinciri v11, sonsuz kule v8, zar atma v8.) Yeni fikirler: sezonluk rekor tablosu, Suikastçı'ya özel ustalık dalı, Batık Şehir'e özel zindan, yoldaşlara 3B evrim görselleri.
