@@ -808,9 +808,9 @@ function buildFx(){
    bd.userData={rg,ms:[g1,r1,r2,mo],mo:[]};for(let i=0;i<8;i++)bd.userData.mo.push(N(new T.PlaneGeometry(1,1),mo,0,0,0,bd));bd.visible=false;FX.bd=bd}
   try{legBuild()}catch(e){LEG.o={}}}
 /* kısa parıltı: havuzdan sıradaki düzlem; star → dört kollu yıldız */
-function pop(at,col,size,dur,star){if(!act||!FX.pop.length)return;const p=FX.pop[FX.pi++%FX.pop.length],m=p.material,tok=(p.userData.tok||0)+1,r0=rnd(0,PI),sz=size*(QL?1:.8);p.userData.tok=tok;
+function pop(at,col,size,dur,star){if(!act||!FX.pop.length)return;const p=FX.pop[FX.pi++%FX.pop.length],m=p.material,tok=(p.userData.tok||0)+1,r0=rnd(0,PI),sz=size*(QL?.7:.56);p.userData.tok=tok;
   m.map=star?FX.st:dot();m.color.set(col);p.position.copy(at);p.position.z+=.25;p.visible=true;
-  anim(dur,k=>{if(p.userData.tok!==tok)return;p.quaternion.copy(cam.quaternion);p.rotateZ(r0+k*.8);const e=star?.35+k*1.1:.55+k*.6;p.scale.set(sz*e,sz*e,1);m.opacity=(1-k)*(1-k*.5)},()=>{if(p.userData.tok===tok)p.visible=false})}
+  anim(dur,k=>{if(p.userData.tok!==tok)return;p.quaternion.copy(cam.quaternion);p.rotateZ(r0+k*.8);const e=star?.35+k*1.1:.55+k*.6;p.scale.set(sz*e,sz*e,1);m.opacity=.55*(1-k)*(1-k*.5)},()=>{if(p.userData.tok===tok)p.visible=false})}
 /* ---------------- efsanevi güç efektleri: kahramanın üstünde ince, sürekli görseller (en fazla 3) ----------------
    hepsi init'te bir kez kurulur, paylaşımlı malzemelerle; sahnede kalır ve her kare kahramanı izler (setHero sonrası kendiliğinden yeniden bağlanır) */
 const LEG={on:[],o:{},tw:null,twFor:null,gm:null},LQ=new T.Quaternion();
@@ -957,7 +957,7 @@ function envFor(d,r,pm){if(!pm)return null;const es=new T.Scene(),sg=new T.Spher
 API.init=function(stage){if(!webglOk())return false;
   try{ren=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch(e){return false}
   ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;
-  ren.outputEncoding=T.sRGBEncoding;ren.toneMapping=T.ACESFilmicToneMapping;ren.toneMappingExposure=1.18;
+  ren.outputEncoding=T.sRGBEncoding;ren.toneMapping=T.ACESFilmicToneMapping;ren.toneMappingExposure=1.22;
   host=stage;const c=ren.domElement;c.id='c3d';host.insertBefore(c,host.firstChild);
   scene=new T.Scene();cam=new T.PerspectiveCamera(46,1,.1,150);
   lights.hemi=new T.HemisphereLight(0xffffff,0x444444,.8);scene.add(lights.hemi);
@@ -1019,7 +1019,7 @@ API.hit=function(crit,src,pow){if(!monM||monM.userData.dying)return;pow=pow||1;c
   u.kb=Math.min(.9,(u.kb||0)+(pet?.08:crit?.42:.22)*pow);u.sq=Math.min(.35,(u.sq||0)+(pet?.04:crit?.22:.12)*pow);u.tl=Math.min(.6,(u.tl||0)+(crit?.35:.18)*pow);
   if(!pet&&heroK==='war')slashArc(c,crit?0xffd23d:0xffffff,crit||pow>1.2,pow>1.2?-1.4:null);
   burst(c,crit?0xffd23d:pet?0x9fd8ff:0xffffff,crit?16:pet?4:8,crit?1.3:1);
-  pop(c,crit?0xffc040:pet?0x7fc8ff:0xfff4e0,crit?2.6:pet?1:1.6,crit?.26:.16);if(crit)pop(c,0xffffff,3.4,.3,1);
+  pop(c,crit?0xffc040:pet?0x7fc8ff:0xfff4e0,crit?2.6:pet?1:1.6,crit?.26:.16);if(crit)pop(c,0xffffff,2.4,.22,1);
   if(crit||pow>1.2)debris(c,monColors(monM),crit?5:3,1);
   if(crit){shk=Math.max(shk,.45);punch=Math.max(punch,.8);stopT=Math.max(stopT,.07);light(c,0xffd23d,2.5,.22)}else if(!pet){punch=Math.max(punch,.25);stopT=Math.max(stopT,pow>1.2?.05:.025)}
   if(pow>1.2){ring(V(c.x,0,c.z),0xffcf4a,.3,2.4,.35,.06,.06);shk=Math.max(shk,.5)}};
