@@ -272,7 +272,10 @@ textarea{width:100%;height:100px;background:#0008;color:var(--tx);border:1px sol
 .lgbar{height:10px;border-radius:99px;background:#0008;overflow:hidden;margin-top:6px}.lgbar i{display:block;height:100%;background:linear-gradient(90deg,#ffcf4a,#ff7a3d)}
 .npc{display:flex;gap:12px;align-items:flex-start}.npc .e{font-size:48px;flex:none}.npc p{margin:0;font-size:14.5px;line-height:1.6}
 .fl.c{-webkit-text-stroke:1px #7a2a00;animation-duration:1.05s}.fl.fin{color:#ffb070}.fl.fin::before{content:"BİTİRİCİ";display:block;font-size:10px;letter-spacing:2px;text-align:center;color:#ff7a3d}.fl.c.fin::before{content:"KRİTİK BİTİRİCİ";color:#ff9a1f}
-#flash{position:fixed;inset:0;pointer-events:none;z-index:8;opacity:0;background:#fff}#flash.w{animation:flw .14s}#flash.r{background:#ff1a1a;animation:flr .3s}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:8;opacity:0;background:#fff}
+/* v22 hız çizgileri (bitirici / ağır vuruş) */
+#spd{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;background:repeating-conic-gradient(from 0deg at 55% 40%,#fff0 0deg 2.6deg,#ffffff38 2.6deg 3.2deg);-webkit-mask:radial-gradient(circle at 55% 40%,#0000 22%,#000 70%);mask:radial-gradient(circle at 55% 40%,#0000 22%,#000 70%)}
+#spd.on{animation:spd .32s ease-out}@keyframes spd{0%{opacity:.95;transform:scale(1.12)}100%{opacity:0;transform:scale(1)}}#flash.w{animation:flw .14s}#flash.r{background:#ff1a1a;animation:flr .3s}
 @keyframes flw{0%{opacity:.2}100%{opacity:0}}@keyframes flr{0%{opacity:.3}100%{opacity:0}}
 #mBar.hit{animation:bsh .18s}@keyframes bsh{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 #shout{position:absolute;left:50%;top:30%;z-index:7;pointer-events:none;font-size:34px;font-weight:800;letter-spacing:2px;white-space:nowrap;opacity:0;transform:translate(-50%,0)}
@@ -445,7 +448,7 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
   </nav>
 </div>
 <div id="vig"></div>
-<div id="flash"></div>
+<div id="flash"></div><div id="spd"></div>
 <div id="sheetBg"><div id="sheet"></div></div>
 <div id="leg" data-a="legClose"><div class="in"><div class="t" data-t>✨ EFSANEVİ ✨</div><div class="e" id="legE"></div><div class="n" id="legN"></div><div class="m" data-t>Devam etmek için dokun</div></div></div>
 <div id="confetti"></div>
@@ -934,6 +937,7 @@ function heroPos(){if(D3)return D3.heroScreen();const s=stage.getBoundingClientR
 const FXF=()=>[.35,.7,1][S.set.fx==null?2:S.set.fx];
 function add(el){if(tab!=='battle')return el;stage.appendChild(el);el.addEventListener('animationend',()=>el.remove());return el}
 function floatTxt(txt,cls,x,y,sz){const d=document.createElement('div');d.className='fl '+(cls||'');d.textContent=txt;d.style.left=x+'px';d.style.top=y+'px';d.style.setProperty('--dx',rnd(-34,34)+'px');if(sz)d.style.fontSize=sz+'px';add(d)}
+function spdFx(){if(S.set.flash===false||S.set.fx===0||tab!=='battle')return;const f=$('spd');f.classList.remove('on');void f.offsetWidth;f.classList.add('on')}
 function scrFlash(k){if(S.set.flash===false||tab!=='battle')return;const f=$('flash');f.className='';void f.offsetWidth;f.className=k}
 function shout(txt,col){if(tab!=='battle')return;const e=$('shout');e.textContent=txt;e.style.color=col||'#ffe14a';e.style.textShadow='0 3px 0 #000,0 0 18px '+(col||'#ff9a1f');e.classList.remove('on');void e.offsetWidth;e.classList.add('on')}
 function fxSlash(x,y,crit){const d=document.createElement('div');d.className='slash';d.style.left=x+'px';d.style.top=y+'px';d.style.setProperty('--r',rnd(-60,30)+'deg');
@@ -1018,7 +1022,7 @@ function attack(mult,o){o=o||{};if(!M||M.dead||dead||paused())return 0;if(R.froz
   if(!o.fx&&o.src!=='pet'){R.hitN=(R.hitN||0)+1;if(E.storm&&R.hitN%5===0)setTimeout(()=>{if(M&&!M.dead){if(D3&&D3.bolt&&tab==='battle')D3.bolt();attack(1.8*E.storm,{src:'pet',fx:1,sure:true})}},90);if(E.twin&&o.src!=='skill'&&Math.random()*100<15*E.twin)setTimeout(()=>attack(.6*mult,{src:'pet',fx:1}),130)}
   const m=monPos(),x=o.x!=null?o.x:m.x+rnd(-m.w*.3,m.w*.3),y=o.y!=null?o.y:m.y+rnd(-m.h*.3,m.h*.2);
   const rt=Math.min(1,d/Math.max(1,M.max)),fs=o.src==='pet'?16:Math.round((c?32:22)+Math.min(20,rt*90)+(o.fin?6:0));
-  floatTxt((o.psn?'☠️':'')+fmt(d)+(c?'!':''),(o.src==='pet'?'pt':c?'c':o.src==='skill'?'sk':'')+(o.fin?' fin':''),x+rnd(-14,14),y-30,fs);if(c||o.fin){const b=$('mBar');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit')}if(c&&(o.fin||o.src==='skill'))scrFlash('w');
+  floatTxt((o.psn?'☠️':'')+fmt(d)+(c?'!':''),(o.src==='pet'?'pt':c?'c':o.src==='skill'?'sk':'')+(o.fin?' fin':''),x+rnd(-14,14),y-30,fs);if(c||o.fin){const b=$('mBar');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit')}if(c&&(o.fin||o.src==='skill'))scrFlash('w');if(o.fin&&o.src!=='pet'&&(c||o.src==='skill'))spdFx();
   if(o.src!=='pet'){fxSlash(x,y,c);fxSparks(x,y,c?'#ffd23d':'#fff',c?9:5)}else fxSparks(x,y,o.psn?'#8dff6a':'#9fd8ff',4);
   if(c)shake(false);
   if(P.ls>0&&S.hp<P.hp)S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(d*P.ls/100)));
@@ -1896,7 +1900,7 @@ function newsSheet(){classSheet(T(`<div style="text-align:center"><div style="fo
  <div class="card" style="font-size:13.5px;line-height:1.7">🧙 <b>Sınıflar</b>: Savaşçı, Okçu, Büyücü<br>✨ <b>4 yetenek</b> + kombo sistemi<br>⚒️ <b>Demirci</b>: eşyaları +15'e kadar geliştir, erit<br>🐾 <b>Yoldaşlar</b>: yanında savaşır (Kurt hediye!)<br>📜 <b>Günlük ödül, görevler, başarımlar</b><br>💎 <b>Elmas</b> ve 🌙 sen yokken kazanç<br>💀 <b>Elit canavarlar</b> ve tamamen yeni görünüm</div>
  <p class="mut" style="text-align:center">Tüm eşyaların ve ilerlemen yerinde. Şimdi sınıfını seç:</p>`))}
 function news22(){S.nv=22;save();openSheet('<div style="text-align:center"><div style="font-size:56px">🔱</div><h2>'+T('Derinlerden yenilikler!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
-  T('🔱 <b>Batık Mabet</b>: Batık Şehir\'e ulaşınca Macera\'da yeni zindan. Her öldürme 🫧 süre kazandırır, Batık Sandık kesin Epik+ eşya verir<br>🐾 Yoldaşlar <b>Ulu</b> (Sv10) ve <b>Efsanevi</b> (Sv20) evrimde 3B olarak büyüyor, parlıyor, görünüşü değişiyor<br>🥷 Suikastçıya özel <b>Gölge</b> ustalık dalı: Pusu, Zehirli Bıçak, İnfaz, Kaybolma<br>🛠️ Birçok küçük hata düzeltmesi')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
+  T('⚔️ <b>Canlı savaş</b>: kahramanla canavar artık sahnede dönüp adım atıyor; canavarlar koşarak geliyor, türüne göre sıçrayıp çakılıyor, dalıyor, pençe atıyor; ölenler savrulup parçalanıyor')+'<br>'+T('🔱 <b>Batık Mabet</b>: Batık Şehir\'e ulaşınca Macera\'da yeni zindan. Her öldürme 🫧 süre kazandırır, Batık Sandık kesin Epik+ eşya verir<br>🐾 Yoldaşlar <b>Ulu</b> (Sv10) ve <b>Efsanevi</b> (Sv20) evrimde 3B olarak büyüyor, parlıyor, görünüşü değişiyor<br>🥷 Suikastçıya özel <b>Gölge</b> ustalık dalı: Pusu, Zehirli Bıçak, İnfaz, Kaybolma<br>🛠️ Birçok küçük hata düzeltmesi')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
 function news20(){S.nv=20;save();openSheet('<div style="text-align:center"><div style="font-size:56px">⚔️</div><h2>'+T('Dalga savaşı!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
   T('👥 Normal katlarda canavarlar artık <b>dalga hâlinde</b> geliyor: aynı anda 2–5 düşman. Öndeki ölünce sıradaki hemen öne çıkar.<br>⚔️ Arkadaki ilk iki düşman da sana saldırır, dikkat!<br>🌪️ Çok vuruşlu yetenekler (Kasırga, Ok Yağmuru, Bin Kesik) bütün dalgaya dağılır.<br>💪 İleri bölgelerde normal canavarlar daha dayanıklı.')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
 function news19(){S.nv=19;save();openSheet('<div style="text-align:center"><div style="font-size:56px">🔱</div><h2>'+T('Yeni bölge, yeni sınıf!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
