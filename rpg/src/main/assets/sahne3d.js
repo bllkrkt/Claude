@@ -337,6 +337,13 @@ function eyeMon(o){const g=G(),u=g.userData;u.fly=1;const bm=mat(o.c||0x2a1a40);
   for(let i=0;i<6;i++){const a=i/6*PI*2;Rz(M(cone(.08,.3,5),bm,Math.sin(a)*.55,1.3+Math.cos(a)*.55,0,g),0,0,-a)}
   u.legs=[];for(let i=0;i<5;i++){const a=i/5*PI*2,L=G(g);L.position.set(Math.sin(a)*.3,.8,Math.cos(a)*.3);let p=V(0,0,0),r=.07;for(let j=0;j<4;j++){const q=V(Math.sin(a)*.12*(j+1),-.22*(j+1),Math.cos(a)*.12*(j+1));seg(p,q,r,r*.75,bm,L);p=q;r*=.75}u.legs.push(L)}
   const l=PL(o.glow||0xc060ff,1.5,5);l.position.set(0,1.3,1);g.add(l);return g}
+function sunkChest(){const g=G(),u=g.userData,wd=mat(0x2f5a5a,{roughness:.9}),mt=metal(0xc9a24a),bar=mat(0xd8e0d0,{roughness:.6}),moss=mat(0x3f8a4a,{roughness:.95});
+  M(box(1.2,.6,.8),wd,0,.3,0,g);for(const x of[-.56,0,.56])M(box(.08,.62,.84),mt,x,.3,0,g);M(box(1.1,.04,.7),glow(0x6fe8ff,1.4),0,.61,0,g);
+  const lid=G(g);lid.position.set(0,.6,-.4);u.chomp=lid;M(box(1.2,.3,.8),wd,0,.15,.4,lid);for(const x of[-.56,0,.56])M(box(.08,.32,.84),mt,x,.15,.4,lid);
+  M(box(.18,.2,.06),mt,0,.0,.83,lid);M(sph(.05,8,6),glow(0xbff4ff,1.6),0,-.02,.87,lid);
+  for(let i=0;i<9;i++){const a=i*2.4,x=Math.cos(a)*.5,z=Math.sin(a)*.32;M(sph(.045+(i%3)*.015,7,5),bar,x,.08+(i%4)*.12,z>0?.41:-.41,g)}
+  for(let i=0;i<5;i++){const x=-.5+i*.25,w=M(cone(.035,.45+(i%2)*.2,5),moss,x,.2+(i%2)*.1,i%2?.42:-.42,g);w.rotation.z=(i%2?.25:-.25)}
+  M(sph(.12,10,8),glow(0xe8fbff,1.2),0,.62,.05,g);return g}
 function mimic(){const g=G(),u=g.userData,wd=mat(0x8a5a2a),mt=metal(0xd4af37);M(box(1.2,.6,.8),wd,0,.3,0,g);for(const x of[-.56,.56])M(box(.08,.62,.84),mt,x,.3,0,g);
   M(box(1.12,.05,.72),glow(0x7a0a1a,.7),0,.6,0,g);const lid=G(g);lid.position.set(0,.6,-.4);u.chomp=lid;M(box(1.2,.32,.8),wd,0,.16,.4,lid);M(box(1.24,.06,.84),mt,0,.3,.4,lid);
   for(let i=0;i<7;i++){M(cone(.05,.16,4),mat(0xffffff),-.5+i*.166,.68,.36,g);M(cone(.05,.16,4),mat(0xffffff),-.5+i*.166,-.02,.76,lid).rotation.x=PI}
@@ -424,6 +431,20 @@ function applyGear(o,g,col){if(!g)return o;
     if(e==='👑')o.crown=col?(h.r>=3?0xffd84a:RM[h.r]):c;else if(e==='🎩'){o.hat='wizard';o.hatC=c}else{o.helmet=c;if(h.r>=2)o.plume=RC[h.r]}}
   if(g.gloves)o.glove=col?RM[g.gloves.r]:(o.glove||o.cloth);if(g.boots)o.boots=col?RM[g.boots.r]:o.boots;if(g.ring)o.ring=RC[g.ring.r];return o}
 const HERO={};for(const k in HB)HERO[k]=(sk,g)=>humanoid(applyGear(Object.assign({},HB[k],SK[k][sk]||{}),g,!SK[k][sk]));
+function petEvo(root,m,st){const gold=st>=2,tc=new T.Color(gold?0xffc94a:0x6fd8ff),wc=new T.Color(0xfff2c8);
+  m.traverse(n=>{if(!n.isMesh||!n.material)return;const mt=n.material;if(gold&&mt.color&&!mt.transparent)mt.color.lerp(wc,.22);
+    if(mt.emissive){mt.emissive.lerp(tc,gold?.55:.4);mt.emissiveIntensity=Math.max(mt.emissiveIntensity||0,gold?.42:.24);mt.userData.e0=mt.emissive.clone();mt.userData.i0=mt.emissiveIntensity}});
+  root.updateMatrixWorld(true);const b=new T.Box3().setFromObject(m),cw=b.getCenter(V(0,0,0)),c=root.worldToLocal(cw.clone()),top=root.worldToLocal(V(cw.x,b.max.y,cw.z)).y,bot=root.worldToLocal(V(cw.x,b.min.y,cw.z)).y,mid=(top+bot)/2;
+  const add=(o,x,y,z)=>{o.position.set(x,y,z);root.add(o);return o},bm=(col,op)=>new T.MeshBasicMaterial({color:col,transparent:true,opacity:op==null?.9:op,blending:T.AdditiveBlending,depthWrite:false});
+  const orb=G(root);orb.position.set(c.x,mid,c.z);const n=gold?5:3;
+  for(let i=0;i<n;i++){const a=i/n*PI*2,o=new T.Mesh(gold?sph(.07,8,6):new T.OctahedronGeometry(.08),bm(gold?0xffd56a:0x8fe8ff));o.position.set(Math.cos(a)*.62,Math.sin(a*2)*.12,Math.sin(a)*.62);orb.add(o)}
+  const ev={orb,wings:[],halo:null,st};
+  if(gold){const cr=G(root);cr.position.set(c.x,top+.08,c.z);const cm=bm(0xffd56a,1);
+    for(let i=0;i<6;i++){const a=i/6*PI*2,k=new T.Mesh(cone(.035,.16,4),cm);k.position.set(Math.cos(a)*.14,.06,Math.sin(a)*.14);cr.add(k)}
+    const rg=new T.Mesh(new T.TorusGeometry(.15,.022,5,20),cm);rg.rotation.x=PI/2;cr.add(rg);ev.halo=cr;
+    for(const sd of[-1,1]){const w=new T.Mesh(new T.PlaneGeometry(.75,.42),bm(0xffe7a0,.4));w.geometry.translate(.38*sd,0,0);const p=G(root);p.position.set(c.x,mid+.12,c.z-.12);p.add(w);w.rotation.y=sd*.35;ev.wings.push(p)}}
+  else{const rn=new T.Mesh(new T.TorusGeometry(.32,.018,5,24),bm(0x8fe8ff,.7));rn.rotation.x=PI/2;add(rn,c.x,top+.12,c.z);ev.halo=rn}
+  root.userData.evo=ev}
 const PETM={
   wolf:()=>quad({c:0x8a8d96,c2:0xd5d8de,len:1.2,h:.4,w:.55,head:'wolf',tail:'bushy'}),
   owl:()=>bird({type:'owl'}),
@@ -505,6 +526,7 @@ const MON={
   'Kraken':()=>kraken({c:0x8a2a4a,c2:0xf0a8b8,glow:0xffd23d}),
   'Leviathan':()=>serpent({boss:1,c:0x123a5a,c2:0x5fd0d8,fin:0x2a8aa8,spike:0xd8e8f0,glow:0x6fe8ff,eye:0x6fe8ff}),
   'Mimik':()=>mimic(),
+  'Batık Sandık':()=>sunkChest(),
   'Rün Muhafızı':()=>golem({c:0x4a5a7a,lava:1,gc:0x5fe3ff,eye:0x5fe3ff}),
   'Kadim Ejder':()=>dragon({c:0xd4a017,c2:0xfff0a0,glow:0xff3df0,wc:0x8a5a10,horn:0x2a1a10})};
 
@@ -742,6 +764,8 @@ function idle(dt){
     if(u.cape)u.cape.rotation.x=.14+Math.sin(t*1.7)*.05+Math.sin(t*3.1)*.015;if(u.scarf)for(let i=0;i<u.scarf.length;i++)u.scarf[i].rotation.x=.9+Math.sin(t*2.6+i*1.3)*.16}
   if(petM){const u=petM.userData;petM.position.y=u.y0+(u.fly?.7+Math.sin(t*3)*.12:Math.abs(Math.sin(t*3))*.05);if(u.wings)u.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.6);
     petM.scale.y=u.s*(1+Math.sin(t*3.1)*.02);if(u.fly)petM.rotation.z=Math.sin(t*1.7)*.07;else petM.rotation.x=Math.sin(t*3)*.03;if(u.head)u.head.rotation.y=Math.sin(t*.9+1)*.22}
+  if(petRoot&&petRoot.userData.evo){const e=petRoot.userData.evo;e.orb.rotation.y+=dt*(e.st>=2?1.6:1.1);e.orb.position.y+=Math.sin(t*2)*.002;if(e.halo){e.halo.position.y+=Math.sin(t*2.2+1)*.0015;e.halo.rotation.y+=dt*.8}
+    e.wings.forEach((w,i)=>{w.rotation.y=(i?-1:1)*(.2+Math.sin(t*2.6)*.35)})}
   if(monM&&!monM.userData.dying)monIdle(monM,dt,t);
   if(eliteFx){eliteFx.rotation.z+=dt;const s=1+Math.sin(t*4)*.06;eliteFx.scale.set(s,s,1)}
   if(buff.shield&&buff.shield.visible){buff.shield.rotation.y+=dt;const s=1+Math.sin(t*5)*.03;buff.shield.scale.setScalar(s)}
@@ -1000,6 +1024,7 @@ API.setHero=function(k,sk,gear){const id=k+'/'+(sk||'def')+'/'+(gear?JSON.string
   heroM=(HERO[k]||HERO.war)(sk||"def",gear);prep(heroM);heroRoot.add(heroM);fit(heroM,1.75,1.6);relight();for(const b in buff){buff[b].parent&&buff[b].parent.remove(buff[b]);delete buff[b]}};
 API.setPet=function(k,st){st=st||0;const id=k?k+'/'+st:null;if(id===petK)return;petK=id;remove(petRoot);petRoot=petM=null;relight();if(!k||!PETM[k])return;petRoot=G(scene);petRoot.position.copy(PP);face(petRoot,MP);
   petM=PETM[k]();prep(petM);petRoot.add(petM);fit(petM,(petM.userData.fly?.75:.95)*(1+.22*st),1.3*(1+.22*st));
+  if(st>=1)try{petEvo(petRoot,petM,st)}catch(e){}
   if(st>=1){const a=new T.Mesh(new T.TorusGeometry(.55+.1*st,.035,6,32),new T.MeshBasicMaterial({color:st>=2?0xffd56a:0x9fe8ff,transparent:true,opacity:.85,blending:T.AdditiveBlending}));a.rotation.x=PI/2;a.position.y=.06;petRoot.add(a);
     if(st>=2){const l=PL(0xffd56a,1.2,3.5);l.position.y=.9;petRoot.add(l)}}
   relight();const pr=petRoot;anim(.4,q=>{const s=q<.7?q/.7*1.15:1.15-(q-.7)/.3*.15;pr.scale.setScalar(s)})};
@@ -1125,7 +1150,7 @@ API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.Web
   const w=el.clientWidth||300,h=el.clientHeight||240;SC.ren.setSize(w,h,false);SC.cam.aspect=w/h;SC.cam.updateProjectionMatrix();
   const id=JSON.stringify(o);if(id!==SC.id){SC.id=id;while(SC.root.children.length){const ch=SC.root.children[0];SC.root.remove(ch);dispose(ch)}
     SC.hm=bake((HERO[o.cls]||HERO.war)(o.skin||'def',o.gear));fit(SC.hm,1.8,1.5);SC.root.add(SC.hm);SC.pm=null;
-    if(o.pet&&PETM[o.pet]){const pg=G(SC.root);pg.position.set(1.0,0,.35);pg.rotation.y=-.5;SC.pm=bake(PETM[o.pet]());fit(SC.pm,.8*(1+.15*(o.st||0)),1.1);if(SC.pm.userData.fly)SC.pm.position.y+=.5;pg.add(SC.pm)}}
+    if(o.pet&&PETM[o.pet]){const pg=G(SC.root);pg.position.set(1.0,0,.35);pg.rotation.y=-.5;SC.pm=bake(PETM[o.pet]());fit(SC.pm,.8*(1+.15*(o.st||0)),1.1);if(SC.pm.userData.fly)SC.pm.position.y+=.5;pg.add(SC.pm);if(o.st>=1)try{SC.pm.traverse(n=>{if(n.isMesh&&n.material){n.material=n.material.clone()}});petEvo(pg,SC.pm,o.st)}catch(e){}}}
   SC.on=true;return true}catch(e){return false}};
 API.showcaseStop=()=>{SC.on=false};
 window.S3D=API;
