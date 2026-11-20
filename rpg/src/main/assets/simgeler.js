@@ -184,7 +184,7 @@ const G={
 /* emoji → [çizim, renk, ek] */
 const IT=k=>['_it',k];
 const E={
- '💰':['bag2'],'🪙':['coin'],'💎':['gem'],'💠':['ess'],'🔮':['crys'],'⚔':['swords'],'🗡':['dagger'],'🔪':['dagger'],'🛡':['shield'],'⚡':['bolt'],'💥':['burst'],'✨':['sparkle'],'🌟':['sparkle','#fff2a0'],'⭐':['star'],'💫':['sparkle',CYN],
+ '💰':['bag2'],'🪙':['coin'],'💎':['gem'],'💠':['ess'],'🔮':['crys'],'⚔':['swords'],'🗡':['dagger'],'🔪':['dagger'],'🛡':['shield'],'⚡':['bolt'],'🌫':['fog'],'🫧':['bubble'],'🌠':['shooting'],'💥':['burst'],'✨':['sparkle'],'🌟':['sparkle','#fff2a0'],'⭐':['star'],'💫':['sparkle',CYN],
  '🔒':['lock'],'🔓':['unlock'],'🎁':['gift'],'🎒':['bag'],'⚒':['forge'],'🔨':IT('hammer'),'🛠':['tools'],'🔧':['wrench'],'🧰':['toolbox'],
  '🔥':['fire'],'💀':['skull'],'☠':['skull','#e8e8f8'],'👑':['crown'],'💾':['disk'],'🌀':['spiral'],'🧪':['potion'],'🧊':['cube'],'❄':['flake'],'✅':['check'],'❌':['cross'],'✓':null,
  '📜':['scroll'],'🎯':['target'],'🗼':['tower'],'⚠':['warn'],'🌳':['tree'],'🌲':['pine'],'🌿':['leaf','#5ab84a'],'🍃':['leaf','#8fdc6a'],'🍀':['clover'],'🍄':['mushroom'],
@@ -211,6 +211,9 @@ const E={
 };
 G.bag2=(c)=>G.bag('#b07a3a')+Cc(12,14,3.4,GOLD)+P('M10.8 13.2h2.4M12 12v4','none',' stroke="#9a5a08" stroke-width="1"');
 G.burst=(c)=>P('M12 2l2.4 6.2 6.6-2.6-3.6 6 5.6 3.4-6.6.6 1 6.6L12 17.6 6.6 22.2l1-6.6-6.6-.6L6.6 11.6 3 5.6l6.6 2.6z',c||ORG)+P('M12 7.5l1.3 3.4 3.4-.6-2.3 2.6 2.3 2.6-3.4-.6L12 18.3l-1.3-3.4-3.4.6 2.3-2.6-2.3-2.6 3.4.6z',YEL,' stroke="none"');
+G.fog=(c)=>ln('M3 7h12M7 11h14M3 15h12M7 19h10',c||'#c8d0e0',1.8);
+G.bubble=(c)=>Cc(9,14,6,c||'#9fe8ff',' fill-opacity=".6"')+Cc(17,7,3.5,c||'#9fe8ff',' fill-opacity=".6"')+th('M6 11a3 3 0 0 1 3-2.5','#fff',1.2);
+G.shooting=(c)=>ln('M3 21L13 11',c||'#ffe9a0',1.4)+P('M17 3.5l1.6 3.4 3.7.5-2.7 2.6.7 3.7-3.3-1.8-3.3 1.8.7-3.7-2.7-2.6 3.7-.5z',c||YEL);
 G.crys=(c)=>Cc(12,10.5,7.8,c||ESS)+Cc(9.5,8,2.2,'#ffffff70',' stroke="none"')+P('M6 18.5h12l1.5 3h-15z',BRN);
 G.gear=(c)=>P('M10.5 2h3l.5 2.6 1.9.8 2.2-1.5 2.1 2.1-1.5 2.2.8 1.9 2.6.5v3l-2.6.5-.8 1.9 1.5 2.2-2.1 2.1-2.2-1.5-1.9.8-.5 2.6h-3l-.5-2.6-1.9-.8-2.2 1.5-2.1-2.1 1.5-2.2-.8-1.9L2 13.5v-3l2.6-.5.8-1.9-1.5-2.2 2.1-2.1 2.2 1.5 1.9-.8z',c||GRY)+Cc(12,12,3.4,'#3a3550');
 const norm=e=>e.replace(/️/g,'').replace(/[\u{1F3FB}-\u{1F3FF}]/gu,'').replace(/‍[♀♂]/g,'');
