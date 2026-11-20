@@ -6,8 +6,8 @@ android {
         applicationId 'com.bilal.efsaneavcisi'
         minSdk 24
         targetSdk 35
-        versionCode 31
-        versionName '31.0'
+        versionCode 32
+        versionName '32.0'
     }
     // Aynı imza = güncellemeler eskisinin üzerine kurulur, oyun kaydı silinmez. Bu anahtarı değiştirme.
     signingConfigs {
