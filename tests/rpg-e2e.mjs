@@ -483,12 +483,13 @@ check(await p.evaluate(() => { const bk = JSON.stringify(S); const o = JSON.pars
 check(await p.evaluate(() => { const c = S.cls; hpKeep(() => { S.cls = 'war' }); const a = P.crit, d = P.critDmg; hpKeep(() => { S.cls = 'asn' }); const ok = (P.crit === Math.min(85, a + 12) || P.crit === 85) && P.critDmg === d + 40 && CLS.asn.sk.length === 4; hpKeep(() => { S.cls = c }); renderSkillBar(); return ok; }), 'suikastçı bonusları hatalı');
 // ---- v20: dalga savaşı ----
 await clear(); await p.click('#tabs [data-v=battle]');
-const wv = await p.evaluate(() => { S.autoAtk = false; S.zone = 1; S.floors[1] = 5; S.kills = 0; setStage(); spawn(); M.int = 1e9; W.forEach(w => w.int = 1e9);
+const wv = await p.evaluate(() => { S.autoAtk = false; window.__ep = elProc; elProc = () => { }; S.zone = 1; S.floors[1] = 5; S.kills = 0; setStage(); spawn(); M.int = 1e9; W.forEach(w => w.int = 1e9);
   const r = { n: W.length, want: Math.min(waveSize(G()), KPF) - 1, chips: document.querySelectorAll('#wave .wv').length };
   const nx = W[0]; M.hp = 1; attack(5, { src: 'tap' }); r.k0 = S.tot.kills; return r; });
 check(wv.n === wv.want && wv.n >= 1 && wv.chips === wv.n, 'dalga oluşmadı: ' + JSON.stringify(wv));
 await waitFor(n => !M.dead && W.length === n - 1, 4000, wv.n);
 check(await p.evaluate(n => !M.dead && W.length === n - 1, wv.n), 'sıradaki öne geçmedi: ' + await p.evaluate(() => JSON.stringify({ d: M.dead, w: W.length })));
+await p.evaluate(() => { elProc = window.__ep; });
 check(await p.evaluate(() => { if (!W.length) { S.kills = 0; spawn(); } M.int = 1e9; const w = W[W.length - 1]; const k = S.tot.kills; hitW(w, 1e6, true); const dead1 = w.dead; for (const x of W) if (!x.dead) x.int = 1e9; return dead1 && document.querySelectorAll('#wave .wv').length === W.filter(x => !x.dead).length; }), 'arkadaki düşman ölmedi');
 check(await p.evaluate(() => { spawn(); const w = W[0]; if (!w) return true; const h = S.hp; waveHit(w); return S.hp < h; }), 'arkadaki düşman saldırmadı');
 check(await p.evaluate(() => { S.floors[1] = 10; S.kills = 0; spawn(); const ok = W.length === 0 && M.boss; S.floors[1] = 5; spawn(); return ok; }), 'boss katında dalga olmamalı');
