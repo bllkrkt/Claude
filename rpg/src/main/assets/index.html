@@ -473,6 +473,19 @@ html[lang=en] .fl.c::before{content:"CRIT"}html[lang=en] .fl.fin::before{content
 /* v25 performans: çok eşyalı listelerde sürekli animasyon ve gölge yok (telefonda ikon kaybolması ve takılma yapıyordu) */
 .it.r2,.it.r3{animation:none!important}.it.r3::after,.it.r3::before,.it.r2::after{animation:none!important;display:none}
 .it .ii{filter:none}.em .emi{filter:none}.it{contain:paint}
+/* v27 akıcılık: sürekli animasyonlar sadece transform/opacity (her karede boyama yok), bulanıklık yok */
+*{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+#tabs{background:#120e16}#sheetBg{background:#000c}
+.btn.pri:not(:disabled)::before{left:0!important;animation:shine2 3.2s ease-in-out infinite!important;will-change:transform}
+#bHit::after{left:0!important;animation:shine2 4s ease-in-out infinite!important;will-change:transform}
+@keyframes shine2{0%,60%{transform:translateX(-120%)}100%{transform:translateX(360%)}}
+.r3::after,.slot.r3::after{animation:none!important;display:none}
+.r2,.slot.r2{animation:none!important}.slot.r2{box-shadow:0 0 12px #b56bff66,inset 0 0 14px #b56bff40}
+.skb.rdy{animation:none!important;box-shadow:0 0 14px #ffcf4a88,inset 0 0 8px #ffcf4a33,0 5px 12px #0008}
+#ultBtn.rdy{animation:ultP2 .55s ease-in-out infinite alternate!important;box-shadow:0 0 0 3px #ffd56a,0 0 24px #ffb347}
+@keyframes ultP2{to{transform:scale(1.08)}}
+@keyframes tabNew{50%{transform:translateY(-4px) scale(1.18)}}
+.scr.on{animation:scrIn .2s ease-out}
 /* v22 elementler */
 .fl.el{font-size:17px}.fl.el.fire{color:#ff8a4a}.fl.el.ice{color:#9feeff}.fl.el.poi{color:#8dff6a}.fl.el.lit{color:#fff06a}
 .elw{display:flex;gap:6px;justify-content:center;margin-top:3px}.elw span{font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:99px;border:1px solid;background:#0008;color:#fff}.elw .rs{border-color:#ffffff40;color:#bbb}
@@ -570,7 +583,7 @@ ICO.init();ICO.emoStart();document.querySelectorAll('#tabs button').forEach(b=>{
 document.getElementById('ciG').innerHTML=ICO.cur('gold');document.getElementById('ciD').innerHTML=ICO.cur('gem');
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='26.0';let titleOn=false;
+const VER='27.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Envanter':'Inventory','Karakter':'Character','Görevler':'Quests','Nadirlik':'Rarity','Seviye':'Level','Yeni':'Newest','Yuva':'Slot','Sırala:':'Sort:','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -1313,7 +1326,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=no
   if((keepT+=dt)>2000){keepT=0;keepUpd()}
   if((tutT+=dt)>400){tutT=0;tutTick()}
   if((ambT-=dt)<=0){ambT=rnd(4000,9000);amb()}
-  if(tab!=='battle'){if(now-bgIT>1000){bgIT=now;bgInfo()}if(menuDirty&&now-menuRT>3000&&!busy()){menuRT=now;menuDirty=false;if(tab==='inv'&&REND.inv){REND.inv();vitrin()}}}else menuDirty=false;
+  if(tab!=='battle'){if(now-bgIT>1000){bgIT=now;bgInfo()}if(menuDirty&&now-menuRT>3000&&now-uiT>5000&&!busy()){menuRT=now;menuDirty=false;if(tab==='inv'&&REND.inv){REND.inv();vitrin()}}}else menuDirty=false;
   /* ölüm penceresi "Devam et" dışında bir yolla kapandıysa oyun ölü durumda takılmasın */
   if(dead&&!busy()&&!titleOn&&!busyMode()){if((deadT+=dt)>600){deadT=0;ACT.revive()}}else deadT=0;
   if(paused()||dead)return;
@@ -1578,7 +1591,8 @@ function setStage(){const z=ZONES[S.zone];if(D3)D3.setZone(S.zone);$('sky').styl
   p.innerHTML=h}
 function itemTile(it){const up=power(it)>power(S.eq[it.slot]);
   return '<button class="it r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span>'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+(up?'<span class="up">▲</span>':'')+(it.lk?'<span class="lk">🔒</span>':'')+T('<span class="l">Sv')+it.L+'</span></button>'}
-let invF='all';
+let invF='all',uiT=0;/* v27: kullanıcı kaydırırken/dokunurken arka plan liste yenilemesi beklesin */
+document.addEventListener('scroll',()=>{uiT=performance.now()},{capture:true,passive:true});document.addEventListener('pointerdown',()=>{uiT=performance.now()},{capture:true,passive:true});
 /* v22: çanta sıralama */
 const INVS={r:{n:T('Nadirlik'),f:(a,b)=>b.r-a.r||power(b)-power(a)},p:{n:T('Güç'),f:(a,b)=>power(b)-power(a)},L:{n:T('Seviye'),f:(a,b)=>b.L-a.L||b.r-a.r},n:{n:T('Yeni'),f:(a,b)=>b.id-a.id},s:{n:T('Yuva'),f:(a,b)=>SLOTS.findIndex(x=>x.k===a.slot)-SLOTS.findIndex(x=>x.k===b.slot)||b.r-a.r||power(b)-power(a)}};
 let invSeg='items';

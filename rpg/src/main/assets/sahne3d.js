@@ -816,7 +816,7 @@ function monIdle(m,dt,tt){const u=m.userData;
 function tickParts(dt){if(!parts)return;const k=parts.userData.k,p=parts.geometry.attributes.position,a=p.array;
   for(let i=0;i<a.length;i+=3){a[i]+=((k.vx||0)+Math.sin(t*1.5+i)*k.sway*.4)*dt;a[i+1]+=k.vy*dt;a[i+2]+=Math.cos(t+i)*k.sway*.1*dt;
     if(a[i+1]<0)a[i+1]=9;if(a[i+1]>9)a[i+1]=0;if(a[i]>10)a[i]=-10}p.needsUpdate=true}
-function loop(){const rdt=Math.min(.05,clock.getDelta());if(SC.on)renderSC(rdt);if(!act)return;
+function loop(){const rdt=Math.min(.05,clock.getDelta());if(SC.on&&scVis())renderSC(rdt);if(!act)return;
   if(tsT>0){tsT-=rdt;if(tsT<=0)ts=1}let dt=rdt*ts;if(stopT>0){stopT-=rdt;dt=rdt*.04}t+=dt;
   for(let i=anims.length-1;i>=0;i--){const a=anims[i];a.t+=dt;const k=Math.min(1,a.t/a.d);try{a.f(k,dt)}catch(e){}if(k>=1){anims.splice(i,1);try{a.end&&a.end()}catch(e){}}}
   liveTick(dt);idle(dt);wvTick(dt);tickParts(dt);if(env){const a=env.userData.tk;for(let i=0;i<a.length;i++)a[i](dt)}tickFx(dt);shk=Math.max(0,shk-rdt*2.4);
@@ -1007,7 +1007,7 @@ function envFor(d,r,pm){if(!pm)return null;const es=new T.Scene(),sg=new T.Spher
   const rt=pm.fromScene(es,.03,.1,50);es.traverse(n=>{if(n.isMesh){n.geometry.dispose();n.material.dispose()}});return rt}
 API.init=function(stage){if(!webglOk())return false;
   try{ren=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch(e){return false}
-  ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFSoftShadowMap;
+  ren.setPixelRatio(Math.min(window.devicePixelRatio||1,1.6));ren.shadowMap.enabled=true;ren.shadowMap.type=T.PCFShadowMap;
   ren.outputEncoding=T.sRGBEncoding;ren.toneMapping=T.ACESFilmicToneMapping;ren.toneMappingExposure=1.22;
   host=stage;const c=ren.domElement;c.id='c3d';host.insertBefore(c,host.firstChild);
   scene=new T.Scene();cam=new T.PerspectiveCamera(46,1,.1,150);
@@ -1180,7 +1180,7 @@ API.buffs=function(f){if(!heroRoot)return;
 API.shake=b=>{shk=Math.max(shk,b?.6:.15)};
 API.setShake=v=>{SHK=v?1:0};
 /* efekt yoğunluğu: 0 düşük (gölge yok, düşük çözünürlük, az parçacık) · 1 orta · 2 yüksek */
-API.setQuality=function(q){q=Math.max(0,Math.min(2,q|0));if(q===QL&&ren.userData)return;QL=q;QF=[.35,.7,1][q];ren.userData=1;ren.setPixelRatio(Math.min(window.devicePixelRatio||1,[1,1.5,2][q]));
+API.setQuality=function(q){q=Math.max(0,Math.min(2,q|0));if(q===QL&&ren.userData)return;QL=q;QF=[.35,.7,1][q];ren.userData=1;ren.setPixelRatio(Math.min(window.devicePixelRatio||1,[1,1.3,1.6][q]));
   const sh=q>0;if(ren.shadowMap.enabled!==sh){ren.shadowMap.enabled=sh;lights.sun.castShadow=sh;scene.traverse(n=>{if(n.material)(Array.isArray(n.material)?n.material:[n.material]).forEach(m=>{m.needsUpdate=true})})}
   resize();if(zoneI>=0){const z=zoneI;zoneI=-1;API.setZone(z)}try{wvApply()}catch(e){}};
 API.hitStop=s=>{stopT=Math.max(stopT,s)};
@@ -1205,8 +1205,10 @@ API.enrage=function(){if(!monM||!monRoot)return;const m=monM,red=new T.Color(0x6
   flash(m,0xff2020,.5);const l=PL(0xff2020,2.5,6);l.position.set(0,2,1);monRoot.add(l);relight();ring(MP,0xff2020,.5,4.5,.7,.1,.1);shk=.8};
 /* karakter vitrini: Çanta/Kahraman ekranında dönen 3B kahraman */
 const SC={on:false};
-function renderSC(dt){SC.root.rotation.y+=dt*.55;if(SC.hm&&SC.hm.userData.orb)SC.hm.userData.orb.rotation.y+=dt*2.2;if(SC.pm&&SC.pm.userData.wings)SC.pm.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.5);SC.ren.render(SC.scene,SC.cam)}
-API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.WebGLRenderer({antialias:true,alpha:true});SC.ren.setPixelRatio(Math.min(window.devicePixelRatio||1,2));SC.ren.outputEncoding=T.sRGBEncoding;SC.ren.toneMapping=T.ACESFilmicToneMapping;SC.ren.toneMappingExposure=1.1;
+/* v27: vitrin sadece ekranda görünürken ve 30 kare/sn çizilir (önceden her sekmede 60 kare çiziyordu: menü takılması) */
+function scVis(){const e=SC.el;if(!e||!e.isConnected||!e.offsetParent)return false;if(SC.io)return SC.vis!==false;return true}
+function renderSC(dt){SC.acc=(SC.acc||0)+dt;if(SC.acc<1/30)return;dt=SC.acc;SC.acc=0;SC.root.rotation.y+=dt*.55;if(SC.hm&&SC.hm.userData.orb)SC.hm.userData.orb.rotation.y+=dt*2.2;if(SC.pm&&SC.pm.userData.wings)SC.pm.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.5);SC.ren.render(SC.scene,SC.cam)}
+API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.WebGLRenderer({antialias:true,alpha:true});SC.ren.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));SC.ren.outputEncoding=T.sRGBEncoding;SC.ren.toneMapping=T.ACESFilmicToneMapping;SC.ren.toneMappingExposure=1.1;
     SC.scene=new T.Scene();SC.cam=new T.PerspectiveCamera(30,1,.1,60);SC.cam.position.set(0,1.45,5.6);SC.cam.lookAt(0,.95,0);
     SC.scene.add(new T.HemisphereLight(0xffffff,0x3a3050,.95));const d=new T.DirectionalLight(0xfff4e0,1.15);d.position.set(3,5,4);SC.scene.add(d);const d2=new T.DirectionalLight(0x9fb4ff,.6);d2.position.set(-4,2,-3);SC.scene.add(d2);
     try{const pm=new T.PMREMGenerator(SC.ren),rt=envFor({top:0x5a6aa8,bot:0x2a2e48,gnd:0x1a1c2a,sun:0xfff4e0,rim:0x9fb4ff},SC.ren,pm);if(rt)SC.scene.environment=rt.texture;pm.dispose()}catch(e){}
@@ -1216,7 +1218,7 @@ API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.Web
   const id=JSON.stringify(o);if(id!==SC.id){SC.id=id;while(SC.root.children.length){const ch=SC.root.children[0];SC.root.remove(ch);dispose(ch)}
     SC.hm=bake((HERO[o.cls]||HERO.war)(o.skin||'def',o.gear));fit(SC.hm,1.8,1.5);SC.root.add(SC.hm);SC.pm=null;
     if(o.pet&&PETM[o.pet]){const pg=G(SC.root);pg.position.set(1.0,0,.35);pg.rotation.y=-.5;SC.pm=bake(PETM[o.pet]());fit(SC.pm,.8*(1+.15*(o.st||0)),1.1);if(SC.pm.userData.fly)SC.pm.position.y+=.5;pg.add(SC.pm);if(o.st>=1)try{SC.pm.traverse(n=>{if(n.isMesh&&n.material){n.material=n.material.clone()}});petEvo(pg,SC.pm,o.st)}catch(e){}}}
-  SC.on=true;return true}catch(e){return false}};
+  if(SC.el!==el){SC.el=el;SC.vis=true;try{if(SC.io)SC.io.disconnect();SC.io=new IntersectionObserver(es=>{for(const x of es)SC.vis=x.isIntersecting});SC.io.observe(el)}catch(e){SC.io=null}}SC.on=true;return true}catch(e){return false}};
 API.showcaseStop=()=>{SC.on=false};
 window.S3D=API;
 })();
