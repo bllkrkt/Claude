@@ -1,5 +1,15 @@
 /* Efsane Avcısı — İngilizce sözlük (anahtar: Türkçe metin). Düzeltmeleri burada yap. */
 window.EN_DICT={
+"Kolye": "Necklace",
+"Savaş Pelerini": "War Cloak",
+"Yıldız Ocağı": "Star Forge",
+"Kuşandığın her eşyaya, çantadaki aynı yuva ve nadirlikteki yedekleri feda ederek yıldız ver (en çok 5 yıldız, her biri +%10 stat).": "Give stars to every equipped item by sacrificing spares of the same slot and rarity from your bag (max 5 stars, each +10% stats).",
+"⭐ Kuşandıklarıma toplu yıldız": "⭐ Star up all equipped",
+"En yüksek yıldızda!": "Max stars reached!",
+"Aynı yuvadan, aynı nadirlikte 1 eşyayı feda et: +1 yıldız, tüm statlar +%10. Uygun eşya: {0}": "Sacrifice 1 item of the same slot and rarity: +1 star, all stats +10%. Eligible items: {0}",
+"⭐ Yıldız ekle": "⭐ Add star",
+"Kuşandıklarına uygun yedek eşya yok": "No spare items match your equipped gear",
+"⭐ Kuşandıklarına toplam {0} yıldız eklendi": "⭐ {0} stars added to your equipped gear",
 "Mitik": "Mythic",
 "Kozmik": "Cosmic",
 "Ebedi": "Eternal",

@@ -48,7 +48,7 @@ const SH={
  charm:p=>'<circle cx="24" cy="26" r="17" fill="'+p.G+'"/><circle cx="24" cy="26" r="17" fill="none" stroke="'+p.M+'" stroke-width="3"/><circle cx="24" cy="26" r="10" fill="#f6fbff"/><circle cx="24" cy="26" r="6" fill="#2f86ff"/><circle cx="24" cy="26" r="3" fill="'+OL+'"/><circle cx="21.5" cy="23.5" r="1.6" fill="#fff" stroke="none"/><rect x="21" y="5" width="6" height="5" rx="1.5" fill="'+p.M+'"/>'
 };
 const BYE={'🔪':'knife','⚔️':'twin','📖':'tome','🧥':'cloak','🎭':'mask','🦾':'mecharm','💎':'jewel','🗡️':'sword','🪓':'axe','🔨':'hammer','🔱':'spear','🏹':'bow','🪄':'staff','🦺':'plate','🥋':'tunic','👘':'robe','🪖':'helm','⛑️':'helm2','👑':'crown','🎩':'what','🧤':'glove','🥊':'gaunt','🥾':'boot','👢':'tboot','💍':'ring','📿':'amulet','🧿':'charm'};
-const BYS={weapon:'sword',armor:'plate',helmet:'helm',gloves:'glove',boots:'boot',ring:'ring'};
+const BYS={weapon:'sword',armor:'plate',helmet:'helm',gloves:'glove',boots:'boot',ring:'ring',neck:'amulet',cape:'cloak'};
 function svg(inner,cls){return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 48 48" stroke="'+OL+'" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'+inner+'</svg>'}
 function shape(e,slot){return BYE[e]||BYS[slot]||'ring'}
 /* eşya ikonu */

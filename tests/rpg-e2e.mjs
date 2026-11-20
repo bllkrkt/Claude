@@ -169,7 +169,7 @@ check(await p.evaluate(() => S.set.music && musI > 0), 'müzik çalmadı');
 
 // eşya setleri: 6 parça Kurt Avcısı
 await p.evaluate(() => { ACT.zone('0'); for (const s of SLOTS) { const it = makeItem(30, 2, s.k, 'wolf'); S.inv.push(it); ACT.equip(it.id); } closeSheet(); });
-check(await p.evaluate(() => setBonus().n.wolf === 6 && setBonus().o.atkP === 30), 'set bonusu hesaplanmadı');
+check(await p.evaluate(() => setBonus().n.wolf >= 6 && setBonus().o.atkP === 30), 'set bonusu hesaplanmadı');
 await p.click('[data-v=inv]'); await p.waitForTimeout(300); await shot('25-set-canta');
 await p.evaluate(() => ACT.item(S.eq.weapon.id)); await p.waitForTimeout(400); await shot('26-set-esya');
 await p.evaluate(() => closeSheet());

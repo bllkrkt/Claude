@@ -488,6 +488,11 @@ html[lang=en] .fl.c::before{content:"CRIT"}html[lang=en] .fl.fin::before{content
 .scr.on{animation:scrIn .2s ease-out}
 /* v29: APK'da üst boşluk (kamera deliği) üst barın kendi arka planıyla dolar */
 html.apk #app{padding-top:0}html.apk #hud{padding-top:calc(8px + var(--sat))}
+/* v31 yıldız + 8 yuva */
+.eqg{grid-template-columns:repeat(4,1fr)!important;gap:6px}.eqg .slot{min-height:84px}.eqg .slot .e .ii{width:40px;height:40px}
+.it .stz,.slot .stz{position:absolute;bottom:13px;left:0;right:0;text-align:center;font-size:8.5px;letter-spacing:-.5px;color:#ffd84a;text-shadow:0 1px 1px #000;z-index:2}
+.stz2{color:#ffd84a;letter-spacing:1px}.stz2 i{color:#ffffff30;font-style:normal}
+.slot .stz{bottom:20px}
 /* v30 envanter */
 .it.r4,.slot.r4{border-color:#ff4a86!important;box-shadow:0 0 14px #ff4a8688,inset 0 0 18px #19e0ff40}
 #leg[data-r="4"]{background:radial-gradient(circle,#ff4a86 0,#4a0626f5 45%,#000000f2 100%)}
@@ -591,7 +596,7 @@ ICO.init();ICO.emoStart();document.querySelectorAll('#tabs button').forEach(b=>{
 document.getElementById('ciG').innerHTML=ICO.cur('gold');document.getElementById('ciD').innerHTML=ICO.cur('gem');
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='30.0';let titleOn=false;
+const VER='31.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Envanter':'Inventory','Karakter':'Character','Görevler':'Quests','Nadirlik':'Rarity','Seviye':'Level','Yeni':'Newest','Yuva':'Slot','Sırala:':'Sort:','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -645,11 +650,13 @@ const SKEL={'🔥':'fire','⚡':'lit','🧊':'ice','🗡️':'poi','🌀':'poi',
 const ZW=[['fire','poi'],['lit','ice'],['ice','fire'],['fire','ice'],['ice','fire'],['lit','poi'],['poi','lit'],['lit','ice'],null];
 const SLOTS=[
   {k:'weapon',n:T('Silah'),e:'🗡️',pri:[['atk',1]],names:[['🗡️','Kılıç'],['🪓','Balta'],['🔨','Savaş Çekici'],['🔱','Mızrak'],['🏹','Yay'],['🪄','Asa'],['🔪','Hançer'],['⚔️','İkiz Kılıç'],['📖','Büyü Kitabı']]},
-  {k:'armor',n:T('Zırh'),e:'🦺',pri:[['def',1],['hp',.5]],names:[['🦺','Zırh'],['🥋','Savaş Giysisi'],['👘','Cübbe'],['🧥','Pelerin']]},
+  {k:'armor',n:T('Zırh'),e:'🦺',pri:[['def',1],['hp',.5]],names:[['🦺','Zırh'],['🥋','Savaş Giysisi'],['👘','Cübbe']]},
   {k:'helmet',n:T('Kask'),e:'🪖',pri:[['hp',.7],['def',.4]],names:[['🪖','Miğfer'],['⛑️','Kask'],['👑','Taç'],['🎩','Büyücü Şapkası'],['🎭','Savaş Maskesi']]},
   {k:'gloves',n:T('Eldiven'),e:'🧤',pri:[['atk',.3],['crit',1]],names:[['🧤','Eldiven'],['🥊','Yumruk Eldiveni'],['🦾','Demir Kol']]},
   {k:'boots',n:T('Bot'),e:'🥾',pri:[['def',.5],['hp',.4]],names:[['🥾','Bot'],['👢','Çizme']]},
-  {k:'ring',n:T('Yüzük'),e:'💍',pri:null,names:[['💍','Yüzük'],['📿','Tılsım'],['🧿','Nazar Muskası'],['💎','Mücevher']]}];
+  {k:'ring',n:T('Yüzük'),e:'💍',pri:null,names:[['💍','Yüzük'],['💎','Mücevher']]},
+  {k:'neck',n:T('Kolye'),e:'📿',pri:[['critDmg',.8],['hp',.35]],names:[['📿','Kolye'],['🧿','Muska'],['📿','Tılsım']]},
+  {k:'cape',n:T('Pelerin'),e:'🧥',pri:[['def',.5],['hp',.5]],names:[['🧥','Pelerin'],['🧥','Savaş Pelerini']]}];
 const SLOT=Object.fromEntries(SLOTS.map(s=>[s.k,s]));
 const PRE=[['Paslı','Eski','Sade','Yıpranmış'],['Sağlam','Keskin','Usta İşi','Çelik'],['Kadim','Büyülü','Gölge','Fırtına'],['Ejder','Tanrısal','Ölümsüz','Anka'],['Mitik','Kozmik','Ebedi','Yıldız']];
 const BASE_ST=[
@@ -878,7 +885,7 @@ function fresh(){return {v:2,hvT:0,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:
 let S=fresh();
 /* bozuk kayıt oyunu kilitlemesin: okunamayan kaydı ayrı anahtara sakla, temiz başla */
 function load(){let r=null;try{r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){try{if(r)localStorage.setItem(SAVE_KEY+'-bozuk',r)}catch(x){}S=fresh()}}
-function cleanItem(it){if(!it||typeof it!=='object'||!SLOT[it.slot]||!it.st||typeof it.st!=='object')return null;it.r=Math.max(0,Math.min(4,it.r|0));if(it.leg2&&!LEGP[it.leg2])delete it.leg2;if(it.nw)it.nw=1;it.L=Math.max(1,+it.L||1);it.up=Math.max(0,Math.min(UPMAX,it.up|0));
+function cleanItem(it){if(!it||typeof it!=='object'||!SLOT[it.slot]||!it.st||typeof it.st!=='object')return null;it.r=Math.max(0,Math.min(4,it.r|0));if(it.str!=null)it.str=Math.max(0,Math.min(5,it.str|0));if(it.leg2&&!LEGP[it.leg2])delete it.leg2;if(it.nw)it.nw=1;it.L=Math.max(1,+it.L||1);it.up=Math.max(0,Math.min(UPMAX,it.up|0));
   for(const k in it.st)if(!STAT[k]||typeof it.st[k]!=='number'||!isFinite(it.st[k]))delete it.st[k];if(it.set&&!SETS[it.set])delete it.set;if(typeof it.e!=='string')it.e=SLOT[it.slot].e;it.n=typeof it.n==='string'?it.n.slice(0,40):SLOT[it.slot].n;
   if(it.sock!=null){if(!Array.isArray(it.sock))delete it.sock;else it.sock=it.sock.map(k=>{if(typeof k!=='string')return null;const [t,l]=k.split(':');return RUNES[t]&&+l>=1&&+l<=5?t+':'+(+l):null})}
   if(it.id==null)it.id=S.nextId++;if(it.r===3){if(!LEGP[it.leg])it.leg=LEGK[it.id%LEGK.length]}else if('leg' in it)delete it.leg;return it}
@@ -922,7 +929,7 @@ window.__resume=()=>{bg=false;wake();d3Act()};
 
 /* ======================= HESAPLAR ======================= */
 let P={};
-const sOf=(it,k)=>{const v=it.st[k];if(!v)return 0;const m=1+.12*(it.up||0);return STAT[k].p?Math.round(v*m*10)/10:Math.round(v*m)};
+const sOf=(it,k)=>{const v=it.st[k];if(!v)return 0;const m=(1+.12*(it.up||0))*(1+.1*(it.str||0));return STAT[k].p?Math.round(v*m*10)/10:Math.round(v*m)};
 function petBonus(){const o={};const p=S.pet&&PET[S.pet];if(!p)return o;const l=S.pets[S.pet]||1;for(const k in p.b)o[k]=p.b[k]*(1+.05*(l-1))*(1+.25*petStage(l));return o}
 function setBonus(){const n={},o={};for(const s of SLOTS){const it=S.eq[s.k];if(it&&it.set&&SETS[it.set])n[it.set]=(n[it.set]||0)+1}
   for(const k in n)for(const [c,b] of SETS[k].b)if(n[k]>=c)for(const x in b)o[x]=(o[x]||0)+b[x];return {n,o}}
@@ -1602,7 +1609,7 @@ function setStage(){const z=ZONES[S.zone];if(D3)D3.setZone(S.zone);$('sky').styl
 /* ===== v30: FÜZYON OCAĞI (3 eşya → 1 üst nadirlik), MİTİK nadirlik, YENİ işareti, KAYITLI TAKIMLAR ===== */
 const FUS=[{g:15},{g:40},{g:120,e:10},{g:400,e:80,gm:30}];
 const fusCost=r=>{const b=gpk(Math.max(G(),gBest())),c=FUS[r];return {g:Math.round(b*c.g),e:c.e||0,gm:c.gm||0}};
-function fusPool(r){return S.inv.filter(i=>i.r===r&&!i.lk&&(invF==='all'||i.slot===invF)).sort((a,b)=>power(a)-power(b))}
+function fusPool(r){return S.inv.filter(i=>i.r===r&&!i.lk&&!i.str&&(invF==='all'||i.slot===invF)).sort((a,b)=>power(a)-power(b))}
 function fusOk(r){const c=fusCost(r);return fusPool(r).length>=3&&S.gold>=c.g&&S.ess>=c.e&&S.gems>=c.gm}
 function fusAny(){for(let r=0;r<4;r++)if(fusOk(r))return true;return false}
 function mythic(it,used){const k=RAR[4].m/RAR[3].m;for(const s in it.st)it.st[s]=STAT[s].p?Math.round(it.st[s]*k*10)/10:Math.round(it.st[s]*k);
@@ -1620,8 +1627,20 @@ function fusSheet(){let h='<h2>'+T('⚗️ Füzyon Ocağı')+'</h2><p class="mut
   for(let r=0;r<4;r++){const n=fusPool(r).length,c=fusCost(r),ok=fusOk(r);
     h+='<div class="card"><div class="row" style="gap:6px"><b style="color:'+RAR[r].c+'">3 × '+RAR[r].n+'</b><span class="mut">→</span><b style="color:'+RAR[r+1].c+'">'+RAR[r+1].n+'</b><span class="grow"></span><small class="mut">'+T('Elinde: {0}',n)+'</small></div>'+
        '<div class="mut" style="font-size:12px;margin:4px 0 8px">'+T('Bedel:')+' 💰 '+fmt(c.g)+(c.e?' · 💠 '+c.e:'')+(c.gm?' · 💎 '+c.gm:'')+(r===3?'<br><b style="color:#ff8ab0">'+T('Mitik: daha yüksek statlar, +1 ek özellik ve İKİ efsanevi güç.')+'</b>':'')+'</div>'+
-       '<div class="row"><button class="btn sm grow '+(ok?(r===3?'pri':'ess'):'')+'" data-a="fuse" data-v="'+r+'" '+(ok?'':'disabled')+'>'+T('⚗️ 1 kez birleştir')+'</button>'+(r<3?'<button class="btn sm grow" data-a="fuseAll" data-v="'+r+'" '+(ok?'':'disabled')+'>'+T('Hepsini birleştir')+'</button>':'')+'</div></div>'}
+       '<div class="row"><button class="btn sm grow '+(ok?(r===3?'pri':'ess'):'')+'" data-a="fuse" data-v="'+r+'" '+(ok?'':'disabled')+'>'+T('⚗️ 1 kez birleştir')+'</button>'+'<button class="btn sm grow" data-a="fuseAll" data-v="'+r+'" '+(ok?'':'disabled')+'>'+T('Hepsini birleştir')+'</button>'+'</div></div>'}
+  h+='<div class="card"><b>⭐ '+T('Yıldız Ocağı')+'</b><div class="mut" style="font-size:12px;margin:4px 0 8px">'+T('Kuşandığın her eşyaya, çantadaki aynı yuva ve nadirlikteki yedekleri feda ederek yıldız ver (en çok 5 yıldız, her biri +%10 stat).')+'</div><button class="btn sm w100 pri" data-a="starAll">'+T('⭐ Kuşandıklarıma toplu yıldız')+'</button></div>';
   openSheet(h+'<button class="btn w100" data-a="close">'+T('Kapat')+'</button>')}
+/* v31: YILDIZ — aynı yuva + aynı nadirlikte bir eşyayı feda et, +1 yıldız (en çok 5); her yıldız tüm statlara +%10 */
+const STARMAX=5;
+const starCost=it=>Math.round(gpk(Math.max(G(),gBest()))*20*((it.str||0)+1)*(1+it.r*.5));
+function starPool(it){return S.inv.filter(i=>i!==it&&i.slot===it.slot&&i.r===it.r&&!i.lk&&!i.str).sort((a,b)=>power(a)-power(b))}
+function starOnce(it){if(!it||(it.str||0)>=STARMAX)return false;const f=starPool(it)[0],c=starCost(it);if(!f||S.gold<c)return false;
+  S.gold-=c;unsock(f);S.inv=S.inv.filter(i=>i!==f);it.str=(it.str||0)+1;S.tot.stars=(S.tot.stars||0)+1;menuDirty=true;return true}
+function starCard(it){const n=it.str||0,f=starPool(it).length,c=starCost(it),full=n>=STARMAX,ok=!full&&f>0&&S.gold>=c;
+  return '<div class="card"><div class="row"><b class="grow">⭐ '+T('Yıldız')+' <span class="stz2">'+'★'.repeat(n)+'<i>'+'★'.repeat(STARMAX-n)+'</i></span></b></div><div class="mut" style="font-size:12px;margin:4px 0 8px">'+
+    (full?T('En yüksek yıldızda!'):T('Aynı yuvadan, aynı nadirlikte 1 eşyayı feda et: +1 yıldız, tüm statlar +%10. Uygun eşya: {0}',f)+' · 💰 '+fmt(c))+'</div>'+
+    (full?'':'<button class="btn sm w100 '+(ok?'pri':'')+'" data-a="star" data-v="'+it.id+'" '+(ok?'':'disabled')+'>'+T('⭐ Yıldız ekle')+'</button>')+'</div>'}
+function starEqAll(){let n=0;for(let k=0;k<60;k++){let did=false;for(const sl of SLOTS){const it=S.eq[sl.k];if(it&&starOnce(it)){n++;did=true}}if(!did)break}return n}
 function equipId(id){const it=S.inv.find(i=>i.id==id);if(!it)return false;const old=S.eq[it.slot];S.inv=S.inv.filter(i=>i!==it);if(old)S.inv.push(old);S.eq[it.slot]=it;return true}
 function loSheet(){if(!Array.isArray(S.lo))S.lo=[null,null,null];let h='<h2>'+T('🎽 Kayıtlı Takımlar')+'</h2><p class="mut" style="font-size:13px;margin-top:-4px">'+T('Şu an kuşandıklarını bir takıma kaydet, sonra tek dokunuşla geri giy. Ör: boss takımı, element takımı.')+'</p>';
   for(let i=0;i<3;i++){const L=S.lo[i];let ic='';if(L)for(const sl of SLOTS){const it=L.ids&&findAny(L.ids[sl.k]);ic+='<span class="loi">'+(it?ICO.item(it):ICO.slot(sl.k))+'</span>'}
@@ -1630,7 +1649,7 @@ function loSheet(){if(!Array.isArray(S.lo))S.lo=[null,null,null];let h='<h2>'+T(
        '<div class="row" style="margin-top:8px"><button class="btn sm grow" data-a="loSave" data-v="'+i+'">'+T('💾 Şu ankini kaydet')+'</button><button class="btn sm grow '+(L&&!on?'ok':'')+'" data-a="loWear" data-v="'+i+'" '+(L&&!on?'':'disabled')+'>'+T('Giy')+'</button></div></div>'}
   openSheet(h+'<button class="btn w100" data-a="close">'+T('Kapat')+'</button>')}
 function itemTile(it){const up=power(it)>power(S.eq[it.slot]);
-  return '<button class="it r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span>'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+(up?'<span class="up">▲</span>':'')+(it.lk?'<span class="lk">🔒</span>':'')+(it.nw?'<span class="nwi"></span>':'')+T('<span class="l">Sv')+it.L+'</span></button>'}
+  return '<button class="it r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span>'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+(up?'<span class="up">▲</span>':'')+(it.lk?'<span class="lk">🔒</span>':'')+(it.nw?'<span class="nwi"></span>':'')+(it.str?'<span class="stz">'+'★'.repeat(it.str)+'</span>':'')+T('<span class="l">Sv')+it.L+'</span></button>'}
 let invF='all',uiT=0;/* v27: kullanıcı kaydırırken/dokunurken arka plan liste yenilemesi beklesin */
 document.addEventListener('scroll',()=>{uiT=performance.now()},{capture:true,passive:true});document.addEventListener('pointerdown',()=>{uiT=performance.now()},{capture:true,passive:true});
 /* v22: çanta sıralama */
@@ -1647,7 +1666,7 @@ function renderInv(){const inv=S.inv.filter(i=>invF==='all'||i.slot===invF).sort
   if(invSeg==='rune'){$('s-inv').innerHTML=h+renderRunes();return}
   h+=invTop()+'<div class="eqg">';
   for(const s of SLOTS){const it=S.eq[s.k];
-    h+=it?'<button class="slot r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span class="e">'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+'<small style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</small></button>'
+    h+=it?'<button class="slot r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span class="e">'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.str?'<span class="stz">'+'★'.repeat(it.str)+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+'<small style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</small></button>'
           :'<div class="slot empty"><span class="e">'+ICO.slot(s.k)+'</span><small>'+s.n+'</small></div>'}
   const nb=bestList().length,nu=upPlan(false).n;
   h+='</div><div class="row" style="margin-top:10px"><button class="btn sm grow '+(nb?'ok':'')+'" data-a="eqBest" '+(nb?'':'disabled')+T('>⚡ En iyileri kuşan')+(nb?' ('+nb+')':'')+'</button><button class="btn sm grow '+(nu?'ess':'')+'" data-a="upAll" '+(nu?'':'disabled')+T('>⚒️ Toplu geliştir</button>');
@@ -1913,7 +1932,7 @@ function itemSheet(it,title){if(it.nw){delete it.nw;menuDirty=true}const r=RAR[i
   if(it.set&&SETS[it.set]){const sd=SETS[it.set],cnt=setBonus().n[it.set]||0;h+='<div class="forge" style="border-color:#ffcf4a55"><b>'+sd.i+' '+sd.n+T(' seti</b> <span class="mut">· kuşanılı ')+cnt+'/6</span>'+sd.b.map(([c,b])=>'<div class="sbon '+(cnt>=c?'on':'')+'">'+(cnt>=c?'✅':'▫️')+' '+c+T(' parça: ')+bTxt(b)+'</div>').join('')+'</div>'}
   if(sockN(it)){const sk=sockOf(it);h+=T('<div class="forge" style="border-color:#5fe3ff44"><b>🔮 Rün yuvaları</b> <span class="mut">· boş yuvaya dokun: rün tak, dolu yuvaya dokun: çıkar</span><div class="rsock">')+sk.map((k,i)=>k?'<button class="f" style="border-color:'+RUNES[k.split(':')[0]].c+'" data-a="unsock" data-v="'+it.id+'|'+i+'">'+runeLbl(k)+'<br><small class="mut">'+runeVal(k)+'</small></button>':'<button data-a="sockPick" data-v="'+it.id+'|'+i+'">＋</button>').join('')+'</div></div>'}
   const uc=upCost(it),max=it.up>=UPMAX,can=!max&&S.gold>=uc.g&&S.ess>=uc.e;
-  h+=T('<div class="forge"><div class="row"><b class="grow">⚒️ Demirci · +')+it.up+(max?T(' (en yüksek)'):' → +'+(it.up+1))+'</b>'+(max?'':T('<span class="mut">Başarı %')+upRate(it.up)+'</span>')+'</div>'+
+  h+=starCard(it);h+=T('<div class="forge"><div class="row"><b class="grow">⚒️ Demirci · +')+it.up+(max?T(' (en yüksek)'):' → +'+(it.up+1))+'</b>'+(max?'':T('<span class="mut">Başarı %')+upRate(it.up)+'</span>')+'</div>'+
    (max?'':T('<div class="mut" style="margin:4px 0 8px">Tüm statlar +%12 artar. Başarısız olursa sadece malzemeler gider, eşya zarar görmez.</div><button class="btn ess w100" data-a="forge" data-v="')+it.id+'" '+(can?'':'disabled')+T('>Geliştir · 💰 ')+fmt(uc.g)+' · 💠 '+uc.e+T('</button><div class="mut" style="text-align:center;font-size:11.5px;margin-top:5px">Sende: 💰 ')+fmt(S.gold)+' · 💠 '+fmt(S.ess)+'</div>')+'</div>';
   {const rc=rrCost(it);h+=T('<div class="forge" style="border-color:#ffcf4a44;margin-top:0"><div class="row"><b class="grow">🎲 Statları yeniden zar at</b><span class="mut">💰 ')+fmt(rc.g)+' · 💠 '+rc.e+T('</span></div><div class="mut" style="margin:4px 0 8px">Eşyanın statları aynı seviye ve nadirlikte yeniden belirlenir. +, rün ve set korunur.</div><button class="btn w100" data-a="reroll" data-v="')+it.id+'" '+(S.gold>=rc.g&&S.ess>=rc.e?'':'disabled')+T('>🎲 Zar at</button></div>')}
   h+=eq?'<div class="row"><button class="btn grow" data-a="unequip" data-v="'+it.slot+T('">Çıkar</button></div>')
@@ -1987,6 +2006,8 @@ const ACT={
   item:v=>{const it=findAny(v);if(it)itemSheet(it)},
   invF:v=>{invF=v;renderInv()},
   fusion:()=>fusSheet(),
+  star:v=>{const it=findAny(v);if(!it)return;if(!starOnce(it)){toast(T('Yeterli eşya ya da kaynak yok'));return}hpKeep(()=>{});tune([660,880,1175],60);vib(30);updAll();save();itemSheet(it)},
+  starAll:()=>{let n=0;hpKeep(()=>{n=starEqAll()});closeSheet();if(!n){toast(T('Kuşandıklarına uygun yedek eşya yok'));return}tune([660,880,1175],60);confetti(25);updAll();save();toast(T('⭐ Kuşandıklarına toplam {0} yıldız eklendi',n),'big')},
   fuse:v=>{const r=+v;const it=fuseOnce(r);if(!it){toast(T('Yeterli eşya ya da kaynak yok'));return}closeSheet();tune([392,523,659,880],70);vib([20,30,40]);updAll();save();
     if(it.r>=3)legendary(it);else{confetti(25);itemSheet(it,T('⚗️ Füzyondan çıktı!'))}},
   fuseAll:v=>{const r=+v;let n=0,best=null;while(n<200){const it=fuseOnce(r);if(!it)break;n++;if(!best||power(it)>power(best))best=it}closeSheet();if(!n){toast(T('Yeterli eşya ya da kaynak yok'));return}
