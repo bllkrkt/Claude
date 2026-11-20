@@ -395,8 +395,8 @@ function seaWitch(){const g=humanoid({skin:0x8ad0c0,cloth:0x3a1a6a,float:1,robe:
   for(const s of[-1,1])S(M(new T.SphereGeometry(.14,8,4,0,PI*2,0,PI/2),mat(0xffc8d8),.43*s,1.45,0,g),1,.6,1);
   u.tj=[];for(let i=0;i<6;i++){const a=(i+.5)/6*PI*2,b=G(g);b.position.set(Math.sin(a)*.22,.5,Math.cos(a)*.22);b.rotation.y=a;const r2=G(b);r2.rotation.x=2.4;tentacle(r2,5,.26,.1,tm,u.tj,i*1.1,.14,-.35,sm)}
   return g}
-function emojiSprite(e){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.font='200px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(e||'❔',128,140);
-  const tx=new T.CanvasTexture(c);tx.encoding=T.sRGBEncoding;const sp=new T.Sprite(new T.SpriteMaterial({map:tx}));sp.scale.set(2,2,1);const g=G();g.add(sp);return g}
+function emojiSprite(e){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');const tx0={};if(window.ICO&&ICO.emoUrl){const im=new Image();im.onload=()=>{x.drawImage(im,24,24,208,208);if(tx0.t)tx0.t.needsUpdate=true};im.src=ICO.emoUrl(e||'❔')}
+  const tx=new T.CanvasTexture(c);tx0.t=tx;tx.encoding=T.sRGBEncoding;const sp=new T.Sprite(new T.SpriteMaterial({map:tx}));sp.scale.set(2,2,1);const g=G();g.add(sp);return g}
 
 /* ---------------- model listeleri ---------------- */
 const SKIN=0xf1c27d;

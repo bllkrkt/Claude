@@ -96,5 +96,5 @@ const GLY={
 };
 function skill(e){const s=SKC[e];if(!s)return null;return '<svg class="ico sk" viewBox="0 0 48 48" aria-hidden="true" fill="'+s[0]+'" stroke="'+s[0]+'" stroke-width="0" style="filter:drop-shadow(0 0 5px '+s[0]+'aa) drop-shadow(0 2px 0 #000a)">'+GLY[s[1]]+'</svg>'}
 function init(){if(document.getElementById('icoDefs'))return;const d=document.createElement('div');d.innerHTML='<svg id="icoDefs" width="0" height="0" style="position:absolute;width:0;height:0" aria-hidden="true"><defs>'+defs()+'</defs></svg>';document.body.insertBefore(d.firstChild,document.body.firstChild)}
-window.ICO={item,slot,tab,cur,cls,skill,init,has:e=>!!BYE[e]};
+window.ICO={item,slot,tab,cur,cls,skill,init,has:e=>!!BYE[e],_sh:(k,r)=>SH[k]?SH[k](P(r|0)):'',_tab:k=>TAB[k]||'',_cur:k=>CUR[k]||'',_cls:k=>CLP[k]||'',_gly:(e)=>{const q=SKC[e];return q?{c:q[0],g:GLY[q[1]]}:null}};
 })();

@@ -25,7 +25,10 @@ await p.waitForTimeout(400);
 const _click = p.click.bind(p);
 const _leg = () => p.evaluate(() => { if (document.querySelector('#leg.on')) ACT.legClose(); });
 p.click = async (sel, o = {}) => { await _leg(); if (!String(sel).includes('#tPlay') && await p.evaluate(q => { const e = document.querySelector(q); return !!e && !e.closest('#sheetBg'); }, sel)) { try { await clear(); } catch (e) { } } try { return await _click(sel, { ...o, timeout: 12000 }); } catch (e) { await _leg(); return _click(sel, o); } };
-const shot = n => HIZLI ? Promise.resolve() : p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') });
+const emoSeen = new Set();
+// v22: ekranda hiç emoji kalmamalı (hepsi çizilmiş simgeye dönüşür)
+const emoCheck = async n => { const r = await p.evaluate(() => { const re = /(?:\p{Extended_Pictographic})/u; const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let t, o = []; while ((t = w.nextNode())) { const pn = t.parentNode; if (!pn || /SCRIPT|STYLE|TEXTAREA/.test(pn.nodeName)) continue; const m = t.data.match(/\p{Extended_Pictographic}/gu); if (m) for (const x of m) if (!'©®™'.includes(x)) o.push(x); } return o.join(''); }).catch(() => ''); if (r) for (const x of r) if (!emoSeen.has(x)) { emoSeen.add(x); errors.push('emoji kaldı (' + n + '): ' + x); } };
+const shot = async n => { await new Promise(r => setTimeout(r, 30)); await emoCheck(n); if (!HIZLI) await p.screenshot({ path: path.join(out, 'rpg-' + n + '.png') }); };
 const check = (c, msg) => { if (!c) errors.push(msg); };
 if (!HIZLI) check(await p.evaluate(() => !!D3), '3B sahne açılmadı');
 // açılış ekranı: ilk açılışta görünür, oyun durur, Oyna'ya basınca kalkar
