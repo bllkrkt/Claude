@@ -1135,7 +1135,7 @@ function elInfo(m){if(!m||!m.wk)return'';return '<h3>'+T('Elementler')+'</h3><di
 function attack(mult,o){o=o||{};if(!M||M.dead||dead||paused())return 0;if(R.frozen>0&&o.src!=='pet')return 0;
   let d=atkNow()*rnd(.88,1.12)*mult;if(o.src==='tap')d*=1+comboB();if(M.afx&&M.afx.includes('armor'))d*=.6;if(M.stun>0)d*=1.5;if(o.src==='skill')d*=1+P.skD/100;if(M.boss&&P.bossD)d*=1+P.bossD/100;const E=P.e||{};if(E.exec&&M.hp<M.max*.3)d*=1+.6*E.exec;if(E.swift&&R.combo>=20)d*=1+.25*E.swift;
   const c=o.sure||(R.nxC&&o.src!=='pet'&&!(R.nxC=0))||Math.random()*100<critNow();if(c){d*=P.critDmg/100;S.tot.crits++;qAdd('crit');if(E.vamp&&o.src!=='pet'&&S.hp<P.hp)S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(P.hp*.02*E.vamp)))}
-  d=Math.max(1,Math.round(d+elemDmg(d,o)));if(M.arena){const k0=arenaLvl();arenaDmg+=d;const k1=arenaLvl();if(k1>k0){banner(T('⭐ KADEME ')+k1+' ⭐','lv');tune([523,784,1047],70);confetti(20)}}else if(M.sh>0){d=Math.max(1,Math.round(d*(o.src==='skill'||o.fin?2:.5)));M.sh=Math.max(0,M.sh-d);if(!M.sh){M.stun=1500;shout(T('🛡️ KALKAN KIRILDI!'),'#9fd8ff');scrFlash('w');if(D3&&D3.shieldFx)D3.shieldFx(false)}}else{M.hp-=d;if(M.hlC>0)M.hlD=(M.hlD||0)+d}
+  d=Math.max(1,Math.round(d+elemDmg(d,o)));if(!isFinite(d))d=1;if(M.arena){const k0=arenaLvl();arenaDmg+=d;const k1=arenaLvl();if(k1>k0){banner(T('⭐ KADEME ')+k1+' ⭐','lv');tune([523,784,1047],70);confetti(20)}}else if(M.sh>0){d=Math.max(1,Math.round(d*(o.src==='skill'||o.fin?2:.5)));M.sh=Math.max(0,M.sh-d);if(!M.sh){M.stun=1500;shout(T('🛡️ KALKAN KIRILDI!'),'#9fd8ff');scrFlash('w');if(D3&&D3.shieldFx)D3.shieldFx(false)}}else{M.hp-=d;if(M.hlC>0)M.hlD=(M.hlD||0)+d}
   if(!o.fx&&o.src!=='pet'){R.hitN=(R.hitN||0)+1;if(E.storm&&R.hitN%5===0)setTimeout(()=>{if(M&&!M.dead){if(D3&&D3.bolt&&tab==='battle')D3.bolt();attack(1.8*E.storm,{src:'pet',fx:1,sure:true})}},90);if(E.twin&&o.src!=='skill'&&Math.random()*100<15*E.twin)setTimeout(()=>attack(.6*mult,{src:'pet',fx:1}),130)}
   const m=monPos(),x=o.x!=null?o.x:m.x+rnd(-m.w*.3,m.w*.3),y=o.y!=null?o.y:m.y+rnd(-m.h*.3,m.h*.2);
   const rt=Math.min(1,d/Math.max(1,M.max)),fs=o.src==='pet'?16:Math.round((c?32:22)+Math.min(20,rt*90)+(o.fin?6:0));
@@ -1298,6 +1298,7 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=no
   if(dungOn){dungT-=dt;updTimer();if(dungT<=0){endDung(T('⏱ Süre doldu'));return}}
   if(M&&!M.dead&&M.timer!=null){M.timer-=dt;updTimer();if(M.timer<=0){M.timer=0;timeUp();return}}
   if(M&&!M.dead&&M.spT!=null){if(M.stun>0)M.stun-=dt;if(M.tele>0){M.tele-=dt;$('defN').textContent=M.spN+' · '+tr(Math.max(0,M.tele)/1000)+T(' sn');if(M.tele<=0){M.tele=0;bossSpecial()}}else if(tab==='battle'){M.spT-=dt;if(M.spT<=0)startTele()}}
+  if(M&&!M.dead&&!(isFinite(M.hp)&&isFinite(M.max))){if(!isFinite(M.max))M.max=1000;M.hp=M.max;updMon()}
   if(M&&!M.dead&&!dead&&(M.brn>0||M.poiT>0||M.chl>0))elTick(dt);
   if(R.frozen>0){R.frozen-=dt;if(R.frozen<=0)unfreeze()}
   if(M&&!M.dead&&M.frz>0){M.frz-=dt;if(M.frz<=0){M.frz=0;M.int/=.55}}
