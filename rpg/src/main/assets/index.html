@@ -371,6 +371,83 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
 #sheet::before{content:'';display:block;position:sticky;top:-10px;height:2px;margin:-10px -16px 8px;background:linear-gradient(90deg,transparent,#ffcf4a88,transparent)}
 #toasts>div{border:1px solid rgba(255,214,130,.35)!important;box-shadow:0 6px 18px #000a}
 .zone{box-shadow:inset 0 1px 0 #ffffff30,inset 0 -30px 40px #0006,0 6px 16px #0007}
+/* ===================== v22 TEMA: koyu fantastik + altın detaylar, Cinzel başlık yazısı, çizilmiş ikonlar ===================== */
+@font-face{font-family:C;font-weight:700;font-display:swap;src:url(fonts/cinzel-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:C;font-weight:700;font-display:swap;src:url(fonts/cinzel-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--bg:#0b090e;--pan:linear-gradient(172deg,#241e2b 0%,#1a1520 55%,#141018 100%);--line:rgba(217,178,95,.13);--line2:rgba(217,178,95,.28);--tx:#f3ece0;--mut:#a89f9a;--gold:#f2c35a;--au:#d9b25f;--au2:#8a6a2a;--hot:linear-gradient(#c8423a,#8e1f22 55%,#5e1016)}
+body{background:radial-gradient(ellipse 120% 55% at 50% -12%,#3a2418 0,transparent 62%),radial-gradient(ellipse 90% 45% at 100% 110%,#3a1018 0,transparent 60%),radial-gradient(circle at 0% 60%,#1a2a3055 0,transparent 45%),#0b090e}
+h2,#hName,.zinfo #zName,#leg .t,#leg .n,#banner>div,.ihead b,#title .tg,.dlg-t{font-family:C,J,serif;letter-spacing:.4px}
+h2{color:#f6e4b8;text-shadow:0 2px 0 #000,0 0 14px #d9b25f33}
+h3{font-family:C,J,serif;color:#cdb98a;letter-spacing:1.4px}
+h3::before,h3::after{background:linear-gradient(90deg,transparent,#d9b25f66)!important}h3::after{background:linear-gradient(90deg,#d9b25f66,transparent)!important}
+.card{border:1px solid rgba(217,178,95,.16);box-shadow:inset 0 1px 0 rgba(255,240,200,.06),inset 0 -1px 0 rgba(0,0,0,.4),0 8px 22px #000a}
+.card::before{background:linear-gradient(90deg,transparent,#e8c46a99,transparent)}
+/* köşe süsleri */
+.card::after{content:'';position:absolute;inset:4px;border-radius:inherit;pointer-events:none;opacity:.5;
+ background:linear-gradient(var(--au),var(--au)) 0 0/9px 1.5px no-repeat,linear-gradient(var(--au),var(--au)) 0 0/1.5px 9px no-repeat,
+ linear-gradient(var(--au),var(--au)) 100% 0/9px 1.5px no-repeat,linear-gradient(var(--au),var(--au)) 100% 0/1.5px 9px no-repeat,
+ linear-gradient(var(--au),var(--au)) 0 100%/9px 1.5px no-repeat,linear-gradient(var(--au),var(--au)) 0 100%/1.5px 9px no-repeat,
+ linear-gradient(var(--au),var(--au)) 100% 100%/9px 1.5px no-repeat,linear-gradient(var(--au),var(--au)) 100% 100%/1.5px 9px no-repeat}
+.btn{background:linear-gradient(#3a3040,#28212e 60%,#1e1923);border:1px solid rgba(217,178,95,.38);color:#f3e6c8;box-shadow:inset 0 1px 0 rgba(255,235,190,.16),0 4px 0 #0a080c,0 6px 14px #0008}
+.btn.pri{background:linear-gradient(#d4503f,#a02a26 50%,#6e1518);border:1px solid #f0c860;color:#fff3d6;box-shadow:inset 0 1px 0 #ffd0a080,inset 0 0 0 1px #00000040,0 4px 0 #3e0a0c,0 6px 18px #c8423a55}
+.btn.ok{background:linear-gradient(#3fae6a,#1f7a48 50%,#124a2c);border:1px solid #e8c46a;box-shadow:inset 0 1px 0 #c8ffd860,0 4px 0 #082a18,0 6px 16px #2fbf6f33}
+.btn.gem{background:linear-gradient(#3aa8c8,#1d6a8e 50%,#103e58);border:1px solid #9fe6ff;box-shadow:inset 0 1px 0 #d8f8ff70,0 4px 0 #082234,0 6px 16px #3fc9ec33}
+.btn.ess{background:linear-gradient(#9a62e0,#64309e 50%,#3a1a66);border:1px solid #d8b0ff;box-shadow:inset 0 1px 0 #efe0ff60,0 4px 0 #1e0c38,0 6px 16px #a56bff33}
+.btn:disabled{filter:saturate(.3) brightness(.8)}
+#hud{background:linear-gradient(#1b1520f0,#120e16e6);border-bottom:1px solid rgba(217,178,95,.3);box-shadow:0 4px 16px #000a}
+#hud::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,#f2c35a,transparent);opacity:.6}
+#hud{position:relative}
+.ava{box-shadow:0 0 0 2px #0b090e,0 0 0 3px #d9b25f88,0 0 14px #d9b25f44}
+.ava>div{background:radial-gradient(circle at 35% 30%,#3a3040,#140f18)}
+#hCls .ico,#tabCls .ico{width:100%;height:100%}
+#hCls{padding:5px}
+.pill{background:linear-gradient(#120e16e6,#1e1824e6);border:1px solid rgba(217,178,95,.35)}
+.pill .ci{display:inline-flex;width:17px;height:17px}
+.pill .ci .ico{width:100%;height:100%}
+#tabs{background:linear-gradient(#1c1621f5,#0e0b11fa);border-top:1px solid rgba(217,178,95,.35)}
+#tabs button>span{display:grid;place-items:center;width:28px;height:28px}
+#tabs button>span .ico{width:28px;height:28px;filter:drop-shadow(0 2px 2px #000a)}
+#tabs button:not(.on)>span .ico{filter:grayscale(.65) brightness(.75) drop-shadow(0 2px 2px #000a)}
+#tabs button.on{background:radial-gradient(ellipse 80% 90% at 50% 100%,#f2c35a33,transparent 70%),linear-gradient(#2c2232,#1c1620);box-shadow:inset 0 -2px 0 #f2c35a,inset 0 1px 0 rgba(255,235,190,.08)}
+#tabs small{font-weight:800}
+.skb{background:radial-gradient(circle at 35% 28%,#43364c,#221a28 62%,#120e16);border:2px solid #d9b25f55;box-shadow:inset 0 2px 6px #ffffff14,inset 0 -4px 10px #000a,0 0 0 1px #000,0 5px 12px #000a}
+.skb .ico.sk{width:56%;height:56%;margin-top:-8px}
+.skb.rdy{border-color:#f2c35a}
+#bHit{background:linear-gradient(#d4503f,#a02a26 48%,#6e1518);border:2px solid #f0c860;font-family:C,J,serif;letter-spacing:4px;color:#fff3d6;text-shadow:0 2px 0 #4a0a0c,0 0 12px #ffb04a88;box-shadow:inset 0 2px 0 #ffd0a099,inset 0 -6px 14px #3e0a0c99,0 6px 0 #3e0a0c,0 10px 26px #c8423a55}
+#aaBtn,#asBtn{border:1px solid rgba(217,178,95,.35)}
+#stage{box-shadow:0 0 0 1px rgba(217,178,95,.3),0 0 0 3px #0b090e,0 0 0 4px rgba(217,178,95,.12),0 12px 34px #000c}
+#sheet{background:linear-gradient(#211a27,#16111b);border-top:2px solid rgba(217,178,95,.5)}
+.zbar button{border-color:rgba(217,178,95,.25)}
+/* eşya ikonları ve nadirlik çerçeveleri */
+.ii{display:block;filter:drop-shadow(0 3px 2px #000c)}
+.seg .ii,.chips .ii{width:22px;height:22px;display:inline-block;vertical-align:middle}
+.it .ii{width:80%;height:80%;position:relative;z-index:1}
+.slot .e .ii{width:46px;height:46px;margin:0 auto}
+.ihead .e .ii{width:60px;height:60px}
+.ihead .e{background:#0006}
+.ii.emp{opacity:.22;filter:grayscale(1)}
+.it.r0,.slot.r0{border-color:#6c6878!important}
+.it.r1,.slot.r1{border-color:#4f9cff!important;box-shadow:inset 0 0 12px #4f9cff33}
+.it.r2,.slot.r2{border-color:#b56bff!important}
+.it.r3,.slot.r3{border-color:#ffb43a!important;box-shadow:0 0 12px #ff9a1f66,inset 0 0 16px #ff9a1f44}
+.it.r3::before,.slot.r3::before{content:'';position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent 0 70%,#ffd27a55 80%,transparent 90%);animation:spin 3.5s linear infinite;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* efsanevi: ışık hüzmesi + yükselen ikon */
+#leg::before{content:'';position:absolute;left:50%;top:50%;width:200vmax;height:200vmax;margin:-100vmax 0 0 -100vmax;background:repeating-conic-gradient(from 0deg,#ffd27a30 0 6deg,transparent 6deg 18deg);animation:spin 14s linear infinite;pointer-events:none}
+#leg::after{content:'';position:absolute;left:50%;top:-10%;bottom:30%;width:160px;margin-left:-80px;background:linear-gradient(#fff6d000,#fff6d0aa 55%,#ffd27a00);filter:blur(10px);animation:beam 2.4s ease-in-out infinite;pointer-events:none}
+@keyframes beam{0%,100%{opacity:.55;transform:scaleX(.8)}50%{opacity:1;transform:scaleX(1.15)}}
+#leg .e .ii{width:150px;height:150px;margin:0 auto;animation:legRise 1s cubic-bezier(.2,1.4,.4,1),legFloat 2.6s 1s ease-in-out infinite;filter:drop-shadow(0 0 24px #ffd27a) drop-shadow(0 6px 4px #000c)}
+@keyframes legRise{from{transform:translateY(80px) scale(.3) rotate(-30deg);opacity:0}}
+@keyframes legFloat{50%{transform:translateY(-10px)}}
+#leg .t{font-family:C,J,serif}
+/* menü geçişleri */
+.scr.on{animation:scrIn .26s cubic-bezier(.2,.9,.3,1)}
+@keyframes scrIn{from{opacity:0;transform:translateY(10px) scale(.985)}}
+#sheetBg.on #sheet{animation:sheetUp .3s cubic-bezier(.2,.9,.3,1)}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.3}}
+/* kritik vuruş yazısı: büyük, altın-kırmızı, sallanarak */
+.fl.c{font-family:C,J,serif!important;font-size:40px;background:linear-gradient(#fff6c0,#ffb43a 45%,#ff4a2a);-webkit-background-clip:text;background-clip:text;color:transparent!important;-webkit-text-stroke:1px #4a0a00;filter:drop-shadow(0 2px 0 #000) drop-shadow(0 0 10px #ff8a2a99);text-shadow:none}
+.fl.c::before{-webkit-text-fill-color:#ffd27a;-webkit-text-stroke:0;font-family:J,sans-serif}
 </style>
 </head>
 <body>
@@ -389,7 +466,7 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
   <header id="hud">
     <div class="ava" id="hAva"><div id="hCls">🤺</div><b><i data-t style="font-style:normal">Sv</i> <span id="hLv">1</span></b></div>
     <div class="hmid"><div class="t1" id="hName">Kahraman</div><div class="t2">⚡ <i data-t style="font-style:normal">Güç</i> <b id="hPow">0</b> · XP <span id="hXpT"></span></div></div>
-    <div class="pills"><div class="pill g">💰 <span id="hGold">0</span></div><div class="pill d">💎 <span id="hGem">0</span></div></div>
+    <div class="pills"><div class="pill g"><b class="ci" id="ciG"></b><span id="hGold">0</span></div><div class="pill d"><b class="ci" id="ciD"></b><span id="hGem">0</span></div></div>
     <button class="gear" data-a="settings" aria-label="Ayarlar">⚙️</button>
   </header>
   <main>
@@ -454,7 +531,11 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
 <script src="lib/three.min.js"></script>
 <script src="sahne3d.js"></script>
 <script src="lang-en.js"></script>
+<script src="ikonlar.js"></script>
 <script>
+/* v22: kodla çizilen ikonlar (ikonlar.js) */
+ICO.init();document.querySelectorAll('#tabs button').forEach(b=>{const sp=b.querySelector('span');if(sp&&sp.id!=='tabCls')sp.innerHTML=ICO.tab(b.dataset.v)});
+document.getElementById('ciG').innerHTML=ICO.cur('gold');document.getElementById('ciD').innerHTML=ICO.cur('gem');
 'use strict';
 /* ======================= VERİ ======================= */
 const VER='21.0';let titleOn=false;
@@ -1095,7 +1176,7 @@ function lootMsg(it,drop){const c=RAR[it.r].c,d=document.createElement('div');d.
   if(D3&&it.r>=1&&tab==='battle')D3.lootBeam(RAR[it.r].c);
   if(it.r===3){if(tab==='battle'||!drop)legendary(it);else{pendLeg=it;toast(T('🌟 EFSANEVİ eşya düştü: ')+it.e+' '+itN(it),'big')}}else if(it.r===2&&tab==='battle'){tune([440,660],90);vib(40)}}
 let legAfter=null;
-function legendary(it,after){logEv('🌟 '+itN(it));$('legE').textContent=it.e;$('legN').textContent=itN(it);$('leg').classList.add('on');legAfter=after||null;confetti(80);tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
+function legendary(it,after){logEv('🌟 '+itN(it));$('legE').innerHTML=ICO.item(it);$('leg').dataset.r=it.r;$('legN').textContent=itN(it);$('leg').classList.add('on');legAfter=after||null;confetti(80);tune([523,659,784,1047,1319,1568],95,'sine');vib([60,50,60,50,160])}
 function monsterHit(mult){mult=mult||1;const h=heroPos();if(D3&&mult===1)D3.monAttack(R.dodge>0);
   if(R.dodge>0){floatTxt(T('ISKA'),'m',h.x+10,h.y-30);return}
   let d=M.atk*mult*rnd(.85,1.15)*dmgRed(M.lv);if(R.shield>0)d*=1-R.shV/100;if(M.afx&&M.afx.includes('vamp')){M.hp=Math.min(M.max,M.hp+M.max*.03);updMon()}d*=1-P.dr/100;d=Math.max(1,Math.round(d));S.hp-=d;if(P.e&&P.e.thorn&&S.hp>0)setTimeout(()=>attack(.5*P.e.thorn,{src:'pet',fx:1}),70);
@@ -1256,7 +1337,7 @@ function evOpen(){const k=evOn;if(!k||dead||busyMode())return;evHide();S.ev=(S.e
     openSheet(T('<div style="text-align:center"><div style="font-size:60px">⚒️</div><h2>Gezgin demirci</h2><p class="mut">Yolda karşılaştığın usta, <b style="color:')+RAR[it.r].c+'">'+it.e+' '+esc(itN(it))+T('</b> eşyanı bedavaya <b>+')+it.up+T('</b> yaptı.</p></div><button class="btn pri w100" data-a="close">Sağ ol usta</button>'));return}
   if(k==='chest'){openSheet(T('<div style="text-align:center"><div style="font-size:60px">🎁</div><h2>Lanetli sandık</h2><p class="mut">İçinden hafif bir uğultu geliyor.<br><b>%55</b> ihtimalle Epik ya da Efsanevi eşya ve altın.<br><b>%45</b> ihtimalle lanet: canının %40\'ı gider.</p></div><div class="row"><button class="btn pri grow" data-a="evChest">Aç</button><button class="btn grow" data-a="close">Dokunma</button></div>'));return}
   let it=null;for(let i=0;i<10;i++){const c=makeItem(Math.max(G(),gBest())+4,rollRar([0,30,50,20]),i<6?null:pick(SLOTS).k);if(!it||power(c)-power(S.eq[c.slot])>power(it)-power(S.eq[it.slot]))it=c}const c=price(it)*5,cur=S.eq[it.slot];evD={it,c};
-  openSheet(T('<div style="text-align:center"><div style="font-size:60px">🧙</div><h2>Gezgin tüccar</h2><p class="mut">"Bunu başka yerde bulamazsın yolcu."</p></div><div class="card" style="text-align:center;border-color:')+RAR[it.r].c+'88"><div style="font-size:40px">'+it.e+'</div><b style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</b><div class="mut">'+RAR[it.r].n+' · '+SLOT[it.slot].n+T(' · Seviye ')+it.L+T('</div><div style="margin-top:6px">⚡ Güç <b>')+fmt(power(it))+T('</b> <span class="mut">(kuşandığın: ')+fmt(power(cur))+')</span></div>'+(it.leg?'<div style="margin-top:6px;color:#ffd9a0">'+LEGP[it.leg].i+' '+LEGP[it.leg].n+': '+LEGP[it.leg].d+'</div>':'')+'</div><div class="row"><button class="btn pri grow" data-a="evBuy" '+(S.gold<c?'disabled':'')+T('>Satın al · 💰 ')+fmt(c)+T('</button><button class="btn grow" data-a="close">Geç</button></div>'))}
+  openSheet(T('<div style="text-align:center"><div style="font-size:60px">🧙</div><h2>Gezgin tüccar</h2><p class="mut">"Bunu başka yerde bulamazsın yolcu."</p></div><div class="card" style="text-align:center;border-color:')+RAR[it.r].c+'88"><div style="font-size:40px">'+ICO.item(it)+'</div><b style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</b><div class="mut">'+RAR[it.r].n+' · '+SLOT[it.slot].n+T(' · Seviye ')+it.L+T('</div><div style="margin-top:6px">⚡ Güç <b>')+fmt(power(it))+T('</b> <span class="mut">(kuşandığın: ')+fmt(power(cur))+')</span></div>'+(it.leg?'<div style="margin-top:6px;color:#ffd9a0">'+LEGP[it.leg].i+' '+LEGP[it.leg].n+': '+LEGP[it.leg].d+'</div>':'')+'</div><div class="row"><button class="btn pri grow" data-a="evBuy" '+(S.gold<c?'disabled':'')+T('>Satın al · 💰 ')+fmt(c)+T('</button><button class="btn grow" data-a="close">Geç</button></div>'))}
 function towerCard(){const f=S.tower.best+1;return T('<div class="card" style="background:linear-gradient(135deg,#2a2a5a,#1e2136 70%);border-color:#9fb4ff55"><div class="row"><span style="font-size:44px">🗼</span><div class="grow"><b style="font-size:16px">Sonsuz Kule</b><div class="mut">Her katta güçlü bir muhafız, 40 saniye. İlk geçişte ödül; her 3 katta rün, her 5 katta 💎.</div><div class="mut" style="margin-top:3px">En yüksek: <b style="color:var(--gold)">')+kn(S.tower.best)+T('. kat</b> · Deneme sınırsız</div></div></div><button class="btn pri w100" style="margin-top:10px" data-a="tower" ')+(S.cls&&!dead&&!busyMode()?'':'disabled')+'>🗼 '+kn(f)+T('. kata çık</button>')+(S.cls&&!dead&&!busyMode()&&towerSkipN()?T('<button class="btn ok w100" style="margin-top:8px" data-a="towerSkip">⏩ Hızlı geç: ')+towerSkipN()+T(' kolay kat (ödülleriyle)</button>'):'')+'</div>'}
 
 /* ======================= ZİNDANLAR ======================= */
@@ -1365,7 +1446,7 @@ let legK='';
 function legUpd(){if(!D3||!D3.legFx)return;const k=Object.keys(P.e||{}).filter(x=>LEGP[x]).sort().slice(0,3).join(',');if(k!==legK){legK=k;try{D3.legFx(k?k.split(','):[])}catch(e){}}}
 function updHud(){legUpd();$('hLv').textContent=S.lvl;$('hAva').style.setProperty('--p',S.xp/xpNeed(S.lvl)*100);$('hXpT').textContent=fmt(S.xp)+'/'+fmt(xpNeed(S.lvl));
   $('hGold').textContent=fmt(S.gold);$('hGem').textContent=fmt(S.gems);$('hPow').textContent=fmt(cpow());
-  const c=CLS[S.cls];$('hCls').textContent=c?c.e:'❔';$('tabCls').textContent=c?c.e:'🧝';$('hName').innerHTML=esc(T(c?c.n:T('Kahraman')))+(titleTxt()?' <small class="ttl">'+esc(titleTxt())+'</small>':'');
+  const c=CLS[S.cls];$('hCls').innerHTML=c?ICO.cls(S.cls):'❔';$('tabCls').innerHTML=c?ICO.cls(S.cls):ICO.tab('hero');$('hName').innerHTML=esc(T(c?c.n:T('Kahraman')))+(titleTxt()?' <small class="ttl">'+esc(titleTxt())+'</small>':'');
   const dot=(id,n)=>{const d=$(id);d.hidden=!n||!tabOpen(d.parentNode.dataset.v);d.textContent='!'};
   dot('dHero',S.pts+tpFree());dot('dInv',S.inv.filter(it=>power(it)>power(S.eq[it.slot])).length);dot('dQuest',questReady()+achReady());dot('dAdv',S.cls&&(WTR.some((x,i)=>S.wev.tok>=x.t&&!S.wev.cl.includes(i))||S.advDay!==today()&&(S.arena.left>0||S.duel.left>0||Object.values(S.dung.left).some(x=>x>0))));
   if(lastGold!=null&&S.gold>lastGold&&tab!=='battle')pillBump('.pill.g');if(lastGem!=null&&S.gems>lastGem)pillBump('.pill.d');lastGold=S.gold;lastGem=S.gems;tabCheck()}
@@ -1382,8 +1463,8 @@ function updBattle(){const z=ZONES[S.zone],f=S.floors[S.zone];
   $('heroE').textContent=CLS[S.cls]?CLS[S.cls].e:'🤺';$('petE').textContent=S.pet?PET[S.pet].e:'';if(D3){D3.setHero(S.cls||'war',S.skin,gearOf());D3.setPet(S.pet,S.pet?petStage(S.pets[S.pet]||1):0)}}
 function renderSkillBar(){let h='';const c=CLS[S.cls];
   for(let i=0;i<4;i++){if(!c){h+='<div></div>';continue}const s=c.sk[i],lk=S.lvl<s.lv;
-    h+='<button class="skb'+(lk?' lk':'')+'" data-sk="'+i+'" aria-label="'+s.n+'">'+(lk?'🔒':s.i)+'<i class="cd"></i><em>'+(lk?T('Sv')+s.lv:s.n.split(' ')[0])+'</em></button>'}
-  h+='<button class="skb" data-sk="p" aria-label="İksir">🧪<i class="cd"></i><em>'+T('İksir')+'</em><i class="n">'+S.potions+'</i></button>';
+    h+='<button class="skb'+(lk?' lk':'')+'" data-sk="'+i+'" aria-label="'+s.n+'">'+(lk?'🔒':(ICO.skill(s.i)||s.i))+'<i class="cd"></i><em>'+(lk?T('Sv')+s.lv:s.n.split(' ')[0])+'</em></button>'}
+  h+='<button class="skb" data-sk="p" aria-label="İksir">'+ICO.skill('🧪')+'<i class="cd"></i><em>'+T('İksir')+'</em><i class="n">'+S.potions+'</i></button>';
   $('skills').innerHTML=h;updSkillCd()}
 function updSkillCd(){if(!S.cls)return;document.querySelectorAll('.skb[data-sk]').forEach(b=>{const i=b.dataset.sk;if(i==='p')return;const s=skInfo(+i);
   const p=R.cd[i]>0?R.cd[i]/s.cdMs*100:0;b.querySelector('.cd').style.setProperty('--p',p);b.classList.toggle('rdy',!p&&S.lvl>=s.lv)})}
@@ -1397,7 +1478,7 @@ function setStage(){const z=ZONES[S.zone];if(D3)D3.setZone(S.zone);$('sky').styl
     else h+='<span style="left:'+rnd(0,100)+'%;'+an+'width:'+sz+'px;height:'+sz+'px;background:'+z.pc+';box-shadow:0 0 8px '+z.pc+'"></span>'}
   p.innerHTML=h}
 function itemTile(it){const up=power(it)>power(S.eq[it.slot]);
-  return '<button class="it r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span>'+it.e+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+(up?'<span class="up">▲</span>':'')+(it.lk?'<span class="lk">🔒</span>':'')+T('<span class="l">Sv')+it.L+'</span></button>'}
+  return '<button class="it r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span>'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+(up?'<span class="up">▲</span>':'')+(it.lk?'<span class="lk">🔒</span>':'')+T('<span class="l">Sv')+it.L+'</span></button>'}
 let invF='all';
 let invSeg='items';
 function renderRunes(){let h=T('<div class="card"><b>🔮 Rünler nedir?</b><div class="mut" style="margin-top:4px">Nadir eşyada 1, Epik\'te 2, Efsanevi\'de 3 rün yuvası var. Eşyaya dokun → yuvaya rün tak. Aynı rünün 3 tanesi birleşince bir üst kademe olur (I → V).</div></div>');
@@ -1411,13 +1492,13 @@ function renderInv(){const inv=S.inv.filter(i=>invF==='all'||i.slot===invF).sort
   if(invSeg==='rune'){$('s-inv').innerHTML=h+renderRunes();return}
   h+=invTop()+'<div class="eqg">';
   for(const s of SLOTS){const it=S.eq[s.k];
-    h+=it?'<button class="slot r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span class="e">'+it.e+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+'<small style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</small></button>'
-          :'<div class="slot empty"><span class="e">'+s.e+'</span><small>'+s.n+'</small></div>'}
+    h+=it?'<button class="slot r'+it.r+'" style="'+rarBg(it.r)+'" data-a="item" data-v="'+it.id+'"><span class="e">'+ICO.item(it)+'</span>'+(it.up?'<span class="u">+'+it.up+'</span>':'')+(it.set?'<span class="st">'+SETS[it.set].i+'</span>':'')+'<small style="color:'+RAR[it.r].c+'">'+esc(itN(it))+'</small></button>'
+          :'<div class="slot empty"><span class="e">'+ICO.slot(s.k)+'</span><small>'+s.n+'</small></div>'}
   const nb=bestList().length,nu=upPlan(false).n;
   h+='</div><div class="row" style="margin-top:10px"><button class="btn sm grow '+(nb?'ok':'')+'" data-a="eqBest" '+(nb?'':'disabled')+T('>⚡ En iyileri kuşan')+(nb?' ('+nb+')':'')+'</button><button class="btn sm grow '+(nu?'ess':'')+'" data-a="upAll" '+(nu?'':'disabled')+T('>⚒️ Toplu geliştir</button>');
   h+=T('</div><div class="row" style="margin-top:14px"><h3 class="grow" style="margin:0">Eşyalar (')+S.inv.length+'/'+invMax()+T(')</h3><button class="btn sm" data-a="invUp" style="margin-right:6px">➕ Büyüt</button><button class="btn sm" data-a="bulk">🧹 Toplu</button></div>');
   h+='<button class="btn sm w100" style="margin-top:8px;'+(S.set.autoJ?'border-color:#3ddc8488;color:#9df0c0':'')+T('" data-a="autoJ">🧹 Oto temizlik: ')+AJN[S.set.autoJ|0]+(S.set.autoJ?' → '+(S.set.autoJM==='melt'?'eritilir':T('satılır'))+(S.tot.aj?' · '+fmt(S.tot.aj)+T(' eşya'):''):'')+'</button>';
-  h+='<div class="filt"><button class="'+(invF==='all'?'on':'')+T('" data-a="invF" data-v="all" style="font-size:13px">Tümü</button>')+SLOTS.map(s=>'<button class="'+(invF===s.k?'on':'')+'" data-a="invF" data-v="'+s.k+'" aria-label="'+s.n+'">'+s.e+'</button>').join('')+'</div><div class="invg">';
+  h+='<div class="filt"><button class="'+(invF==='all'?'on':'')+T('" data-a="invF" data-v="all" style="font-size:13px">Tümü</button>')+SLOTS.map(s=>'<button class="'+(invF===s.k?'on':'')+'" data-a="invF" data-v="'+s.k+'" aria-label="'+s.n+'">'+ICO.item({e:s.names[0][0],slot:s.k,r:1})+'</button>').join('')+'</div><div class="invg">';
   h+=inv.map(itemTile).join('');
   for(let i=inv.length;i<Math.max(10,Math.ceil(inv.length/5)*5);i++)h+='<div class="it empty"></div>';
   h+=T('</div><p class="mut" style="text-align:center;margin-top:14px">Yeşil ▲ = kuşandığından iyi. Eşyaya dokun: kuşan, sat, erit ya da ⚒️ geliştir. Eritilen eşyalar 💠 Öz verir; Öz ile eşyalarını +15\'e kadar güçlendirirsin.</p>');
@@ -1664,7 +1745,7 @@ document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.rng
 /* ======================= EŞYA PANELİ ======================= */
 function itemSheet(it,title){const r=RAR[it.r],eq=isEq(it),cur=eq?null:S.eq[it.slot];
   let h=(title?'<div style="text-align:center;margin-bottom:8px;font-weight:800;color:var(--gold)">'+title+'</div>':'')+
-   '<div class="ihead"><div class="e r'+it.r+'" style="'+rarBg(it.r)+';box-shadow:0 0 22px '+r.c+'66"><span style="position:relative;z-index:1">'+it.e+'</span></div><div class="grow"><b style="color:'+r.c+'">'+esc(iName(it))+'</b><small style="color:'+r.c+'">'+r.n+'</small><small class="mut"> · '+SLOT[it.slot].n+T(' · Seviye ')+it.L+'</small></div>'+
+   '<div class="ihead"><div class="e r'+it.r+'" style="'+rarBg(it.r)+';box-shadow:0 0 22px '+r.c+'66"><span style="position:relative;z-index:1">'+ICO.item(it)+'</span></div><div class="grow"><b style="color:'+r.c+'">'+esc(iName(it))+'</b><small style="color:'+r.c+'">'+r.n+'</small><small class="mut"> · '+SLOT[it.slot].n+T(' · Seviye ')+it.L+'</small></div>'+
    '<button class="gear" data-a="lock" data-v="'+it.id+'" aria-label="Kilit">'+(it.lk?'🔒':'🔓')+'</button></div>';
   h+='<div class="note">'+(eq?T('Şu an kuşandığın eşya.'):cur?T('Kuşandığın: <b style="color:')+RAR[cur.r].c+'">'+cur.e+' '+esc(iName(cur))+T('</b> ile karşılaştırma'):T('Bu yuvada kuşanılı eşya yok — hepsi kazanç!'))+(it.lk?T(' · 🔒 Kilitli: satılamaz, eritilemez.'):'')+'</div>';
   if(it.leg&&LEGP[it.leg])h+='<div class="note" style="border-color:#ff9a1f88;color:#ffd9a0"><b>'+LEGP[it.leg].i+T(' Özel güç: ')+LEGP[it.leg].n+'</b><br>'+LEGP[it.leg].d+'</div>';
@@ -1848,7 +1929,7 @@ const ACT={
   about:()=>openSheet('<div style="text-align:center"><svg viewBox="0 0 120 120" width="76" height="76">'+$('title').querySelector('svg').innerHTML+'</svg><h2 style="margin:6px 0 2px">Efsane Avcısı</h2><div class="mut">'+T('Sürüm {0}',VER)+'</div><p class="mut" style="margin-top:8px">'+T('Tek elle oynanan, internetsiz bir aksiyon RPG.')+'</p></div>'+
     '<h3>🔒 '+T('Gizlilik')+'</h3><div class="card" style="font-size:13.5px;line-height:1.6">'+T('Oyun internete hiç bağlanmaz ve hiçbir kişisel veri toplamaz. İlerlemen yalnızca bu cihazda saklanır.')+'<div class="mut" style="margin-top:6px;font-size:12.5px">'+T('Android\'in kendi yedekleme özelliği açıksa telefonun, uygulama verilerini Google hesabına yedekleyebilir.')+'</div></div>'+
     '<h3>🛠️ '+T('Yapım')+'</h3><div class="card" style="font-size:13.5px;line-height:1.6">'+T('Bütün 3B modeller, efektler, sesler ve müzik oyunun kendi kodunda üretilir.')+'</div>'+
-    '<h3>📜 '+T('Açık kaynak lisansları')+'</h3><div class="card" style="font-size:13px;line-height:1.7"><b>three.js</b> r149 · MIT License<br><span class="mut">Copyright © 2010–2023 three.js authors</span><br><b>Plus Jakarta Sans</b> · SIL Open Font License 1.1<br><span class="mut">Copyright 2020 The Plus Jakarta Sans Project Authors</span><div class="mut" style="margin-top:6px;font-size:12px">'+T('Simgeler cihazın kendi emoji yazı tipiyle çizilir.')+'</div></div>'+
+    '<h3>📜 '+T('Açık kaynak lisansları')+'</h3><div class="card" style="font-size:13px;line-height:1.7"><b>three.js</b> r149 · MIT License<br><span class="mut">Copyright © 2010–2023 three.js authors</span><br><b>Plus Jakarta Sans</b> · SIL Open Font License 1.1<br><span class="mut">Copyright 2020 The Plus Jakarta Sans Project Authors</span><br><b>Cinzel</b> · SIL Open Font License 1.1<br><span class="mut">Copyright 2020 The Cinzel Project Authors</span><div class="mut" style="margin-top:6px;font-size:12px">'+T('Simgeler cihazın kendi emoji yazı tipiyle çizilir.')+'</div></div>'+
     '<div id="licBox"></div><button class="btn w100" style="margin-top:8px" data-a="licShow">'+T('📄 Lisans metinlerini göster')+'</button><button class="btn pri w100" style="margin-top:8px" data-a="close">'+T('Kapat')+'</button>'),
   licShow:()=>{const box=$('licBox');if(!box)return;const get=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.text()}).catch(()=>T('Lisans dosyası bu sürümde okunamadı.'));
     Promise.all([get('lib/three-LICENSE.txt'),get('fonts/OFL.txt')]).then(([a,b])=>{const e=$('licBox');if(e)e.innerHTML='<div class="lic">three.js\n\n'+esc(a)+'</div><div class="lic" style="margin-top:8px">Plus Jakarta Sans\n\n'+esc(b)+'</div>'})},
