@@ -142,7 +142,7 @@ check(await p.evaluate(() => M.hp < 1e9 && S.tot.skills > 0), 'oto saldırı/oto
 await shot('40-oto-saldiri');
 await p.evaluate(() => { ACT.aa(); }); await p.waitForTimeout(300); await shot('40b-oto-hiz');
 await p.evaluate(() => { ACT.aaTog(); }); check(await p.evaluate(() => !S.autoAtk), 'oto saldırı kapatılamadı');
-await p.evaluate(() => { ACT.aaSp('2'); }); check(await p.evaluate(() => S.autoAtk && S.aaSp === 2 && aaMs() === 280), 'oto saldırı hızı ayarlanamadı');
+await p.evaluate(() => { ACT.aaSp('2'); }); check(await p.evaluate(() => S.autoAtk && S.aaSp === 2 && Math.abs(aaMs() * (1 + (P.spd || 0) / 100) - 280) < .01), 'oto saldırı hızı ayarlanamadı');
 await p.evaluate(() => { ACT.aaSp('4'); }); check(await p.evaluate(() => S.aaSp === 2), 'kilitli hız seçilebildi'); await p.evaluate(() => closeSheet());
 // tek tıkla en iyileri kuşan + toplu geliştir
 await p.evaluate(() => { S.tut.equip = 1; for (const s of SLOTS) S.inv.push(makeItem(60, 1, s.k)); S.gold += 5e6; S.ess += 400; ACT.tab('inv'); });
