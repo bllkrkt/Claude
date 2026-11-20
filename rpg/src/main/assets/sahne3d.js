@@ -418,9 +418,9 @@ const HB={
   mag:{hero:1,hs2:1.1,cloth:0x3b2a8a,robe:0x3b2a8a,hat:'wizard',hatC:0x2d1f6e,weapon:'staff',orb:0x7fe7ff,beard:0xeeeeee,hair:0xe8e8e8,sleeve:1,cape:0x241a5a,capeH:1.25},
   /* suikastçı: koyu deri, başlık, yüz maskesi, kısa pelerin, iki hançer */
   asn:{hero:1,hs2:1.1,slim:1,cloth:0x2e2329,pants:0x1e1a1e,boots:0x141014,hood:0x231c22,hoodTip:1,mask:0x121014,scarf:0x7a1830,belt:0x6a4a2a,sleeve:1,glove:0x1a1418,weapon:'dagger',dual:1,wepC:0xc8d0dc,hair:0x1a1418,bracer:1}};
-const RC=[0xc8d0dc,0x4f9cff,0xb56bff,0xffa52a],RM=[0x9aa3b0,0x3a6ed8,0x7a3ad8,0xd4a017];
+const RC=[0xc8d0dc,0x4f9cff,0xb56bff,0xffa52a,0xff4a86],RM=[0x9aa3b0,0x3a6ed8,0x7a3ad8,0xd4a017,0xc0185a];
 const fe=e=>String(e||'').replace(/\uFE0F/g,'');
-const WT={'🗡':'sword','🪓':'axe','🔨':'hammer','🔱':'spear','🏹':'bow','🪄':'staff'},AT={'🦺':'plate','🥋':'gi','👘':'robe'};
+const WT={'🗡':'sword','🪓':'axe','🔨':'hammer','🔱':'spear','🏹':'bow','🪄':'staff','🔪':'sword','⚔':'sword','📖':'staff'},AT={'🦺':'plate','🥋':'gi','👘':'robe','🧥':'robe'};
 /* kuşanılan eşyalar karakterin üstünde görünür; kostüm seçiliyse renkler kostümden, şekiller eşyadan gelir */
 function applyGear(o,g,col){if(!g)return o;
   const w=g.weapon;if(w){const t=o.dual?'dagger':WT[fe(w.e)]||'sword';if(t==='bow'){o.bow=1;delete o.weapon;delete o.shield}else{delete o.bow;o.weapon=t}

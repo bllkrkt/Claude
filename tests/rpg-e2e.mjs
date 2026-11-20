@@ -350,7 +350,7 @@ const san = await p.evaluate(() => { const o = JSON.parse(JSON.stringify(S)); o.
   o.gold = 'abc'; o.zone = 77; o.cls = 'hacker'; o.pets = { wolf: 999, ejderha: 3 }; o.pet = 'ejderha'; o.skl = 'x'; o.aaSp = 40; o.lvl = 12.7;
   const ok = restoreCode(btoa(unescape(encodeURIComponent(JSON.stringify(o))))); const bad = S.inv[S.inv.length - 1];
   return { ok, g: S.gold, z: S.zone, c: S.cls, w: S.pets.wolf, e: S.pets.ejderha, pet: S.pet, sk: S.skl, a: S.aaSp, l: S.lvl, bad, all: S.inv.every(i => i && SLOT[i.slot]), up: UPMAX }; });
-check(san.ok && san.g === 0 && san.z === 0 && san.c === null && san.w === 30 && !san.e && san.pet === null && san.sk.length === 4 && san.a === 4 && san.l === 12 && san.bad.r === 3 && san.bad.up === san.up && san.bad.L === 1 && san.bad.st.atk === 10 && !('uydurma' in san.bad.st) && !('crit' in san.bad.st) && !san.bad.set && san.bad.sock[0] === null && san.all, 'bozuk alanlı yedek temizlenmedi: ' + JSON.stringify(san));
+check(san.ok && san.g === 0 && san.z === 0 && san.c === null && san.w === 30 && !san.e && san.pet === null && san.sk.length === 4 && san.a === 4 && san.l === 12 && san.bad.r === 4 && san.bad.up === san.up && san.bad.L === 1 && san.bad.st.atk === 10 && !('uydurma' in san.bad.st) && !('crit' in san.bad.st) && !san.bad.set && san.bad.sock[0] === null && san.all, 'bozuk alanlı yedek temizlenmedi: ' + JSON.stringify(san));
 await p.evaluate(c => { closeSheet(); Q.length = 0; restoreCode(c); }, code); await p.waitForTimeout(300); await clear();
 // baykuş: uzun süren etkiyi kısaltmamalı
 await p.evaluate(() => { spawn(); }); await waitFor(() => M && !M.dead, 4000);

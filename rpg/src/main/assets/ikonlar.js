@@ -1,11 +1,11 @@
 /* Efsane Avcısı — kodla çizilen SVG ikonlar (v22). Emoji yerine: eşyalar, sekmeler, sınıf portreleri, yetenekler, para birimleri.
    Renkler nadirliğe göre: 0 demir, 1 çelik-mavi, 2 mor büyülü, 3 altın efsanevi. Ortak gradyanlar bir kez <body>'ye eklenir (ICO.init). */
 (function(){
-const MET=[['#eef1f7','#a6adbd','#5d6476'],['#eaf5ff','#7fb0ee','#2f5c9e'],['#f6e8ff','#b98af0','#5e2fa0'],['#fff6c8','#f2c14a','#a8640c']];
-const GEM=[['#d9dee8','#8a93a8'],['#bfe6ff','#2f86ff'],['#f3c8ff','#a63cf0'],['#ffd0c0','#ff3a1a']];
-const CLO=[['#8b93a6','#4c5366'],['#4f86d8','#1f3f7a'],['#9a5ae0','#43207a'],['#e0503c','#7a1a14']];
+const MET=[['#eef1f7','#a6adbd','#5d6476'],['#eaf5ff','#7fb0ee','#2f5c9e'],['#f6e8ff','#b98af0','#5e2fa0'],['#fff6c8','#f2c14a','#a8640c'],['#ffe6f0','#ff5a8c','#6e0a36']];
+const GEM=[['#d9dee8','#8a93a8'],['#bfe6ff','#2f86ff'],['#f3c8ff','#a63cf0'],['#ffd0c0','#ff3a1a'],['#e8fdff','#19e0ff']];
+const CLO=[['#8b93a6','#4c5366'],['#4f86d8','#1f3f7a'],['#9a5ae0','#43207a'],['#e0503c','#7a1a14'],['#ff4a86','#4a0626']];
 const OL='#160d1e';
-function defs(){let h='';for(let r=0;r<4;r++){const m=MET[r],g=GEM[r],c=CLO[r];
+function defs(){let h='';for(let r=0;r<5;r++){const m=MET[r],g=GEM[r],c=CLO[r];
   h+='<linearGradient id="im'+r+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+m[0]+'"/><stop offset=".45" stop-color="'+m[1]+'"/><stop offset="1" stop-color="'+m[2]+'"/></linearGradient>'+
      '<radialGradient id="ig'+r+'" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".25" stop-color="'+g[0]+'"/><stop offset="1" stop-color="'+g[1]+'"/></radialGradient>'+
      '<linearGradient id="ic'+r+'" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="'+c[0]+'"/><stop offset="1" stop-color="'+c[1]+'"/></linearGradient>'}
@@ -38,14 +38,21 @@ const SH={
  tboot:p=>'<path d="M16 3 L30 3 L30 30 L40 34 Q43.5 36 42.5 41 L12 41 L13 30Z" fill="'+p.C+'"/><path d="M14 3 H32 L31 11 H15Z" fill="'+p.M+'"/><rect x="11" y="39.5" width="32.5" height="5" rx="2" fill="'+OL+'"/><circle cx="23" cy="7" r="2" fill="'+p.G+'"/>',
  ring:p=>'<ellipse cx="24" cy="30" rx="13" ry="12" fill="none" stroke="'+OL+'" stroke-width="8"/><ellipse cx="24" cy="30" rx="13" ry="12" fill="none" stroke="'+p.M+'" stroke-width="5"/>'+hl('M14 24 Q17 19 22 18')+'<path d="M24 5 L32 13 L24 22 L16 13Z" fill="'+p.G+'"/><path d="M16 13 H32 M24 5 L21 13 L24 22 L27 13Z" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width=".9"/>',
  amulet:p=>'<path d="M9 4 Q24 32 39 4" fill="none" stroke="'+OL+'" stroke-width="4.5"/><path d="M9 4 Q24 32 39 4" fill="none" stroke="'+p.M+'" stroke-width="2.4" stroke-dasharray="3 1.6"/><path d="M24 22 L34 32 L24 46 L14 32Z" fill="'+p.M+'"/><circle cx="24" cy="33" r="5.5" fill="'+p.G+'"/>',
+ knife:p=>'<g transform="rotate(45 24 24)"><path d="M24 6 L29 12 L29 30 L19 30 L19 14 Z" fill="'+p.M+'"/>'+hl('M26 12 V28')+'<rect x="14" y="30" width="20" height="4" rx="2" fill="'+p.M+'"/><rect x="21.5" y="34" width="5" height="9" rx="1.5" fill="'+p.L+'"/><circle cx="24" cy="32" r="1.8" fill="'+p.G+'"/></g>',
+ twin:p=>'<g transform="rotate(35 24 24) translate(-5 0)"><path d="M24 3 L27.5 8 L27.5 30 L20.5 30 L20.5 8Z" fill="'+p.M+'"/><rect x="15" y="30" width="18" height="4" rx="2" fill="'+p.M+'"/><rect x="22" y="34" width="4" height="8" rx="1.5" fill="'+p.L+'"/></g><g transform="rotate(-35 24 24) translate(5 0)"><path d="M24 3 L27.5 8 L27.5 30 L20.5 30 L20.5 8Z" fill="'+p.M+'"/>'+hl('M24 8 V28')+'<rect x="15" y="30" width="18" height="4" rx="2" fill="'+p.M+'"/><rect x="22" y="34" width="4" height="8" rx="1.5" fill="'+p.L+'"/><circle cx="24" cy="32" r="1.8" fill="'+p.G+'"/></g>',
+ tome:p=>'<path d="M8 8 Q8 5 11 5 H38 V39 H11 Q8 39 8 42Z" fill="'+p.C+'"/><path d="M8 42 Q8 39 11 39 H38 V44 H11 Q8 44 8 42Z" fill="#efe6cc"/><path d="M12 5 V39" stroke="'+p.M+'" stroke-width="2.4"/><circle cx="25" cy="21" r="7" fill="none" stroke="'+p.M+'" stroke-width="2.2"/><path d="M25 14 L27 19.5 L32 21 L27 22.5 L25 28 L23 22.5 L18 21 L23 19.5Z" fill="'+p.G+'" stroke-width=".8"/>',
+ cloak:p=>'<path d="M17 6 Q24 9 31 6 L36 12 Q42 30 40 44 Q24 40 8 44 Q6 30 12 12Z" fill="'+p.C+'"/><path d="M17 6 Q24 18 31 6" fill="none" stroke="'+p.M+'" stroke-width="2.4"/><path d="M24 14 V42" stroke="'+OL+'" stroke-opacity=".35" stroke-width="1.2"/><circle cx="24" cy="12" r="3" fill="'+p.G+'"/>',
+ mask:p=>'<path d="M6 14 Q24 6 42 14 Q42 34 24 42 Q6 34 6 14Z" fill="'+p.M+'"/><path d="M11 20 Q16 16 21 20 Q16 24 11 20Z M27 20 Q32 16 37 20 Q32 24 27 20Z" fill="'+OL+'"/><path d="M18 32 Q24 35 30 32" fill="none" stroke="'+OL+'" stroke-width="1.6"/><circle cx="24" cy="12" r="2.4" fill="'+p.G+'"/>'+hl('M10 15 Q14 12 18 12'),
+ mecharm:p=>'<path d="M14 44 L13 22 Q13 16 18 15 L30 14 Q35 14 35 20 L35 44Z" fill="'+p.M+'"/><path d="M13 24 H35 M13 31 H35 M13 38 H35" stroke="'+OL+'" stroke-opacity=".45" stroke-width="1.2"/><path d="M16 15 L16 7 Q16 5 18.5 5 Q21 5 21 7 V14 M22 14 V5 Q22 3 24.5 3 Q27 3 27 5 V14 M28 14 V6 Q28 4 30.5 4 Q33 4 33 6 V15" fill="'+p.M+'"/>'+hl('M17 18 V40')+'<circle cx="24" cy="27" r="3" fill="'+p.G+'"/>',
+ jewel:p=>'<path d="M14 10 H34 L42 20 L24 44 L6 20Z" fill="'+p.G+'"/><path d="M6 20 H42 M14 10 L19 20 L24 44 L29 20 L34 10 M19 20 L24 10 L29 20" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.1"/><path d="M14 10 H34" stroke="'+p.M+'" stroke-width="3"/>',
  charm:p=>'<circle cx="24" cy="26" r="17" fill="'+p.G+'"/><circle cx="24" cy="26" r="17" fill="none" stroke="'+p.M+'" stroke-width="3"/><circle cx="24" cy="26" r="10" fill="#f6fbff"/><circle cx="24" cy="26" r="6" fill="#2f86ff"/><circle cx="24" cy="26" r="3" fill="'+OL+'"/><circle cx="21.5" cy="23.5" r="1.6" fill="#fff" stroke="none"/><rect x="21" y="5" width="6" height="5" rx="1.5" fill="'+p.M+'"/>'
 };
-const BYE={'🗡️':'sword','🪓':'axe','🔨':'hammer','🔱':'spear','🏹':'bow','🪄':'staff','🦺':'plate','🥋':'tunic','👘':'robe','🪖':'helm','⛑️':'helm2','👑':'crown','🎩':'what','🧤':'glove','🥊':'gaunt','🥾':'boot','👢':'tboot','💍':'ring','📿':'amulet','🧿':'charm'};
+const BYE={'🔪':'knife','⚔️':'twin','📖':'tome','🧥':'cloak','🎭':'mask','🦾':'mecharm','💎':'jewel','🗡️':'sword','🪓':'axe','🔨':'hammer','🔱':'spear','🏹':'bow','🪄':'staff','🦺':'plate','🥋':'tunic','👘':'robe','🪖':'helm','⛑️':'helm2','👑':'crown','🎩':'what','🧤':'glove','🥊':'gaunt','🥾':'boot','👢':'tboot','💍':'ring','📿':'amulet','🧿':'charm'};
 const BYS={weapon:'sword',armor:'plate',helmet:'helm',gloves:'glove',boots:'boot',ring:'ring'};
 function svg(inner,cls){return '<svg class="ico'+(cls?' '+cls:'')+'" viewBox="0 0 48 48" stroke="'+OL+'" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'+inner+'</svg>'}
 function shape(e,slot){return BYE[e]||BYS[slot]||'ring'}
 /* eşya ikonu */
-function item(it){const r=Math.max(0,Math.min(3,it.r|0));return svg(SH[shape(it.e,it.slot)](P(r)),'ii q'+r)}
+function item(it){const r=Math.max(0,Math.min(4,it.r|0));return svg(SH[shape(it.e,it.slot)](P(r)),'ii q'+r)}
 /* boş yuva ikonu (soluk) */
 function slot(k){return svg(SH[BYS[k]||'ring'](P(0)),'ii emp')}
 /* sekme ikonları (altın çizgi) */

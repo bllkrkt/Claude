@@ -184,8 +184,8 @@ const G={
 /* emoji → [çizim, renk, ek] */
 const IT=k=>['_it',k];
 const E={
- '💰':['bag2'],'🪙':['coin'],'💎':['gem'],'💠':['ess'],'🔮':['crys'],'⚔':['swords'],'🗡':['dagger'],'🔪':['dagger'],'🛡':['shield'],'⚡':['bolt'],'🌫':['fog'],'🫧':['bubble'],'🌠':['shooting'],'💥':['burst'],'✨':['sparkle'],'🌟':['sparkle','#fff2a0'],'⭐':['star'],'💫':['sparkle',CYN],
- '🔒':['lock'],'🔓':['unlock'],'🎁':['gift'],'🎒':['bag'],'⚒':['forge'],'🔨':IT('hammer'),'🛠':['tools'],'🔧':['wrench'],'🧰':['toolbox'],
+ '💰':['bag2'],'🪙':['coin'],'💎':['gem'],'💠':['ess'],'🔮':['crys'],'⚔':['swords'],'🗡':['dagger'],'🔪':IT('knife'),'🛡':['shield'],'⚡':['bolt'],'🌫':['fog'],'🫧':['bubble'],'🌠':['shooting'],'💥':['burst'],'✨':['sparkle'],'🌟':['sparkle','#fff2a0'],'⭐':['star'],'💫':['sparkle',CYN],
+ '🔒':['lock'],'🧥':IT('cloak'),'🎭':IT('mask'),'🦾':IT('mecharm'),'⚗':['potion',PUR],'🎽':['shirt'],'🔓':['unlock'],'🎁':['gift'],'🎒':['bag'],'⚒':['forge'],'🔨':IT('hammer'),'🛠':['tools'],'🔧':['wrench'],'🧰':['toolbox'],
  '🔥':['fire'],'💀':['skull'],'☠':['skull','#e8e8f8'],'👑':['crown'],'💾':['disk'],'🌀':['spiral'],'🧪':['potion'],'🧊':['cube'],'❄':['flake'],'✅':['check'],'❌':['cross'],'✓':null,
  '📜':['scroll'],'🎯':['target'],'🗼':['tower'],'⚠':['warn'],'🌳':['tree'],'🌲':['pine'],'🌿':['leaf','#5ab84a'],'🍃':['leaf','#8fdc6a'],'🍀':['clover'],'🍄':['mushroom'],
  '▶':['play'],'◀':['back'],'⏩':['ffwd'],'⏸':['pause'],'🐾':['paw'],'🎵':['note'],'🎶':['note'],'❤':['heart'],'💚':['heart',GRN],'💙':['heart',BLU],'💜':['heart',PUR],'🖤':['heart','#3a3550'],
