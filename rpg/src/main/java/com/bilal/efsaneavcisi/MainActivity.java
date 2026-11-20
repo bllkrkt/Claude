@@ -12,6 +12,19 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.app.AlarmManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.WindowInsetsController;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowInsets;
@@ -45,20 +58,48 @@ public class MainActivity extends Activity {
     private static long lastRecreate = 0;
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
+    /** v28: oyun ilk karesini çizene kadar Android'in açılış ekranı ekranda kalır (boş/yarım sayfa görünmez). */
+    private volatile boolean ready = false;
+    private Vibrator vibrator;
 
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (Build.VERSION.SDK_INT >= 28) {
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
+        }
+        try { vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE); } catch (Exception ignored) { }
+        GameAlarm.cancelAll(this);
         web = new WebView(this);
-        web.setBackgroundColor(0xFF0E0F1A);
+        web.setBackgroundColor(0xFF0B090E);
         web.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         // WebView kendi iç boşluğunu (padding) yok sayar; bu yüzden onu bir çerçeveye koyup boşluğu çerçeveye veriyoruz.
         // Böylece oyun saat/şarj çubuğunun ve alttaki gezinme çizgisinin altına girmez.
         final android.widget.FrameLayout root = new android.widget.FrameLayout(this);
-        root.setBackgroundColor(0xFF0E0F1A);
+        root.setBackgroundColor(0xFF0B090E);
         root.addView(web, new android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(root);
+        // Oyun hazır olana kadar (en çok 6 sn) çizimi beklet: bu sırada sistemin açılış ekranı görünür
+        root.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override public boolean onPreDraw() {
+                if (!ready) return false;
+                root.getViewTreeObserver().removeOnPreDrawListener(this);
+                return true;
+            }
+        });
+        new Handler(Looper.getMainLooper()).postDelayed(() -> { ready = true; root.invalidate(); }, 6000);
+        // Uzun basınca seçim/menü çıkmasın, kaydırma çubuğu görünmesin (oyun hissi)
+        web.setOnLongClickListener(v -> true);
+        web.setLongClickable(false);
+        web.setHapticFeedbackEnabled(false);
+        web.setVerticalScrollBarEnabled(false);
+        web.setHorizontalScrollBarEnabled(false);
+        if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true);
+        immersive();
+        askNotifications();
 
         // Kenardan kenara ekran: durum çubuğu, gezinme çubuğu ve kamera çentiği boşlukları
         root.setOnApplyWindowInsetsListener((v, insets) -> {
@@ -85,6 +126,10 @@ public class MainActivity extends Activity {
         s.setAllowFileAccess(false);
         s.setTextZoom(100);
         s.setMediaPlaybackRequiresUserGesture(false);
+        s.setOffscreenPreRaster(true);
+        s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
 
@@ -148,6 +193,56 @@ public class MainActivity extends Activity {
         if (resultCode == RESULT_OK && data != null && data.getData() != null) result = new Uri[]{data.getData()};
         fileCallback.onReceiveValue(result);
         fileCallback = null;
+    }
+
+    /** Tam ekran oyun modu: durum ve gezinme çubukları gizli; kenardan kaydırınca bir süreliğine görünür. */
+    private void immersive() {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                getWindow().setDecorFitsSystemWindows(false);
+                WindowInsetsController c = getWindow().getInsetsController();
+                if (c != null) {
+                    c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                    c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                }
+            } else {
+                getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+            }
+        } catch (Exception ignored) { }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) immersive();
+    }
+
+    /** Android 13+ bildirim izni: bir kez sorulur. */
+    private void askNotifications() {
+        try {
+            GameAlarm.channel(this);
+            if (Build.VERSION.SDK_INT < 33) return;
+            SharedPreferences p = getSharedPreferences("oyun", MODE_PRIVATE);
+            if (p.getBoolean("bildirimSoruldu", false)) return;
+            p.edit().putBoolean("bildirimSoruldu", true).apply();
+            if (checkSelfPermission("android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED)
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    try { requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 77); } catch (Exception ignored) { }
+                }, 4000);
+        } catch (Exception ignored) { }
+    }
+
+    // Uygulamadan çıkınca bildirimler kurulur (ganimet doldu / günlük ödül), dönünce iptal edilir
+    @Override protected void onStop() {
+        super.onStop();
+        GameAlarm.schedule(this);
+    }
+    @Override protected void onStart() {
+        super.onStart();
+        GameAlarm.cancelAll(this);
     }
 
     // Arka plana alınınca oyun durur; dönünce "sen yokken" kazancı hesaplanır
@@ -215,6 +310,55 @@ public class MainActivity extends Activity {
     }
 
     private class Bridge {
+        /** Oyun ilk ekranını hazırladı: açılış ekranı kalkar. */
+        @JavascriptInterface
+        public void ready() {
+            runOnUiThread(() -> {
+                ready = true;
+                try { if (web != null && web.getParent() instanceof View) ((View) web.getParent()).invalidate(); } catch (Exception ignored) { }
+            });
+        }
+
+        /** Gerçek titreşim motoru: "40" tek darbe, "30,40,60" bekle-titre-bekle dizisi. Süreye göre şiddet. */
+        @JavascriptInterface
+        public void vib(String pat) {
+            try {
+                final Vibrator v = vibrator;
+                if (v == null || pat == null || pat.isEmpty() || !v.hasVibrator()) return;
+                String[] a = pat.split(",");
+                if (Build.VERSION.SDK_INT >= 26) {
+                    if (a.length == 1) {
+                        long ms = Math.max(5, Math.min(400, Long.parseLong(a[0].trim())));
+                        int amp = (int) Math.min(255, 70 + ms * 3);
+                        v.vibrate(VibrationEffect.createOneShot(ms, amp));
+                    } else {
+                        long[] t = new long[a.length + 1];
+                        int[] amp = new int[a.length + 1];
+                        t[0] = 0; amp[0] = 0;
+                        for (int i = 0; i < a.length; i++) {
+                            t[i + 1] = Math.max(1, Math.min(600, Long.parseLong(a[i].trim())));
+                            amp[i + 1] = (i % 2 == 0) ? (int) Math.min(255, 90 + t[i + 1] * 2) : 0;
+                        }
+                        v.vibrate(VibrationEffect.createWaveform(t, amp, -1));
+                    }
+                } else {
+                    long[] t = new long[a.length + 1];
+                    for (int i = 0; i < a.length; i++) t[i + 1] = Long.parseLong(a[i].trim());
+                    v.vibrate(a.length == 1 ? new long[]{0, t[1]} : t, -1);
+                }
+            } catch (Exception ignored) { }
+        }
+
+        /** Bildirim metinleri oyunun dilinde saklanır. */
+        @JavascriptInterface
+        public void notifTexts(String lootTitle, String lootBody, String dailyTitle, String dailyBody) {
+            try {
+                getSharedPreferences("oyun", MODE_PRIVATE).edit()
+                        .putString("n1t", lootTitle).putString("n1b", lootBody)
+                        .putString("n2t", dailyTitle).putString("n2b", dailyBody).apply();
+            } catch (Exception ignored) { }
+        }
+
         /** Yedeği İndirilenler klasörüne yazar; yazılan yeri döndürür, olmazsa boş metin. */
         @JavascriptInterface
         public String saveFile(String name, String content) {

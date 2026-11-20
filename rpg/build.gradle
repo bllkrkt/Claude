@@ -6,8 +6,8 @@ android {
         applicationId 'com.bilal.efsaneavcisi'
         minSdk 24
         targetSdk 35
-        versionCode 27
-        versionName '27.0'
+        versionCode 28
+        versionName '28.0'
     }
     // Aynı imza = güncellemeler eskisinin üzerine kurulur, oyun kaydı silinmez. Bu anahtarı değiştirme.
     signingConfigs {
@@ -18,7 +18,17 @@ android {
             keyPassword 'android'
         }
     }
-    buildTypes { debug { signingConfig signingConfigs.debug } }
+    buildTypes {
+        debug { signingConfig signingConfigs.debug }
+        // v28: kullanıcıya verilen sürüm: hata ayıklama kapalı, R8 ile küçültülmüş, AYNI imza (güncelleme üstüne kurulur)
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    lint { checkReleaseBuilds false; abortOnError false }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 dependencies { implementation 'androidx.webkit:webkit:1.12.1' }

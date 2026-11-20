@@ -1,5 +1,9 @@
 /* Efsane Avcısı — İngilizce sözlük (anahtar: Türkçe metin). Düzeltmeleri burada yap. */
 window.EN_DICT={
+"💰 Ganimetin doldu!": "💰 Your loot is full!",
+"Sen yokken kahramanın savaşmaya devam etti. Gel, ganimetini topla!": "Your hero kept fighting while you were away. Come collect your loot!",
+"🎁 Günlük ödülün hazır": "🎁 Your daily reward is ready",
+"Bugünün giriş ödülü seni bekliyor. Seriyi bozma!": "Today's login reward is waiting. Don't break the streak!",
 "Sınıfına özel dal. Sınıf değiştirirsen bu daldaki puanlar geri verilir.": "Class-specific branch. If you change class, points in this branch are refunded.",
 "🌳 Sınıf dalındaki {0} ustalık puanı geri verildi": "🌳 {0} mastery points from the class branch were refunded",
 "Büyük yenilenme!": "Big overhaul!",

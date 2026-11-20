@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0c16">
 <title>Efsane Avcısı</title>
-<script>/* v25: APK'da kenar boşluğunu Android veriyor; sayfa ayrıca eklerse çift olur */if(window.AndroidBridge)document.documentElement.classList.add('apk');setTimeout(function(){document.documentElement.classList.add('hzr')},2500)</script>
+<script>/* v25: APK'da kenar boşluğunu Android veriyor; sayfa ayrıca eklerse çift olur */if(window.AndroidBridge)document.documentElement.classList.add('apk');setTimeout(function(){document.documentElement.classList.add('hzr');try{window.AndroidBridge&&AndroidBridge.ready&&AndroidBridge.ready()}catch(e){}},2500)</script>
 <style>
 :root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}html.apk{--sat:0px;--sab:0px}
 html:not(.hzr) body{opacity:0}body{transition:opacity .3s ease}
@@ -583,7 +583,7 @@ ICO.init();ICO.emoStart();document.querySelectorAll('#tabs button').forEach(b=>{
 document.getElementById('ciG').innerHTML=ICO.cur('gold');document.getElementById('ciD').innerHTML=ICO.cur('gem');
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='27.0';let titleOn=false;
+const VER='28.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Envanter':'Inventory','Karakter':'Character','Görevler':'Quests','Nadirlik':'Rarity','Seviye':'Level','Yeni':'Newest','Yuva':'Slot','Sırala:':'Sort:','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -1068,7 +1068,7 @@ function beep(f,d,type,vol,slide){if(!S.set.sound)return;try{AC=AC||new (window.
   const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
   g.gain.setValueAtTime(vol||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(outS());o.start(t);o.stop(t+d)}catch(e){}}
 function tune(ns,gap,type){ns.forEach((f,i)=>setTimeout(()=>beep(f,.16,type||'triangle',.07),i*gap))}
-function vib(p){if(S.set.vib&&touched&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+function vib(p){if(!S.set.vib)return;const A=window.AndroidBridge;if(A&&A.vib){try{A.vib(Array.isArray(p)?p.join(','):String(p))}catch(e){}return}if(touched&&navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
 
 /* ======================= GÖRSEL EFEKTLER ======================= */
 const stage=$('stage');let D3=null;
@@ -2133,7 +2133,7 @@ if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td'
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
 if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
-giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);if(S.cls&&S.nv>=22&&S.nv<24)enqueue(news24);if(S.cls&&S.nv>=20&&S.nv<25)enqueue(news25);requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.add('hzr')));$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
+giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);if(S.cls&&S.nv>=22&&S.nv<24)enqueue(news24);if(S.cls&&S.nv>=20&&S.nv<25)enqueue(news25);requestAnimationFrame(()=>requestAnimationFrame(()=>{document.documentElement.classList.add('hzr');try{const A=window.AndroidBridge;if(A&&A.ready)A.ready();if(A&&A.notifTexts)A.notifTexts(ICO.strip(T('💰 Ganimetin doldu!')),T('Sen yokken kahramanın savaşmaya devam etti. Gel, ganimetini topla!'),ICO.strip(T('🎁 Günlük ödülün hazır')),T('Bugünün giriş ödülü seni bekliyor. Seriyi bozma!'))}catch(e){}}));$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
 save(true);setTimeout(autoBk,6000);if(!window.__noTitle)showTitle();requestAnimationFrame(fpsLoop);
