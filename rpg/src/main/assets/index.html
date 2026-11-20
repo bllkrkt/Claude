@@ -55,7 +55,7 @@ h2{font-size:20px;margin:6px 0 12px;font-weight:800}h3{font-size:12px;color:var(
 .dots .bossT{font-size:11px;color:#ff7b7b;font-weight:800;letter-spacing:1px;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.4}}
 /* ---------- sahne ---------- */
-#stage{flex:1;position:relative;margin:0 10px;border-radius:24px;overflow:hidden;min-height:0;border:1px solid var(--line2);touch-action:manipulation;box-shadow:0 10px 30px #0008,inset 0 0 0 1px #ffffff08;isolation:isolate}
+#stage{flex:1;position:relative;margin:0 10px;border-radius:24px;overflow:hidden;min-height:0;border:1px solid var(--line2);touch-action:none;box-shadow:0 10px 30px #0008,inset 0 0 0 1px #ffffff08;isolation:isolate}
 #sky,#far,#parts,#ground{position:absolute;inset:0;pointer-events:none}
 #far span{position:absolute;bottom:25%;opacity:.42;filter:brightness(.55) saturate(.7) blur(.4px)}
 #ground{top:auto;height:31%;background:radial-gradient(ellipse 70% 40% at 50% 0,#ffffff1c,transparent 70%),linear-gradient(#0000,var(--gnd) 28%,#0009)}
@@ -273,6 +273,17 @@ textarea{width:100%;height:100px;background:#0008;color:var(--tx);border:1px sol
 .npc{display:flex;gap:12px;align-items:flex-start}.npc .e{font-size:48px;flex:none}.npc p{margin:0;font-size:14.5px;line-height:1.6}
 .fl.c{-webkit-text-stroke:1px #7a2a00;animation-duration:1.05s}.fl.fin{color:#ffb070}.fl.fin::before{content:"BİTİRİCİ";display:block;font-size:10px;letter-spacing:2px;text-align:center;color:#ff7a3d}.fl.c.fin::before{content:"KRİTİK BİTİRİCİ";color:#ff9a1f}
 #flash{position:fixed;inset:0;pointer-events:none;z-index:8;opacity:0;background:#fff}
+/* v24 ULTİ düğmesi (dolum halkası) ve kaçınma uyarısı */
+#ultBtn{position:absolute;right:10px;bottom:12px;z-index:9;width:64px;height:64px;border-radius:50%;border:none;padding:0;background:conic-gradient(#ffd56a var(--p,0%),#ffffff1f 0);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px #0008;color:#fff}
+#ultBtn::before{content:'';position:absolute;inset:5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3c4170,#15172a)}
+#ultBtn span{position:relative;font-size:22px;line-height:1;opacity:.55}#ultBtn b{position:relative;font-size:10px;letter-spacing:1px;font-weight:800;opacity:.6}
+#ultBtn.rdy{animation:ultP .55s ease-in-out infinite alternate}#ultBtn.rdy::before{background:radial-gradient(circle at 35% 30%,#fff1b8,#e08a1a 70%)}#ultBtn.rdy span,#ultBtn.rdy b{opacity:1;color:#3a1a00}
+@keyframes ultP{from{box-shadow:0 0 0 2px #ffd56a,0 0 14px #ffd56a;transform:scale(1)}to{box-shadow:0 0 0 4px #fff,0 0 34px #ffb347;transform:scale(1.08)}}
+#ultBtn[hidden],#dgHint[hidden]{display:none}
+#dgHint{position:absolute;left:50%;bottom:24%;transform:translateX(-50%);z-index:9;display:flex;gap:12px;align-items:center}
+#dgHint b{font-size:22px;font-weight:900;color:#fff;text-shadow:0 0 12px #ff2a2a,0 2px 0 #7a0010;animation:dgP .25s infinite alternate;white-space:nowrap}
+#dgHint button{width:50px;height:50px;border-radius:50%;border:2px solid #ff8a8a;background:#3a0a14dd;color:#fff;font-size:24px;font-weight:900;box-shadow:0 0 16px #ff2a2a88}
+@keyframes dgP{from{transform:scale(1)}to{transform:scale(1.12)}}
 /* v22 hız çizgileri (bitirici / ağır vuruş) */
 #spd{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;background:repeating-conic-gradient(from 0deg at 55% 40%,#fff0 0deg 2.6deg,#ffffff38 2.6deg 3.2deg);-webkit-mask:radial-gradient(circle at 55% 40%,#0000 22%,#000 70%);mask:radial-gradient(circle at 55% 40%,#0000 22%,#000 70%)}
 #spd.on{animation:spd .32s ease-out}@keyframes spd{0%{opacity:.95;transform:scale(1.12)}100%{opacity:0;transform:scale(1)}}#flash.w{animation:flw .14s}#flash.r{background:#ff1a1a;animation:flr .3s}
@@ -425,6 +436,7 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
         <button id="evBtn" hidden></button>
         <div id="fateBar"></div>
         <div id="vigS"></div>
+        <button id="ultBtn" hidden aria-label="ULTİ"><span>⚡</span><b data-t>ULTİ</b></button><div id="dgHint" hidden><button data-dg="-1">⇠</button><b data-t>KAYDIR!</b><button data-dg="1">⇢</button></div>
         <button id="defBtn" hidden><i data-t style="font-style:normal">🛡️ SAVUN!</i><small id="defN"></small></button>
       </div>
       <div id="pbox"><div class="php"><i id="pHp"></i><span id="pHpT"></span></div><div id="pSt" data-a="statInfo"></div></div>
@@ -460,7 +472,7 @@ h3::before,h3::after{content:'';flex:1;height:1px;background:linear-gradient(90d
 <script>
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='23.0';let titleOn=false;
+const VER='24.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -727,7 +739,7 @@ function dur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h?h+T(' 
 function fresh(){return {v:2,lvl:1,xp:0,gold:0,gems:0,ess:0,pts:0,st:{str:0,vit:0,agi:0,luck:0},hp:null,potions:3,eq:{},inv:[],
   zone:0,floors:ZONES.map(()=>1),maxF:ZONES.map((_,i)=>i?0:1),kills:0,auto:true,autoAtk:true,autoSk:true,aaSp:1,aaSeen:false,skin:'def',skins:{def:1},nextId:1,seen:false,
   cls:null,skl:[1,1,1,1],pets:{},pet:null,ach:{},bossFirst:{},daily:{day:'',claimed:false,streak:0,last:'',q:[],bonus:false},
-  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N,deep:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,zv:2,invX:0,elog:[],wev:{wk:0,tok:0,cl:[]},title:'',titles:{},tu:{},tut:{},perfAsk:0,advDay:'',fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),fx:detFx(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
+  lastSeen:Date.now(),arena:{left:3,best:0},runes:{},story:{},nv:0,ultT:0,dgT:0,tal:{},tower:{best:0},dung:{left:{gold:DUNG_N,ess:DUNG_N,rune:DUNG_N,deep:DUNG_N},best:{}},duel:{left:DUEL_N,tr:0,wins:0,best:0,lg:0,opp:null},reb:{n:0,souls:0,up:{}},tot:{kills:0,boss:0,leg:0,gold:0,elite:0,crits:0,taps:0,skills:0,forges:0,maxUp:0,maxCombo:0,chests:0,souls:0,blocks:0,duelW:0,dungRuns:0,runeT:0},lastBk:0,zv:2,invX:0,elog:[],wev:{wk:0,tok:0,cl:[]},title:'',titles:{},tu:{},tut:{},perfAsk:0,advDay:'',fate:{best:0,runs:0},bst:{},zq:{},ev:0,set:{lang:detLang(),fx:detFx(),autoJ:0,autoJM:'sell',sound:true,vib:true,d3:true,music:true,vol:.8,mvol:.6,flash:true,bgFight:true,autoBk:true,autoPot:true}}}
 let S=fresh();
 /* bozuk kayıt oyunu kilitlemesin: okunamayan kaydı ayrı anahtara sakla, temiz başla */
 function load(){let r=null;try{r=localStorage.getItem(SAVE_KEY);if(r)applySave(JSON.parse(r))}catch(e){try{if(r)localStorage.setItem(SAVE_KEY+'-bozuk',r)}catch(x){}S=fresh()}}
@@ -1000,7 +1012,7 @@ function spawn(pre){clearTimeout(spawnT);const z=ZONES[S.zone],f=S.floors[S.zone
   else if(boss){const b=z.boss[(f/10-1)%3];M={e:b[0],n:b[1],boss:true,max:Math.round(mHp(g)*(12+4*Math.min(3,f/10))*(evIs('boss')?.8:1)),atk:mAtk(g)*1.45,int:1500,timer:BOSS_T,zb:1}}
   else{M=mkMon(z,f,g);if(S.cls){const n=Math.min(waveSize(g),KPF-S.kills)-1;for(let i=0;i<n;i++)W.push(mkMon(z,f,g))}}
   if(!pre||M.hp==null)M.hp=M.max;M.t=M.boss?-1300:0;M.lv=M.fate?fateF:M.tower?towerG(S.tower.best+1):M.duel?duelOn.lvl:M.dung||M.arena?gBest():g;if(M.boss||M.duel){M.spT=M.duel?rnd(5000,7000):rnd(5500,7500);M.tele=0}hideDef();R.last=false;
-  R.wkT=0;R.wkN=rnd(5000,8000);weakHide();unfreeze();
+  R.wkT=0;R.wkN=rnd(5000,8000);weakHide();unfreeze();$('dgHint').hidden=true;if(D3&&D3.charge)D3.charge(false);R.ultOn=0;updUlt();
   if(D3)D3.spawn(M.n.replace(/^Elit /,''),M.e,{boss:M.boss&&!M.arena,elite:M.elite,arena:M.arena,hero:M.duel?M.cls:null,skin:M.duel?duelOn.sk:null,gear:M.duel?duelOn.gear:null,aura:M.afx?AFX[M.afx[0]].h:null,scale:M.afx&&M.afx.includes('giant')?1.25:1});
   if(M.zb&&!pre)setTimeout(()=>sfx('bossIn'),200);
   if(D3){if(D3.shieldFx)D3.shieldFx(M.sh>0);if(D3.packCount)D3.packCount(M.pack||0)}
@@ -1018,7 +1030,7 @@ function attack(mult,o){o=o||{};if(!M||M.dead||dead||paused())return 0;if(R.froz
   let d=atkNow()*rnd(.88,1.12)*mult,amb=0;if(o.src==='tap')d*=1+comboB();if(M.afx&&M.afx.includes('armor'))d*=.6;if(M.stun>0)d*=1.5;if(o.src==='skill')d*=1+P.skD/100;if(M.boss&&P.bossD)d*=1+P.bossD/100;const E=P.e||{};if(E.exec&&M.hp<M.max*.3)d*=1+.6*E.exec;if(E.swift&&R.combo>=20)d*=1+.25*E.swift;
   if(S.cls==='asn'&&o.src!=='pet'&&o.raw==null){if(tl('amb')&&!M.ambU){M.ambU=1;amb=1;d*=1+.25*tl('amb')}if(tl('exe')&&M.hp<M.max*.3)d*=1+.1*tl('exe')}if(o.raw!=null)d=o.raw;
   const c=o.raw==null&&(o.sure||amb||Math.random()*100<critNow());if(c){d*=P.critDmg/100;S.tot.crits++;qAdd('crit');if(E.vamp&&o.src!=='pet'&&S.hp<P.hp)S.hp=Math.min(P.hp,S.hp+Math.max(1,Math.round(P.hp*.02*E.vamp)))}
-  d=Math.max(1,Math.round(d));if(c&&S.cls==='asn'&&tl('ven')&&o.src!=='pet'){const pd=Math.max(1,Math.round(d*.04*tl('ven')));if(!(M.psT>0)||pd>M.psD)M.psD=pd;M.psT=3000;M.psA=0}if(amb)shout(T('🥷 PUSU!'),'#c2a8ff');if(M.arena){const k0=arenaLvl();arenaDmg+=d;const k1=arenaLvl();if(k1>k0){banner(T('⭐ KADEME ')+k1+' ⭐','lv');tune([523,784,1047],70);confetti(20)}}else if(M.sh>0){d=Math.max(1,Math.round(d*(o.src==='skill'||o.fin?2:.5)));M.sh=Math.max(0,M.sh-d);if(!M.sh){M.stun=1500;shout(T('🛡️ KALKAN KIRILDI!'),'#9fd8ff');scrFlash('w');if(D3&&D3.shieldFx)D3.shieldFx(false)}}else{M.hp-=d;if(M.hlC>0)M.hlD=(M.hlD||0)+d}
+  d=Math.max(1,Math.round(d));if(c&&S.cls==='asn'&&tl('ven')&&o.src!=='pet'){const pd=Math.max(1,Math.round(d*.04*tl('ven')));if(!(M.psT>0)||pd>M.psD)M.psD=pd;M.psT=3000;M.psA=0}if(amb)shout(T('🥷 PUSU!'),'#c2a8ff');if(!o.ult&&o.raw==null&&o.src!=='pet')ultAdd((o.src==='tap'?1.1:o.src==='auto'?.55:1.6)+(c?1.2:0));if(M.arena){const k0=arenaLvl();arenaDmg+=d;const k1=arenaLvl();if(k1>k0){banner(T('⭐ KADEME ')+k1+' ⭐','lv');tune([523,784,1047],70);confetti(20)}}else if(M.sh>0){d=Math.max(1,Math.round(d*(o.src==='skill'||o.fin?2:.5)));M.sh=Math.max(0,M.sh-d);if(!M.sh){M.stun=1500;shout(T('🛡️ KALKAN KIRILDI!'),'#9fd8ff');scrFlash('w');if(D3&&D3.shieldFx)D3.shieldFx(false)}}else{M.hp-=d;if(M.hlC>0)M.hlD=(M.hlD||0)+d}
   if(!o.fx&&o.src!=='pet'){R.hitN=(R.hitN||0)+1;if(E.storm&&R.hitN%5===0)setTimeout(()=>{if(M&&!M.dead){if(D3&&D3.bolt&&tab==='battle')D3.bolt();attack(1.8*E.storm,{src:'pet',fx:1,sure:true})}},90);if(E.twin&&o.src!=='skill'&&Math.random()*100<15*E.twin)setTimeout(()=>attack(.6*mult,{src:'pet',fx:1}),130)}
   const m=monPos(),x=o.x!=null?o.x:m.x+rnd(-m.w*.3,m.w*.3),y=o.y!=null?o.y:m.y+rnd(-m.h*.3,m.h*.2);
   const rt=Math.min(1,d/Math.max(1,M.max)),fs=o.src==='pet'?16:Math.round((c?32:22)+Math.min(20,rt*90)+(o.fin?6:0));
@@ -1068,7 +1080,7 @@ function aaSheet(){openSheet(T('<h2>⚔️ Oto saldırı</h2><button class="btn 
   T('<p class="mut" style="text-align:center">Hızlı kademeler seviye atladıkça açılır. Dokunarak vurmak her hızda ekstra hasar ve kombo kazandırır.</p><button class="btn w100" data-a="close">Kapat</button>'))}
 const aaOpen=()=>S.tot.boss>0||S.reb.n>0,asOpen=()=>S.lvl>=15||S.reb.n>0;
 function swing(auto){const n=performance.now();R.step=n-R.stepT<1300?(R.step+1)%3:0;R.stepT=n;const h=$('heroE');h.classList.remove('lunge');void h.offsetWidth;h.classList.add('lunge');if(D3)D3.heroAttack(R.step);sfx(S.cls==='arc'?'arrow':S.cls==='mag'?'magic':'swing',auto?.5:1);return R.step}
-function autoSkill(){if(!S.cls)return;const sk=CLS[S.cls].sk;for(let i=0;i<4;i++){const s=sk[i];if(S.lvl<s.lv||R.cd[i]>0)continue;
+function autoSkill(){if(!S.cls)return;if(R.ult>=100&&M&&!M.dead&&(M.boss||M.elite||M.dung||M.tower||M.fate||W.filter(w=>!w.dead).length>=2))useUlt();const sk=CLS[S.cls].sk;for(let i=0;i<4;i++){const s=sk[i];if(S.lvl<s.lv||R.cd[i]>0)continue;
   if(s.t==='hit'||s.t==='batk'||s.t==='bcrit'){useSkill(i);return}
   if((s.t==='shield'||s.t==='dodge')&&(S.hp<P.hp*.6||M&&M.tele>0)&&R.shield<=0&&R.dodge<=0){useSkill(i);return}
   if(s.t==='heal'&&S.hp<P.hp*.5){useSkill(i);return}}}
@@ -1092,7 +1104,7 @@ function kill(){M.dead=true;M.hp=0;hideDef();const g=G(),boss=M.boss,el=M.elite,
   if(D3&&!M.wd)D3.die(boss);const me=$('mon');me.classList.remove('hit','in');me.classList.add('dead');fxBoom(m.x,m.y,boss?'#ff5263':'#fff');sfx('kill',boss?1.3:1);setTimeout(()=>sfx('coin',boss?1.2:.8),110);if(boss)scrFlash('w');
   if(boss&&tab==='battle'){vib([40,40,80]);tune([392,523,659,784],90);shake(true)}
   if(tab!=='battle')bgSt.k++;
-  S.kills++;
+  ultAdd(boss?15:3);S.kills++;
   if(S.kills>=(boss?1:KPF)){S.kills=0;W=[];
     if(!isLast(z)&&f>=ZF){const nw=!S.maxF[z+1];if(nw){S.maxF[z+1]=1;logEv('🗺️ '+T('Yeni bölge: {0}',ZONES[z+1].n));setTimeout(()=>fanfare('unlock'),400)}S.zone=z+1;S.auto=true;setStage();
       banner((nw?T('🗺️ YENİ BÖLGE: '):'🗺️ ')+ZONES[z+1].n.toLocaleUpperCase(LANG),'zone');toast('🗺️ '+ZONES[z+1].e+' '+ZONES[z+1].n+(nw?T(' açıldı!'):'')+T(' Yolculuk devam ediyor'),'big');if(nw)confetti(60);storyCheck()}
@@ -1189,10 +1201,17 @@ setInterval(()=>{const now=performance.now(),dt=Math.min(250,now-lastT);lastT=no
   if(tab==='battle'&&M&&!M.dead){if(weakOn){weakT-=dt;weakFollow();if(weakT<=0)weakHide()}else if(!(M.tele>0)){R.wkT=(R.wkT||0)+dt;if(R.wkT>=(R.wkN||6000))weakShow()}}
   if(evOn){evT-=dt;if(evT<=0||tab!=='battle'&&evT<20000)evHide()}
   if(M&&!M.dead&&M.afx&&M.afx.includes('regen')){M.rg=(M.rg||0)+dt;if(M.rg>=1000){M.rg=0;M.hp=Math.min(M.max,M.hp+M.max*.02);updMon()}}
-  if(M&&!M.dead&&!(M.tele>0)&&!(M.stun>0)){M.t+=dt;if(M.t>=M.int){M.t=0;monsterHit()}$('mAt').style.width=Math.max(0,Math.min(100,M.t/M.int*100))+'%'}
+  if(M&&!M.dead&&M.ch>0){if(tab!=='battle'){chargeEnd(true);M.t=0;monsterHit()}else{M.ch-=dt;if(M.ch<=0)chargeEnd()}}
+  else if(M&&!M.dead&&!(M.tele>0)&&!(M.stun>0)){M.t+=dt;if(M.t>=M.int){M.t=0;if(chOk()&&Math.random()<.16)chargeStart();else monsterHit()}$('mAt').style.width=Math.max(0,Math.min(100,M.t/M.int*100))+'%'}
   /* ilk 10 katta arkadakiler saldırmaz (yeni oyuncu alışsın) */
   if(W.length&&M&&!M.dead&&!dead&&G()>10){let k=0;for(const w of W){if(w.dead)continue;if(k++>=2)break;w.t=(w.t||0)+dt;if(w.t>=w.int){w.t=0;waveHit(w);if(dead)break}}}},50);
 $('bHit').addEventListener('pointerdown',tap);
+$('ultBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();useUlt()});
+$('dgHint').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-dg]');if(!b)return;e.preventDefault();e.stopPropagation();dodgeSwipe(+b.dataset.dg)});
+/* kaydırma: parmak hareket ederken algılanır (sahnede tarayıcı kaydırması kapalı, yoksa dokunuş iptal edilir) */
+{let sx=0,sy=0,st=0,on=false;const chk=e=>{if(!on)return;const dx=e.clientX-sx,dy=e.clientY-sy;if(performance.now()-st<650&&Math.abs(dx)>32&&Math.abs(dx)>Math.abs(dy)*1.2){on=false;dodgeSwipe(dx>0?1:-1)}};
+ stage.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;st=performance.now();on=true},{passive:true});
+ stage.addEventListener('pointermove',chk,{passive:true});stage.addEventListener('pointerup',e=>{chk(e);on=false},{passive:true});stage.addEventListener('pointercancel',()=>{on=false},{passive:true})}
 $('monW').addEventListener('pointerdown',tap);
 $('skills').addEventListener('pointerdown',e=>{const b=e.target.closest('.skb');if(!b)return;e.preventDefault();if(b.dataset.sk==='p')usePotion();else useSkill(+b.dataset.sk)});
 
@@ -1206,7 +1225,7 @@ function bossSpecial(){$('defBtn').hidden=true;if(D3){D3.telegraph(false);D3.big
   if(R.dodge>0){const h=heroPos();floatTxt(T('ISKA'),'m',h.x+10,h.y-30);return}
   banner('💥 '+M.spN.toLocaleUpperCase(LANG),'boss');monsterHit(M.duel?2.5:3)}
 function block(){if(!M||M.dead||!(M.tele>0)||paused())return;M.tele=0;$('defBtn').hidden=true;M.spT=rnd(6500,9000)*(M.enr?.75:1);M.stun=2000;M.t=0;
-  S.tot.blocks++;qAdd('block');if(D3){D3.telegraph(false);D3.block()}const h=heroPos();floatTxt(T('SAVUŞTURDUN!'),'h',h.x+40,h.y-50);
+  S.tot.blocks++;qAdd('block');ultAdd(15);if(D3){D3.telegraph(false);D3.block()}const h=heroPos();floatTxt(T('SAVUŞTURDUN!'),'h',h.x+40,h.y-50);
   sfx('block');tune([880,1320],60);vib([20,20,60]);scrFlash('w');if(D3)D3.hitStop(.12);banner(T('🛡️ SAVUŞTURDUN! KARŞI SALDIRI'),'lv');setTimeout(()=>{swing();attack(3*(1+P.parry/100),{src:'skill',sure:true,pow:1.6,fin:true})},200)}
 function enrage(){M.enr=true;M.int*=.7;M.atk*=1.2;banner('😡 '+tn(M.n).toLocaleUpperCase(LANG)+T(' ÖFKELENDİ!'),'boss');say(tn(M.n),T('YETER! Şimdi gerçek gücümü göreceksin!'));
   $('mon').classList.add('enr');if(D3)D3.enrage();beep(70,.7,'sawtooth',.07,40);vib([80,40,80])}
@@ -1279,7 +1298,7 @@ let dungOn=null,dungT=0,dungKills=0,dungLoot=null,dungCh=0;
 const dungOk=k=>!!DUNG[k]&&(!DUNG[k].lock||DUNG[k].lock());
 function startDung(k){if(!S.cls||dead||busyMode()||!dungOk(k)||!(S.dung.left[k]>0))return;S.dung.left[k]--;dungOn=k;dungT=DUNG_T;dungKills=0;dungCh=0;dungLoot={gold:0,ess:0,runes:{},items:[],air:0};S.tot.dungRuns++;qAdd('dung');
   closeSheet();go('battle');banner(DUNG[k].i+' '+DUNG[k].n.toLocaleUpperCase(LANG),'zone');spawn();save()}
-function dungKill(){M.dead=true;M.hp=0;dungKills++;const gb=gBest(),m=monPos();
+function dungKill(){M.dead=true;M.hp=0;dungKills++;ultAdd(3);const gb=gBest(),m=monPos();
   if(dungOn==='gold'){const g=Math.round(gpk(gb)*(6+dungKills*.7)*(1+P.gold/100));dungLoot.gold+=g;S.gold+=g;S.tot.gold+=g;floatTxt('+'+fmt(g)+' 💰','g',m.x,m.y);fxCoins(6)}
   else if(dungOn==='ess'){const e=2+Math.floor(dungKills/3);dungLoot.ess+=e;S.ess+=e;floatTxt('+'+e+' 💠','x',m.x,m.y)}
   else if(dungOn==='deep'){const air=M.chest?DEEP_AIR*1.6:DEEP_AIR,a0=dungT;dungT=Math.min(DEEP_MAX,dungT+air);dungLoot.air+=dungT-a0;floatTxt(T('🫧 +{0} sn',tr(air/1000)),'h',m.x,m.y-50,20);
@@ -1708,6 +1727,25 @@ function openChest(ci,free){const c=CHESTS[ci],g=gBest();
   const it=makeItem(g,rollRar(c.w),null,c.set?pick(Object.keys(SETS)):null);giveItem(it);S.tot.chests++;qAdd('chest');updAll();save();
   const show=()=>itemSheet(it,c.e+' '+c.n+T('\'tan çıktı!'));
   if(it.r===3)legendary(it,show);else{tune(it.r===2?[440,660,880]:[440,550],90);if(it.r===2)confetti(30);if(busy())Q.unshift(show);else show()}return true}
+/* ===== v24 ULTİ: vuruş/kritik/öldürme/kaçış ile dolar, sınıfa özel sinematik süper saldırı ===== */
+const ULT={war:{n:T('Titan Darbesi'),i:'🌋',m:14},arc:{n:T('Gök Yağmuru'),i:'🌠',m:11},mag:{n:T('Meteor'),i:'☄️',m:16},asn:{n:T('Gölge Dansı'),i:'🌑',m:9}};
+const ultOpen=()=>S.lvl>=8||S.reb.n>0;
+function ultAdd(v){if(!v||!S.cls||!ultOpen())return;const was=R.ult>=100;R.ult=Math.min(100,(R.ult||0)+v);if(!was&&R.ult>=100){if(tab==='battle'){shout(T('⚡ ULTİ HAZIR!'),'#ffd56a');beep(880,.15,'triangle',.05,1320)}if(!S.ultT){S.ultT=1;toast(T('⚡ ULTİ hazır! Sağ alttaki parlayan düğmeye bas'),'big')}}updUlt()}
+function updUlt(){const b=$('ultBtn');if(!b)return;const op=!!S.cls&&ultOpen();b.hidden=!op;if(!op)return;b.style.setProperty('--p',(R.ult||0)+'%');b.classList.toggle('rdy',R.ult>=100)}
+function useUlt(){if(!(R.ult>=100)||!M||M.dead||dead||paused()||R.frozen>0||R.ultOn)return;const u=ULT[S.cls]||ULT.war;R.ult=0;R.ultOn=1;updUlt();M.stun=Math.max(M.stun||0,2400);if(M.ch>0)chargeEnd(true);
+  banner(u.i+' '+u.n.toLocaleUpperCase(LANG),'lv');scrFlash('w');vib([30,30,80]);tune([392,523,784,1047],70);S.tot.ults=(S.tot.ults||0)+1;
+  const hit=()=>{if(!R.ultOn)return;R.ultOn=0;if(!M||M.dead)return;W.filter(w=>!w.dead).slice(0,4).forEach(w=>hitW(w,u.m*.5,true));attack(u.m,{src:'skill',sure:true,pow:2.2,fin:true,ult:1});shake(true);spdFx()};
+  setTimeout(hit,3200);if(D3&&D3.ult&&tab==='battle')D3.ult(S.cls,hit);else{const m=monPos();fxBoom(m.x,m.y,'#ffd56a');setTimeout(hit,350)}}
+/* ===== v24 KAÇINMA: normal canavar ara sıra güçlü saldırı hazırlar; ekranı yana kaydırınca kaçılır, son anda kaçış = MÜKEMMEL (ağır çekim + karşı kritik) ===== */
+const chOk=()=>tab==='battle'&&ultOpen()&&M&&!M.boss&&!M.duel&&!M.arena&&!M.chest&&M.atk>0&&G()>=6&&!(R.frozen>0)&&!R.ultOn;
+function chargeStart(){M.ch=1100;M.chOn=1;R.dgOK=0;R.dgPf=0;$('dgHint').hidden=false;if(D3&&D3.charge)D3.charge(true);beep(240,.3,'sawtooth',.04,520);vib(25);
+  if(!S.dgT){S.dgT=1;toast(T('💨 Güçlü saldırı geliyor! Ekranı sağa ya da sola KAYDIR, kaç!'),'big')}}
+function chargeEnd(cancel){$('dgHint').hidden=true;if(D3&&D3.charge)D3.charge(false);if(!M)return;const was=M.chOn;M.chOn=0;M.ch=0;if(cancel||!was)return;M.t=0;
+  if(R.dgOK){if(D3)D3.monAttack(true,true);const h=heroPos();floatTxt(R.dgPf?T('MÜKEMMEL!'):T('KAÇTIN!'),R.dgPf?'c':'m',h.x+10,h.y-40,R.dgPf?28:22);S.tot.dodges=(S.tot.dodges||0)+1;
+    if(R.dgPf){ultAdd(25);shout(T('✨ MÜKEMMEL KAÇIŞ!'),'#7fffd4');tune([660,990],60);setTimeout(()=>{if(M&&!M.dead&&!dead){swing();attack(2.5,{src:'skill',sure:true,pow:1.6,fin:true})}},180)}else ultAdd(8)}
+  else{if(D3)D3.monAttack(false);monsterHit(1.5)}}
+function dodgeSwipe(dir){if(!M||!(M.ch>0)||R.dgOK||dead||paused())return;R.dgOK=1;R.dgPf=M.ch<=480?1:0;$('dgHint').hidden=true;if(D3&&D3.charge)D3.charge(false);
+  if(D3&&D3.roll)D3.roll(dir,R.dgPf);else{const h=$('heroE');h.classList.remove('lunge');void h.offsetWidth;h.classList.add('lunge')}sfx('swing',.8);vib(15)}
 /* v23: toplu sandık (en fazla 10; para ve çanta yerine göre) — her eşya için ayrı pencere yerine tek özet */
 const CH_N=10;
 function chestN(ci,gem){const c=CHESTS[ci];if(!c)return 0;const cost=gem?c.gem:(c.p?c.p(gBest()):0);if(!cost)return 0;return Math.max(0,Math.min(CH_N,Math.floor((gem?S.gems:S.gold)/cost),invMax()-S.inv.length))}
@@ -1802,7 +1840,7 @@ const ACT={
   clsChange:()=>{if(!S.cls)return classSheet();openSheet(T('<h2>Sınıf değiştir</h2><p class="mut">Eşyaların, seviyen ve statların korunur; yeteneklerin yeni sınıfa göre değişir (yetenek seviyeleri korunur).</p><div class="row"><button class="btn grow" data-a="close">Vazgeç</button><button class="btn gem grow" data-a="clsChangeOk" ')+(S.gems<100?'disabled':'')+T('>💎 100 ile değiştir</button></div>'))},
   clsChangeOk:()=>{if(S.gems<100)return;S.gems-=100;S.cls=null;classSheet()},
   pickCls:v=>{const rf=talCls(v);hpKeep(()=>{S.cls=v});if(rf)setTimeout(()=>toast(T('🌳 Gölge dalındaki {0} ustalık puanı geri verildi',rf),'big'),900);S.seen=true;R.cd=[0,0,0,0];closeSheet();renderSkillBar();updAll();banner(CLS[v].e+' '+CLS[v].n.toLocaleUpperCase(LANG),'lv');confetti(40);save(true);
-    S.nv=22;if(!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);storyCheck()},
+    S.nv=24;if(!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);storyCheck()},
   set:v=>{S.set[v]=(v==='flash'||v==='shake'||v==='bgFight'||v==='autoPot'||v==='autoBk')?S.set[v]===false:!S.set[v];if(v==='shake'&&D3&&D3.setShake)D3.setShake(S.set.shake!==false);if(v==='vib')vib(40);if(v==='sound')beep(660,.1,'triangle',.06);ACT.settings();save()},
   buyPot:v=>{const n=+v,p=potPrice()*n;if(S.gold<p)return;S.gold-=p;S.potions+=n;beep(600,.1,'triangle',.05);toast('🧪 +'+n+T(' iksir'));updAll();renderSkillBar();save()},
   chest:v=>{const c=CHESTS[v];if(!c.p)return;const p=c.p(gBest());if(S.gold<p)return;if(S.inv.length>=invMax()){toast(T('🎒 Çanta dolu — önce eşya sat'));return}S.gold-=p;openChest(+v)},
@@ -1911,6 +1949,8 @@ function introSheet(){classSheet('<div style="text-align:center"><div style="fon
 function newsSheet(){classSheet(T(`<div style="text-align:center"><div style="font-size:56px">🎉</div><h2>Büyük güncelleme!</h2></div>
  <div class="card" style="font-size:13.5px;line-height:1.7">🧙 <b>Sınıflar</b>: Savaşçı, Okçu, Büyücü<br>✨ <b>4 yetenek</b> + kombo sistemi<br>⚒️ <b>Demirci</b>: eşyaları +15'e kadar geliştir, erit<br>🐾 <b>Yoldaşlar</b>: yanında savaşır (Kurt hediye!)<br>📜 <b>Günlük ödül, görevler, başarımlar</b><br>💎 <b>Elmas</b> ve 🌙 sen yokken kazanç<br>💀 <b>Elit canavarlar</b> ve tamamen yeni görünüm</div>
  <p class="mut" style="text-align:center">Tüm eşyaların ve ilerlemen yerinde. Şimdi sınıfını seç:</p>`))}
+function news24(){S.nv=24;save();openSheet('<div style="text-align:center"><div style="font-size:56px">⚡</div><h2>'+T('Savaş artık senin elinde!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
+  T('⚡ <b>ULTİ</b>: vurdukça, kritik attıkça ve canavar devirdikçe sağ alttaki halka dolar. Dolunca bas: her sınıfın sinematik süper saldırısı (Titan Darbesi, Gök Yağmuru, Meteor, Gölge Dansı) bütün dalgayı vurur<br>💨 <b>Kaçınma</b>: canavar kırmızı halkayla güçlü saldırı hazırlarsa ekranı sağa ya da sola <b>KAYDIR</b>. Son anda kaçarsan <b>MÜKEMMEL</b>: zaman yavaşlar, karşı kritik vurursun ve ulti dolar. Kaçamazsan darbe ağır gelir<br>🤖 Oto yetenek açıksa ulti zor anlarda kendiliğinden kullanılır')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
 function news22(){S.nv=22;save();openSheet('<div style="text-align:center"><div style="font-size:56px">🔱</div><h2>'+T('Derinlerden yenilikler!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
   T('⚔️ <b>Canlı savaş</b>: kahramanla canavar artık sahnede dönüp adım atıyor; canavarlar koşarak geliyor, türüne göre sıçrayıp çakılıyor, dalıyor, pençe atıyor; ölenler savrulup parçalanıyor')+'<br>'+T('🔱 <b>Batık Mabet</b>: Batık Şehir\'e ulaşınca Macera\'da yeni zindan. Her öldürme 🫧 süre kazandırır, Batık Sandık kesin Epik+ eşya verir<br>🐾 Yoldaşlar <b>Ulu</b> (Sv10) ve <b>Efsanevi</b> (Sv20) evrimde 3B olarak büyüyor, parlıyor, görünüşü değişiyor<br>🥷 Suikastçıya özel <b>Gölge</b> ustalık dalı: Pusu, Zehirli Bıçak, İnfaz, Kaybolma<br>🛠️ Birçok küçük hata düzeltmesi')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
 function news20(){S.nv=20;save();openSheet('<div style="text-align:center"><div style="font-size:56px">⚔️</div><h2>'+T('Dalga savaşı!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
@@ -1932,7 +1972,7 @@ if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td'
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
 if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
-giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
+giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);if(S.cls&&S.nv>=22&&S.nv<24)enqueue(news24);$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
 save(true);setTimeout(autoBk,6000);if(!window.__noTitle)showTitle();requestAnimationFrame(fpsLoop);
