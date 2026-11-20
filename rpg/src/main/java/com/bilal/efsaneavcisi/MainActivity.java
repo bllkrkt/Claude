@@ -61,6 +61,25 @@ public class MainActivity extends Activity {
     /** v28: oyun ilk karesini çizene kadar Android'in açılış ekranı ekranda kalır (boş/yarım sayfa görünmez). */
     private volatile boolean ready = false;
     private Vibrator vibrator;
+    private int topPx = 0;
+
+    private void sendTop() {
+        final WebView w = web;
+        if (w == null) return;
+        float d = getResources().getDisplayMetrics().density;
+        final int css = Math.round(topPx / (d <= 0 ? 1 : d));
+        try { w.evaluateJavascript("document.documentElement.style.setProperty('--sat','" + css + "px')", null); } catch (Exception ignored) { }
+    }
+
+    private void buzz(VibrationEffect e) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            vibrator.vibrate(e, android.os.VibrationAttributes.createForUsage(android.os.VibrationAttributes.USAGE_MEDIA));
+        } else {
+            vibrator.vibrate(e, new android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_GAME)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+        }
+    }
 
     @Override
     protected void onCreate(Bundle b) {
@@ -110,7 +129,10 @@ public class MainActivity extends Activity {
             } else {
                 top = insets.getSystemWindowInsetTop(); bottom = insets.getSystemWindowInsetBottom();
             }
-            v.setPadding(left, top, right, bottom);
+            // v29: üst boşluğu (kamera deliği) siyah bırakma; sayfaya bildir, üst bar arka planıyla dolsun
+            v.setPadding(left, 0, right, bottom);
+            topPx = top;
+            sendTop();
             return insets;
         });
 
@@ -138,6 +160,8 @@ public class MainActivity extends Activity {
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
                 return loader.shouldInterceptRequest(req.getUrl());
             }
+            @Override
+            public void onPageFinished(WebView view, String url) { sendTop(); }
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 return !HOST.equals(req.getUrl().getHost());
@@ -328,18 +352,19 @@ public class MainActivity extends Activity {
                 String[] a = pat.split(",");
                 if (Build.VERSION.SDK_INT >= 26) {
                     if (a.length == 1) {
-                        long ms = Math.max(5, Math.min(400, Long.parseLong(a[0].trim())));
-                        int amp = (int) Math.min(255, 70 + ms * 3);
-                        v.vibrate(VibrationEffect.createOneShot(ms, amp));
+                        long ms = Math.max(22, Math.min(400, Long.parseLong(a[0].trim()) * 2));
+                        int amp = (int) Math.min(255, 110 + ms * 2);
+                        buzz(VibrationEffect.createOneShot(ms, v.hasAmplitudeControl() ? amp : VibrationEffect.DEFAULT_AMPLITUDE));
                     } else {
                         long[] t = new long[a.length + 1];
                         int[] amp = new int[a.length + 1];
                         t[0] = 0; amp[0] = 0;
                         for (int i = 0; i < a.length; i++) {
                             t[i + 1] = Math.max(1, Math.min(600, Long.parseLong(a[i].trim())));
-                            amp[i + 1] = (i % 2 == 0) ? (int) Math.min(255, 90 + t[i + 1] * 2) : 0;
+                            if (i % 2 == 0) t[i + 1] = Math.max(25, t[i + 1]);
+                            amp[i + 1] = (i % 2 == 0) ? (v.hasAmplitudeControl() ? (int) Math.min(255, 120 + t[i + 1] * 2) : 255) : 0;
                         }
-                        v.vibrate(VibrationEffect.createWaveform(t, amp, -1));
+                        buzz(VibrationEffect.createWaveform(t, amp, -1));
                     }
                 } else {
                     long[] t = new long[a.length + 1];

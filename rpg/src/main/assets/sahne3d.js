@@ -1206,9 +1206,12 @@ API.enrage=function(){if(!monM||!monRoot)return;const m=monM,red=new T.Color(0x6
 /* karakter vitrini: Çanta/Kahraman ekranında dönen 3B kahraman */
 const SC={on:false};
 /* v27: vitrin sadece ekranda görünürken ve 30 kare/sn çizilir (önceden her sekmede 60 kare çiziyordu: menü takılması) */
-function scVis(){const e=SC.el;if(!e||!e.isConnected||!e.offsetParent)return false;if(SC.io)return SC.vis!==false;return true}
+function scVis(){const e=SC.ren&&SC.ren.domElement.parentElement;if(!e||!e.isConnected||!e.offsetParent)return false;const r=e.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight&&r.width>0}
 function renderSC(dt){SC.acc=(SC.acc||0)+dt;if(SC.acc<1/30)return;dt=SC.acc;SC.acc=0;SC.root.rotation.y+=dt*.55;if(SC.hm&&SC.hm.userData.orb)SC.hm.userData.orb.rotation.y+=dt*2.2;if(SC.pm&&SC.pm.userData.wings)SC.pm.userData.wings.forEach((w,i)=>w.rotation.z=(i?1:-1)*Math.sin(t*10)*.5);SC.ren.render(SC.scene,SC.cam)}
-API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.WebGLRenderer({antialias:true,alpha:true});SC.ren.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));SC.ren.outputEncoding=T.sRGBEncoding;SC.ren.toneMapping=T.ACESFilmicToneMapping;SC.ren.toneMappingExposure=1.1;
+API.showcase=function(el,o){try{if(!el)return false;
+  /* v29: telefon arka plana alınınca 3B bağlamı kaybolabilir: kaybolduysa vitrini baştan kur */
+  if(SC.ren&&(SC.lost||SC.ren.getContext().isContextLost())){try{SC.ren.dispose()}catch(e){}try{SC.ren.domElement.remove()}catch(e){}SC.ren=null;SC.key=null;SC.lost=false;if(SC.root)SC.root.clear&&SC.root.clear()}
+  if(!SC.ren){SC.ren=new T.WebGLRenderer({antialias:true,alpha:true});SC.ren.domElement.addEventListener('webglcontextlost',ev=>{ev.preventDefault();SC.lost=true},false);SC.ren.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));SC.ren.outputEncoding=T.sRGBEncoding;SC.ren.toneMapping=T.ACESFilmicToneMapping;SC.ren.toneMappingExposure=1.1;
     SC.scene=new T.Scene();SC.cam=new T.PerspectiveCamera(30,1,.1,60);SC.cam.position.set(0,1.45,5.6);SC.cam.lookAt(0,.95,0);
     SC.scene.add(new T.HemisphereLight(0xffffff,0x3a3050,.95));const d=new T.DirectionalLight(0xfff4e0,1.15);d.position.set(3,5,4);SC.scene.add(d);const d2=new T.DirectionalLight(0x9fb4ff,.6);d2.position.set(-4,2,-3);SC.scene.add(d2);
     try{const pm=new T.PMREMGenerator(SC.ren),rt=envFor({top:0x5a6aa8,bot:0x2a2e48,gnd:0x1a1c2a,sun:0xfff4e0,rim:0x9fb4ff},SC.ren,pm);if(rt)SC.scene.environment=rt.texture;pm.dispose()}catch(e){}
@@ -1218,7 +1221,7 @@ API.showcase=function(el,o){try{if(!el)return false;if(!SC.ren){SC.ren=new T.Web
   const id=JSON.stringify(o);if(id!==SC.id){SC.id=id;while(SC.root.children.length){const ch=SC.root.children[0];SC.root.remove(ch);dispose(ch)}
     SC.hm=bake((HERO[o.cls]||HERO.war)(o.skin||'def',o.gear));fit(SC.hm,1.8,1.5);SC.root.add(SC.hm);SC.pm=null;
     if(o.pet&&PETM[o.pet]){const pg=G(SC.root);pg.position.set(1.0,0,.35);pg.rotation.y=-.5;SC.pm=bake(PETM[o.pet]());fit(SC.pm,.8*(1+.15*(o.st||0)),1.1);if(SC.pm.userData.fly)SC.pm.position.y+=.5;pg.add(SC.pm);if(o.st>=1)try{SC.pm.traverse(n=>{if(n.isMesh&&n.material){n.material=n.material.clone()}});petEvo(pg,SC.pm,o.st)}catch(e){}}}
-  if(SC.el!==el){SC.el=el;SC.vis=true;try{if(SC.io)SC.io.disconnect();SC.io=new IntersectionObserver(es=>{for(const x of es)SC.vis=x.isIntersecting});SC.io.observe(el)}catch(e){SC.io=null}}SC.on=true;return true}catch(e){return false}};
+  SC.on=true;return true}catch(e){return false}};
 API.showcaseStop=()=>{SC.on=false};
 window.S3D=API;
 })();
