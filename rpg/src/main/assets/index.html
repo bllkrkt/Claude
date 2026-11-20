@@ -547,7 +547,7 @@ ICO.init();document.querySelectorAll('#tabs button').forEach(b=>{const sp=b.quer
 document.getElementById('ciG').innerHTML=ICO.cur('gold');document.getElementById('ciD').innerHTML=ICO.cur('gem');
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='21.0';let titleOn=false;
+const VER='22.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Envanter':'Inventory','Karakter':'Character','Görevler':'Quests','Nadirlik':'Rarity','Seviye':'Level','Yeni':'Newest','Yuva':'Slot','Sırala:':'Sort:','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -917,7 +917,7 @@ function statBase(k,L){switch(k){
   case'atk':return 2+L;case'def':return 1+L*.5;case'hp':return 8+L*5;
   case'crit':return 2+Math.min(L,150)*.02;case'critDmg':return 6+Math.min(L,200)*.08;
   case'gold':return 4+Math.min(L,200)*.04;case'ls':return .6+Math.min(L,200)*.004;
-  case'fire':case'ice':case'poi':case'lit':return 4+Math.min(L,200)*.05;case'spd':return 2+Math.min(L,200)*.03}}
+  case'fire':case'ice':case'poi':case'lit':return 3+Math.min(L,200)*.04;case'spd':return 2+Math.min(L,200)*.03}}
 function makeItem(L,r,slot,setK){slot=slot||pick(SLOTS).k;const d=SLOT[slot],st={};
   const add=(k,f)=>{const v=statBase(k,L)*f*RAR[r].m*rnd(.85,1.15);st[k]=STAT[k].p?Math.round(v*10)/10:Math.max(1,Math.round(v))};
   (d.pri||[[pick(['crit','critDmg','gold','ls','fire','ice','poi','lit','spd']),1],['hp',.3]]).forEach(p=>add(p[0],p[1]));
@@ -1320,7 +1320,7 @@ function startTele(){M.tele=M.hv?1500:1700;if(M.hv&&!S.hvT){S.hvT=1;toast(T('⚠
   if(D3)D3.telegraph(true,1.7);beep(220,.5,'sawtooth',.05,880);vib([30,30,30])}
 function bossSpecial(){$('defBtn').hidden=true;if(D3){D3.telegraph(false);D3.bigHit()}M.spT=M.hv?rnd(7000,11000):rnd(6500,9000)*(M.enr?.75:1);
   if(R.dodge>0){const h=heroPos();floatTxt(T('ISKA'),'m',h.x+10,h.y-30);return}
-  if(M.hv)shout('💥 '+M.spN.toLocaleUpperCase(LANG),'#ff6a4a');else banner('💥 '+M.spN.toLocaleUpperCase(LANG),'boss');monsterHit(M.hv?2:M.duel?2.5:3)}
+  if(M.hv)shout('💥 '+M.spN.toLocaleUpperCase(LANG),'#ff6a4a');else banner('💥 '+M.spN.toLocaleUpperCase(LANG),'boss');monsterHit(M.hv?(G()>=30?2.4:2):M.duel?2.5:3)}
 function block(){if(!M||M.dead||!(M.tele>0)||paused())return;M.tele=0;$('defBtn').hidden=true;M.spT=M.hv?rnd(7000,11000):rnd(6500,9000)*(M.enr?.75:1);M.stun=2000;M.t=0;
   S.tot.blocks++;qAdd('block');if(D3){D3.telegraph(false);D3.block()}const h=heroPos();floatTxt(T('SAVUŞTURDUN!'),'h',h.x+40,h.y-50);
   sfx('block');tune([880,1320],60);vib([20,20,60]);scrFlash('w');if(D3)D3.hitStop(.12);banner(T('🛡️ SAVUŞTURDUN! KARŞI SALDIRI'),'lv');setTimeout(()=>{swing();attack(3*(1+P.parry/100),{src:'skill',sure:true,pow:1.6,fin:true})},200)}
@@ -2016,6 +2016,8 @@ function introSheet(){classSheet('<div style="text-align:center"><div style="fon
 function newsSheet(){classSheet(T(`<div style="text-align:center"><div style="font-size:56px">🎉</div><h2>Büyük güncelleme!</h2></div>
  <div class="card" style="font-size:13.5px;line-height:1.7">🧙 <b>Sınıflar</b>: Savaşçı, Okçu, Büyücü<br>✨ <b>4 yetenek</b> + kombo sistemi<br>⚒️ <b>Demirci</b>: eşyaları +15'e kadar geliştir, erit<br>🐾 <b>Yoldaşlar</b>: yanında savaşır (Kurt hediye!)<br>📜 <b>Günlük ödül, görevler, başarımlar</b><br>💎 <b>Elmas</b> ve 🌙 sen yokken kazanç<br>💀 <b>Elit canavarlar</b> ve tamamen yeni görünüm</div>
  <p class="mut" style="text-align:center">Tüm eşyaların ve ilerlemen yerinde. Şimdi sınıfını seç:</p>`))}
+function news22(){S.nv=22;save();openSheet('<div style="text-align:center"><div style="font-size:56px">✨</div><h2>'+T('Büyük yenilenme!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
+  T('🎨 <b>Yeni görünüm</b>: koyu-altın tema, destansı yazı tipi, kodla çizilmiş eşya ikonları, efsanevi düşüşte ışık hüzmesi<br>🔥 <b>Elementler</b>: Ateş, Buz, Zehir, Yıldırım. Her canavarın bir zayıflığı var (adının altında yazar); zayıflığa vurunca element hasarı 2 kat<br>⚠️ <b>Ağır darbe</b>: canavarlar artık kırmızı uyarıyla ağır darbe hazırlar; 🛡️ SAVUN\'a zamanında bas, engelle ve karşı saldır<br>🌳 <b>Sınıfına özel yetenek dalı</b> (Ustalık sekmesinin en altında)<br>💨 Yeni eşya özellikleri: element hasarları ve Hız<br>⚠️ Tuzaklı geçit ve 💰 Hazine odası yol olayları<br>🎒 Envanterde sıralama')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
 function news20(){S.nv=20;save();openSheet('<div style="text-align:center"><div style="font-size:56px">⚔️</div><h2>'+T('Dalga savaşı!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
   T('👥 Normal katlarda canavarlar artık <b>dalga hâlinde</b> geliyor: aynı anda 2–5 düşman. Öndeki ölünce sıradaki hemen öne çıkar.<br>⚔️ Arkadaki ilk iki düşman da sana saldırır, dikkat!<br>🌪️ Çok vuruşlu yetenekler (Kasırga, Ok Yağmuru, Bin Kesik) bütün dalgaya dağılır.<br>💪 İleri bölgelerde normal canavarlar daha dayanıklı.')+'</div><button class="btn pri w100" data-a="close">'+T('Hadi bakalım!')+'</button>')}
 function news19(){S.nv=19;save();openSheet('<div style="text-align:center"><div style="font-size:56px">🔱</div><h2>'+T('Yeni bölge, yeni sınıf!')+'</h2></div><div class="card" style="font-size:13.5px;line-height:1.75">'+
@@ -2035,7 +2037,7 @@ if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td'
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
 if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
-giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
+giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
 save(true);setTimeout(autoBk,6000);if(!window.__noTitle)showTitle();requestAnimationFrame(fpsLoop);

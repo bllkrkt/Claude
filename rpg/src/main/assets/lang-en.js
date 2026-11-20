@@ -1,5 +1,7 @@
 /* Efsane Avcısı — İngilizce sözlük (anahtar: Türkçe metin). Düzeltmeleri burada yap. */
 window.EN_DICT={
+"Büyük yenilenme!": "Big overhaul!",
+"🎨 <b>Yeni görünüm</b>: koyu-altın tema, destansı yazı tipi, kodla çizilmiş eşya ikonları, efsanevi düşüşte ışık hüzmesi<br>🔥 <b>Elementler</b>: Ateş, Buz, Zehir, Yıldırım. Her canavarın bir zayıflığı var (adının altında yazar); zayıflığa vurunca element hasarı 2 kat<br>⚠️ <b>Ağır darbe</b>: canavarlar artık kırmızı uyarıyla ağır darbe hazırlar; 🛡️ SAVUN'a zamanında bas, engelle ve karşı saldır<br>🌳 <b>Sınıfına özel yetenek dalı</b> (Ustalık sekmesinin en altında)<br>💨 Yeni eşya özellikleri: element hasarları ve Hız<br>⚠️ Tuzaklı geçit ve 💰 Hazine odası yol olayları<br>🎒 Envanterde sıralama": "🎨 <b>New look</b>: dark-gold theme, epic font, hand-drawn item icons, light beams on legendary drops<br>🔥 <b>Elements</b>: Fire, Ice, Poison, Lightning. Every monster has a weakness (shown under its name); hitting it doubles your elemental damage<br>⚠️ <b>Heavy blows</b>: monsters now wind up heavy blows with a red warning; tap 🛡️ DEFEND in time to block and counterattack<br>🌳 <b>Class-specific skill branch</b> (at the bottom of the Mastery tab)<br>💨 New item bonuses: elemental damage and Speed<br>⚠️ Trapped passage and 💰 Treasure room road events<br>🎒 Inventory sorting",
 "Ateş Hasarı": "Fire Damage",
 "Buz Hasarı": "Ice Damage",
 "Zehir Hasarı": "Poison Damage",
