@@ -145,10 +145,10 @@ await p.evaluate(() => { ACT.aaTog(); }); check(await p.evaluate(() => !S.autoAt
 await p.evaluate(() => { ACT.aaSp('2'); }); check(await p.evaluate(() => S.autoAtk && S.aaSp === 2 && Math.abs(aaMs() * (1 + (P.spd || 0) / 100) - 280) < .01), 'oto saldırı hızı ayarlanamadı');
 await p.evaluate(() => { ACT.aaSp('4'); }); check(await p.evaluate(() => S.aaSp === 2), 'kilitli hız seçilebildi'); await p.evaluate(() => closeSheet());
 // tek tıkla en iyileri kuşan + toplu geliştir
-await p.evaluate(() => { S.tut.equip = 1; for (const s of SLOTS) S.inv.push(makeItem(60, 1, s.k)); S.gold += 5e6; S.ess += 400; ACT.tab('inv'); });
+await p.evaluate(() => { S.tut.equip = 1; for (const s of SLOTS) S.inv.push(makeItem(90, 2, s.k)); S.gold += 5e6; S.ess += 400; ACT.tab('inv'); });
 await p.waitForTimeout(300); await shot('44-canta-tek-tik');
 await p.click('[data-a=eqBest]'); await p.waitForTimeout(300);
-check(await p.evaluate(() => bestList().length === 0 && SLOTS.every(s => S.eq[s.k] && S.eq[s.k].L === 60)), 'en iyileri kuşan çalışmadı');
+check(await p.evaluate(() => bestList().length === 0 && SLOTS.every(s => S.eq[s.k] && S.eq[s.k].L === 90)), 'en iyileri kuşan çalışmadı');
 await p.click('[data-a=upAll]'); await p.waitForTimeout(400); await shot('45-toplu-gelistir');
 await p.click('[data-a=upAllDo][data-v="0"]'); await p.waitForTimeout(300);
 check(await p.evaluate(() => SLOTS.every(s => S.eq[s.k].up === 5)), 'güvenli toplu geliştirme hepsini +5 yapmadı');
