@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0c16">
 <title>Efsane Avcısı</title>
+<script>/* v25: APK'da kenar boşluğunu Android veriyor; sayfa ayrıca eklerse çift olur */if(window.AndroidBridge)document.documentElement.classList.add('apk');setTimeout(function(){document.documentElement.classList.add('hzr')},2500)</script>
 <style>
+:root{--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}html.apk{--sat:0px;--sab:0px}
+html:not(.hzr) body{opacity:0}body{transition:opacity .3s ease}
 @font-face{font-family:J;font-weight:400 800;font-display:swap;src:url(fonts/jakarta-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:J;font-weight:400 800;font-display:swap;src:url(fonts/jakarta-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 :root{--bg:#0b0c16;--pan:linear-gradient(160deg,#1e2136,#15172a);--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--tx:#f1f2ff;--mut:#9ca2c4;--gold:#ffcf4a;--gem:#5fe3ff;--ess:#c58bff;--red:#ff5263;--grn:#3ddc84;--hot:linear-gradient(160deg,#ff9a3d,#f0364f)}
@@ -13,7 +16,7 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font-family:J,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;overscroll-behavior:none}
 body{background:radial-gradient(ellipse 120% 60% at 50% -10%,#2a1f55 0,transparent 60%),radial-gradient(ellipse 80% 50% at 100% 110%,#3a1420 0,transparent 60%),var(--bg)}
 button{font:inherit;color:inherit;border:0;background:none;touch-action:manipulation;cursor:pointer;padding:0}
-#app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding-top:env(safe-area-inset-top)}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:520px;margin:0 auto;padding-top:var(--sat)}
 /* ---------- üst bilgi ---------- */
 #hud{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 10px}
 .ava{--p:0;position:relative;width:50px;height:50px;border-radius:50%;padding:3px;background:conic-gradient(#5ab0ff calc(var(--p)*1%),#ffffff14 0);flex:none}
@@ -148,7 +151,7 @@ h2{font-size:20px;margin:6px 0 12px;font-weight:800}h3{font-size:12px;color:var(
 #bHit::before{content:"";position:absolute;left:0;right:0;top:0;height:48%;background:linear-gradient(#ffffff40,#ffffff08);border-radius:22px 22px 0 0}
 #bHit span{font-size:34px}#bHit:active{transform:translateY(4px);box-shadow:0 2px 0 #8a1c2c}
 /* ---------- sekmeler ---------- */
-#tabs{display:grid;grid-template-columns:repeat(5,1fr);background:#121426e6;border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom));backdrop-filter:blur(8px)}
+#tabs{display:grid;grid-template-columns:repeat(5,1fr);background:#121426e6;border-top:1px solid var(--line);padding:4px 4px calc(4px + var(--sab));backdrop-filter:blur(8px)}
 #tabs button{position:relative;padding:6px 0 5px;font-size:22px;display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:14px;color:var(--mut)}
 #tabs button.on{background:linear-gradient(#2c3054,#22253f);color:var(--gold)}#tabs button.on>span{animation:bounce .35s}
 @keyframes bounce{40%{transform:translateY(-5px) scale(1.15)}}
@@ -210,7 +213,7 @@ h2{font-size:20px;margin:6px 0 12px;font-weight:800}h3{font-size:12px;color:var(
 /* ---------- panel ---------- */
 #sheetBg{position:fixed;inset:0;background:#000b;display:none;align-items:flex-end;justify-content:center;z-index:20;backdrop-filter:blur(3px)}
 #sheetBg.on{display:flex}
-#sheet{width:100%;max-width:520px;max-height:90%;overflow-y:auto;background:linear-gradient(#1f2238,#161829 120px);border-radius:26px 26px 0 0;padding:10px 16px calc(18px + env(safe-area-inset-bottom));animation:up .25s cubic-bezier(.2,1.2,.4,1);border-top:1px solid var(--line2);box-shadow:0 -10px 40px #000a}
+#sheet{width:100%;max-width:520px;max-height:90%;overflow-y:auto;background:linear-gradient(#1f2238,#161829 120px);border-radius:26px 26px 0 0;padding:10px 16px calc(18px + var(--sab));animation:up .25s cubic-bezier(.2,1.2,.4,1);border-top:1px solid var(--line2);box-shadow:0 -10px 40px #000a}
 #sheet::before{content:"";display:block;width:44px;height:5px;border-radius:9px;background:#ffffff30;margin:0 auto 12px}
 @keyframes up{from{transform:translateY(100%)}}
 .ihead{display:flex;gap:12px;align-items:center;margin-bottom:10px}
@@ -240,7 +243,7 @@ textarea{width:100%;height:100px;background:#0008;color:var(--tx);border:1px sol
 #confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:2px;animation:conf linear forwards}
 @keyframes conf{to{transform:translate(var(--dx),110vh) rotate(var(--rot));opacity:.8}}
 .coin{position:fixed;left:0;top:0;z-index:46;font-size:20px;pointer-events:none}
-#toasts{position:fixed;top:calc(66px + env(safe-area-inset-top));left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:50;pointer-events:none}
+#toasts{position:fixed;top:calc(66px + var(--sat));left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:50;pointer-events:none}
 #toasts div{background:#000e;border:1px solid var(--line2);border-radius:14px;padding:9px 16px;font-weight:800;font-size:14px;animation:lootIn 2.6s forwards;max-width:90%;text-align:center;box-shadow:0 6px 18px #0008}
 #toasts div.big{font-size:17px;border-color:var(--gold);color:var(--gold)}
 #c3d{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -305,14 +308,14 @@ input[type=range]{flex:1;min-width:0;height:34px;accent-color:#ffcf4a}
 #vigS{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(ellipse 85% 75% at 50% 52%,transparent 55%,#0008 100%),linear-gradient(#0003,transparent 22%,transparent 80%,#0005)}
 #mBar.shd{box-shadow:0 0 0 2px #6fc3ff,0 0 14px #6fc3ff}#mBar.shd .fg{filter:saturate(.4) brightness(.8)}#mBar.hl{box-shadow:0 0 0 2px #3ddc84,0 0 14px #3ddc84}
 .boon{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:14px;margin-top:10px;border-radius:18px;border:1.5px solid #7b3df088;background:linear-gradient(135deg,#2b1d52,#1e2136 75%);color:inherit;font:inherit}.boon i{font-style:normal;font-size:34px}.boon b{display:block;font-size:15.5px;color:#e6d8ff}.boon small{color:#b9b3d6;font-size:12.5px}.boon em{font-style:normal;margin-left:auto;color:var(--gold);font-weight:800;font-size:12px;white-space:nowrap}
-#title{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(34px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));text-align:center;overflow:hidden;
+#title{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(34px + var(--sat)) 22px calc(22px + var(--sab));text-align:center;overflow:hidden;
   background:radial-gradient(ellipse 110% 60% at 50% 28%,#3b2f7ad9,#14123ae0 55%,#07081afa 100%);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
 #title.on{display:flex}#title.out{animation:tOut .5s ease forwards;pointer-events:none}@keyframes tOut{to{opacity:0;transform:scale(1.08)}}
 #title .tray{position:absolute;left:50%;top:26%;width:900px;height:900px;margin:-450px 0 0 -450px;background:repeating-conic-gradient(from 0deg,#ffcf4a14 0 7deg,transparent 7deg 20deg);animation:tSpin 40s linear infinite;pointer-events:none;-webkit-mask:radial-gradient(circle,#000 0,transparent 62%);mask:radial-gradient(circle,#000 0,transparent 62%)}
 @keyframes tSpin{to{transform:rotate(360deg)}}
 #tEmb{position:absolute;inset:0;pointer-events:none}#tEmb i{position:absolute;bottom:-10px;width:5px;height:5px;border-radius:50%;background:#ffb347;box-shadow:0 0 8px #ff9a1f;animation:tEmber linear infinite;opacity:0}
 @keyframes tEmber{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(-100vh) translateX(30px);opacity:0}}
-.tlang{position:absolute;top:calc(12px + env(safe-area-inset-top));right:14px;display:flex;border:1px solid var(--line2);border-radius:99px;overflow:hidden;z-index:2}.tlang button{padding:6px 12px;font:800 12px inherit;color:var(--mut);background:#0006}.tlang button.on{background:var(--gold);color:#241a00}
+.tlang{position:absolute;top:calc(12px + var(--sat));right:14px;display:flex;border:1px solid var(--line2);border-radius:99px;overflow:hidden;z-index:2}.tlang button{padding:6px 12px;font:800 12px inherit;color:var(--mut);background:#0006}.tlang button.on{background:var(--gold);color:#241a00}
 .ttop{position:relative;z-index:1;margin-top:4vh}.temb{width:118px;height:118px;filter:drop-shadow(0 6px 24px #ffcf4a66);animation:tFloat 3.6s ease-in-out infinite}@keyframes tFloat{50%{transform:translateY(-8px)}}
 .tname{margin:10px 0 0;line-height:.95;font-weight:800;letter-spacing:6px}.tname span{display:block;font-size:46px;background:linear-gradient(#fff6d0,#ffcf4a 55%,#e08a1c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 3px 0 #6b3a00) drop-shadow(0 0 22px #ff9a1f66)}
 .tname span+span{font-size:38px;letter-spacing:10px}.tsub{margin-top:10px;color:#cfc8ff;font-weight:700;letter-spacing:3px;text-transform:uppercase;font-size:12px;opacity:.85}
@@ -467,6 +470,9 @@ html[lang=en] .fl.c::before{content:"CRIT"}html[lang=en] .fl.fin::before{content
 .sortr{display:flex;gap:5px;align-items:center;margin:6px 0 8px;overflow-x:auto;scrollbar-width:none}.sortr span{font-size:11.5px;color:var(--mut);font-weight:800;flex:none}
 .sortr button{flex:none;font-size:11.5px;font-weight:800;padding:5px 10px;border-radius:99px;border:1px solid rgba(217,178,95,.25);background:#0006;color:var(--mut)}.sortr button.on{color:#1a1206;background:linear-gradient(#ffe08a,#d9a43a);border-color:#ffe08a}
 .em{display:inline-block;width:1.18em;height:1.18em;vertical-align:-.24em;line-height:0;font-style:normal}.em .emi{width:100%;height:100%;display:block;filter:drop-shadow(0 1px 1px #0009)}
+/* v25 performans: çok eşyalı listelerde sürekli animasyon ve gölge yok (telefonda ikon kaybolması ve takılma yapıyordu) */
+.it.r2,.it.r3{animation:none!important}.it.r3::after,.it.r3::before,.it.r2::after{animation:none!important;display:none}
+.it .ii{filter:none}.em .emi{filter:none}.it{contain:paint}
 /* v22 elementler */
 .fl.el{font-size:17px}.fl.el.fire{color:#ff8a4a}.fl.el.ice{color:#9feeff}.fl.el.poi{color:#8dff6a}.fl.el.lit{color:#fff06a}
 .elw{display:flex;gap:6px;justify-content:center;margin-top:3px}.elw span{font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:99px;border:1px solid;background:#0008;color:#fff}.elw .rs{border-color:#ffffff40;color:#bbb}
@@ -564,7 +570,7 @@ ICO.init();ICO.emoStart();document.querySelectorAll('#tabs button').forEach(b=>{
 document.getElementById('ciG').innerHTML=ICO.cur('gold');document.getElementById('ciD').innerHTML=ICO.cur('gem');
 'use strict';
 /* ======================= VERİ ======================= */
-const VER='25.0';let titleOn=false;
+const VER='26.0';let titleOn=false;
 /* İngilizce sözlük: anahtar Türkçe metnin kendisi; çevirisi olmayan metin Türkçe kalır */
 const EN=Object.assign({'Savaş':'Battle','Çanta':'Bag','Envanter':'Inventory','Karakter':'Character','Görevler':'Quests','Nadirlik':'Rarity','Seviye':'Level','Yeni':'Newest','Yuva':'Slot','Sırala:':'Sort:','Kahraman':'Hero','Macera':'Adventure','Görev':'Quests','Dükkan':'Shop','VUR':'HIT','Güç':'Power','İksir':'Potion',
   'Savaşçı':'Warrior','Okçu':'Archer','Büyücü':'Mage','Kat':'Floor',
@@ -2113,7 +2119,7 @@ if(S.set.d3&&window.S3D){try{if(S3D.init(stage)){D3=S3D;stage.classList.add('td'
 if(!S.maxF[S.zone])S.zone=0;
 setStage();renderSkillBar();spawn();updAll();
 if(!S.cls)enqueue(S.seen?newsSheet:introSheet);
-giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);if(S.cls&&S.nv>=22&&S.nv<24)enqueue(news24);if(S.cls&&S.nv>=20&&S.nv<25)enqueue(news25);$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
+giftCheck();aaCheck();if(S.cls&&S.nv<7)enqueue(news7);if(S.cls&&S.nv<8)enqueue(news8);if(S.cls&&S.nv<10)S.nv=10;if(S.cls&&S.nv<11)enqueue(news11);if(S.cls&&S.nv>=11&&S.nv<15)enqueue(news15);if(S.cls&&S.nv>=15&&S.nv<19)enqueue(news19);if(S.cls&&S.nv>=19&&S.nv<20)enqueue(news20);if(S.cls&&S.nv>=20&&S.nv<22)enqueue(news22);if(S.cls&&S.nv>=22&&S.nv<24)enqueue(news24);if(S.cls&&S.nv>=20&&S.nv<25)enqueue(news25);requestAnimationFrame(()=>requestAnimationFrame(()=>document.documentElement.classList.add('hzr')));$('weak').addEventListener('pointerdown',weakHit);document.querySelector('#coach .cb').addEventListener('click',coachTap);$('evBtn').addEventListener('click',evOpen);
 offline(Date.now()-(S.lastSeen||Date.now()));
 dailyCheck();if(S.cls&&!S.daily.claimed&&!Q.includes(loginSheet))enqueue(loginSheet);
 save(true);setTimeout(autoBk,6000);if(!window.__noTitle)showTitle();requestAnimationFrame(fpsLoop);
