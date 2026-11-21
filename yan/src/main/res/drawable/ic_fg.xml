@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+<!-- pelerin -->
+<path android:fillColor="#FFC0392B" android:pathData="M48,44 L34,66 L44,62 L40,74 L54,56z"/>
+<!-- bacaklar (koşma) -->
+<path android:fillColor="#FF2A1E3A" android:pathData="M50,62 L42,76 L46,78 L55,65z M56,62 L66,72 L63,76 L53,66z"/>
+<!-- gövde -->
+<path android:fillColor="#FF3E7BD0" android:pathData="M46,44 L60,44 L60,64 L48,64z"/>
+<path android:fillColor="#FFF5C242" android:pathData="M46,56 L60,56 L60,59 L46,59z"/>
+<!-- baş -->
+<path android:fillColor="#FFF0C8A0" android:pathData="M53,30 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0"/>
+<path android:fillColor="#FF5A3A1E" android:pathData="M46,29 Q48,21 55,22 Q61,23 60,28 L52,27 L47,32z"/>
+<!-- kılıç -->
+<path android:fillColor="#FFEEF2F8" android:pathData="M62,48 L82,28 L85,31 L65,51z"/>
+<path android:fillColor="#FFF5C242" android:pathData="M59,47 L66,54 L68,52 L61,45z"/>
+<path android:fillColor="#FFFFFFFF" android:fillAlpha="0.6" android:pathData="M80,18 L82,24 L88,26 L82,28 L80,34 L78,28 L72,26 L78,24z"/>
+</vector>

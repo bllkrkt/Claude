@@ -3,3 +3,4 @@ dependencyResolutionManagement { repositories { google(); mavenCentral() } }
 rootProject.name = "TakipTemizleme"
 include ':app'
 include ':rpg'
+include ':yan'

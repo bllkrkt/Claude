@@ -92,7 +92,20 @@ Kararlar: **Google Play**'de yayın, **Türkçe + İngilizce**, **para kazanma y
 ## Sıradaki fikirler (öneri olarak sun)
 - (Yapıldı: haftalık etkinlik v18, ustalık v8, yoldaş yetenekleri v8, bölge görev zinciri v11, sonsuz kule v8, zar atma v8.) Yeni fikirler (v32 sonrası): ezeli düşmana 3B taç/yara izi görseli, ezeli düşmanlar arası hiyerarşi (Derebeyi altına adam toplar), sezon kozmetik ödülleri, gerçek çevrimiçi tablo (sunucu gerekir)ları.
 
-## SIRADAKİ BÜYÜK İŞ (kullanıcı v32 sonrası seçti): YANDAN GÖRÜNÜMLÜ OYUN
+# Üçüncü proje: Efsane Yolu (yandan görünümlü oyun) — kullanıcı v32 sonrası istedi
+Kullanıcı "karakter sağa koşar, zıplar, düşmanla karşılaşır" türü istedi; karar: Efsane Avcısı'na DOKUNMADAN **ayrı uygulama**, önce küçük deneme sürümü, telefondaki hissine göre büyüt.
+- Modül `yan/` (paket `com.bilal.efsaneyolu`, telefonda ayrı simge "Efsane Yolu"), **yatay ekran** (`sensorLandscape`).
+- `yan/src/main/assets/index.html` ← tüm oyun: Canvas 2D, sabit adımlı (60/sn) fizik, tek dosya. Fontlar `fonts/` (rpg'den kopya).
+- İmza: `yan/keystore/yol.keystore` (SHA-256 `19d3e3c4…af46`) **değiştirme**.
+- Derleme: `./gradlew :yan:assembleDebug` → `yan/build/outputs/apk/debug/yan-debug.apk` → kullanıcıya `EfsaneYolu-vN.apk`. Her sürümde `yan/build.gradle` versionCode +1 ve oyundaki `VER`. (Şu an 1 / "1.0".) SDK yoksa /opt/android-sdk'ye kur, `local.properties` içine `sdk.dir`.
+- Test: `cd tests && node yan-e2e.mjs ../yan/src/main/assets/index.html /tmp/yan-test` (~40 sn; bot koşar, boss'a ışınlar, bitirir, ölüm/menü/İngilizce dener) → `errors []`.
+- Kayıt: localStorage `efsane-yolu-v1` (`SV`, alan eklerken `fresh()`'e varsayılan koy). Dil: `T()` + dosya içindeki `EN` sözlüğü; yeni metni `T('...')` ile sar, EN'e ekle.
+- Kod haritası: harita `buildLevel()` (karo 0 boş/1 toprak/2 tek yönlü platform/3 diken/4 kapı; `fill/plat/spike/coins/en/sign` yardımcıları, `L.cps` kontrol noktası, `L.movers` hareketli kütük, `L.chests`, `L.arena`), oyuncu `stepPlayer` (koyote süresi, zıplama tamponu, değişken zıplama, kaçış `dashT` dokunulmazlık, 3'lü kombo `ATKD`, `swingHit`), düşmanlar `mkEnemy/stepEnemies` (slime/bat/archer), boss `bossStart/stepBoss` (Kök Devi: walk/slam şok dalgası/roots kök/seeds tohum, %50'de 2. aşama), mermiler `PRJ`, toplanabilir `PICK`, eşya `mkItem/gainItem/stats` (3 yuva w/a/c, 4 nadirlik, Demirci `upCost`), arayüz `SCR`/`ACT`, dokunmatik `TP/pickAct` (sol %42 hareket, sağ en yakın düğme, parmak düğmeler arasında kayabilir), test kancası `window.__T`.
+- Tekrar oynama: her bitiriş `SV.lv.done`++ → düşmanlar ×(1+0,3·done), ganimet daha iyi.
+- v1 (deneme): 1 bölüm (Zümrüt Orman, ~196 karo, 3 kontrol noktası, 2 sandık), 3 düşman, 1 boss, eşya/çanta/demirci, WebAudio efekt + basit müzik, TR/EN.
+- Sıradaki fikirler (kullanıcının telefon geri bildirimine göre): 2. bölüm (mağara), çift zıplama/duvar kayması yeteneği, sınıflar (Okçu/Büyücü), yoldaş, boss'a özel ganimet, harita seçimi ekranı.
+
+## (ESKİ NOT) Yandan görünüm planı
 Kullanıcı "yandan görünümlü (karakter sağa koşar, zıplar, düşmanla karşılaşır) farklı bir oyuna çevirelim" dedi; ona bunun büyük iş olduğu, savaş/kontrolün baştan yazılacağı, mevcut dokun-vur/dalga/oto saldırı/sen yokken kazanç sisteminin bu türe uymadığı söylendi, kabul etti.
 - ÖNERİLEN YOL (ilk iş kullanıcıya bunu kısaca teyit ettir): mevcut oyunu ve telefondaki kaydı BOZMA. Yan görünüm oyunu aynı depoda AYRI bir modül olarak başla (ör. `yan/`, ayrı paket adı → telefonda ayrı uygulama), ya da Efsane Avcısı içinde ayrı bir "mod" olarak. Taşınabilecekler: eşya/nadirlik/set, yoldaş, ezeli düşman fikri, sınıflar, simge sistemi (`simgeler.js`, `ikonlar.js`), dil sistemi `T()`, tema.
 - Teknik öneri: tek `index.html` + Canvas 2D (ya da mevcut Three.js ile 2.5B yan kamera), sabit adımlı fizik (yerçekimi, zıplama, çarpışma), dokunmatik kontroller (sol: hareket, sağ: zıpla/vur/kaçış), bölüm bazlı haritalar (oda + kontrol noktası), boss odaları. Önce küçük oynanabilir bir dikey dilim (1 bölüm, 3 düşman türü, 1 boss) yap, APK ver, kullanıcının telefondaki hissine göre büyüt.
