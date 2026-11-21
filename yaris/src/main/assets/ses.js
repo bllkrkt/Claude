@@ -23,7 +23,7 @@
     if (ctx.state === 'suspended') ctx.resume();
   }
   function setVol(s, m) {
-    vol.sfx = s; vol.mus = m;
+    vol.sfx = Number.isFinite(s) ? s : 0.8; vol.mus = Number.isFinite(m) ? m : 0.5;
     if (ok()) { sfxG.gain.value = s; musG.gain.value = m * 0.6; }
   }
   function noise(loop) { const n = ctx.createBufferSource(); n.buffer = noiseBuf; n.loop = !!loop; return n; }

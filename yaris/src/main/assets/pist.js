@@ -131,7 +131,8 @@
     const r = rng(def.seed || 1);
     const style = def.stil || 'sehir';
     let poly, loop = def.tip === 'dongu';
-    if (def.tip === 'duz') {
+    if (def.poly) { poly = def.poly; loop = false; }
+    else if (def.tip === 'duz') {
       poly = [];
       const n = Math.round((def.uzun || 1000) / STEP) + 120;
       for (let i = 0; i < n; i++) poly.push([Math.sin(i * STEP / 400) * 6, i * STEP]);
@@ -181,8 +182,25 @@
       py[i] = y;
     }
     if (def.tip === 'duz') for (let i = 0; i < N; i++) k[i] = 0;
+    if (def.yFn) for (let i = 0; i < N; i++) py[i] = def.yFn(i * STEP, L);
+    // atlama tepeleri: düz kesimlerde keskin tümsekler (hızlı geçince araba havalanır)
+    const bumps = [];
+    if (def.zipla && def.tip !== 'duz') {
+      const rb = rng((def.seed || 1) * 31 + 7);
+      for (let tries = 0; tries < 80 && bumps.length < def.zipla; tries++) {
+        const sb = 260 + rb() * (L - 520);
+        let flat = true;
+        for (let x = -70; x <= 70; x += 6) { const i = Math.floor(((sb + x) % L + L) % L / STEP); if (Math.abs(k[i]) > 0.005) { flat = false; break; } }
+        if (!flat || bumps.some(b => Math.abs(b - sb) < 300)) continue;
+        bumps.push(sb);
+      }
+      for (const sb of bumps) {
+        const H = 3.2 + rb() * 1.6, w = 15;
+        for (let i = 0; i < N; i++) { const x = i * STEP - sb; if (Math.abs(x) < 50) py[i] += H * Math.exp(-(x / w) * (x / w)); }
+      }
+    }
     const W = def.W || 14;
-    const T = { N, L, loop, px, pz, py, tx, tz, hd, k, W, step: STEP, stil: style, def };
+    const T = { N, L, loop, px, pz, py, tx, tz, hd, k, W, step: STEP, stil: style, def, bumps };
     T.grid = makeGrid(T);
     return T;
   }
@@ -241,5 +259,44 @@
     return sg * m;
   }
 
-  G.PIST = { build, sample, wrap, curvAt, maxCurv, curvSign, roadDist, rng, STEP };
+  // Kestirmeler: virajın içinden geçen kısa ara yollar. Dönüş: [{sA, sB, side, poly}]
+  function shortcuts(T, max, r) {
+    const out = [], W = T.W;
+    const pt = (s, d) => { const o = {}; sample(T, s, d, o); return o; };
+    const dir = h => [Math.sin(h), Math.cos(h)];
+    for (let sA = 160; sA < T.L - 300 && out.length < max; sA += 20) {
+      let found = null;
+      for (let len = 170; len <= 520 && !found; len += 30) {
+        const sB = sA + len;
+        if (sB > T.L - (T.loop ? 80 : 160)) break;
+        let dh = 0;
+        for (let x = sA; x < sB; x += STEP) dh += curvAt(T, x) * STEP;
+        if (Math.abs(dh) < 1.0 || Math.abs(dh) > 2.7) continue;
+        const side = dh > 0 ? -1 : 1; // sola dönen virajın içi = sol (d<0)
+        const A = pt(sA, side * (W / 2 + 1)), B = pt(sB, side * (W / 2 + 1));
+        const h0 = A.h - side * 0.45, h3 = B.h + side * 0.45;
+        const chord = Math.hypot(B.x - A.x, B.z - A.z), c = chord * 0.33;
+        const d0 = dir(h0), d3 = dir(h3);
+        const P0 = [A.x, A.z], P1 = [A.x + d0[0] * c, A.z + d0[1] * c], P2 = [B.x - d3[0] * c, B.z - d3[1] * c], P3 = [B.x, B.z];
+        const poly = [];
+        for (let i = 0; i <= 60; i++) {
+          const t = i / 60, u = 1 - t;
+          poly.push([u * u * u * P0[0] + 3 * u * u * t * P1[0] + 3 * u * t * t * P2[0] + t * t * t * P3[0], u * u * u * P0[1] + 3 * u * u * t * P1[1] + 3 * u * t * t * P2[1] + t * t * t * P3[1]]);
+        }
+        let L2 = 0; for (let i = 1; i < poly.length; i++) L2 += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
+        if (L2 > len * 0.84 || L2 < 90) continue;
+        let ok = true;
+        for (let i = 6; i <= 54 && ok; i++) {
+          const dd = roadDist(T, poly[i][0], poly[i][1]);
+          if (dd < (i > 12 && i < 48 ? W / 2 + 12 : W / 2 + 4)) ok = false;
+          for (const o of out) for (let j = 0; j < o.poly.length; j += 4) if (Math.hypot(o.poly[j][0] - poly[i][0], o.poly[j][1] - poly[i][1]) < 30) ok = false;
+        }
+        if (ok) found = { sA, sB, side, poly, yA: A.y, yB: B.y, kaz: Math.round(len - L2) };
+      }
+      if (found) { out.push(found); sA = found.sB + 250 + r() * 300; }
+    }
+    return out;
+  }
+
+  G.PIST = { build, shortcuts, sample, wrap, curvAt, maxCurv, curvSign, roadDist, rng, STEP };
 })(typeof window !== 'undefined' ? window : globalThis);

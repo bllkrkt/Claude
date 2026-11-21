@@ -13,6 +13,7 @@
   let R = null;             // etkin yarış durumu
   let SHOW = null;          // vitrin (garaj) durumu
   let raf = 0, lastT = 0, running = false, paused = false;
+  const fpsW = { t: 0, n: 0 };
   const tmp = {}, tmp2 = {};
   const input = { steer: 0, gas: 0, brake: 0, nitro: 0, hb: 0, odak: 0, tilt: 0, laneL: 0, laneR: 0, shift: 0 };
   const opt = { autoGas: false, assist: 0.5, tilt: false, cam: 0, vib: true, tiltSens: 1, fx: 2 };
@@ -33,6 +34,7 @@
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
     camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2400);
+    try { if (G.POST) G.POST.init(renderer, Q); } catch (e) { console.warn('ekran efektleri kapalı', e); }
     setQuality(Q);
     window.addEventListener('resize', resize);
     resize();
@@ -42,6 +44,7 @@
   function setQuality(q) {
     Q = q;
     if (renderer) renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 0 ? 0.8 : q === 1 ? 1.1 : 1.6));
+    if (G.POST && G.POST.ok) G.POST.setQuality(q);
     if (G.ARABA3D) A3().setQuality(q);
     resize();
   }
@@ -56,8 +59,17 @@
     raf = requestAnimationFrame(loop);
     let dt = Math.min(0.1, (t - lastT) / 1000 || 0.016); lastT = t;
     if (paused) return;
+    // kare hızı bekçisi: yüksek grafikte telefon yetişemiyorsa bir kademe düşür
+    if (R && R.phase === 'yaris' && Q >= 2) {
+      fpsW.t += dt; fpsW.n++;
+      if (fpsW.t > 6) { const f = fpsW.n / fpsW.t; fpsW.t = 0; fpsW.n = 0; if (f < 27 && G.onLowFps) G.onLowFps(f); }
+    }
     if (R) stepRace(dt);
     else if (SHOW) stepShow(dt);
+  }
+  function draw(sc) {
+    if (Q >= 1 && G.POST && G.POST.ok) G.POST.render(sc, camera);
+    else renderer.render(sc, camera);
   }
   function startLoop() { if (!running) { running = true; lastT = performance.now(); raf = requestAnimationFrame(loop); } }
   function stopLoop() { running = false; cancelAnimationFrame(raf); }
@@ -128,7 +140,8 @@
     camera.fov = 45; camera.updateProjectionMatrix();
     void off;
     S.ring.material.color.setHSL((S.t * 0.05) % 1, 1, 0.55);
-    renderer.render(S.sc, camera);
+    if (G.POST) { const P2 = G.POST.P; P2.speed = 0; P2.nitro = 0; P2.hit = 0; P2.odak = 0; P2.tint = [1, 1, 1]; P2.bloom = 0.8; P2.exposure = 1.05; }
+    draw(S.sc);
   }
   function hideShow() { root.classList.remove('show'); }
 
@@ -141,12 +154,39 @@
     stopRace(true);
     hideShow();
     const Z = cfg.bolge;
-    const T = P().build(Object.assign({ stil: Z.stil, tepe: Z.tepe, W: Z.W || 14 }, cfg.pist));
+    const noJump = cfg.tip === 'drag';
+    const T = P().build(Object.assign({ stil: Z.stil, tepe: Z.tepe, W: Z.W || 14, zipla: noJump ? 0 : (Z.zipla != null ? Z.zipla : 2) }, cfg.pist));
+    // kestirmeler (ara sokaklar) ve rampalar
+    const rr = P().rng((cfg.pist.seed || 1) * 13 + 5);
+    const shortcuts = noJump || cfg.tip === 'drift' ? [] : P().shortcuts(T, 3, rr);
+    shortcuts.forEach((k, i) => {
+      k.id = i;
+      const yA = k.yA, yB = k.yB;
+      k.T = P().build({ poly: k.poly, tip: 'acik', W: 10, stil: 'sehir', seed: 7 + i, yFn: (x, L) => yA + (yB - yA) * (x / L) });
+    });
+    const ramps = [];
+    if (!noJump) {
+      const nearSc = s0 => shortcuts.some(k => Math.abs(s0 - k.sA) < 120 || Math.abs(s0 - k.sB) < 120);
+      let last = -999;
+      const maxR = Math.min(5, Math.floor(T.L / 900) + 1);
+      for (let s0 = 300; s0 < T.L - 250 && ramps.length < maxR; s0 += 30) {
+        if (s0 - last < 550 || nearSc(s0) || (T.bumps || []).some(b => Math.abs(b - s0) < 150)) continue;
+        if (P().maxCurv(T, s0 - 30, 140) > 0.0035) continue;
+        const nl0 = Math.max(2, Math.round(T.W / 3.5)), lw = T.W / nl0;
+        const lane = rr() < 0.5 ? nl0 - 1 : rr() < 0.5 ? 0 : Math.floor(nl0 / 2);
+        ramps.push({ sc: null, s0, len: 9, d0: -T.W / 2 + (lane + 0.5) * lw, w: lw * 1.25, h: 1.5 + rr() * 0.4 });
+        last = s0;
+      }
+      for (const k of shortcuts) {
+        const m = k.T.L / 2;
+        if (P().maxCurv(k.T, m - 20, 55) < 0.014) ramps.push({ sc: k, s0: m - 6, len: 8, d0: 0, w: k.T.W - 1, h: 1.9 });
+      }
+    }
     scene = new THREE.Scene();
     const sky = G.DUNYA.SKY[cfg.saat || 'gece'](Z);
     const env = G.DUNYA.envMap(renderer, sky.top, sky.hor, Z.isik);
     A3().setEnv(env);
-    const world = G.DUNYA.build(scene, T, Z, { saat: cfg.saat, hava: cfg.hava, q: Q, env, renderer });
+    const world = G.DUNYA.build(scene, T, Z, { saat: cfg.saat, hava: cfg.hava, q: Q, env, renderer, shortcuts, ramps });
     const nl = Math.max(2, Math.round(T.W / 3.5));
     R = {
       cfg, T, world, env, scene, t: 0, phase: 'geri', count: 3.6, nl,
@@ -156,7 +196,9 @@
       stats: { kilpayi: 0, carpma: 0, duvar: 0, mukemmel: 0, enHiz: 0, driftEn: 0, etkisiz: 0, barikat: 0, engel: 0, kacis: 0, mesafe: 0, hizToplam: 0, maxIsi: 0 },
       drift: { on: false, pts: 0, combo: 0, mult: 1, total: 0, t: 0 },
       purs: null, radioT: 6, camMode: opt.cam, wet: cfg.hava === 'yagmur',
+      shortcuts, ramps,
     };
+    R.stats.kestirme = 0; R.stats.ucus = 0;
     const grip = R.wet ? 0.86 : 1;
     R.gripMul = grip;
     // ── oyuncu ──
@@ -298,10 +340,98 @@
     r.world.update(dtReal, camera);
     updateHud(dtReal);
     G.__camQ = camera.quaternion;
-    renderer.render(r.scene, camera);
+    if (G.POST) {
+      const P2 = G.POST.P, pl = r.player;
+      P2.speed = opt.fx === 0 ? 0 : clamp((pl.v - 35) / 55, 0, 1) * 0.8 + (pl.nitroOn ? 0.5 : 0);
+      P2.nitro = pl.nitroOn ? 1 : 0; P2.hit = r.shake; P2.odak = r.odakT > 0 ? 1 : 0;
+      const sa = r.cfg.saat;
+      P2.tint = sa === 'aksam' ? [1.08, 1.0, 0.92] : sa === 'gunduz' ? [1.02, 1.0, 0.98] : [0.94, 1.0, 1.1];
+      P2.bloom = sa === 'gunduz' ? 0.3 : sa === 'aksam' ? 0.45 : 0.55;
+      P2.exposure = sa === 'gece' ? 1.05 : 1.0;
+    }
+    draw(r.scene);
   }
 
   function allCars() { return R.racers.concat(R.cops, R.traffic); }
+  // araç ana yolda mı kestirmede mi: pist ve yerel konum
+  function trk(c) { return c.sc ? c.sc.T : R.T; }
+  function loc(c) { return c.sc ? c.ss : c.s; }
+  function moveS(c, x) {
+    if (c.sc) {
+      const k = c.sc;
+      c.ss += x;
+      c.s = k.sA + clamp(c.ss / k.T.L, 0, 1) * (k.sB - k.sA);
+      if (c.ss >= k.T.L - 3) exitShortcut(c);
+      else if (c.ss < 0) { c.ss = 0; c.v = Math.max(0, c.v); }
+    } else { c.s += x; wrapS(c); }
+  }
+  function normA(x) { while (x > Math.PI) x -= 2 * Math.PI; while (x < -Math.PI) x += 2 * Math.PI; return x; }
+  // dünya konumunu korurak aracı başka bir yola taşı (yakın örnekte en yakın noktayı ara)
+  function rebase(c, T2, sGuess, win) {
+    P().sample(trk(c), loc(c), c.d, tmp);
+    const wx = tmp.x, wz = tmp.z, H = tmp.h - c.a;
+    let best = sGuess, bd = 1e9;
+    for (let x = Math.max(0, sGuess - win); x <= Math.min(T2.L - 0.1, sGuess + win); x += 1) {
+      P().sample(T2, x, 0, tmp2); const d = (tmp2.x - wx) * (tmp2.x - wx) + (tmp2.z - wz) * (tmp2.z - wz);
+      if (d < bd) { bd = d; best = x; }
+    }
+    P().sample(T2, best, 0, tmp2);
+    const nx = -Math.cos(tmp2.h), nz = Math.sin(tmp2.h);
+    const d = (wx - tmp2.x) * nx + (wz - tmp2.z) * nz;
+    return { s: best, d, a: normA(tmp2.h - H) };
+  }
+  function enterShortcut(c, k) {
+    const p = rebase(c, k.T, 6, 12);
+    c.sc = k; c.ss = p.s; c.d = clamp(p.d, -k.T.W / 2 + c.W / 2, k.T.W / 2 - c.W / 2); c.a = clamp(p.a, -0.9, 0.9);
+    if (c.isPlayer) { R.stats.kestirme++; popup('KESTİRME!', '+' + k.kaz + ' m', 1, 'orta'); SES().sfx('whoosh'); }
+  }
+  function exitShortcut(c) {
+    const k = c.sc, p = rebase(c, R.T, k.sB, 25);
+    c.sc = null; c.s = p.s;
+    const lim = R.T.W / 2 + 0.2 - c.W / 2;
+    c.d = clamp(p.d, -lim, lim); c.a = clamp(p.a, -0.9, 0.9);
+  }
+  // rampa yüksekliği (aracın bulunduğu yolda)
+  function rampH(c) {
+    const rs = R.ramps; if (!rs.length) return 0;
+    const sl = loc(c);
+    for (const rp of rs) {
+      if (rp.sc !== (c.sc || null)) continue;
+      const x = sl - rp.s0;
+      if (x >= 0 && x <= rp.len && Math.abs(c.d - rp.d0) < rp.w / 2) return rp.h * x / rp.len;
+    }
+    return 0;
+  }
+  // dikey fizik: tepeden ya da rampadan hızla geçen araç havalanır
+  const GA = 24;
+  function vert(c, dt) {
+    P().sample(trk(c), loc(c), c.d, tmp2);
+    const ys = tmp2.y + rampH(c);
+    if (c.wy == null) { c.wy = ys; c.vy = 0; c.air = 0; c.gvy = 0; return; }
+    if (c.air > 0) {
+      c.air += dt; c.vy -= GA * dt; c.wy += c.vy * dt;
+      if (c.wy <= ys) land(c, ys);
+    } else {
+      const vyr = (ys - c.wy) / dt;
+      if (c.gvy - vyr > GA * dt * 1.4 + 0.4 && c.v > 16 && c.gvy > -2) { c.air = dt; c.vy = c.gvy; c.wy += c.vy * dt; c.airS = loc(c); }
+      else { c.wy = ys; c.gvy = clamp(vyr, -30, 30); }
+    }
+  }
+  function land(c, ys) {
+    const hard = -c.vy;
+    const t = c.air;
+    c.wy = ys; c.air = 0; c.gvy = 0; c.vy = 0;
+    c.bounce = Math.min(0.25, hard * 0.02);
+    if (!c.isPlayer) return;
+    if (hard > 7) { R.shake = Math.min(1, R.shake + hard / 25); SES().sfx('bump', Math.min(1, hard / 15)); vib(40); c.v *= 0.97; }
+    if (t > 0.45) {
+      const m = Math.round(Math.abs(loc(c) - (c.airS || loc(c))));
+      R.stats.ucus = Math.max(R.stats.ucus, m);
+      c.nitro = Math.min(1, c.nitro + t * 0.18);
+      popup('UÇUŞ! ' + m + ' m', t.toFixed(1) + ' sn · +NİTRO', 1.2, 'iyi');
+      if (G.onStat) G.onStat('ucus', m);
+    }
+  }
 
   function simulate(dt) {
     const r = R, pl = r.player, T = r.T;
@@ -315,6 +445,8 @@
     }
     for (const c of r.traffic) trafficAI(c, dt);
     for (const c of r.cops) copAI(c, dt);
+    for (const c of r.racers) if (!c.out) vert(c, dt);
+    for (const c of r.cops) if (!c.block) vert(c, dt);
     collisions(dt);
     for (const c of r.racers) progress(c, dt);
     if (r.phase === 'yaris') {
@@ -336,7 +468,7 @@
 
   // ───────── OYUNCU FİZİĞİ ─────────
   function playerPhysics(c, dt) {
-    const r = R, T = r.T, st = c.st;
+    const r = R, T = trk(c), st = c.st;
     const isDrag = r.cfg.tip === 'drag';
     // giriş
     let steerIn = opt.tilt ? input.tilt : input.steer;
@@ -365,6 +497,7 @@
     } else if (!gas) acc -= 1.2 + c.v * 0.012;
     c.v += acc * dt;
     if (c.v < -9) c.v = -9;
+    if (c.air) c.v -= acc * dt * 0.95; // havadayken gaz/fren etkisiz
     if (!gas && !input.brake && Math.abs(c.v) < 0.3) c.v = 0;
     // direksiyon
     const grip = st.grip * r.gripMul * (c.spike > 0 ? 0.75 : 1);
@@ -383,8 +516,9 @@
       yaw = 0;
     }
     // sürüş yardımı: virajı kısmen kendisi takip etsin, araba yola hizalansın
-    const k = P().curvAt(T, c.s);
-    if (!isDrag) {
+    const k = P().curvAt(T, loc(c));
+    if (c.air) yaw = 0;
+    if (!isDrag && !c.air) {
       const asst = opt.assist;
       yaw += -k * c.v * asst * 0.85;
       if (Math.abs(c.steer) < 0.1) yaw += -c.a * asst * 2.2;
@@ -409,8 +543,7 @@
     c.a += (yaw + k * sdot) * dt;
     c.a = clamp(c.a, -1.1, 1.1);
     c.d += c.v * Math.sin(c.a) * dt;
-    c.s += sdot * dt;
-    wrapS(c);
+    moveS(c, sdot * dt);
     walls(c, dt);
     // nitro dolumu: yüksek hız ve hava akımı
     if (!c.nitroOn && c.v > st.vmax * 0.8) c.nitro = Math.min(1, c.nitro + dt * 0.012);
@@ -475,9 +608,16 @@
     } else c.s = clamp(c.s, 0, T.L - 1);
   }
 
+  function scAt(c) { // ana yolda bu noktada bir kestirme girişi var mı
+    if (c.sc || !R.shortcuts.length) return null;
+    for (const k of R.shortcuts) { const x = c.s - k.sA; if (Math.sign(c.d) === k.side && x > -8 && x < 14) return k; }
+    return null;
+  }
   function walls(c, dt) {
-    const T = R.T, lim = T.W / 2 + 0.2 - c.W / 2;
+    const T = trk(c), lim = T.W / 2 + 0.2 - c.W / 2;
     if (Math.abs(c.d) > lim) {
+      const k = scAt(c);
+      if (k && (c.isPlayer || c.kind === 'racer')) { enterShortcut(c, k); return; }
       const sg = Math.sign(c.d);
       c.d = sg * lim;
       const into = Math.sin(c.a) * sg; // duvara doğru bileşen
@@ -514,7 +654,8 @@
     if (r.cfg.tip === 'drag') return aiDrag(c, dt, skill * band);
     const vmax = st.vmax * skill * band * (c.spike > 0 ? 0.55 : 1);
     const look = 25 + c.v * 1.6;
-    const kmax = P().maxCurv(T, c.s, look);
+    const Tl = trk(c), sl = loc(c);
+    const kmax = P().maxCurv(Tl, sl, look);
     const vCorner = Math.sqrt(st.grip * r.gripMul * GRAV * 1.12 / Math.max(0.0008, kmax)) * (0.82 + skill * 0.12);
     let vT = Math.min(vmax, vCorner);
     if (c.done) vT = Math.min(vT, 18);
@@ -529,13 +670,23 @@
     if (c.v < vT) c.v = Math.min(vT, c.v + acc * dt);
     else c.v = Math.max(vT, c.v - 13 * dt);
     // çizgi: virajın içi
-    const cs = P().curvSign(T, c.s, look * 0.8);
-    let dT = -Math.sign(cs) * Math.min(1, Math.abs(cs) * 55) * (T.W / 2 - 2.2) + c.ai.lineBias;
+    const cs = P().curvSign(Tl, sl, look * 0.8);
+    let dT = -Math.sign(cs) * Math.min(1, Math.abs(cs) * 55) * (Tl.W / 2 - 2.2) + (c.sc ? 0 : c.ai.lineBias);
+    // kestirmeye girme kararı (her girişte bir kez)
+    if (!c.sc && !autopilot) for (const k of R.shortcuts) {
+      const x = k.sA - c.s;
+      if (x > 0 && x < 70) {
+        c.ai.take = c.ai.take || {};
+        const key = k.id + ':' + c.lap;
+        if (c.ai.take[key] == null) c.ai.take[key] = Math.random() < 0.25 + skill * 0.3;
+        if (c.ai.take[key]) dT = k.side * T.W;
+      }
+    }
     // önündekinden kaç
     const ahead = nearestAhead(c, 28);
     if (ahead) {
       const left = ahead.d - (ahead.W + c.W) / 2 - 0.8, right = ahead.d + (ahead.W + c.W) / 2 + 0.8;
-      const lim = T.W / 2 - c.W / 2 - 0.3;
+      const lim = Tl.W / 2 - c.W / 2 - 0.3;
       const goL = Math.abs(clamp(left, -lim, lim) - c.d) < Math.abs(clamp(right, -lim, lim) - c.d) ? left > -lim : !(right < lim);
       dT = goL ? clamp(left, -lim, lim) : clamp(right, -lim, lim);
       if (Math.abs(ahead.d - c.d) < (ahead.W + c.W) / 2 && ahead.v < c.v) c.v = Math.max(ahead.v * 0.98, c.v - 9 * dt);
@@ -563,13 +714,15 @@
     c.a = Math.asin(clamp(want / Math.max(c.v, 3), -0.6, 0.6));
   }
   function advance(c, dt) {
-    const T = R.T, k = P().curvAt(T, c.s);
+    const T = trk(c), k = P().curvAt(T, loc(c));
     const sdot = c.v * Math.cos(c.a) / Math.max(0.3, 1 + k * c.d);
-    c.s += sdot * dt;
     c.d += c.v * Math.sin(c.a) * dt;
-    wrapS(c);
-    const lim = T.W / 2 + 0.2 - c.W / 2;
-    if (Math.abs(c.d) > lim) c.d = Math.sign(c.d) * lim;
+    moveS(c, sdot * dt);
+    const T2 = trk(c), lim = T2.W / 2 + 0.2 - c.W / 2;
+    if (Math.abs(c.d) > lim) {
+      const sc = c.kind === 'racer' ? scAt(c) : null;
+      if (sc) enterShortcut(c, sc); else c.d = Math.sign(c.d) * lim;
+    }
   }
   // pist boyunca öndeki en yakın araç (döngüde sarma hesaba katılır)
   function ds(a, b) { // b, a'nın ne kadar önünde
@@ -580,7 +733,7 @@
   function nearestAhead(c, range) {
     let best = null, bd = range;
     for (const o of allCars()) {
-      if (o === c || o.gone) continue;
+      if (o === c || o.gone || o.sc !== c.sc) continue;
       const x = ds(c, o);
       if (x > 0 && x < bd && Math.abs(o.d - c.d) < (o.W + c.W) / 2 + 1.2) { bd = x; best = o; }
     }
@@ -667,7 +820,8 @@
       for (let j = i + 1; j < n; j++) {
         const b = cs[j];
         if (a.kind === 'traffic' && b.kind === 'traffic') continue;
-        if ((a.out || b.out)) continue;
+        if ((a.out || b.out) || a.sc !== b.sc) continue;
+        if (Math.abs((a.wy || 0) - (b.wy || 0)) > 1.6 && (a.air || b.air)) continue;
         const x = ds(a, b);
         const ox = (a.L + b.L) / 2 - Math.abs(x);
         if (ox <= 0) continue;
@@ -967,14 +1121,14 @@
       if (H.heli && !p.heli) makeHeli();
       // yakalanma
       let near = false;
-      for (const c of r.cops) if (!c.disabled && Math.abs(ds(pl, c)) < 9 && Math.abs(c.d - pl.d) < 4) near = true;
+      for (const c of r.cops) if (!c.disabled && !pl.sc && Math.abs(ds(pl, c)) < 9 && Math.abs(c.d - pl.d) < 4) near = true;
       if (p.grace > 0) p.grace -= dt;
       if (near && Math.abs(pl.v) < 5.5 && p.grace <= 0) p.bust = Math.min(1, p.bust + dt / 2.8);
       else p.bust = Math.max(0, p.bust - dt / 1.2);
       if (p.bust >= 1) { busted(); return; }
       // kaçış
       let seen = false;
-      for (const c of r.cops) if (!c.disabled && c.state !== 'bekle' && Math.abs(ds(pl, c)) < 170) seen = true;
+      for (const c of r.cops) if (!c.disabled && c.state !== 'bekle' && !pl.sc && Math.abs(ds(pl, c)) < 170) seen = true;
       if (!seen) p.evade = Math.min(1, p.evade + dt / (5 + p.heat * 1.3) * (p.heli ? 0.55 : 1));
       else p.evade = Math.max(0, p.evade - dt * 0.4);
       if (p.evade >= 1) {
@@ -1105,7 +1259,7 @@
         popup('BARİKAT GEÇİLDİ', '+250 ÜN', 1.2, 'iyi');
       }
       // çivili şerit: boşluktaki 4 m bant
-      if (b.spikes && !b.spiked && Math.abs(x + 3) < 1.6 && Math.abs(pl.d - b.gap) < 2.3) {
+      if (b.spikes && !b.spiked && !pl.sc && !pl.air && Math.abs(x + 3) < 1.6 && Math.abs(pl.d - b.gap) < 2.3) {
         b.spiked = true; pl.spike = 9;
         popup('LASTİKLER PATLADI!', 'Hız düştü', 1.6, 'kotu'); SES().sfx('spike'); vib(120);
       }
@@ -1143,7 +1297,7 @@
       }
       const x = ds(pl, { s: b.s });
       const ringD = b.side * (T.W / 2 + 2.2);
-      if (Math.abs(x) < 4 && Math.abs(pl.d - ringD) < 5.5 && pl.v > 12) {
+      if (!pl.sc && Math.abs(x) < 4 && Math.abs(pl.d - ringD) < 5.5 && pl.v > 12) {
         b.used = true; b.obj.userData.ring.visible = false;
         r.stats.engel++;
         if (G.onStat) G.onStat('engel', 1);
@@ -1195,15 +1349,19 @@
   // ───────── MODEL SENKRONU ─────────
   const _q = { x: 0, y: 0, z: 0 };
   function syncModel(c, dt) {
-    const T = R.T, m = c.model;
-    P().sample(T, c.s, c.d, tmp);
-    m.position.set(tmp.x, tmp.y + 0.02 + (c.bounce || 0), tmp.z);
+    const m = c.model;
+    P().sample(trk(c), loc(c), c.d, tmp);
+    const baseY = c.wy != null ? c.wy : tmp.y + rampH(c);
+    if (c.bounce) c.bounce = Math.max(0, c.bounce - dt * 0.8);
+    m.position.set(tmp.x, baseY + 0.02 - (c.bounce || 0) * 0.5, tmp.z);
     const dir = c.kind === 'traffic' && c.dir < 0 ? Math.PI : 0;
     const head = tmp.h - c.a - c.slip + dir + (c.spin || 0);
     m.rotation.set(0, 0, 0);
     m.rotation.y = head;
     // eğim + yuvarlanma
-    m.rotateX(-Math.atan(tmp.p) * (dir ? -1 : 1));
+    if (c.air > 0) m.rotateX(-Math.atan2(c.vy, Math.max(8, c.v)) * 0.75);
+    else if (c.wy != null && rampH(c) > 0) m.rotateX(-0.17);
+    else m.rotateX(-Math.atan(tmp.p) * (dir ? -1 : 1) + (c.bounce || 0) * 0.3);
     if (c.isPlayer || c.kind === 'racer') m.rotateZ(clamp(-c.steer * c.v * 0.0025 - (c.slip || 0) * 0.06, -0.06, 0.06));
     // tekerlekler
     c.wheelRot += c.v * dt / 0.34;
@@ -1217,14 +1375,14 @@
     }
     // stop lambaları
     const braking = c.isPlayer ? (input.brake && c.v > 1) : (c.kind !== 'traffic' && c.lastV != null && c.v < c.lastV - 0.05);
-    m.userData.brake.color.setHex(braking ? 0xff2030 : (R.world.isNight ? 0x9a1020 : 0x6a0a12));
+    m.userData.brake.color.setHex(braking ? 0xff2030 : 0xc0101c).multiplyScalar(braking ? 4 : (R.world.isNight ? 1.4 : 0.6));
     c.lastV = c.v;
     // siren
     const sr = m.userData.siren;
     if (sr.length && !c.disabled) {
       const ph = Math.floor((R.t + (c.id || 0) * 3) * 8) % 4;
-      sr[0].color.setHex(ph < 2 ? 0xff1020 : 0x300000);
-      sr[1].color.setHex(ph >= 2 ? 0x2050ff : 0x000030);
+      sr[0].color.setHex(ph < 2 ? 0xff1020 : 0x300000).multiplyScalar(ph < 2 ? 5 : 1);
+      sr[1].color.setHex(ph >= 2 ? 0x2050ff : 0x000030).multiplyScalar(ph >= 2 ? 6 : 1);
     } else if (sr.length) { sr[0].color.setHex(0x200000); sr[1].color.setHex(0x000020); }
     // görünürlük (uzaktakileri çizme)
     if (!c.gone) m.visible = !c.out && Math.abs(ds(R.player, c)) < 900;
@@ -1234,18 +1392,19 @@
   const camPos = { x: 0, y: 0, z: 0 }, camLook = { x: 0, y: 0, z: 0 };
   let camFov = 62;
   function camTarget(out, look) {
-    const pl = R.player, T = R.T;
-    P().sample(T, pl.s, pl.d, tmp);
+    const pl = R.player, T = trk(pl);
+    P().sample(T, loc(pl), pl.d, tmp);
+    const cy = pl.wy != null ? pl.wy : tmp.y;
     const head = tmp.h - pl.a - pl.slip * 0.55;
     const mode = R.camMode;
     const dist = mode === 1 ? 9.5 : mode === 2 ? -0.6 : 6.4, hgt = mode === 1 ? 3.6 : mode === 2 ? 1.05 : 2.35;
     const back = R.cfg.tip === 'serbest' && pl.v < 0 ? -1 : 1;
-    out.x = tmp.x - Math.sin(head) * dist * back; out.z = tmp.z - Math.cos(head) * dist * back; out.y = tmp.y + hgt;
+    out.x = tmp.x - Math.sin(head) * dist * back; out.z = tmp.z - Math.cos(head) * dist * back; out.y = cy + hgt * (pl.air ? 0.8 : 1);
     // yol yükseltisine göre kamera zemin altına girmesin
-    P().sample(T, pl.s - dist, pl.d, tmp2);
+    P().sample(T, loc(pl) - dist, pl.d, tmp2);
     out.y = Math.max(out.y, tmp2.y + hgt * 0.8);
     const la = mode === 2 ? 12 : 4.5;
-    look.x = tmp.x + Math.sin(head) * la; look.z = tmp.z + Math.cos(head) * la; look.y = tmp.y + (mode === 2 ? 0.9 : 1.05);
+    look.x = tmp.x + Math.sin(head) * la; look.z = tmp.z + Math.cos(head) * la; look.y = cy + (mode === 2 ? 0.9 : 1.05);
   }
   function snapCam() {
     camTarget(camPos, camLook);
@@ -1325,7 +1484,7 @@
   }
   function sparks(c, side, imp) {
     if (opt.fx === 0) return;
-    const r = R; P().sample(r.T, c.s, c.d + side * c.W / 2, tmp);
+    const r = R; P().sample(trk(c), loc(c), c.d + side * c.W / 2, tmp); if (c.wy != null) tmp.y = c.wy;
     const n = Math.min(24, 4 + imp | 0);
     for (let i = 0; i < n; i++) {
       const p = r.spark.p.find(q => q.life <= 0); if (!p) break;
@@ -1337,7 +1496,7 @@
   }
   function smokeAt(c, big, side) {
     const r = R; const s = r.smoke.find(q => q.life <= 0); if (!s) return;
-    P().sample(r.T, c.s - (side ? c.L * 0.4 : 0), c.d + (side || 0), tmp);
+    P().sample(trk(c), loc(c) - (side ? c.L * 0.4 : 0), c.d + (side || 0), tmp); if (c.wy != null) tmp.y = c.wy;
     s.s.position.set(tmp.x, tmp.y + 0.4, tmp.z); s.s.visible = true;
     s.life = s.max = big ? 2.2 : 0.9; s.grow = big ? 7 : 3.4;
     s.vx = (Math.random() - 0.5) * 1.5; s.vy = big ? 2.5 : 0.8; s.vz = (Math.random() - 0.5) * 1.5;
@@ -1525,13 +1684,16 @@
       if (T.loop) x.closePath();
       x.stroke();
     }
+    x.strokeStyle = 'rgba(255,214,0,0.9)'; x.lineWidth = 2.5; x.setLineDash([4, 3]);
+    for (const k of R.shortcuts) { x.beginPath(); k.poly.forEach((p, i) => i ? x.lineTo(X(p[0]), Y(p[1])) : x.moveTo(X(p[0]), Y(p[1]))); x.stroke(); }
+    x.setLineDash([]);
     return { img: c, X, Y };
   }
   function drawMap() {
     const r = R, m = r.minimap, x = r.hudEl.map;
     x.clearRect(0, 0, 150, 150);
     x.drawImage(m.img, 0, 0);
-    const dot = (c, col, sz) => { P().sample(r.T, c.s, c.d, tmp); x.fillStyle = col; x.beginPath(); x.arc(m.X(tmp.x), m.Y(tmp.z), sz, 0, 7); x.fill(); };
+    const dot = (c, col, sz) => { if (c.sc) P().sample(c.sc.T, c.ss, c.d, tmp); else P().sample(r.T, c.s, c.d, tmp); x.fillStyle = col; x.beginPath(); x.arc(m.X(tmp.x), m.Y(tmp.z), sz, 0, 7); x.fill(); };
     if (!r.T.loop) { P().sample(r.T, r.finishS, 0, tmp); x.fillStyle = '#ff2e63'; x.fillRect(m.X(tmp.x) - 4, m.Y(tmp.z) - 4, 8, 8); }
     for (const b of r.breakers) if (!b.used) dot(b, '#ffd600', 2.2);
     for (const cp of r.cps) if (!cp.done) { dot(cp, '#00e5ff', 3.5); break; }
@@ -1652,14 +1814,16 @@
     const pl = r.player, T = r.T;
     r.t += 1 / 60;
     const look = 20 + pl.v * 1.4;
-    const cs = P().curvSign(T, pl.s, look * 0.8);
-    const dT = -Math.sign(cs) * Math.min(1, Math.abs(cs) * 50) * (T.W / 2 - 2.5);
+    const TL = trk(pl), sl = loc(pl);
+    const cs = P().curvSign(TL, sl, look * 0.8);
+    const dT = -Math.sign(cs) * Math.min(1, Math.abs(cs) * 50) * (TL.W / 2 - 2.5);
     const ahead = nearestAhead(pl, 30);
     let tgt = dT;
     if (ahead) tgt = ahead.d > pl.d ? ahead.d - 3 : ahead.d + 3;
     for (const b of r.blocks) { const x = ds(pl, { s: b.s }); if (x > 0 && x < 160) tgt = b.gap + (b.spikes ? 0 : 0); }
-    input.steer = clamp((tgt - pl.d) * 0.12 - pl.a * 2.2 + (P().curvAt(T, pl.s + 10) * -pl.v * 0.25) * (1 - opt.assist), -1, 1);
-    const kmax = P().maxCurv(T, pl.s, 25 + pl.v * 1.5);
+    if (!pl.sc) for (const k of r.shortcuts) { const x = k.sA - pl.s; if (x > 0 && x < 60) tgt = k.side * T.W; }
+    input.steer = clamp((tgt - pl.d) * 0.12 - pl.a * 2.2 + (P().curvAt(TL, sl + 10) * -pl.v * 0.25) * (1 - opt.assist), -1, 1);
+    const kmax = P().maxCurv(TL, sl, 25 + pl.v * 1.5);
     const vC = Math.sqrt(pl.st.grip * r.gripMul * GRAV * 1.12 / Math.max(0.0008, kmax)) * skill;
     input.gas = pl.v < vC ? 1 : 0; input.brake = pl.v > vC + 4 ? 1 : 0;
     input.nitro = kmax < 0.006 && pl.nitro > 0.3 ? 1 : 0;

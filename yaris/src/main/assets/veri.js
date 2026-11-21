@@ -71,12 +71,12 @@
   // ───────── BÖLGELER (her biri farklı ortam) ─────────
   // gok: [üst, ufuk] renkleri; isik: sokak lambası rengi; bina: bina renk aralığı
   const ZONES = [
-    { id: 0, ad: 'Liman', yazi: 'Konteynerler, vinçler, sodyum lambalar. Her şey burada başlar.', gok: ['#0b0f2a', '#e0703a'], sis: '#2a1a24', isik: '#ffb347', zemin: '#2b2b30', bina: ['#3b3f4a', '#5a4a42', '#2f3b4a'], yuk: [8, 22], tema: 'liman', stil: 'sehir', tepe: 1.5 },
-    { id: 1, ad: 'Sanayi', yazi: 'Bacalar, depolar, kırık asfalt. Kurallar burada eğilir.', gok: ['#0d1a12', '#7a8a3a'], sis: '#1c2418', isik: '#d9ff66', zemin: '#2c2e26', bina: ['#4a4a3a', '#3a3f3a', '#5a5040'], yuk: [10, 26], tema: 'sanayi', stil: 'blok', tepe: 1 },
-    { id: 2, ad: 'Merkez', yazi: 'Gökdelenler ve neon tabelalar. Şehrin kalbi gece atar.', gok: ['#07071a', '#5a2a8a'], sis: '#140d26', isik: '#9fd8ff', zemin: '#26262e', bina: ['#232838', '#2c2244', '#1d3040'], yuk: [30, 110], tema: 'merkez', stil: 'blok', tepe: 2 },
-    { id: 3, ad: 'Sahil', yazi: 'Palmiyeler, deniz kokusu, sonsuz gün batımı.', gok: ['#2a1650', '#ff8c5a'], sis: '#4a2a4a', isik: '#ffd27f', zemin: '#3a3030', bina: ['#e8d8c0', '#d0b8a0', '#f0e0d0'], yuk: [6, 16], tema: 'sahil', stil: 'sehir', tepe: 4 },
-    { id: 4, ad: 'Dağ Yolu', yazi: 'Çam ormanı, uçurum, firketeler. Fren unutulmaz.', gok: ['#0a1428', '#3a5a7a'], sis: '#1a2430', isik: '#fff2cc', zemin: '#26302a', bina: ['#4a3a2a', '#3a2a20'], yuk: [5, 9], tema: 'dag', stil: 'dag', tepe: 14 },
-    { id: 5, ad: 'Otoyol', yazi: 'Körfez köprüsü ve sekiz şeritli hız. Son durak.', gok: ['#050510', '#b03060'], sis: '#1a0a1a', isik: '#ffffff', zemin: '#22222a', bina: ['#2a2a3a', '#3a2a3a'], yuk: [20, 70], tema: 'otoyol', stil: 'otoyol', tepe: 6, W: 20 },
+    { id: 0, ad: 'Liman', yazi: 'Konteynerler, vinçler, sodyum lambalar. Her şey burada başlar.', gok: ['#0b0f2a', '#9a4a32'], sis: '#2a1a24', isik: '#ffb347', zemin: '#2b2b30', bina: ['#3b3f4a', '#5a4a42', '#2f3b4a'], yuk: [8, 22], tema: 'liman', stil: 'sehir', tepe: 1.5, zipla: 1 },
+    { id: 1, ad: 'Sanayi', yazi: 'Bacalar, depolar, kırık asfalt. Kurallar burada eğilir.', gok: ['#0d1a12', '#7a8a3a'], sis: '#1c2418', isik: '#d9ff66', zemin: '#2c2e26', bina: ['#4a4a3a', '#3a3f3a', '#5a5040'], yuk: [10, 26], tema: 'sanayi', stil: 'blok', tepe: 1, zipla: 1 },
+    { id: 2, ad: 'Merkez', yazi: 'Gökdelenler ve neon tabelalar. Şehrin kalbi gece atar.', gok: ['#07071a', '#5a2a8a'], sis: '#140d26', isik: '#9fd8ff', zemin: '#26262e', bina: ['#232838', '#2c2244', '#1d3040'], yuk: [30, 110], tema: 'merkez', stil: 'blok', tepe: 2, zipla: 3 },
+    { id: 3, ad: 'Sahil', yazi: 'Palmiyeler, deniz kokusu, sonsuz gün batımı.', gok: ['#2a1650', '#ff8c5a'], sis: '#4a2a4a', isik: '#ffd27f', zemin: '#3a3030', bina: ['#e8d8c0', '#d0b8a0', '#f0e0d0'], yuk: [6, 16], tema: 'sahil', stil: 'sehir', tepe: 4, zipla: 2 },
+    { id: 4, ad: 'Dağ Yolu', yazi: 'Çam ormanı, uçurum, firketeler. Fren unutulmaz.', gok: ['#0a1428', '#3a5a7a'], sis: '#1a2430', isik: '#fff2cc', zemin: '#26302a', bina: ['#4a3a2a', '#3a2a20'], yuk: [5, 9], tema: 'dag', stil: 'dag', tepe: 14, zipla: 3 },
+    { id: 5, ad: 'Otoyol', yazi: 'Körfez köprüsü ve sekiz şeritli hız. Son durak.', gok: ['#050510', '#b03060'], sis: '#1a0a1a', isik: '#ffffff', zemin: '#22222a', bina: ['#2a2a3a', '#3a2a3a'], yuk: [20, 70], tema: 'otoyol', stil: 'otoyol', tepe: 6, W: 20, zipla: 1 },
   ];
 
   // ───────── PİSTLER ─────────
@@ -304,6 +304,8 @@
     { id: 'milyon', ad: 'Milyoner', yazi: 'Toplam 1.000.000 💰 kazan', ik: '💰' },
     { id: 'un', ad: 'Şehrin Dilinde', yazi: '50.000 Ün', ik: '🔥' },
     { id: 'serbest', ad: 'Gece Gezgini', yazi: 'Serbest sürüşte 20 km yol yap', ik: '🌃' },
+    { id: 'kestirme', ad: 'Ara Sokak Bilgini', yazi: 'Toplam 20 kestirme kullan', ik: '🔀' },
+    { id: 'ucus', ad: 'Kanatlı', yazi: 'Tek atlayışta 60 m uç', ik: '🛫' },
   ];
 
   // Trafik araçları

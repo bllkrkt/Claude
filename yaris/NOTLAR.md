@@ -14,6 +14,7 @@ adı, karakterleri, "Blacklist" gibi isimleri, gerçek araba markaları kullanı
 | `ses.js` | `SES`: WebAudio ile motor (devir), lastik, siren, efektler ve koddan synthwave müzik (`menu/yaris/kovala/hikaye`) |
 | `araba3d.js` | `ARABA3D.make(opt)`: profilden ekstrüzyonla araba modeli (8 gövde + kamyon/otobüs), jant, kit, rüzgârlık, neon, desen dokusu, polis ışığı |
 | `dunya.js` | `DUNYA.build(scene,T,zone,opts)`: yol, kaldırım, binalar (instanced), bölge süsleri, gökyüzü, sis, yağmur, lambalar; kapı/radar/kontrol noktası/takip engeli/barikat üreticileri |
+| `post.js` | `POST`: ekran efektleri — sahne HDR doku hedefine çizilir; parlama (bloom, 2 seviye), hız bulanıklığı, nitro renk kayması, vinyet, ACES + sRGB. Grafik Düşük'te kapalı (`draw()` doğrudan çizer) |
 | `yaris.js` | `YARIS`: yarış motoru — fizik, yapay zekâ, trafik, polis, yarış türleri, kamera, efektler, HUD, kontroller, vitrin (garaj sahnesi) |
 | `oyun.js` | `A`: kayıt, kariyer, garaj, menüler, hikâye diyalogu, ödüller, günlük, başarımlar, ayarlar |
 | `lib/three.min.js` | Three.js r149 (MIT). `fonts/` Plus Jakarta Sans (OFL) |
@@ -25,6 +26,16 @@ adı, karakterleri, "Blacklist" gibi isimleri, gerçek araba markaları kullanı
 - Sürüş yardımı (`opt.assist`) virajı kısmen kendisi takip eder; el freni = drift (gövde kayma açısı `slip`, puan, nitro dolumu).
 - Döngü pistte herkes çizginin gerisinde (`s<0` → `lap=-1`) başlar; tur olayı sadece yeni en yüksek turda (`maxLap`).
 - Renkler: `THREE.ColorManagement.legacyMode=false` ve tüm `CanvasTexture`'lar sRGB (yaris.init içinde yamalı). Bunu kaldırırsan her şey soluk/beyaz görünür.
+
+## Kestirmeler, rampalar, uçuş (v2)
+- `PIST.shortcuts(T,3,rng)`: virajın içinden geçen Bezier ara yol (`{sA,sB,side,poly}`), kendi pisti `k.T` (W=10). Araç kestirmedeyken `c.sc=k`, yerel konum `c.ss`; `c.s` ana yol eşdeğerine eşlenir (sıralama/mesafe aynı kalır). Giriş: ana yol kenarına `sA` civarında çarpınca `enterShortcut`; çıkış `exitShortcut` (dünya konumu korunur, `rebase`). Farklı yoldaki araçlar çarpışmaz; polis kestirmedeki oyuncuyu göremez/yakalayamaz.
+- Yardımcılar: `trk(c)`, `loc(c)`, `moveS(c,x)`. Yeni fizik kodunda `R.T`/`c.s` yerine bunları kullan.
+- Rampalar `R.ramps` (`{sc,s0,len,d0,w,h}`), tepeler `T.bumps` (`zipla` bölge değeri). Dikey fizik `vert()`: `c.wy`, `c.vy`, `c.air`; yol aşağı kıvrılınca ya da rampa bitince havalanır, inişte `land()` (uçuş ≥0,45 sn → nitro + "UÇUŞ" yazısı).
+
+## Grafik (v2)
+- Araba gövdesi `loftBody`/`loftCabin`: profilden kesit örme (yuvarlak uçlar, çamurluk şişkinliği, eğimli yan cam). Yüksek kalitede clearcoat (MeshPhysical). Farlar/stoplar/siren HDR renk (parlama efektiyle ışır).
+- Çevre: park etmiş arabalar (`ARABA3D.parkGeo`, örneklemeli), ağaç, musluk, çöp kutusu, bank, yaya geçidi, rögar, bulut katmanı, zemin kat vitrinleri.
+- Kalite otomatik: bellek ≥6 GB ve ≥8 çekirdek → Yüksek; yarışta 6 sn ortalama <27 kare/sn ise `onLowFps` Orta'ya düşürür.
 
 ## Yarış türleri (`cfg.tip`)
 devre, sprint, drag (elle vites `input.shift`, şerit değiştirme, trafiğe sert çarpma = kaza), hiz (radar toplamı),
@@ -59,8 +70,10 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
   6 bölge, 26 pist + serbest sürüş halkası, 10 yarış türü, 10 rakipli Gece Listesi + hikâye (abla Defne, Bora, Komiser Sert, Kobra),
   polis sistemi, 10 meydan okuma, 20 başarım, günlük giriş + görevler, ayarlar (dokun/eğ, oto gaz, yardım, kamera, grafik).
 
+- v2: kestirmeler (AI da kullanır), rampalar ve tepelerden uçuş, kavisli yeni araba modelleri, ekran efektleri (bloom, hız bulanıklığı), sokak ayrıntıları, kayıt birleştirme hatası düzeltildi (iç içe varsayılanlar kayboluyordu). Denge: beceri 0.9 → 37/49 (kestirme kullanan sanal sürücü).
+
 ## Fikirler (sıradaki)
-- Yol ayrımları / kestirmeler, köprüden atlama rampaları, gizli koleksiyon parçaları (serbest sürüşte).
+- Gizli koleksiyon parçaları (serbest sürüşte), kırılabilir engeller (kasalar, çitler).
 - Rakip arabalarına özel görünüm ve "pembe kâğıt" yerine özgün bir ödül sistemi; hasar görseli.
 - Hayalet yarış (en iyi turunu kaydet), fotoğraf modu, sezonluk rekor tablosu.
 - Telefonda performans ölçümü; release/R8 APK.

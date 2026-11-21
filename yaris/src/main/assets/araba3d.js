@@ -51,6 +51,73 @@
     return g;
   }
 
+  // ── kesit gövde ──
+  function halfW(B, u) {
+    const e = 0.62, L2 = B.L / 2, a = Math.abs(u);
+    let p = 1;
+    if (a > L2 - e) { const t = Math.min(1, (a - (L2 - e)) / e); p = Math.sqrt(Math.max(0.0, 1 - t * t * 0.72)); }
+    const arch = 0.04 * Math.exp(-Math.pow((a - B.wb) / 0.42, 2));
+    return B.W / 2 * p + arch;
+  }
+  function botAt(B, u) { const a = Math.abs(u), L2 = B.L / 2; return (B.gc || 0.22) + Math.max(0, a - (L2 - 0.55)) * 0.32; }
+  function loftBody(B) {
+    const THREE = T3(), N = Q >= 1 ? 30 : 20, pos = [], uv = [], idx = [];
+    let ring = 0;
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1), u = (-B.L / 2 + B.L * (0.5 - 0.5 * Math.cos(Math.PI * t))) * 0.999;
+      const bot = botAt(B, u);
+      let top = topAt(B.b, u); if (top < bot + 0.12) top = bot + 0.12;
+      const hw = halfW(B, u), hgt = top - bot;
+      const R = [[hw * 0.9, bot], [hw, bot + Math.min(0.1, hgt * 0.2)], [hw * 1.005, bot + hgt * 0.5], [hw * 0.975, top - Math.min(0.08, hgt * 0.2)], [hw * 0.86, top], [0, top + 0.025]];
+      const pts = R.concat(R.slice(0, 5).reverse().map(p => [-p[0], p[1]]));
+      ring = pts.length;
+      pts.forEach(([x, y], j) => { pos.push(x, y, u); uv.push(u / B.L + 0.5, j >= 4 && j <= 6 ? 0.985 : y / 1.5); });
+    }
+    for (let i = 0; i < N - 1; i++) for (let j = 0; j < ring; j++) {
+      const j2 = (j + 1) % ring, A = i * ring + j, Bv = i * ring + j2, C = (i + 1) * ring + j, D = (i + 1) * ring + j2;
+      idx.push(A, Bv, C, Bv, D, C);
+    }
+    // uç kapaklar
+    for (const [i, front] of [[0, false], [N - 1, true]]) {
+      let cy = 0; for (let j = 0; j < ring; j++) cy += pos[(i * ring + j) * 3 + 1]; cy /= ring;
+      const ci = pos.length / 3; pos.push(0, cy, pos[i * ring * 3 + 2]); uv.push(front ? 1 : 0, cy / 1.5);
+      for (let j = 0; j < ring; j++) { const a = i * ring + j, b = i * ring + (j + 1) % ring; if (front) idx.push(ci, a, b); else idx.push(ci, b, a); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+  function loftCabin(B, van) {
+    const THREE = T3(), M = Q >= 1 ? 16 : 10, c = B.c, pos = [], uv = [], gi = [], ri = [];
+    const uS = c[3][0], uE = c[0][0];
+    const roofA = Math.min(c[1][0], c[2][0]) + 0.04, roofB = Math.max(c[1][0], c[2][0]) - 0.04;
+    for (let i = 0; i < M; i++) {
+      const u = uS + (uE - uS) * (i / (M - 1));
+      const base = topAt(B.b, u) - 0.03;
+      let roof = topAt(c, u); if (roof < base + 0.03) roof = base + 0.03;
+      const hwB = halfW(B, u) * (van ? 0.99 : 0.86), hwT = hwB * (van ? 0.95 : 0.76);
+      const pts = [[hwB, base], [hwT, roof - 0.04], [hwT * 0.88, roof], [0, roof + 0.015], [-hwT * 0.88, roof], [-hwT, roof - 0.04], [-hwB, base]];
+      for (const [x, y] of pts) { pos.push(x, y, u); uv.push(0, 0); }
+    }
+    const ring = 7;
+    for (let i = 0; i < M - 1; i++) {
+      const u = uS + (uE - uS) * ((i + 0.5) / (M - 1)), roofZone = u > roofA && u < roofB;
+      for (let j = 0; j < ring - 1; j++) {
+        const A = i * ring + j, Bv = i * ring + j + 1, C = (i + 1) * ring + j, D = (i + 1) * ring + j + 1;
+        // kesit arkadan öne gidiyor: yüz yönü gövdenin tersi
+        (roofZone && j >= 1 && j <= 4 ? ri : gi).push(A, Bv, C, Bv, D, C);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(gi.concat(ri)); g.addGroup(0, gi.length, 0); g.addGroup(gi.length, ri.length, 1);
+    g.computeVertexNormals();
+    return g;
+  }
+
   // Yan desen dokusu (kaporta yan yüzü; UV metre cinsinden u,v)
   function vinylTex(body, color, vinyl, accent) {
     const THREE = T3(), cv = document.createElement('canvas');
@@ -123,6 +190,12 @@
         sp.rotation.x = (i / kol) * Math.PI; g.add(sp);
       }
     }
+    if (Q >= 1) {
+      const disc2 = new THREE.Mesh(new THREE.CylinderGeometry(rr * 0.78, rr * 0.78, 0.03, 14), mat('disc', () => new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.4, metalness: 0.9 })));
+      disc2.rotation.z = Math.PI / 2; disc2.position.x = 0; g.add(disc2);
+      const cal = new THREE.Mesh(new THREE.BoxGeometry(0.08, rr * 0.5, rr * 0.35), mat('caliper', () => new THREE.MeshStandardMaterial({ color: 0xd01830, roughness: 0.5 })));
+      cal.position.set(0, rr * 0.55, 0); g.userData.cal = cal; g.add(cal);
+    }
     const hub = new THREE.Mesh(new THREE.CylinderGeometry(rr * 0.25, rr * 0.25, w + 0.06, 8), rimM);
     hub.rotation.z = Math.PI / 2; g.add(hub);
     return g;
@@ -144,52 +217,61 @@
     const simple = opt.basit || Q === 0;   // trafik araçları ve zayıf telefon: basit malzeme
     const wallM = simple
       ? new THREE.MeshLambertMaterial({ color })
+      : Q >= 2 ? new THREE.MeshPhysicalMaterial({ color, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.2, clearcoat: fin.id === 'mat' ? 0 : 1, clearcoatRoughness: 0.07 })
       : new THREE.MeshStandardMaterial({ color, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.1 });
     let sideM = wallM;
     if (!opt.basit && (opt.vinyl || opt.desen !== false)) {
       const vt = vinylTex(B, color, opt.vinyl || 0, opt.aksan);
       sideM = simple ? new THREE.MeshLambertMaterial({ map: vt })
+        : Q >= 2 ? new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: vt, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.2, clearcoat: fin.id === 'mat' ? 0 : 1, clearcoatRoughness: 0.07 })
         : new THREE.MeshStandardMaterial({ color: 0xffffff, map: vt, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.1 });
     }
-    const body = new THREE.Mesh(extrude(B.b, B.W, simple ? 0 : 0.04), [sideM, wallM]);
+    // gövde: kesitlerden örülmüş kavisli kabuk (yuvarlak burun/kuyruk, şişkin çamurluklar)
+    const body = new THREE.Mesh(loftBody(B), sideM);
     grp.add(body);
-    // cam (kabin)
+    // kabin: eğimli yan camlar + kaporta renginde tavan
     const tint = opt.cam || 0;
     const glassM = mat('glass' + tint + (simple ? 's' : ''), () => simple ? new THREE.MeshLambertMaterial({ color: [0x223040, 0x141a22, 0x08080a][tint] })
-      : new THREE.MeshStandardMaterial({ color: [0x2a3a4c, 0x161c26, 0x07070a][tint], roughness: 0.05, metalness: 0.9, envMap: ENV, envMapIntensity: 1.4 }));
+      : new THREE.MeshStandardMaterial({ color: [0x2a3a4c, 0x161c26, 0x07070a][tint], roughness: 0.04, metalness: 0.95, envMap: ENV, envMapIntensity: 1.6 }));
     const cw = B.W * (B.cw || 0.86);
-    const cab = new THREE.Mesh(extrude(B.c, cw, 0), glassM);
+    const cab = new THREE.Mesh(loftCabin(B, type === 'van'), [glassM, wallM]);
     grp.add(cab);
-    // tavan (kaporta rengi, camın üstünde ince levha)
-    if (type !== 'van') {
-      const rp = B.c, u1 = rp[1][0] - 0.05, u2 = rp[2][0] + 0.05;
-      const ht = Math.min(rp[1][1], rp[2][1]);
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(cw * 0.94, 0.05, Math.abs(u1 - u2)), wallM);
-      roof.position.set(0, ht + 0.01, (u1 + u2) / 2); grp.add(roof);
-    }
-    // farlar & stoplar
-    const headM = mat('head', () => new THREE.MeshBasicMaterial({ color: 0xfff6d8 }));
+    // farlar (HDR: ekran efektleriyle parlar) & LED stop şeridi
+    const headM = mat('head', () => { const m = new THREE.MeshBasicMaterial({ color: 0xfff6d8 }); m.color.multiplyScalar(4); return m; });
+    const drlM = mat('drl', () => { const m = new THREE.MeshBasicMaterial({ color: 0xbfe6ff }); m.color.multiplyScalar(2.2); return m; });
     const brakeM = new THREE.MeshBasicMaterial({ color: 0x8a0a12 });
-    const fz = B.L / 2 + 0.02, fy = topAt(B.b, B.L / 2 - 0.15) - 0.12;
+    const darkM = mat('dark', () => new THREE.MeshLambertMaterial({ color: 0x0c0c0e }));
+    const fu = B.L / 2 - 0.16, fy = topAt(B.b, fu) - 0.09, fhw = halfW(B, fu);
     for (const sx of [-1, 1]) {
-      const h = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.1, 0.06), headM);
-      h.position.set(sx * (B.W / 2 - 0.3), Math.max(0.45, fy), fz); grp.add(h);
-      const t = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.05), brakeM);
-      t.position.set(sx * (B.W / 2 - 0.32), topAt(B.b, -B.L / 2 + 0.1) - 0.14, -B.L / 2 - 0.02); grp.add(t);
+      const h = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.085, 0.16), headM);
+      h.position.set(sx * fhw * 0.62, Math.max(0.42, fy), fu + 0.08); h.rotation.y = sx * 0.25; grp.add(h);
+      const hb = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.13, 0.12), darkM);
+      hb.position.set(sx * fhw * 0.62, Math.max(0.42, fy), fu + 0.03); hb.rotation.y = sx * 0.25; grp.add(hb);
+      if (type === 'super' || type === 'wedge' || type === 'coupe') {
+        const d = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.025, 0.05), drlM);
+        d.position.set(sx * fhw * 0.6, Math.max(0.42, fy) - 0.075, fu + 0.12); d.rotation.y = sx * 0.25; grp.add(d);
+      }
+    }
+    const ru = -B.L / 2 + 0.06, ry = topAt(B.b, ru + 0.06) - 0.12, rhw = halfW(B, ru + 0.05);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(rhw * 1.7, 0.06, 0.06), brakeM); bar.position.set(0, ry, ru - 0.02); grp.add(bar);
+    for (const sx of [-1, 1]) {
+      const t = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.08), brakeM); t.position.set(sx * rhw * 0.72, ry - 0.02, ru); grp.add(t);
+      // egzoz ucu
+      const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.16, 10), mat('chrome', () => new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.2, metalness: 1, envMap: ENV })));
+      ex.rotation.x = Math.PI / 2; ex.position.set(sx * 0.38, 0.3, -B.L / 2 + 0.02); grp.add(ex);
     }
     // ön ızgara + plaka
-    const darkM = mat('dark', () => new THREE.MeshLambertMaterial({ color: 0x0c0c0e }));
-    const gril = new THREE.Mesh(new THREE.BoxGeometry(B.W * 0.5, 0.12, 0.05), darkM);
-    gril.position.set(0, 0.38, fz); grp.add(gril);
+    const gril = new THREE.Mesh(new THREE.BoxGeometry(fhw * 0.9, 0.12, 0.08), darkM);
+    gril.position.set(0, 0.36, B.L / 2 - 0.08); grp.add(gril);
     const plM = mat('plate', () => new THREE.MeshLambertMaterial({ color: 0xf0f0f0 }));
     const pl = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.12, 0.03), plM);
-    pl.position.set(0, 0.42, -B.L / 2 - 0.03); grp.add(pl);
+    pl.position.set(0, 0.4, -B.L / 2 + 0.01); grp.add(pl);
     // tekerlekler
     const wheels = [];
     const rimDef = opt.jant || { kol: 5 };
     for (const sz of [1, -1]) for (const sx of [-1, 1]) {
       const w = wheel(B.r, 0.26, rimDef, opt.jantRenk || '#c8ccd4');
-      w.position.set(sx * (B.W / 2 - 0.055), B.r, sz * B.wb);
+      w.position.set(sx * (halfW(B, B.wb) - 0.07), B.r, sz * B.wb);
       w.userData.front = sz > 0;
       grp.add(w); wheels.push(w);
     }
@@ -199,7 +281,7 @@
     for (const sz of [1, -1]) for (const sx of [-1, 1]) {
       const a = new THREE.Mesh(archG, archM);
       a.rotation.y = sx * Math.PI / 2;
-      a.position.set(sx * (B.W / 2 + 0.046), B.r, sz * B.wb);
+      a.position.set(sx * (halfW(B, B.wb) * 1.005 + 0.012), B.r, sz * B.wb);
       grp.add(a);
     }
     if (!opt.basit) {
@@ -212,14 +294,17 @@
     const kit = opt.kit || 0;
     if (kit > 0) {
       const km = kit === 3 ? darkM : wallM;
-      const sp = new THREE.Mesh(new THREE.BoxGeometry(B.W + 0.04, 0.07, 0.3), km); sp.position.set(0, 0.22, B.L / 2 - 0.05); grp.add(sp);
+      const fw = halfW(B, B.L / 2 - 0.3) * 1.9;
+      const sp = new THREE.Mesh(new THREE.BoxGeometry(fw, 0.05, 0.34), darkM); sp.position.set(0, 0.2, B.L / 2 - 0.22); grp.add(sp);
       for (const sx of [-1, 1]) {
-        const sk = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, B.wb * 1.3), km); sk.position.set(sx * (B.W / 2 + 0.02), 0.28, 0); grp.add(sk);
+        const sk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.1, B.wb * 1.25), km); sk.position.set(sx * (halfW(B, 0) + 0.02), 0.27, 0); grp.add(sk);
       }
-      const df = new THREE.Mesh(new THREE.BoxGeometry(B.W * 0.8, 0.1, 0.25), darkM); df.position.set(0, 0.24, -B.L / 2 + 0.05); grp.add(df);
+      const df = new THREE.Mesh(new THREE.BoxGeometry(halfW(B, -B.L / 2 + 0.3) * 1.6, 0.08, 0.3), darkM); df.position.set(0, 0.22, -B.L / 2 + 0.2); grp.add(df);
+      for (let i = -2; i <= 2; i++) { const fin = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.3), darkM); fin.position.set(i * 0.2, 0.26, -B.L / 2 + 0.2); grp.add(fin); }
       if (kit >= 2) for (const sz of [1, -1]) for (const sx of [-1, 1]) {
-        const fl = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, B.r * 2.6), wallM);
-        fl.position.set(sx * (B.W / 2 + 0.04), B.r * 2 - 0.02, sz * B.wb); grp.add(fl);
+        const fl = new THREE.Mesh(new THREE.CylinderGeometry(B.r * 1.32, B.r * 1.32, 0.12, 14, 1, true, 0, Math.PI), wallM);
+        fl.rotation.z = Math.PI / 2; fl.material = wallM;
+        fl.position.set(sx * (halfW(B, B.wb) + 0.03), B.r, sz * B.wb); grp.add(fl);
       }
       if (kit === 3) { // kaput havalandırması
         const sc = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.5), darkM);
@@ -256,7 +341,7 @@
     // neon
     let neonM = null;
     if (opt.neon) {
-      neonM = new THREE.MeshBasicMaterial({ color: opt.neon, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
+      neonM = new THREE.MeshBasicMaterial({ color: opt.neon, map: blobTex(), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
       const n = new THREE.Mesh(new THREE.PlaneGeometry(B.W + 1.4, B.L + 1.4), neonM);
       n.rotation.x = -Math.PI / 2; n.position.y = 0.03; n.renderOrder = 2; grp.add(n);
       const strip = new THREE.Mesh(new THREE.BoxGeometry(B.W * 0.9, 0.03, B.L * 0.85), new THREE.MeshBasicMaterial({ color: opt.neon }));
@@ -349,5 +434,13 @@
     });
   }
 
-  G.ARABA3D = { make, dispose, setEnv, setQuality, BODY, blobTex };
+  // park etmiş arabalar için tek parça geometri (gövde + kabin), örneklemeli çizim için
+  function parkGeo(type) {
+    const B = BODY[type] || BODY.sedan, q0 = Q; Q = 0;
+    const b = loftBody(B), c = loftCabin(B, type === 'van');
+    Q = q0;
+    c.clearGroups();
+    return [b, c, B];
+  }
+  G.ARABA3D = { make, dispose, setEnv, setQuality, BODY, blobTex, parkGeo };
 })(window);

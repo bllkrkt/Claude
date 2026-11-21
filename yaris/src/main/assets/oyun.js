@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '1.0';
+  const VER = '2.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -24,7 +24,7 @@
       v: 1, para: 2500, un: 0, sec: 'serce', arabalar: { serce: newCar('serce') },
       kar: { bitti: {}, rakip: 10, rk: {}, sahne: {}, final: false, son: false },
       ar: { sure: 0, etkisiz: 0, engel: 0, barikat: 0, kac: 0 },
-      ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0 },
+      ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0, kestirme: 0, ucus: 0 },
       bas: {}, mo: {}, gun: { tarih: '', seri: 0, alindi: '', gorev: [], gtarih: '' },
       set: { ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2 },
       ilk: true,
@@ -35,10 +35,11 @@
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
-        const o = JSON.parse(raw), f = fresh();
+        const o = JSON.parse(raw), d = fresh();
         // eksik alanları varsayılanlarla tamamla (eski kayıtlar bozulmasın)
-        S = Object.assign(f, o);
-        for (const k of ['kar', 'ar', 'ist', 'gun', 'set']) S[k] = Object.assign(f[k] || {}, o[k] || {});
+        S = Object.assign(fresh(), o);
+        for (const k of ['kar', 'ar', 'ist', 'gun', 'set']) S[k] = Object.assign(d[k], o[k] || {});
+        if (!S.arabalar || !Object.keys(S.arabalar).length) S.arabalar = { serce: newCar('serce') };
         for (const id in S.arabalar) { const d = newCar(CAR(id) ? id : 'serce'); S.arabalar[id] = Object.assign(d, S.arabalar[id]); S.arabalar[id].gor = Object.assign(d.gor, S.arabalar[id].gor); }
         if (!S.arabalar[S.sec]) S.sec = Object.keys(S.arabalar)[0] || 'serce';
         if (!S.arabalar.serce && !Object.keys(S.arabalar).length) S.arabalar.serce = newCar('serce');
@@ -284,6 +285,7 @@
     S.ist.enHiz = Math.max(S.ist.enHiz, st.enHiz);
     S.ist.km += st.mesafe / 1000;
     S.ist.drift += res.driftTotal || 0;
+    S.ist.kestirme = (S.ist.kestirme || 0) + (st.kestirme || 0);
     if (res.win) S.ist.gal++;
     const pursTime = res.pursTime || 0;
     S.ar.sure = Math.max(S.ar.sure, pursTime);
@@ -346,6 +348,8 @@
     if (res.driftTotal) L.push(['💨 Drift puanı', fmt(res.driftTotal)]);
     if (st.mukemmel) L.push(['🚦 Mükemmel vites', st.mukemmel]);
     if (st.duvar) L.push(['🧱 Duvar çarpması', st.duvar]);
+    if (st.kestirme) L.push(['🔀 Kestirme', st.kestirme]);
+    if (st.ucus) L.push(['🛫 En uzun uçuş', st.ucus + ' m']);
     if (st.etkisiz) L.push(['🚓 Devre dışı polis', st.etkisiz]);
     if (st.engel) L.push(['🏗️ Yıkılan engel', st.engel]);
     if (st.barikat) L.push(['🚧 Geçilen barikat', st.barikat]);
@@ -536,6 +540,7 @@
     if (k === 'polis') { S.ist.polis += n; S.ar.etkisiz += n; dailyProg('polis', n); }
     if (k === 'engel') { S.ist.engel += n; S.ar.engel += n; }
     if (k === 'barikat') { S.ist.barikat += n; S.ar.barikat += n; }
+    if (k === 'ucus') { S.ist.ucus = Math.max(S.ist.ucus || 0, n); if (n >= 60) unlock('ucus'); }
     if (k === 'kacis') { S.ist.kacis++; S.ar.kac = Math.max(S.ar.kac, n); dailyProg('kacis', 1); }
     save();
   };
@@ -774,13 +779,13 @@
     if (i.engel >= 10) unlock('engel'); if (i.enHiz >= 300) unlock('hiz300'); if (i.kilpayi >= 100) unlock('kil');
     if (n >= 5) unlock('garaj5'); if (n >= 10) unlock('garaj10');
     if (S.kar.rakip <= 5) unlock('liste5'); if (S.kar.rakip <= 0) unlock('liste1');
-    if (i.kazanc >= 1e6) unlock('milyon'); if (S.un >= 50000) unlock('un'); if (i.km >= 20) unlock('serbest');
+    if (i.kazanc >= 1e6) unlock('milyon'); if (S.un >= 50000) unlock('un'); if (i.km >= 20) unlock('serbest'); if ((i.kestirme || 0) >= 20) unlock('kestirme');
   }
   function pBasarim() {
     const i = S.ist;
     return `<div class="pane"><h2>🏆 Başarımlar <small>${Object.keys(S.bas).length}/${V.ACHS.length}</small></h2><div class="grid">` +
       V.ACHS.map(a => `<div class="card ${S.bas[a.id] ? 'done' : 'lock'}" style="cursor:default"><span class="ik">${a.ik}</span><div class="t">${a.ad}</div><div class="s">${a.yazi}</div></div>`).join('') + `</div></div>
-      <div class="pane"><h2>📊 İstatistikler</h2><div class="grid sm">${stat('Yarış', i.yaris)}${stat('Galibiyet', i.gal)}${stat('En yüksek hız', Math.round(i.enHiz) + ' km/s')}${stat('Toplam yol', i.km.toFixed(1) + ' km')}${stat('Kıl payı', i.kilpayi)}${stat('Drift puanı', fmt(i.drift))}${stat('Kaçış', i.kacis)}${stat('Polis', i.polis)}${stat('Toplam kazanç', fmt(i.kazanc) + ' 💰')}${stat('Ün', fmt(S.un))}</div></div>`;
+      <div class="pane"><h2>📊 İstatistikler</h2><div class="grid sm">${stat('Yarış', i.yaris)}${stat('Galibiyet', i.gal)}${stat('En yüksek hız', Math.round(i.enHiz) + ' km/s')}${stat('Toplam yol', i.km.toFixed(1) + ' km')}${stat('Kıl payı', i.kilpayi)}${stat('Drift puanı', fmt(i.drift))}${stat('Kaçış', i.kacis)}${stat('Kestirme', i.kestirme || 0)}${stat('En uzun uçuş', (i.ucus || 0) + ' m')}${stat('Polis', i.polis)}${stat('Toplam kazanç', fmt(i.kazanc) + ' 💰')}${stat('Ün', fmt(S.un))}</div></div>`;
   }
 
   // ───────── AYARLAR ─────────
@@ -814,6 +819,11 @@
     SES.setVol(s.ses, s.muzik);
   }
   window.onCam = m => { S.set.kamera = m; save(); };
+  window.onLowFps = f => {
+    if (S.set.q < 2) return;
+    S.set.q = 1; save(); Y.setQuality(1);
+    toast('⚙️ Telefon zorlandı (' + Math.round(f) + ' kare/sn): grafik Orta\'ya alındı. Ayarlar\'dan değiştirebilirsin.');
+  };
   function askName() {
     modal(`<h2>Sürücü adın</h2><p class="mut">Hikâyede ve yarışlarda görünür.</p><input id="nmIn" maxlength="14" value="${(S.isim || '').replace(/"/g, '')}" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#1a1830;color:#fff;font:inherit;font-size:18px;user-select:text;-webkit-user-select:text"><div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn" id="nmOk">Tamam</button></div>`);
     const inp = $('nmIn'); setTimeout(() => inp.focus(), 50);
@@ -861,6 +871,7 @@
   function hint() {
     modal(`<h2>Nasıl oynanır?</h2>
       <p>👆 <b>Sol alt:</b> parmağını koy ve sağa sola kaydır — direksiyon.<br>🟢 <b>GAZ</b> · 🔴 <b>FREN</b> (durunca geri vites)<br>🔵 <b>NİTRO:</b> virajda kayarak, kıl payı geçişlerle ve mükemmel viteslerle dolar.<br>⚪ <b>EL FRENİ:</b> virajda basılı tut, kay, drift puanı topla.<br>🟡 <b>ODAK:</b> zamanı yavaşlatır.</p>
+      <p>🔀 Sarı <b>KESTİRME</b> tabelalarını gör: yolun o kenarına sür, ara sokağa gir, mesafe kazan (polis de seni orada göremez). 🛫 Rampalardan ve tepelerden hızla geç, havada kaldıkça nitro dolar.</p>
       <p>🚨 Polisten kaçmak için uzaklaş, sarı halkalı <b>takip engellerinin</b> içinden geç, barikatlarda boşluğu bul. Kaçış çubuğu dolunca gizlen.</p>
       <p class="mut">Ayarlar'dan otomatik gaz, eğerek sürüş ve sürüş yardımını değiştirebilirsin.</p>
       <div class="row" style="justify-content:flex-end"><button class="btn" onclick="A.closeModal()">Anladım</button></div>`);
@@ -870,7 +881,7 @@
   function pickQuality() {
     if (S.set.q >= 0) return S.set.q;
     const mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
-    const q = mem <= 3 || cores <= 4 ? 0 : mem <= 4 ? 1 : 2;
+    const q = mem <= 3 || cores <= 4 ? 0 : mem < 6 || cores < 8 ? 1 : 2;
     S.set.q = q; save();
     return q;
   }
