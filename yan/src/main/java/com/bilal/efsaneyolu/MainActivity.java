@@ -1,6 +1,18 @@
 package com.bilal.efsaneyolu;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,6 +46,8 @@ public class MainActivity extends Activity {
     private WebView web;
     private volatile boolean ready = false;
     private Vibrator vibrator;
+    private static final int FILE_REQ = 41;
+    private ValueCallback<Uri[]> fileCallback;
 
     @Override
     protected void onCreate(Bundle b) {
@@ -122,6 +136,24 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
+        // Yedek dosyasını geri yüklemek için dosya seçici
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> cb, FileChooserParams params) {
+                if (fileCallback != null) fileCallback.onReceiveValue(null);
+                fileCallback = cb;
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*");
+                try {
+                    startActivityForResult(Intent.createChooser(i, "Yedek dosyasını seç"), FILE_REQ);
+                } catch (ActivityNotFoundException e) {
+                    fileCallback = null;
+                    return false;
+                }
+                return true;
+            }
+        });
         web.loadUrl("https://" + HOST + "/assets/index.html");
     }
 
@@ -202,6 +234,16 @@ public class MainActivity extends Activity {
         } catch (Exception ignored) { }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != FILE_REQ || fileCallback == null) return;
+        Uri[] result = null;
+        if (resultCode == RESULT_OK && data != null && data.getData() != null) result = new Uri[]{data.getData()};
+        fileCallback.onReceiveValue(result);
+        fileCallback = null;
+    }
+
     private class Bridge {
         /** Oyun ilk ekranını hazırladı: açılış ekranı kalkar. */
         @JavascriptInterface
@@ -210,6 +252,35 @@ public class MainActivity extends Activity {
                 ready = true;
                 try { if (web != null && web.getParent() instanceof View) ((View) web.getParent()).invalidate(); } catch (Exception ignored) { }
             });
+        }
+
+        /** Yedeği İndirilenler klasörüne yazar; yazılan yeri döndürür, olmazsa boş metin. */
+        @JavascriptInterface
+        public String saveFile(String name, String content) {
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            try {
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues v = new ContentValues();
+                    v.put(MediaStore.Downloads.DISPLAY_NAME, name);
+                    v.put(MediaStore.Downloads.MIME_TYPE, "text/plain");
+                    v.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
+                    if (uri == null) return "";
+                    try (OutputStream os = getContentResolver().openOutputStream(uri)) {
+                        if (os == null) return "";
+                        os.write(bytes);
+                    }
+                    return "İndirilenler/" + name;
+                } else {
+                    File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                    if (dir == null) return "";
+                    File f = new File(dir, name);
+                    try (FileOutputStream os = new FileOutputStream(f)) { os.write(bytes); }
+                    return f.getAbsolutePath();
+                }
+            } catch (Exception e) {
+                return "";
+            }
         }
 
         /** Kısa titreşim (ms). */

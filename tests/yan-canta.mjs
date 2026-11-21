@@ -70,7 +70,7 @@ check(await ev(() => __T.ENS.filter(e => !e.dead).length) < k0 || await ev(() =>
 await pg.screenshot({ path: out + '/5-yoldas-oyun.png' });
 // v7: sınıflar ve menzilli saldırı
 for (const k of ['arc', 'mag']) {
-  await ev(k => { __T.SV.cls = k; window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); const e = __T.ENS.find(e => !e.dead && !e.fly); __T.tp(e.x / 32 - 4, Math.floor((e.y + e.h) / 32)); __T.P.face = 1; window.__e = e; window.__h0 = e.hp; }, k);
+  await ev(k => { __T.SV.cls = k; window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); const e = __T.ENS.find(e => !e.dead && !e.fly && e.t !== 'gob'); __T.tp(e.x / 32 - 4, Math.floor((e.y + e.h) / 32)); __T.P.face = 1; window.__e = e; window.__h0 = e.hp; }, k);
   await wait(200); for (let i = 0; i < 6; i++) { await ev(() => { __T.P.ab = .15; }); await wait(120); }
   await ev(() => { __T.P.en = 100; __T.P.sb = .12; }); await wait(900);
   await pg.screenshot({ path: out + '/5c-' + k + '.png' });
@@ -79,7 +79,7 @@ for (const k of ['arc', 'mag']) {
 }
 // v11: ikinci yetenek (her sınıf)
 for (const k of ['war', 'arc', 'mag']) {
-  await ev(k => { __T.SV.cls = k; window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); const e = __T.ENS.find(e => !e.dead && !e.fly); __T.tp(e.x / 32 - 2, Math.floor((e.y + e.h) / 32)); __T.P.face = 1; __T.P.kCd = 0; window.__e = e; window.__h0 = e.hp; }, k);
+  await ev(k => { __T.SV.cls = k; window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); const e = __T.ENS.find(e => !e.dead && !e.fly && e.t !== 'gob'); __T.tp(e.x / 32 - 2, Math.floor((e.y + e.h) / 32)); __T.P.face = 1; __T.P.kCd = 0; window.__e = e; window.__h0 = e.hp; }, k);
   await wait(150); await ev(() => { __T.P.kb = .12; }); await wait(700);
   check(await ev(() => window.__e.dead || window.__e.hp < window.__h0), k + ' ikinci yetenek vurmadı');
   check(await ev(() => __T.P.kCd > 0), k + ' yetenek bekleme süresi yok');
@@ -150,6 +150,10 @@ await pg.click('[data-a=back]'); await wait(100); await pg.click('[data-a=dq]');
 const g8 = await ev(() => __T.SV.gold); await pg.click('[data-a=achc][data-v=k100]'); await wait(100);
 check(await ev(() => __T.SV.ach.k100 === 1) && await ev(() => __T.SV.gold) > g8, 'başarım ödülü'); await pg.screenshot({ path: out + '/11-basarim.png' });
 await pg.click('[data-a=back]'); await wait(100);
+// v12: kayıt yedeği
+const bk = await ev(() => { const t = 'EFSANEYOLU1:' + btoa(unescape(encodeURIComponent(JSON.stringify(__T.SV)))); const o = __T.bkParse(t); return !!o && o.gold === __T.SV.gold && o.inv.length === __T.SV.inv.length && __T.bkParse('çöp') === null; });
+check(bk, 'yedek okuma/yazma');
+await pg.click('[data-a=set]'); await wait(100); await pg.click('[data-a=bks]'); await wait(200); await pg.screenshot({ path: out + '/14-ayarlar.png' }); await pg.click('[data-a=back]'); await wait(100);
 // İngilizce çanta
 await ev(() => { __T.SV.lang = 'en'; localStorage.setItem('efsane-yolu-v1', JSON.stringify(__T.SV)); }); await pg.reload(); await wait(500);
 await pg.click('[data-a=dq]'); await wait(120); await pg.click('[data-a=qtab][data-v=st]'); await wait(80); { const y = await ev(() => document.querySelector('#scr').innerText); const bd = y.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN istatistik: ' + (bd || []).slice(0, 3).join(' / ')); } await pg.click('[data-a=qtab][data-v=ach]'); await wait(100); { const x = await ev(() => document.querySelector('#scr').innerText); const bd = x.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN görev: ' + (bd || []).slice(0, 3).join(' / ')); } await pg.click('[data-a=back]'); await wait(80);
