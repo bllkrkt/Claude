@@ -127,10 +127,10 @@ await ev(() => { const T = __T, TS = 32; window.__bot = setInterval(() => {
 }, 50); });
 await wait(8000); await pg.screenshot({ path: out + '/h6-lav.png' });
 console.log('kale 8 sn:', JSON.stringify(await ev(() => ({ x: __T.P.x / 32 | 0, hp: Math.round(__T.P.hp), state: __T.state }))));
-await ev(() => { clearInterval(window.__bot); __T.I.r = 0; if (__T.state !== 'play') __T.ACT.respawn(); __T.tp(85); }); await wait(1500);
+await ev(() => { clearInterval(window.__bot); __T.I.r = 0; if (__T.state !== 'play') __T.ACT.respawn(); __T.tp(85); window.__gm = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 60); }); await wait(1500);
 check(await ev(() => __T.ENS.some(e => e.t === 'mimic' && e.st === 'awake')), 'mimik uyanmadı');
 await pg.screenshot({ path: out + '/h7-mimik.png' });
-await ev(() => { __T.LV.cp = 2; __T.tp(161); window.__g3 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 60); }); await wait(400);
+await ev(() => { clearInterval(window.__gm); if (__T.state !== 'play') __T.ACT.respawn(); __T.LV.cp = 2; __T.tp(161); window.__g3 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 60); }); await wait(400);
 await ev(() => { __T.I.r = 1; }); await wait(1600); await ev(() => { __T.I.r = 0; });
 check(await ev(() => __T.G.boss && __T.G.boss.kind) === 'kara', 'kara şövalye başlamadı');
 await wait(7000); await pg.screenshot({ path: out + '/h8-kara.png' });

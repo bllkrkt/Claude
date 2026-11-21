@@ -99,23 +99,30 @@ const gd = await ev(() => __T.SV.gold); await pg.click('[data-a=login]'); await 
 check(await ev(() => __T.SV.dl.n === 1) && await ev(() => __T.SV.gold) > gd, 'günlük ödül'); await pg.click('[data-a=back]'); await wait(100);
 await ev(() => { for (const i of [0,1,2,4,5,6,7,8,9,10]) __T.SV.lvs[i].done = 1; }); await pg.click('[data-a=chap]'); await wait(200);
 await pg.screenshot({ path: out + '/7-harita.png' });
-for (const ch of [12, 13, 14]) {
+for (const ch of [12, 13, 14, 15, 16, 17]) {
   if (ch !== 12) { await pg.click('[data-a=chap]'); await wait(150); }
   await pg.click(`[data-a=msel2][data-v="${ch}"]`); await wait(100); await pg.click(`[data-a=go][data-v="${ch}"]`); await wait(400);
   if (await ev(() => __T.state) === 'story') { await pg.screenshot({ path: out + '/8-hikaye' + ch + '.png' }); await pg.click('#sskip'); await wait(300); }
   check(await ev(ch => __T.state === 'play' && __T.CH === ch, ch), 'bölüm başlamadı ' + ch);
-  check(await ev(ch => __T.ENS.some(e => ({12:'star',13:'crab',14:'cog'})[ch] === e.t), ch), 'yeni düşman yok ' + ch);
-  await ev(ch => { const e = __T.ENS.find(e => e.t === ({12:'star',13:'jelly',14:'clock'})[ch]) || __T.ENS[0]; window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(e.x / 32 - 3, Math.floor((e.y + e.h) / 32) + 1); }, ch); await wait(1500); await pg.screenshot({ path: out + '/8b-dusman' + ch + '.png' }); await ev(() => clearInterval(window.__g0));
+  check(await ev(ch => __T.ENS.some(e => ({12:'star',13:'crab',14:'cog',15:'scorp',16:'wisp',17:'shade'})[ch] === e.t), ch), 'yeni düşman yok ' + ch);
+  await ev(ch => { const e = __T.ENS.find(e => e.t === ({12:'star',13:'jelly',14:'clock',15:'scorp',16:'wisp',17:'star'})[ch]) || __T.ENS[0]; window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(e.x / 32 - 3, Math.floor((e.y + e.h) / 32) + 1); }, ch); await wait(1500); await pg.screenshot({ path: out + '/8b-dusman' + ch + '.png' }); await ev(() => clearInterval(window.__g0));
   await ev(() => { window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(__T.L.arena.gate - 2); }); await wait(300);
   await ev(() => { __T.I.r = 1; }); await wait(1200); await ev(() => { __T.I.r = 0; });
   check(await ev(() => !!__T.G.boss), 'boss başlamadı ' + ch); await wait(1500);
-  for (const a of {12:['sweep','ring'],13:['erupt','whirl'],14:['hands','ring']}[ch]) { await ev(a => { const B = __T.G.boss; B.st = a; B.n = 0; B.stT = 0; }, a); await wait(1300); }
+  for (const a of {12:['sweep','ring'],13:['erupt','whirl'],14:['hands','ring'],15:['erupt','hands'],16:['ring','whirl'],17:['sweep','burst']}[ch]) { await ev(a => { const B = __T.G.boss; B.st = a; B.n = 0; B.stT = 0; }, a); await wait(1300); }
   await pg.screenshot({ path: out + '/9b-saldiri' + ch + '.png' }); await pg.screenshot({ path: out + '/9-boss' + ch + '.png' });
   await ev(() => { __T.hitBoss(1); window.__k = setInterval(() => { const B = __T.G.boss; if (B && !B.dead && B.st !== 'intro') { B.hp = Math.min(B.hp, 1); __T.P.x = B.x - 24; __T.P.y = B.y + B.h - 30; __T.P.face = 1; __T.P.ab = .15; } }, 60); });
   for (let i = 0; i < 40 && !(await ev(() => __T.G.won)); i++) await wait(250); await ev(() => clearInterval(window.__k)); check(await ev(() => __T.G.won), 'boss yenilmedi ' + ch);
   await ev(ch => { clearInterval(window.__g); __T.SV.lvs[ch].done = 1; __T.ACT.home(); }, ch); await wait(200);
 }
 check(await ev(() => __T.SV.pets.tilki === 1), 'tilki açılmadı');
+// v10: zorluk, haftalık etkinlik, istatistik
+check(/Haftanın etkinliği/.test(await pg.textContent('#title')), 'haftalık etkinlik görünmüyor');
+const h1 = await ev(() => { __T.loadChapter(15); return __T.diff(); }); await pg.click('[data-a=set]'); await wait(100); await pg.click('[data-a=difc]'); await wait(80);
+const h2 = await ev(() => ({ d: __T.SV.dif, h: __T.diff() })); check(h2.d === 2 && h2.h > h1 * 1.5, 'kâbus zorluğu: ' + JSON.stringify(h2) + ' ' + h1);
+await pg.click('[data-a=difc]'); await wait(80); check(await ev(() => __T.SV.dif) === 0, 'kolay zorluğu'); await pg.click('[data-a=difc]'); await wait(80); await pg.click('[data-a=back]'); await wait(100);
+await pg.click('[data-a=dq]'); await wait(100); await pg.click('[data-a=qtab][data-v=st]'); await wait(100); await pg.screenshot({ path: out + '/12-istatistik.png' });
+check(/Oynama süresi/.test(await ev(() => document.querySelector('#scr').innerText)), 'istatistik yok'); await pg.click('[data-a=back]'); await wait(100);
 await ev(() => { __T.SV.gold += 5000; __T.SV.kills = Math.max(100, __T.SV.kills); __T.SV.pet = 'tilki'; __T.SV.pets.tilki = 4; }); await pg.click('[data-a=bag]'); await wait(150); await pg.click('[data-a=btab][data-v=pet]'); await wait(100);
 await pg.click('[data-a=pup][data-v=tilki]'); await wait(100); check(await ev(() => __T.SV.pets.tilki) === 5, 'evrim besleme');
 await pg.click('[data-a=btab][data-v=cls]'); await wait(100); await pg.click('[data-a=buysk][data-v=gece]'); await wait(100);
@@ -126,7 +133,7 @@ check(await ev(() => __T.SV.ach.k100 === 1) && await ev(() => __T.SV.gold) > g8,
 await pg.click('[data-a=back]'); await wait(100);
 // İngilizce çanta
 await ev(() => { __T.SV.lang = 'en'; localStorage.setItem('efsane-yolu-v1', JSON.stringify(__T.SV)); }); await pg.reload(); await wait(500);
-await pg.click('[data-a=dq]'); await wait(120); await pg.click('[data-a=qtab][data-v=ach]'); await wait(100); { const x = await ev(() => document.querySelector('#scr').innerText); const bd = x.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN görev: ' + (bd || []).slice(0, 3).join(' / ')); } await pg.click('[data-a=back]'); await wait(80);
+await pg.click('[data-a=dq]'); await wait(120); await pg.click('[data-a=qtab][data-v=st]'); await wait(80); { const y = await ev(() => document.querySelector('#scr').innerText); const bd = y.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN istatistik: ' + (bd || []).slice(0, 3).join(' / ')); } await pg.click('[data-a=qtab][data-v=ach]'); await wait(100); { const x = await ev(() => document.querySelector('#scr').innerText); const bd = x.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN görev: ' + (bd || []).slice(0, 3).join(' / ')); } await pg.click('[data-a=back]'); await wait(80);
 await pg.click('[data-a=bag]'); await wait(200); await pg.screenshot({ path: out + '/6-en.png' });
 const tx = await ev(() => document.querySelector('#scr').innerText);
 const bad = tx.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bad, 'İngilizcede Türkçe: ' + (bad || []).slice(0, 4).join(' / '));
