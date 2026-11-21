@@ -79,7 +79,7 @@ for (const k of ['arc', 'mag']) {
 }
 await ev(() => { __T.SV.cls = 'war'; });
 // setler: aynı setten 2 eşya → bonus
-const sb = await ev(() => { const T = __T; const a0 = T.stats().crit; const i1 = T.mkItem(2, { s: 'h', st: 'kristal' }), i2 = T.mkItem(2, { s: 'b', st: 'kristal' }); T.SV.inv.push(i1, i2); T.SV.eq.h = i1.id; T.SV.eq.b = i2.id; return T.stats().crit - a0; });
+const sb = await ev(() => { const T = __T; const i1 = T.mkItem(2, { s: 'h', st: 'kristal' }), i2 = T.mkItem(2, { s: 'b', st: 'kristal' }); T.SV.inv.push(i1, i2); T.SV.eq.h = i1.id; T.SV.eq.b = i2.id; const a = T.stats().crit; i2.st = 'alev'; const b = T.stats().crit; i2.st = 'kristal'; return a - b; });
 check(sb >= 8 || await ev(() => __T.stats().crit) === 60, 'set bonusu yok: ' + sb);
 check(await ev(() => __T.ENS.every(e => e.mhp > 0)), 'düşman mhp yok');
 // duvar kayması: soldaki harita sınırına bas
@@ -95,6 +95,8 @@ await pg.screenshot({ path: out + '/5b-gorev.png' }); await pg.click('[data-a=ba
 check(await ev(() => __T.menu) === 'pause', 'görevlerden geri');
 // v8: yeni bölümler, kostüm, başarım, yoldaş evrimi
 await ev(() => { __T.ACT.home(); }); await wait(200);
+const gd = await ev(() => __T.SV.gold); await pg.click('[data-a=login]'); await wait(120); await pg.screenshot({ path: out + '/6b-gunluk.png' }); await pg.click('[data-a=dlc]'); await wait(120);
+check(await ev(() => __T.SV.dl.n === 1) && await ev(() => __T.SV.gold) > gd, 'günlük ödül'); await pg.click('[data-a=back]'); await wait(100);
 await ev(() => { for (const i of [0,1,2,4,5,6,7,8,9,10]) __T.SV.lvs[i].done = 1; }); await pg.click('[data-a=chap]'); await wait(200);
 await pg.screenshot({ path: out + '/7-harita.png' });
 for (const ch of [12, 13, 14]) {
@@ -102,9 +104,13 @@ for (const ch of [12, 13, 14]) {
   await pg.click(`[data-a=msel2][data-v="${ch}"]`); await wait(100); await pg.click(`[data-a=go][data-v="${ch}"]`); await wait(400);
   if (await ev(() => __T.state) === 'story') { await pg.screenshot({ path: out + '/8-hikaye' + ch + '.png' }); await pg.click('#sskip'); await wait(300); }
   check(await ev(ch => __T.state === 'play' && __T.CH === ch, ch), 'bölüm başlamadı ' + ch);
+  check(await ev(ch => __T.ENS.some(e => ({12:'star',13:'crab',14:'cog'})[ch] === e.t), ch), 'yeni düşman yok ' + ch);
+  await ev(ch => { const e = __T.ENS.find(e => e.t === ({12:'star',13:'jelly',14:'clock'})[ch]) || __T.ENS[0]; window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(e.x / 32 - 3, Math.floor((e.y + e.h) / 32) + 1); }, ch); await wait(1500); await pg.screenshot({ path: out + '/8b-dusman' + ch + '.png' }); await ev(() => clearInterval(window.__g0));
   await ev(() => { window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(__T.L.arena.gate - 2); }); await wait(300);
   await ev(() => { __T.I.r = 1; }); await wait(1200); await ev(() => { __T.I.r = 0; });
-  check(await ev(() => !!__T.G.boss), 'boss başlamadı ' + ch); await wait(1500); await pg.screenshot({ path: out + '/9-boss' + ch + '.png' });
+  check(await ev(() => !!__T.G.boss), 'boss başlamadı ' + ch); await wait(1500);
+  for (const a of {12:['sweep','ring'],13:['erupt','whirl'],14:['hands','ring']}[ch]) { await ev(a => { const B = __T.G.boss; B.st = a; B.n = 0; B.stT = 0; }, a); await wait(1300); }
+  await pg.screenshot({ path: out + '/9b-saldiri' + ch + '.png' }); await pg.screenshot({ path: out + '/9-boss' + ch + '.png' });
   await ev(() => { __T.hitBoss(1); window.__k = setInterval(() => { const B = __T.G.boss; if (B && !B.dead && B.st !== 'intro') { B.hp = Math.min(B.hp, 1); __T.P.x = B.x - 24; __T.P.y = B.y + B.h - 30; __T.P.face = 1; __T.P.ab = .15; } }, 60); });
   for (let i = 0; i < 40 && !(await ev(() => __T.G.won)); i++) await wait(250); await ev(() => clearInterval(window.__k)); check(await ev(() => __T.G.won), 'boss yenilmedi ' + ch);
   await ev(ch => { clearInterval(window.__g); __T.SV.lvs[ch].done = 1; __T.ACT.home(); }, ch); await wait(200);
