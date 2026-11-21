@@ -68,6 +68,20 @@ await ev(() => { window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.
 const k0 = await ev(() => __T.ENS.filter(e => !e.dead).length); await wait(3500);
 check(await ev(() => __T.ENS.filter(e => !e.dead).length) < k0 || await ev(() => __T.ENS.some(e => e.burn > 0 || e.hp < e.mhp)), 'yoldaş saldırmadı');
 await pg.screenshot({ path: out + '/5-yoldas-oyun.png' });
+// v7: sınıflar ve menzilli saldırı
+for (const k of ['arc', 'mag']) {
+  await ev(k => { __T.SV.cls = k; window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); const e = __T.ENS.find(e => !e.dead && !e.fly); __T.tp(e.x / 32 - 4, Math.floor((e.y + e.h) / 32)); __T.P.face = 1; window.__e = e; window.__h0 = e.hp; }, k);
+  await wait(200); for (let i = 0; i < 6; i++) { await ev(() => { __T.P.ab = .15; }); await wait(120); }
+  await ev(() => { __T.P.en = 100; __T.P.sb = .12; }); await wait(900);
+  await pg.screenshot({ path: out + '/5c-' + k + '.png' });
+  check(await ev(() => window.__e.dead || window.__e.hp < window.__h0), k + ' menzilli saldırı vurmadı');
+  await ev(() => clearInterval(window.__g));
+}
+await ev(() => { __T.SV.cls = 'war'; });
+// setler: aynı setten 2 eşya → bonus
+const sb = await ev(() => { const T = __T; const a0 = T.stats().crit; const i1 = T.mkItem(2, { s: 'h', st: 'kristal' }), i2 = T.mkItem(2, { s: 'b', st: 'kristal' }); T.SV.inv.push(i1, i2); T.SV.eq.h = i1.id; T.SV.eq.b = i2.id; return T.stats().crit - a0; });
+check(sb >= 8 || await ev(() => __T.stats().crit) === 60, 'set bonusu yok: ' + sb);
+check(await ev(() => __T.ENS.every(e => e.mhp > 0)), 'düşman mhp yok');
 // duvar kayması: soldaki harita sınırına bas
 await ev(() => { __T.tp(1, 5); __T.P.vy = 50; __T.I.l = 1; }); await wait(250);
 const w = await ev(() => ({ wall: __T.P.wall, vy: __T.P.vy })); await ev(() => { __T.P.jb = .12; }); await wait(60);
@@ -85,7 +99,7 @@ await pg.click('[data-a=dq]'); await wait(120); { const x = await ev(() => docum
 await pg.click('[data-a=bag]'); await wait(200); await pg.screenshot({ path: out + '/6-en.png' });
 const tx = await ev(() => document.querySelector('#scr').innerText);
 const bad = tx.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bad, 'İngilizcede Türkçe: ' + (bad || []).slice(0, 4).join(' / '));
-for (const t of ['skl', 'pet']) { await pg.click(`[data-a=btab][data-v=${t}]`); await wait(120); const x = await ev(() => document.querySelector('#scr').innerText); const bd = x.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN ' + t + ': ' + (bd || []).slice(0, 4).join(' / ')); }
+for (const t of ['skl', 'pet', 'cls']) { await pg.click(`[data-a=btab][data-v=${t}]`); await wait(120); const x = await ev(() => document.querySelector('#scr').innerText); const bd = x.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN ' + t + ': ' + (bd || []).slice(0, 4).join(' / ')); }
 await pg.click('[data-a=btab][data-v=inv]'); await wait(100); await pg.click('.tl:not(.em)'); await wait(100);
 const dx = await ev(() => document.querySelector('#scr').innerText); const bd2 = dx.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd2, 'EN ayrıntı: ' + (bd2 || []).slice(0, 4).join(' / '));
 await b.close();
