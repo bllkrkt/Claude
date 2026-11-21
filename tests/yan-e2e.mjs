@@ -146,8 +146,41 @@ await ev(() => { __T.I.r = 1; window.__god = setInterval(() => { __T.P.inv = 5; 
 await wait(22000); check(await ev(() => __T.G.won), 'arena bitmedi: ' + await ev(() => __T.L.ri));
 await ev(() => { clearInterval(window.__god); __T.tp(__T.L.exit.x); }); await wait(800);
 check(await ev(() => __T.state) === 'win', 'arena kazanılmadı');
+// Yeni bölümler (4–10) ve Sonsuz Yol
+const playCh = async (i, tag) => {
+  await ev(i => __T.ACT.go(String(i)), i); await skip(tag + '-giris');
+  check(await ev(() => __T.state) === 'play', tag + ' başlamadı');
+  await ev(() => { const T = __T, TS = 32; window.__bot = setInterval(() => {
+    const P = T.P; if (T.state !== 'play') return; T.I.r = 1;
+    const fx = Math.floor((P.x + P.w + 20) / TS), fy = Math.floor((P.y + P.h + 4) / TS), wy = Math.floor((P.y + P.h - 8) / TS);
+    const g = (x, y) => (x < 0 || y < 0 || y >= T.L.g.length) ? 0 : T.L.g[y][x];
+    const pit = !g(fx, fy) || g(fx, fy + 1) === 5, wall = g(fx, wy) === 1 || g(fx, wy) === 3 || g(fx, wy) === 7;
+    const near = T.ENS.find(e => !e.dead && Math.abs(e.x - P.x) < 70 && Math.abs(e.y - P.y) < 80);
+    if (near) P.ab = .15; if (P.en >= 100 && near) P.sb = .12;
+    if ((pit || wall) && P.on) { P.jb = .12; T.I.jh = 1; setTimeout(() => T.I.jh = 0, 260); } else if (pit && !P.on && P.vy > 60 && P.jumps > 0) P.jb = .12;
+  }, 50); });
+  await wait(6000); await pg.screenshot({ path: out + '/' + tag + '-oyun.png' });
+  const st = await ev(() => ({ x: __T.P.x / 32 | 0, hp: Math.round(__T.P.hp), s: __T.state, W: __T.L.g[0].length, n: __T.ENS.length }));
+  console.log(tag, JSON.stringify(st));
+  await ev(() => { clearInterval(window.__bot); __T.I.r = 0; if (__T.state !== 'play') __T.ACT.respawn(); window.__gd = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 60); __T.tp(__T.L.arena.gate - 2); });
+  await wait(300); await ev(() => { __T.I.r = 1; }); await wait(1800); await ev(() => { __T.I.r = 0; });
+  check(await ev(() => !!__T.G.boss), tag + ' boss başlamadı');
+  await wait(5500); await pg.screenshot({ path: out + '/' + tag + '-boss.png' });
+  await ev(() => { __T.hitBoss(.55); }); await wait(2500);
+  await ev(() => { clearInterval(window.__gd); window.__god = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; const B = __T.G.boss; if (B && !B.dead) { B.hp = Math.min(B.hp, 1); __T.P.x = B.x - 24; __T.P.y = AG0() ; __T.P.face = 1; __T.P.ab = .15; } function AG0(){ return Math.min(B.y + B.h - 30, 11 * 32 - 30); } }, 60); });
+  await wait(4500); check(await ev(() => __T.G.won), tag + ' boss ölmedi');
+  await ev(() => { clearInterval(window.__god); __T.tp(__T.L.exit.x); }); await wait(500); await skip();
+  check(await ev(() => __T.state) === 'win', tag + ' bitmedi: ' + await ev(() => __T.state));
+};
+for (const i of [4, 5, 6, 7, 8, 9, 10]) await playCh(i, 'b' + i);
+await pg.screenshot({ path: out + '/b10-son.png' });
+const f0 = await ev(() => __T.SV.endl.floor); await playCh(11, 'sonsuz');
+check(await ev(() => __T.SV.endl.floor) === f0 + 1, 'sonsuz yol katı artmadı');
+await ev(() => __T.ACT.go('11')); await wait(300); check(await ev(() => __T.state) === 'play', 'sonsuz yol 2. kat');
+await ev(() => __T.ACT.pause());
 // Kayıt + İngilizce
-await pg.click('[data-a=home]'); await wait(200); await pg.click('[data-a=jour]'); await wait(150); await pg.screenshot({ path: out + '/h11-gunluk.png' }); await pg.click('[data-a=back]'); await wait(100);
+await pg.click('[data-a=home]'); await wait(200); await pg.click('[data-a=chap]'); await wait(150); await pg.screenshot({ path: out + '/bolumler10.png' }); await pg.click('[data-a=back]'); await wait(100);
+await pg.click('[data-a=jour]'); await wait(150); await pg.screenshot({ path: out + '/h11-gunluk.png' }); await pg.click('[data-a=back]'); await wait(100);
 await pg.click('[data-a=set]'); await pg.click('[data-a=lang]'); await wait(900);
 await pg.screenshot({ path: out + '/7-ingilizce.png' });
 const t = await pg.textContent('#title');
