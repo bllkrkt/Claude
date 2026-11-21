@@ -91,3 +91,9 @@ Kararlar: **Google Play**'de yayın, **Türkçe + İngilizce**, **para kazanma y
 
 ## Sıradaki fikirler (öneri olarak sun)
 - (Yapıldı: haftalık etkinlik v18, ustalık v8, yoldaş yetenekleri v8, bölge görev zinciri v11, sonsuz kule v8, zar atma v8.) Yeni fikirler (v32 sonrası): ezeli düşmana 3B taç/yara izi görseli, ezeli düşmanlar arası hiyerarşi (Derebeyi altına adam toplar), sezon kozmetik ödülleri, gerçek çevrimiçi tablo (sunucu gerekir)ları.
+
+## SIRADAKİ BÜYÜK İŞ (kullanıcı v32 sonrası seçti): YANDAN GÖRÜNÜMLÜ OYUN
+Kullanıcı "yandan görünümlü (karakter sağa koşar, zıplar, düşmanla karşılaşır) farklı bir oyuna çevirelim" dedi; ona bunun büyük iş olduğu, savaş/kontrolün baştan yazılacağı, mevcut dokun-vur/dalga/oto saldırı/sen yokken kazanç sisteminin bu türe uymadığı söylendi, kabul etti.
+- ÖNERİLEN YOL (ilk iş kullanıcıya bunu kısaca teyit ettir): mevcut oyunu ve telefondaki kaydı BOZMA. Yan görünüm oyunu aynı depoda AYRI bir modül olarak başla (ör. `yan/`, ayrı paket adı → telefonda ayrı uygulama), ya da Efsane Avcısı içinde ayrı bir "mod" olarak. Taşınabilecekler: eşya/nadirlik/set, yoldaş, ezeli düşman fikri, sınıflar, simge sistemi (`simgeler.js`, `ikonlar.js`), dil sistemi `T()`, tema.
+- Teknik öneri: tek `index.html` + Canvas 2D (ya da mevcut Three.js ile 2.5B yan kamera), sabit adımlı fizik (yerçekimi, zıplama, çarpışma), dokunmatik kontroller (sol: hareket, sağ: zıpla/vur/kaçış), bölüm bazlı haritalar (oda + kontrol noktası), boss odaları. Önce küçük oynanabilir bir dikey dilim (1 bölüm, 3 düşman türü, 1 boss) yap, APK ver, kullanıcının telefondaki hissine göre büyüt.
+- DİKKAT: GitHub'daki varsayılan dal `claude/android-sdk-apk-setup-eckfhk` ESKİ (v21). Güncel kod `ccr-1de4d60e-hfd37n` dalında (v32). Yeni oturum bu daldan devam etmeli.
