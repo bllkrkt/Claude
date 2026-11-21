@@ -37,6 +37,20 @@ await pg.click('[data-a=bf][data-v=all]'); await wait(80);
 const n0 = await ev(() => __T.SV.inv.length); await pg.click('[data-a=bulk][data-v=sell]'); await wait(80); await pg.click('[data-a=bulk][data-v=sell]'); await wait(80);
 check(await ev(() => __T.SV.inv.length) < n0, 'toplu sat');
 await pg.click('[data-a=bagx]'); await wait(80); check(await ev(() => __T.SV.bagX) === 1, 'çanta genişletme');
+// v6: en iyileri tak, toplu güçlendir, birleştir
+await pg.click('[data-a=best]'); await wait(80);
+const u0 = await ev(() => Object.values(__T.SV.eq).map(i => __T.SV.inv.find(x => x.id === i)).filter(Boolean).reduce((a, i) => a + (i.u | 0), 0));
+await pg.click('[data-a=bup]'); await wait(80);
+check(await ev(() => Object.values(__T.SV.eq).map(i => __T.SV.inv.find(x => x.id === i)).filter(Boolean).reduce((a, i) => a + (i.u | 0), 0)) > u0, 'toplu güçlendirme');
+await ev(() => { for (let i = 0; i < 6; i++) __T.gainItem(__T.mkItem(0, { r: 0, s: 'w' })); __T.reBag(); });
+await pg.click('[data-a=mmode]'); await wait(80);
+const ids = await ev(() => __T.SV.inv.filter(i => i.r === 0 && !i.lk && !Object.values(__T.SV.eq).includes(i.id)).slice(0, 3).map(i => i.id));
+for (const i of ids) { await pg.click(`.tl[data-v="${i}"]`); await wait(40); }
+await pg.screenshot({ path: out + '/2b-birlestir.png' });
+const n1 = await ev(() => __T.SV.inv.length); await pg.click('[data-a=mgo]'); await wait(100);
+check(await ev(() => __T.SV.inv.length) === n1 - 2 && await ev(() => __T.SV.inv.find(i => i.id === __T.DET).r) === 1, 'birleştirme');
+await pg.click('[data-a=dback]'); await wait(60); await pg.click('[data-a=mmode]'); await wait(60); await pg.click('[data-a=amrg]'); await wait(60); await pg.click('[data-a=amrg]'); await wait(80);
+check(await ev(() => __T.SV.dq.q.length) === 3, 'günlük görev oluşmadı');
 // beceriler
 await pg.click('[data-a=btab][data-v=skl]'); await wait(120);
 const a0 = await ev(() => __T.stats().atk); await pg.click('[data-a=sk][data-v=str]'); await wait(80);
@@ -59,8 +73,15 @@ await ev(() => { __T.tp(1, 5); __T.P.vy = 50; __T.I.l = 1; }); await wait(250);
 const w = await ev(() => ({ wall: __T.P.wall, vy: __T.P.vy })); await ev(() => { __T.P.jb = .12; }); await wait(60);
 const w2 = await ev(() => ({ vx: __T.P.vx, vy: __T.P.vy })); await ev(() => { __T.I.l = 0; clearInterval(window.__g); });
 check(w.wall === -1 && w.vy <= 120, 'duvar kayması: ' + JSON.stringify(w)); check(w2.vx > 0 && w2.vy < 0, 'duvardan zıplama: ' + JSON.stringify(w2));
+// günlük görevler
+await ev(() => { __T.SV.dq.q.forEach(q => q.p = q.t); __T.ACT.pause(); }); await wait(100); await pg.click('[data-a=dq]'); await wait(120);
+const gq = await ev(() => __T.SV.gold); for (let i = 0; i < 3; i++) { await pg.click(`[data-a=dqc][data-v="${i}"]`); await wait(60); } await pg.click('[data-a=dqb]'); await wait(80);
+check(await ev(() => __T.SV.gold) > gq && await ev(() => __T.SV.dq.b) === 1, 'görev ödülü');
+await pg.screenshot({ path: out + '/5b-gorev.png' }); await pg.click('[data-a=back]'); await wait(80);
+check(await ev(() => __T.menu) === 'pause', 'görevlerden geri');
 // İngilizce çanta
 await ev(() => { __T.SV.lang = 'en'; localStorage.setItem('efsane-yolu-v1', JSON.stringify(__T.SV)); }); await pg.reload(); await wait(500);
+await pg.click('[data-a=dq]'); await wait(120); { const x = await ev(() => document.querySelector('#scr').innerText); const bd = x.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bd, 'EN görev: ' + (bd || []).slice(0, 3).join(' / ')); } await pg.click('[data-a=back]'); await wait(80);
 await pg.click('[data-a=bag]'); await wait(200); await pg.screenshot({ path: out + '/6-en.png' });
 const tx = await ev(() => document.querySelector('#scr').innerText);
 const bad = tx.match(/[^\n]*[ığüşöçİĞÜŞÖÇ][^\n]*/g); check(!bad, 'İngilizcede Türkçe: ' + (bad || []).slice(0, 4).join(' / '));
