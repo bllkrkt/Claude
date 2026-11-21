@@ -75,6 +75,17 @@ Kararlar: **Google Play**'de yayın, **Türkçe + İngilizce**, **para kazanma y
 - v20: ekran taşması (WebView FrameLayout içinde), DALGA SAVAŞI (`W`, `mkMon`, `waveNext`, `hitW`, `waveHit`, `S3D.wave*`), denge yeniden.
 - v21: yeni müzik motoru (`MZ`, `musStep`, `note`, `drum`; ses kartı saatine göre), sınıf vuruş sesleri (`clsHit`), `sfx('coin'|'bossIn')`, `fanfare('level')`, arayüz tema katmanı (CSS sonunda "v21 TEMA"), 3B görsel yenileme (yuvarlak ayrıntılı modeller, ACES ışık, parıltı havuzu `FX.pop`).
 
+# Üçüncü proje: Gece Kaçağı (hikâyeli yarış oyunu)
+
+Aynı depoda, diğer ikisinden bağımsız Android uygulaması (`yaris/`, paket `com.bilal.gecekacagi`, **yatay ekran**). Kullanıcı "NFS Most Wanted'a benzeyen hikâyeli, çok çeşitli bir yarış oyunu" istedi; boyut/süre sınırı yok.
+- **Kural:** tür ve mekanikler benzer olabilir ama başka oyunun adı, karakterleri, "Blacklist" gibi adları, gerçek araba markaları kullanılmaz. Her şey kurgusal (şehir Karaliman, "Gece Listesi", Kobra, abla Defne, Bora, Komiser Sert).
+- AYRINTI: `yaris/NOTLAR.md` — bu oyunda çalışmadan önce oku (dosyalar, koordinatlar/fizik, polis, kayıt, testler, sürümler).
+- Derleme `./gradlew :yaris:assembleDebug` → kullanıcıya `GeceKacagi-vN.apk`. versionCode her sürümde +1 (şu an 1) + `oyun.js` `VER`.
+- İmza `yaris/keystore/kacak.keystore` (SHA-256 `d9b78046…e49dbb`) ASLA değişmez.
+- Kayıt localStorage `gece-kacagi-v1`; geriye uyumluluk şart.
+- Test: `cd tests && HIZLI=1 node yaris-e2e.mjs ../yaris/src/main/assets/index.html /tmp/yt` (`errors []`); denge: `node yaris-denge.mjs 0.9`.
+- Bu oturumda Android SDK yoksa `~/android-sdk`'ya komut satırı araçlarıyla kur (bkz. NOTLAR).
+
 ## TOKEN TASARRUFU (kullanıcı uyardı: konuşma çok uzayınca kullanım hızlı doluyor)
 - Uzun işten sonra kullanıcıya yeni oturum açmasını öner; bu dosya devir için yeterli olmalı.
 - Ekran görüntüsünü sadece görsel değişiklikte oku, birleşik ve küçük (deviceScaleFactor 1) al. Komut çıktılarını kısa tut (grep/cut). Testte `tests/rpg-hepsi.sh` (3 satır özet).

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Gece Kaçağı</title>
+<link rel="stylesheet" href="stil.css">
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="hud"></div>
+
+<div id="title" class="scr on">
+  <div class="scan"></div>
+  <div class="logo"><h1>Gece<span>Kaçağı</span></h1><p>Karaliman sokakları seni bekliyor</p></div>
+  <div class="tap" id="tapStart">EKRANA DOKUN</div>
+  <div class="ver" id="ver"></div>
+</div>
+
+<div id="menu" class="scr">
+  <div id="topbar">
+    <div class="brand">GECE <b>KAÇAĞI</b></div>
+    <div class="chip" id="cRank">📜 <small>Liste</small> <span>-</span></div>
+    <div class="chip" id="cUn">🔥 <span>0</span> <small>Ün</small></div>
+    <div class="chip" id="cPara">💰 <span>0</span></div>
+  </div>
+  <div id="nav"></div>
+  <div id="panel"></div>
+</div>
+
+<div id="dlg" class="scr"><button class="btn alt sm skip" id="dlgSkip">ATLA ⏭</button><div class="box"><div class="face" id="dlgFace"></div><div class="txt"><div class="who" id="dlgWho"></div><div class="say" id="dlgSay"></div><div class="nx">dokun ▶</div></div></div></div>
+<div id="res" class="scr"><div class="in"><div class="big" id="resBig"></div><div class="sub" id="resSub"></div><div class="lines" id="resLines"></div><div class="btns" id="resBtns"></div></div></div>
+<div id="pause" class="scr"><div class="in"><h1>DURAKLATILDI</h1><button class="btn big" id="pResume">DEVAM ▶</button><button class="btn alt" id="pRestart">YENİDEN BAŞLAT</button><button class="btn alt" id="pCam">KAMERA</button><button class="btn alt" id="pQuit">ÇIK</button></div></div>
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+<div id="toast"></div>
+<div id="rotate"><div class="ph">📱</div><b>Telefonu yan çevir</b><span class="mut">Gece Kaçağı yatay ekranda oynanır</span></div>
+
+<script src="lib/three.min.js"></script>
+<script src="pist.js"></script>
+<script src="veri.js"></script>
+<script src="ses.js"></script>
+<script src="araba3d.js"></script>
+<script src="dunya.js"></script>
+<script src="yaris.js"></script>
+<script src="oyun.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- hız çizgileri -->
+    <path android:fillColor="#88FFFFFF" android:pathData="M22,44 h14 v2 h-14z M18,50 h16 v2 h-16z M24,56 h10 v2 h-10z"/>
+    <!-- spor araba yan görünüş -->
+    <path android:fillColor="#FFFF2E63" android:pathData="M36,60 L40,52 L52,50 L60,44 L74,44 L82,51 L88,53 L90,60 Z"/>
+    <path android:fillColor="#FF7FE7FF" android:pathData="M58,50 L62,46 L73,46 L78,50 Z"/>
+    <path android:fillColor="#FFFFE66D" android:pathData="M86,54 h3 v3 h-3z"/>
+    <path android:fillColor="#FF14141C" android:pathData="M46,60 m-6,0 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0 M80,60 m-6,0 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0"/>
+    <path android:fillColor="#FFBFC6D6" android:pathData="M46,60 m-2.5,0 a2.5,2.5 0 1 0 5,0 a2.5,2.5 0 1 0 -5,0 M80,60 m-2.5,0 a2.5,2.5 0 1 0 5,0 a2.5,2.5 0 1 0 -5,0"/>
+</vector>
