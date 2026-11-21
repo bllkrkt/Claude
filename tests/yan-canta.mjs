@@ -77,6 +77,14 @@ for (const k of ['arc', 'mag']) {
   check(await ev(() => window.__e.dead || window.__e.hp < window.__h0), k + ' menzilli saldırı vurmadı');
   await ev(() => clearInterval(window.__g));
 }
+// v11: ikinci yetenek (her sınıf)
+for (const k of ['war', 'arc', 'mag']) {
+  await ev(k => { __T.SV.cls = k; window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); const e = __T.ENS.find(e => !e.dead && !e.fly); __T.tp(e.x / 32 - 2, Math.floor((e.y + e.h) / 32)); __T.P.face = 1; __T.P.kCd = 0; window.__e = e; window.__h0 = e.hp; }, k);
+  await wait(150); await ev(() => { __T.P.kb = .12; }); await wait(700);
+  check(await ev(() => window.__e.dead || window.__e.hp < window.__h0), k + ' ikinci yetenek vurmadı');
+  check(await ev(() => __T.P.kCd > 0), k + ' yetenek bekleme süresi yok');
+  await ev(() => clearInterval(window.__g));
+}
 await ev(() => { __T.SV.cls = 'war'; });
 // setler: aynı setten 2 eşya → bonus
 const sb = await ev(() => { const T = __T; const i1 = T.mkItem(2, { s: 'h', st: 'kristal' }), i2 = T.mkItem(2, { s: 'b', st: 'kristal' }); T.SV.inv.push(i1, i2); T.SV.eq.h = i1.id; T.SV.eq.b = i2.id; const a = T.stats().crit; i2.st = 'alev'; const b = T.stats().crit; i2.st = 'kristal'; return a - b; });
@@ -105,6 +113,17 @@ for (const ch of [12, 13, 14, 15, 16, 17]) {
   if (await ev(() => __T.state) === 'story') { await pg.screenshot({ path: out + '/8-hikaye' + ch + '.png' }); await pg.click('#sskip'); await wait(300); }
   check(await ev(ch => __T.state === 'play' && __T.CH === ch, ch), 'bölüm başlamadı ' + ch);
   check(await ev(ch => __T.ENS.some(e => ({12:'star',13:'crab',14:'cog',15:'scorp',16:'wisp',17:'shade'})[ch] === e.t), ch), 'yeni düşman yok ' + ch);
+  check(await ev(() => !!__T.L.secret), 'gizli oda yok ' + ch);
+  if (ch === 12) {
+    const c0 = await ev(() => __T.LV.chest.length);
+    await ev(() => { window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(__T.L.secret.x); }); await wait(400);
+    check(await ev(() => getComputedStyle(document.getElementById('talk')).display !== 'none'), 'gizli kapı düğmesi yok');
+    await pg.click('#talk'); await wait(500); check(await ev(() => !!__T.L.sec && __T.ENS.length > 0), 'gizli odaya girilmedi');
+    await ev(() => __T.tp(22)); await wait(500); await pg.screenshot({ path: out + '/8c-gizli.png' });
+    check(await ev(() => __T.LV.chest.length) === c0, 'gizli sandık ana bölüm kaydına yazıldı');
+    await ev(() => __T.tp(__T.L.secExit)); await wait(500); check(await ev(() => !__T.L.sec && !!__T.L.secret), 'gizli odadan çıkılmadı');
+    await ev(() => clearInterval(window.__g0));
+  }
   await ev(ch => { const e = __T.ENS.find(e => e.t === ({12:'star',13:'jelly',14:'clock',15:'scorp',16:'wisp',17:'star'})[ch]) || __T.ENS[0]; window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(e.x / 32 - 3, Math.floor((e.y + e.h) / 32) + 1); }, ch); await wait(1500); await pg.screenshot({ path: out + '/8b-dusman' + ch + '.png' }); await ev(() => clearInterval(window.__g0));
   await ev(() => { window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(__T.L.arena.gate - 2); }); await wait(300);
   await ev(() => { __T.I.r = 1; }); await wait(1200); await ev(() => { __T.I.r = 0; });
