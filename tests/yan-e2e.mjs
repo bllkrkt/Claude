@@ -83,7 +83,7 @@ check(await ev(() => __T.state) === 'play' && await ev(() => __T.P.hp === __T.P.
 // 2. bölüm: Kristal Mağara
 await ev(() => __T.ACT.pause()); await pg.click('[data-a=home]'); await wait(200);
 await pg.click('[data-a=chap]'); await wait(150); await pg.screenshot({ path: out + '/8-bolumler.png' });
-await pg.click('[data-a=go][data-v="1"]'); await skip();
+await pg.click('[data-a=msel2][data-v="1"]'); await wait(100); await pg.click('[data-a=go][data-v="1"]'); await skip();
 check(await ev(() => __T.CH) === 1 && await ev(() => __T.state) === 'play', '2. bölüm açılmadı');
 await ev(() => { const T = __T, TS = 32; window.__bot = setInterval(() => {
   const P = T.P; if (T.state !== 'play') return; T.I.r = 1;
@@ -140,7 +140,7 @@ await wait(5000); check(await ev(() => __T.G.won), 'kara şövalye ölmedi');
 await ev(() => { clearInterval(window.__god); __T.tp(__T.L.exit.x); }); await wait(500); await skip('h10-son');
 check(await ev(() => __T.state) === 'win', '3. bölüm bitmedi');
 // Boss Arenası
-await pg.click('[data-a=home]'); await wait(200); await pg.click('[data-a=chap]'); await wait(100); await pg.click('[data-a=go][data-v="3"]'); await skip();
+await pg.click('[data-a=home]'); await wait(200); await pg.click('[data-a=chap]'); await wait(100); await pg.click('[data-a=msel2][data-v="3"]'); await wait(100); await pg.click('[data-a=go][data-v="3"]'); await skip();
 check(await ev(() => __T.L.rush.length) === 3, 'arenada 3 boss yok');
 await ev(() => { __T.I.r = 1; window.__god = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; const B = __T.G.boss; if (B && !B.dead && B.st !== 'intro') { B.hp = Math.min(B.hp, 1); __T.I.r = 0; __T.P.x = B.x - 24; __T.P.y = B.y + B.h - 30; __T.P.face = 1; __T.P.ab = .15; } }, 60); });
 await wait(22000); check(await ev(() => __T.G.won), 'arena bitmedi: ' + await ev(() => __T.L.ri));
