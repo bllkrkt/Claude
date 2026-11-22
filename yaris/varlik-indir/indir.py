@@ -27,7 +27,7 @@ TEX = {  # ad: (polyhaven id, haritalar, boyut)
     'toprak': ('gravel_ground_01', ['diff'], 512),
     'cim': ('aerial_grass_rock', ['diff'], 512),
 }
-MODELS = ['metal_trash_can', 'utility_box_01']  # diğerleri telefona fazla ağır (30-86 bin üçgen)
+MODELS = ['metal_trash_can', 'utility_box_01']  # lamba/musluk/bank ayrıca gltfpack ile sadeleştirilip model/ altına elle kondu (bkz. NOTLAR)
 def main():
     for k, sid in SKIES.items():
         p = f'{OUT}/sky/{k}.jpg'

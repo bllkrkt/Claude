@@ -201,8 +201,16 @@
   }
   function envFromSky(renderer, zone, saat, hava) {
     const THREE = T3(), V = G.VARLIK; if (!V || !V.ready) return null;
-    const sk = V.A.sky[skyName(zone, saat, hava)]; if (!sk) return null;
-    const t = sk.tex.clone(); t.needsUpdate = true; t.mapping = THREE.EquirectangularReflectionMapping;
+    const sn = skyName(zone, saat, hava), sk = V.A.sky[sn]; if (!sk) return null;
+    let t;
+    if (saat === 'gece') {
+      // gece: yansıma kaynağı karartılır (yoksa camlar ve yol parlak gökyüzünü yansıtıp bembeyaz olur)
+      const im = V.A.img['sky_' + sn], c = document.createElement('canvas'); c.width = 512; c.height = 256;
+      const x = c.getContext('2d'); x.drawImage(im, 0, 0, 512, 256);
+      x.fillStyle = sn === 'gece' ? 'rgba(4,6,14,0.72)' : 'rgba(4,6,18,0.9)'; x.fillRect(0, 0, 512, 256);
+      t = new THREE.CanvasTexture(c);
+    } else { t = sk.tex.clone(); t.needsUpdate = true; }
+    t.mapping = THREE.EquirectangularReflectionMapping;
     const pm = new THREE.PMREMGenerator(renderer), rt = pm.fromEquirectangular(t);
     pm.dispose(); t.dispose();
     return rt.texture;
@@ -683,7 +691,7 @@
       const shade = night ? col('#6a6a78') : col('#ffffff');
       F.forEach((f, i) => {
         mkMesh(bk[i].up, new THREE.MeshStandardMaterial({ map: f.map, emissiveMap: f.emi, emissive: col('#ffffff'), emissiveIntensity: ei, roughness: 0.82, color: shade }));
-        mkMesh(bk[i].sh, new THREE.MeshStandardMaterial({ map: f.shop, emissiveMap: f.shopEmi, emissive: col('#ffffff'), emissiveIntensity: night ? 1.2 : opts.saat === 'aksam' ? 0.5 : 0.08, roughness: 0.7, color: shade }));
+        mkMesh(bk[i].sh, new THREE.MeshStandardMaterial({ map: f.shop, emissiveMap: f.shopEmi, emissive: col('#ffffff'), emissiveIntensity: night ? 0.55 : opts.saat === 'aksam' ? 0.35 : 0.05, roughness: 0.7, color: shade }));
       });
       const rt2 = G.VARLIK.tex('beton_diff', 1, 1); disposables.push(rt2);
       mkMesh(roof, new THREE.MeshLambertMaterial({ map: rt2, color: col('#77777a') }));
@@ -879,13 +887,15 @@
       const hc = new THREE.SphereGeometry(0.13, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2); hc.translate(0, 0.7, 0);
       const hydM = new THREE.MeshStandardMaterial({ color: '#b8202a', roughness: 0.5, metalness: 0.3 });
       const hydL = okBox ? hyd.filter((b, i) => i % 3 !== 1) : hyd;
-      inst(hg, hydM, hydL); inst(hc, hydM, hydL);
+      const okHyd = VA && q >= 1 && instModel('fire_hydrant', toMats(hydL), 1.1);
+      if (!okHyd) { inst(hg, hydM, hydL); inst(hc, hydM, hydL); }
       const bg = new THREE.CylinderGeometry(0.28, 0.24, 0.9, 12); bg.translate(0, 0.45, 0);
       inst(bg, new THREE.MeshStandardMaterial({ color: '#2a4a3a', roughness: 0.6, metalness: 0.5 }), okBin ? bin.filter((b, i) => i % 3 !== 0) : bin);
       const beg = new THREE.BoxGeometry(1.6, 0.08, 0.45); beg.translate(0, 0.45, 0);
       const bkg = new THREE.BoxGeometry(1.6, 0.4, 0.06); bkg.translate(0, 0.7, -0.2);
       const benchM = new THREE.MeshLambertMaterial({ color: '#6a4a30' });
-      inst(beg, benchM, bench); inst(bkg, benchM, bench);
+      const okBench = VA && q >= 1 && instModel('modular_street_seating', toMats(bench), 0.7);
+      if (!okBench) { inst(beg, benchM, bench); inst(bkg, benchM, bench); }
     }
     // yaya geçitleri ve rögar kapakları (yol üstü çıkartma)
     if (city) {

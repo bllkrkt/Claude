@@ -4,7 +4,7 @@
   'use strict';
   const TEX = ['asfalt_diff', 'asfalt_nor_gl', 'asfalt_rough', 'kaldirim_diff', 'kaldirim_nor_gl', 'beton_diff', 'tugla_diff', 'tugla2_diff', 'siva_diff', 'siva2_diff', 'kaplama_diff', 'cephe_diff', 'kaya_diff', 'toprak_diff', 'cim_diff'];
   const SKY = ['gunduz', 'aksam', 'gece', 'kapali', 'dag'];
-  const MODELS = ['metal_trash_can', 'utility_box_01'];
+  const MODELS = ['metal_trash_can', 'utility_box_01', 'street_lamp_01', 'fire_hydrant', 'modular_street_seating'];  // gltfpack ile sadeleştirildi
   const A = { tex: {}, img: {}, sky: {}, model: {}, facade: [], ready: false };
 
   function loadImg(url) {
@@ -129,6 +129,71 @@
     return c;
   }
 
+  // Araba modelini oyuna hazırla: tekerlekler ayrı, gövde malzemeye göre birleşik; boya/cam/ışık malzemeleri işaretli
+  function prepCar(g) {
+    const THREE = G.THREE;
+    g.scene.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(g.scene);
+    const off = new THREE.Matrix4().makeTranslation(0, -box.min.y, -(box.min.z + box.max.z) / 2);
+    const groups = new Map(); // anahtar: grup|malzeme
+    const wheelPos = {};
+    const kindOf = (o, m) => {
+      const n = (m && m.name) || '';
+      if (/^Paint 1/.test(n)) return 'boya';
+      if (/^Paint 2/.test(n) || n === 'Panel Sides') return 'boya2';
+      if (n === 'Glass') return 'cam';
+      if (n === 'Brakelight') return 'stop';
+      if (n === 'Headlight') return 'far';
+      if (n === 'Signallight') return 'sinyal';
+      if (/^Rim/.test(n)) return 'jant';
+      return 'orj';
+    };
+    g.scene.traverse(o => {
+      if (/^Wheel(Front|Rear)[LR]$/.test(o.name)) { const v = new THREE.Vector3(); o.getWorldPosition(v); v.applyMatrix4(off); wheelPos[o.name] = v; }
+    });
+    g.scene.traverse(o => {
+      if (!o.isMesh || /Pedal|Engine|Axles/.test(o.name)) return;
+      let w = null, p = o;
+      while (p) { if (/^Wheel(Front|Rear)[LR]$/.test(p.name)) { w = p.name; break; } p = p.parent; }
+      const geo = o.geometry.clone();
+      geo.applyMatrix4(o.matrixWorld); geo.applyMatrix4(off);
+      if (w) geo.translate(-wheelPos[w].x, -wheelPos[w].y, -wheelPos[w].z);
+      for (const k of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv'].includes(k)) geo.deleteAttribute(k);
+      if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
+      const kind = kindOf(o, o.material);
+      const key = (w || 'govde') + '|' + (kind === 'orj' ? o.material.uuid : kind);
+      if (!groups.has(key)) groups.set(key, { w, kind, mat: o.material, geos: [] });
+      groups.get(key).geos.push(geo);
+    });
+    const merge = list => {
+      const pos = [], nor = [], uv = [], idx = [];
+      for (const gg of list) {
+        const base = pos.length / 3, P = gg.attributes.position, N = gg.attributes.normal, U = gg.attributes.uv;
+        for (let i = 0; i < P.count; i++) { pos.push(P.getX(i), P.getY(i), P.getZ(i)); if (N) nor.push(N.getX(i), N.getY(i), N.getZ(i)); else nor.push(0, 1, 0); uv.push(U.getX(i), U.getY(i)); }
+        if (gg.index) for (let i = 0; i < gg.index.count; i++) idx.push(base + gg.index.getX(i)); else for (let i = 0; i < P.count; i++) idx.push(base + i);
+        gg.dispose();
+      }
+      const out = new THREE.BufferGeometry();
+      out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+      out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+      out.setIndex(idx); out.userData.varlik = 1; out.computeBoundingSphere();
+      return out;
+    };
+    const parts = [];
+    for (const v of groups.values()) {
+      const m = v.mat;
+      if (v.kind === 'orj') {
+        // kırılma (transmission) pahalı: kapat; ortak malzeme silinmesin
+        if (m.transmission) m.transmission = 0;
+        m.userData.varlik = 1; for (const k of ['map', 'normalMap', 'roughnessMap', 'metalnessMap']) if (m[k]) m[k].userData.varlik = 1;
+      }
+      parts.push({ w: v.w, kind: v.kind, mat: m, geo: merge(v.geos) });
+    }
+    const size = new THREE.Vector3(); box.getSize(size);
+    return { parts, wheelPos, L: size.z, W: 2.0, r: wheelPos.WheelFrontL ? wheelPos.WheelFrontL.y : 0.5 };
+  }
+
   async function load(progress) {
     const THREE = G.THREE;
     const tl = new THREE.TextureLoader();
@@ -150,6 +215,10 @@
         }, undefined, e => { console.warn('model yüklenemedi', m, e); step(); res(); });
       }));
     }
+    // gerçek araba modeli (Khronos CarConcept, CC-BY 4.0, Eric Chadwick / DGG; logolar çıkarıldı, sadeleştirildi)
+    if (G.GLTFLoader) jobs.push(new Promise(res => {
+      new G.GLTFLoader().load('model/araba/konsept.glb', g => { try { A.car = prepCar(g); } catch (e) { console.warn('araba modeli hazırlanamadı', e); } res(); }, undefined, e => { console.warn('araba modeli yüklenemedi', e); res(); });
+    }));
     await Promise.all(jobs);
     // dokular (her biri kendi tekrar ayarıyla kopyalanabilir)
     const mk = (im, srgb) => { const t = new THREE.Texture(im); t.userData.varlik = 1; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; if (srgb) t.encoding = THREE.sRGBEncoding; t.needsUpdate = true; return t; };

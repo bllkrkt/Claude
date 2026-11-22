@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '4.0';
+  const VER = '5.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -806,7 +806,7 @@
       <h3>Titreşim</h3><div class="sw">${o('titresim', true, 'Açık')}${o('titresim', false, 'Kapalı')}</div>
       <h3>Sürücü adı</h3><div class="row"><span>${S.isim || '(yok)'}</span><button class="btn alt sm" onclick="A.askName()">Değiştir</button></div>
       <h3>Kayıt</h3><div class="row"><button class="btn alt sm" onclick="A.backup()">Yedek dosyası kaydet</button><button class="btn alt sm" onclick="A.resetAll()" style="color:var(--red)">Kariyeri sıfırla</button></div>
-      <p class="mut" style="font-size:12px;margin-top:14px">Gece Kaçağı v${VER} · Tüm arabalar, karakterler ve şehir kurgusaldır. Three.js (MIT) kullanır. Reklam yok, internet gerekmez.</p></div>`;
+      <p class="mut" style="font-size:12px;margin-top:14px">Gece Kaçağı v${VER} · Tüm arabalar, karakterler ve şehir kurgusaldır. Three.js (MIT) kullanır. Dokular, gökyüzü fotoğrafları ve sokak modelleri: Poly Haven (CC0). Süper araba modeli: “Car Concept”, Eric Chadwick / Darmstadt Graphics Group, CC BY 4.0 (logolar çıkarıldı, sadeleştirildi, boyası değiştirildi). Reklam yok, internet gerekmez.</p></div>`;
   }
   function set(k, v) {
     S.set[k] = v; click(); save(); applyOpts();

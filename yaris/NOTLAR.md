@@ -84,6 +84,8 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - v4: gerçek zamanlı gölgeler (güneş, kamerayı izleyen 90 m kutu; Orta 1024 / Yüksek 2048), Merkez/Otoyol cam kuleler (`VA.glass`, yansımalı), çatı korkuluğu ve çatı yapıları, yaprak dokulu ağaç tacı (`crownGeo`), arabalarda cam çıtası, büyük stop grupları, tampon bandı, üçüncü stop; garaj gerçekçi stüdyo (`realShowroom`); yarıştan dönünce garajın silinmiş ortam haritası kullanması düzeltildi; `inst` bölme sonsuz döngüsü düzeltildi.
 - Gerçek araba modeli araştırıldı: Khronos CarConcept (CC-BY, 213 bin üçgen, 12 MB, logolu) telefona fazla ağır → kullanılmadı.
 
+- v5: gltfpack (npm `gltfpack@0.21.0`, kullanıcı izin verdi; `-si <oran> -sa -noq -kn`) ile sadeleştirilmiş modeller geri geldi: cadde lambası (1,5 bin üçgen), yangın musluğu (3 bin), bank (1,4 bin). Gerçek süper araba: Khronos "CarConcept" (CC BY 4.0, Eric Chadwick / DGG) → plaka ve lastik yanağındaki logolar değiştirildi, direksiyon amblemi silindi, dokular ≤512, 15,9 bin üçgen, `model/araba/konsept.glb` (1,5 MB). `VARLIK.prepCar` tekerlekleri ayırır, gövdeyi malzemeye göre birleştirir; `ARABA3D.makeReal` sadece `super` ve `wedge` gövdelerde (Orta/Yüksek grafikte) kullanır, boya/cam/far/stop/jant oyunun malzemeleriyle değişir (kit, rüzgârlık, desen bu gövdede yok). Künye Ayarlar'da. Gece yansıma kaynağı karartıldı (`envFromSky`).
+
 ## Fikirler (sıradaki)
 - Gizli koleksiyon parçaları (serbest sürüşte), kırılabilir engeller (kasalar, çitler).
 - Rakip arabalarına özel görünüm ve "pembe kâğıt" yerine özgün bir ödül sistemi; hasar görseli.

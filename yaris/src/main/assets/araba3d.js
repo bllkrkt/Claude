@@ -245,9 +245,50 @@
    * opt: {govde, renk, kaplama(FINISH), jant, jantRenk, kit, spoiler, neon, vinyl, cam, aksan, polis, basit}
    * dönüş: Group; userData: {wheels:[], brake: mat, lights: [..], siren: [mats], L, W}
    */
+  // gerçek araba modeli (süper ve kama gövdeler)
+  function makeReal(opt, C) {
+    const THREE = T3(), B = BODY[opt.govde] || BODY.super, grp = new THREE.Group();
+    const fin = opt.kaplama || { r: 0.3, m: 0.5 }, color = opt.renk || '#cccccc';
+    const sc = B.L / C.L;
+    const paint = Q >= 2 ? new THREE.MeshPhysicalMaterial({ color, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.25, clearcoat: fin.id === 'mat' ? 0 : 1, clearcoatRoughness: 0.06 })
+      : new THREE.MeshStandardMaterial({ color, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.15 });
+    const paint2 = paint.clone(); paint2.color.multiplyScalar(0.55);
+    const tint = opt.cam || 0;
+    const glassM = mat('rglass' + tint, () => new THREE.MeshStandardMaterial({ color: [0x2a3a4c, 0x161c26, 0x07070a][tint], roughness: 0.04, metalness: 0.95, envMap: ENV, envMapIntensity: 1.6 }));
+    const headM = mat('head', () => { const m = new THREE.MeshBasicMaterial({ color: 0xfff6d8 }); m.color.multiplyScalar(4); return m; });
+    const sigM = mat('signal', () => new THREE.MeshBasicMaterial({ color: 0xff9a20 }));
+    const brakeM = new THREE.MeshBasicMaterial({ color: 0x8a0a12 });
+    const rc = opt.jantRenk || '#c8ccd4';
+    const rimM = mat('rrim' + rc, () => new THREE.MeshStandardMaterial({ color: rc, roughness: 0.22, metalness: 0.95, envMap: ENV }));
+    const pick = k => ({ boya: paint, boya2: paint2, cam: glassM, stop: brakeM, far: headM, sinyal: sigM, jant: rimM })[k];
+    const wheels = [], wg = {};
+    for (const n of Object.keys(C.wheelPos)) {
+      const g = new THREE.Group(), v = C.wheelPos[n];
+      g.position.set(v.x * sc, v.y * sc, v.z * sc); g.userData.front = /Front/.test(n);
+      grp.add(g); wheels.push(g); wg[n] = g;
+    }
+    const body = new THREE.Group(); body.scale.setScalar(sc); grp.add(body);
+    for (const p of C.parts) {
+      const m = new THREE.Mesh(p.geo, p.kind === 'orj' ? p.mat : pick(p.kind));
+      if (p.w) { m.scale.setScalar(sc); wg[p.w].add(m); } else body.add(m);
+    }
+    // neon ve gölge lekesi
+    let neonM = null;
+    if (opt.neon) {
+      neonM = new THREE.MeshBasicMaterial({ color: opt.neon, map: blobTex(), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+      const nn = new THREE.Mesh(new THREE.PlaneGeometry(B.W + 1.4, B.L + 1.4), neonM); nn.rotation.x = -Math.PI / 2; nn.position.y = 0.03; nn.renderOrder = 2; grp.add(nn);
+    }
+    const shM = mat('shadow', () => new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55, depthWrite: false, map: blobTex() }));
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(B.W * 1.5, B.L * 1.25), shM); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.renderOrder = 1; grp.add(sh);
+    grp.userData = { wheels, brake: brakeM, siren: [], L: B.L, W: B.W, neon: neonM, body, gercek: true };
+    return grp;
+  }
+
   function make(opt) {
     const THREE = T3();
     const type = opt.govde || 'coupe';
+    const C = G.VARLIK && G.VARLIK.A && G.VARLIK.A.car;
+    if (C && !opt.basit && Q >= 1 && (type === 'super' || type === 'wedge')) return makeReal(opt, C);
     if (type === 'kamyon') return makeTruck(opt);
     if (type === 'otobus') return makeBus(opt);
     const B = BODY[type] || BODY.coupe;
@@ -477,10 +518,10 @@
 
   function dispose(obj) {
     obj.traverse(o => {
-      if (o.geometry) o.geometry.dispose();
+      if (o.geometry && !o.geometry.userData.varlik) o.geometry.dispose();
       const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       for (const m of ms) {
-        let shared = false; for (const k in MC) if (MC[k] === m) shared = true;
+        let shared = !!m.userData.varlik; for (const k in MC) if (MC[k] === m) shared = true;
         if (!shared) { if (m.map && m.map !== BLOB) m.map.dispose(); m.dispose(); }
       }
     });
