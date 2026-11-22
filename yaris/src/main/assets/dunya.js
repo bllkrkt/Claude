@@ -153,6 +153,28 @@
     return g;
   }
 
+  // ağaç tacı: farklı boyda dört yaprak kümesi (tek geometri, yaprak dokusu için UV'li)
+  function crownGeo() {
+    const THREE = T3(), pos = [], nor = [], uv = [], idx = [];
+    [[0, 3.7, 0, 1.45], [0.75, 3.3, 0.3, 1.0], [-0.7, 3.4, -0.25, 1.05], [0.1, 4.5, -0.1, 0.95]].forEach(([x0, y0, z0, rr], k) => {
+      const g = new THREE.IcosahedronGeometry(rr, 1);
+      const P = g.attributes.position, base = pos.length / 3;
+      for (let i = 0; i < P.count; i++) {
+        const x = P.getX(i), y = P.getY(i), z = P.getZ(i), j = 1 + (Math.sin(x * 7 + y * 5 + k) * 0.08);
+        pos.push(x0 + x * j, y0 + y * j * 0.85, z0 + z * j);
+        const l = Math.hypot(x, y, z) || 1; nor.push(x / l, y / l, z / l);
+        uv.push(Math.atan2(z, x) / Math.PI * 1.5 + k * 0.3, y / rr * 0.8 + k * 0.2);
+      }
+      for (let i = 0; i < P.count; i++) idx.push(base + i);
+      g.dispose();
+    });
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    out.setIndex(idx);
+    return out;
+  }
   // üç katlı çam silüeti (tek geometri)
   function mergeCones() {
     const THREE = T3(), pos = [], idx = [];
@@ -211,8 +233,13 @@
     const skyDark = night && skN !== 'gece';  // gündüz fotoğrafı gece için karartılır (ay ışığı)
     const objs = [], anim = [], disposables = [];
     const cull = [];  // [nesne, merkez x, z, yarıçap²]
+    const SH = q >= 1;  // gerçek zamanlı gölgeler
     const add = o => {
       scene.add(o); objs.push(o);
+      if (SH && (o.isMesh || o.isInstancedMesh) && o.material && !Array.isArray(o.material) && !o.material.transparent && !o.material.isMeshBasicMaterial) {
+        o.receiveShadow = true;
+        if (o.isInstancedMesh || o.userData.cast) o.castShadow = true;
+      }
       if (o.isInstancedMesh) {
         // r149'da örnek dönüşümleri sınır küresine katılmaz: kendi ayıklamamızı yap
         o.frustumCulled = false;
@@ -298,6 +325,13 @@
     }
     const hemi = add(new THREE.HemisphereLight(hemiSky, col(zone.zemin), hemiI));
     const sun = new THREE.DirectionalLight(sunC, sunI);
+    if (SH && sunI > 0.3) {
+      sun.castShadow = true;
+      const ms = q >= 2 ? 2048 : 1024;
+      sun.shadow.mapSize.set(ms, ms);
+      const sc = sun.shadow.camera; sc.left = -45; sc.right = 45; sc.top = 45; sc.bottom = -45; sc.near = 1; sc.far = 320;
+      sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
+    }
     sun.position.copy(sunDir).multiplyScalar(100); add(sun); add(sun.target);
 
     // ── zemin ──
@@ -439,7 +473,7 @@
     // gerçek lamba modeli (örneklemeli çizim): her parça için bir InstancedMesh
     const instModel = (name, mats, scale) => {
       const md = VA && VA.model[name]; if (!md || !mats.length) return false;
-      if (mats.length > 12) { const groups = chunk(mats.map(m => [m.elements[12], 0, m.elements[14], m])); for (const gp of groups) instModel(name, gp.map(x => x[3]), scale); return true; }
+      if (mats.length > 12 && !instModel.flat) { const groups = chunk(mats.map(m => [m.elements[12], 0, m.elements[14], m])); instModel.flat = true; for (const gp of groups) instModel(name, gp.map(x => x[3]), scale); instModel.flat = false; return true; }
       const sc = new THREE.Matrix4().makeScale(scale, scale, scale), mm = new THREE.Matrix4();
       for (const part of md.parts) {
         const im = new THREE.InstancedMesh(part.geo, part.mat, mats.length);
@@ -563,6 +597,8 @@
       const F = VA.facade, NB = F.length;
       const bk = F.map(() => ({ up: { p: [], n: [], u: [], i: [] }, sh: { p: [], n: [], u: [], i: [] } }));
       const roof = { p: [], n: [], u: [], i: [] };
+      const trim = { p: [], n: [], u: [], i: [] };   // korkuluk ve çatı yapıları (beton)
+      const gl = VA.glass.map(() => ({ p: [], n: [], u: [], i: [] }));
       const tmpM = new THREE.Matrix4(), tq = new THREE.Quaternion(), ty = new THREE.Vector3(0, 1, 0);
       const pushBox = (dst, rf, x, y, z, yaw, w, h, d, vScale, vOff) => {
         const g = new THREE.BoxGeometry(w, h, d);
@@ -609,10 +645,21 @@
           if (ok) {
             const t = Math.pow(r(), tema === 'merkez' ? 0.9 : 1.4), h = Math.round((H[0] + (H[1] - H[0]) * t) / 3) * 3 + 4.5;
             const fi = Math.floor(r() * NB), B = bk[fi];
+            const tall = (tema === 'merkez' || tema === 'otoyol') && h > 28 && r() < 0.65;
             pushBox(B.sh, null, cx0, by + 2.25 - 0.4, cz0, h0, w, 4.5 + 0.8, d, 5.3, 0);
-            pushBox(B.up, roof, cx0, by + 4.9 + (h - 4.5) / 2, cz0, h0, w, h - 4.5, d, 9, 0);
-            // çatı ayrıntısı: korkuluk + klima/su deposu
-            if (q >= 1) pushBox(B.up, roof, cx0 + fx * (r() - 0.5) * w * 0.4 + rx * (r() - 0.5) * d * 0.3, by + 4.9 + h - 4.5 + 1.2, cz0, h0, 3 + r() * 3, 2.4, 3 + r() * 2, 9, 0);
+            pushBox(tall ? gl[Math.floor(r() * gl.length)] : B.up, roof, cx0, by + 4.9 + (h - 4.5) / 2, cz0, h0, w, h - 4.5, d, 9, 0);
+            const top = by + 4.9 + h - 4.5;
+            // çatı korkuluğu (dört kenar) ve çatı yapıları
+            for (const [ox, oz, ww, dd] of [[0, d / 2 - 0.15, w, 0.3], [0, -d / 2 + 0.15, w, 0.3], [w / 2 - 0.15, 0, 0.3, d], [-w / 2 + 0.15, 0, 0.3, d]])
+              pushBox(trim, trim, cx0 + fx * ox + rx * oz, top + 0.45, cz0 + fz * ox + rz * oz, h0, ww, 0.9, dd, 3, 0);
+            if (q >= 1) {
+              const n = 1 + Math.floor(r() * 3);
+              for (let k = 0; k < n; k++) {
+                const ox = (r() - 0.5) * w * 0.6, oz = (r() - 0.5) * d * 0.5, kind = r();
+                const sw = kind < 0.4 ? 2.5 : kind < 0.75 ? 1.5 : 3.5, sh2 = kind < 0.4 ? 2.2 : kind < 0.75 ? 1.2 : 3.2;
+                pushBox(trim, trim, cx0 + fx * ox + rx * oz, top + sh2 / 2, cz0 + fz * ox + rz * oz, h0, sw, sh2, sw * (kind < 0.75 ? 1 : 1.4), 3, 0);
+              }
+            }
             nb++;
             // merkezde arkada ikinci sıra yüksek bloklar
             if (tema === 'merkez' && r() < 0.7) {
@@ -630,7 +677,7 @@
         g.setAttribute('normal', new THREE.Float32BufferAttribute(buf.n, 3));
         g.setAttribute('uv', new THREE.Float32BufferAttribute(buf.u, 2));
         g.setIndex(buf.i); g.computeBoundingSphere();
-        add(new THREE.Mesh(g, mat));
+        const mh = new THREE.Mesh(g, mat); mh.userData.cast = true; add(mh);
       };
       const ei = night ? 0.6 : opts.saat === 'aksam' ? 0.2 : 0;
       const shade = night ? col('#6a6a78') : col('#ffffff');
@@ -640,6 +687,9 @@
       });
       const rt2 = G.VARLIK.tex('beton_diff', 1, 1); disposables.push(rt2);
       mkMesh(roof, new THREE.MeshLambertMaterial({ map: rt2, color: col('#77777a') }));
+      mkMesh(trim, new THREE.MeshLambertMaterial({ map: rt2, color: col(night ? '#55555a' : '#a8a8aa') }));
+      // cam kuleler: gökyüzünü yansıtır
+      VA.glass.forEach((gv, i) => mkMesh(gl[i], new THREE.MeshStandardMaterial({ map: gv.map, emissiveMap: gv.emi, emissive: col('#ffffff'), emissiveIntensity: night ? 0.7 : 0, roughness: 0.12, metalness: 0.75, envMap: opts.env, envMapIntensity: 1.3 })));
     }
 
     // ── bölgeye özel süsler ──
@@ -759,10 +809,13 @@
     }
 
     // ── sokak ayrıntıları: park etmiş arabalar, ağaçlar, musluk/çöp kutusu/bank, yaya geçidi, rögar ──
-    const inst = (geo, mtl, list, colors) => {
+    const inst = (geo, mtl, list, colors, flat) => {
       if (!list.length) return null;
-      if (list.length > 24 && !colors) { let last = null; for (const part of chunk(list)) last = inst(geo, mtl, part, null); return last; }
-      if (list.length > 24 && colors) { const ci = new Map(list.map((b, i) => [b, colors[i]])); let last = null; for (const part of chunk(list)) last = inst(geo, mtl, part, part.map(b => ci.get(b))); return last; }
+      if (list.length > 24 && !flat) {
+        const ci = colors ? new Map(list.map((b, i) => [b, colors[i]])) : null; let last = null;
+        for (const part of chunk(list)) last = inst(geo, mtl, part, ci ? part.map(b => ci.get(b)) : null, true);
+        return last;
+      }
       const im = new THREE.InstancedMesh(geo, mtl, list.length), e = new THREE.Euler(), cc = new THREE.Color();
       list.forEach((b, i) => {
         e.set(b[7] || 0, b[3], 0); q4.setFromEuler(e);
@@ -802,9 +855,9 @@
         }
         const tg = new THREE.CylinderGeometry(0.12, 0.18, 2.6, 6); tg.translate(0, 1.3, 0);
         inst(tg, new THREE.MeshLambertMaterial({ color: '#4a3324' }), tr);
-        const fg = new THREE.IcosahedronGeometry(1.5, 1); fg.translate(0, 3.6, 0);
-        const fcol = tr.map(() => ['#1f5a2e', '#2a6a34', '#3a7a3a', '#245c3a'][Math.floor(r() * 4)]);
-        inst(fg, new THREE.MeshLambertMaterial({ color: isNight ? '#8899aa' : '#ffffff', flatShading: true }), tr, fcol);
+        const fg = crownGeo();
+        const fcol = tr.map(() => ['#d8e8c8', '#ffffff', '#c8d8b0', '#e8f0d0'][Math.floor(r() * 4)]);
+        inst(fg, VA && VA.leaf ? new THREE.MeshLambertMaterial({ map: VA.leaf, color: isNight ? '#56606a' : '#ffffff' }) : new THREE.MeshLambertMaterial({ color: isNight ? '#8899aa' : '#ffffff', flatShading: true }), tr, fcol);
         // ağaç dibinde saksı
         const pg = new THREE.CylinderGeometry(0.75, 0.8, 0.35, 8); pg.translate(0, 0.17, 0);
         inst(pg, new THREE.MeshLambertMaterial({ color: '#6a6a70' }), tr);
@@ -1041,6 +1094,7 @@
     function remove(obj) { if (!obj) return; scene.remove(obj); const i = objs.indexOf(obj); if (i >= 0) objs.splice(i, 1); }
 
     let time = 0;
+    const _fw = new THREE.Vector3();
     function update(dt, cam) {
       time += dt;
       for (const f of anim) f(time);
@@ -1048,8 +1102,11 @@
       const cxp = cam.position.x, czp = cam.position.z, far = (scene.fog ? scene.fog.far : 900) + 100;
       for (const c of cull) { const d = Math.hypot(c[1] - cxp, c[2] - czp) - c[3]; c[0].visible = d < far; }
       skyGroup.position.set(cam.position.x, SKP ? cam.position.y - 25 : 0, cam.position.z);
-      sun.position.set(cam.position.x + sunDir.x * 100, cam.position.y + sunDir.y * 100, cam.position.z + sunDir.z * 100);
-      sun.target.position.copy(cam.position);
+      // gölge kutusu kameranın biraz önünü kapsasın; titremesin diye ızgaraya oturt
+      cam.getWorldDirection(_fw);
+      const fx = Math.round((cam.position.x + _fw.x * 22) / 0.5) * 0.5, fz = Math.round((cam.position.z + _fw.z * 22) / 0.5) * 0.5, fy = Math.round(cam.position.y);
+      sun.target.position.set(fx, fy, fz);
+      sun.position.set(fx + sunDir.x * 150, fy + sunDir.y * 150, fz + sunDir.z * 150);
       if (rain) {
         rain.position.set(cam.position.x, cam.position.y - 10, cam.position.z);
         const p = rain.geometry.attributes.position, a = p.array;

@@ -97,6 +97,38 @@
     return { c, e };
   }
 
+  // cam giydirme cephe (ofis kulesi): 12 m × 9 m modül, ince alüminyum kayıtlar
+  function makeGlass(tone) {
+    const S = 512, c = document.createElement('canvas'); c.width = c.height = S;
+    const x = c.getContext('2d'), e = document.createElement('canvas'); e.width = e.height = S;
+    const y = e.getContext('2d'); y.fillStyle = '#000'; y.fillRect(0, 0, S, S);
+    const cols = 6, rows = 3, cw = S / cols, rh = S / rows;
+    for (let i = 0; i < cols; i++) for (let j = 0; j < rows; j++) {
+      const g = x.createLinearGradient(0, j * rh, 0, j * rh + rh);
+      const v = 0.85 + Math.random() * 0.3;
+      g.addColorStop(0, tone[0]); g.addColorStop(1, tone[1]);
+      x.globalAlpha = 1; x.fillStyle = g; x.fillRect(i * cw, j * rh, cw, rh);
+      x.globalAlpha = 0.12 * v; x.fillStyle = '#fff'; x.fillRect(i * cw, j * rh, cw, rh * 0.25);
+      if (Math.random() < 0.3) { y.fillStyle = ['#fff2d8', '#e8f0ff', '#ffe0a8'][Math.floor(Math.random() * 3)]; y.globalAlpha = 0.8; y.fillRect(i * cw + 3, j * rh + rh * 0.3, cw - 6, rh * 0.55); }
+    }
+    x.globalAlpha = 1; x.fillStyle = '#b8bcc4';
+    for (let i = 0; i <= cols; i++) x.fillRect(i * cw - 2, 0, 4, S);
+    for (let j = 0; j <= rows; j++) x.fillRect(0, j * rh - 4, S, 8);
+    x.fillStyle = 'rgba(40,44,52,0.9)'; for (let j = 0; j < rows; j++) x.fillRect(0, j * rh + rh * 0.86, S, rh * 0.1);
+    return { c, e };
+  }
+  // yaprak dokusu
+  function makeLeaf() {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+    x.fillStyle = '#2f5a24'; x.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 2600; i++) {
+      const g = 60 + Math.random() * 90; x.fillStyle = `rgb(${Math.round(g * 0.45)},${Math.round(g)},${Math.round(g * 0.3)})`;
+      x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 4, 1 + Math.random() * 2.5, Math.random() * 3, 0, 7); x.fill();
+    }
+    for (let i = 0; i < 400; i++) { x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(Math.random() * 256, Math.random() * 256, 3, 3); }
+    return c;
+  }
+
   async function load(progress) {
     const THREE = G.THREE;
     const tl = new THREE.TextureLoader();
@@ -141,6 +173,13 @@
       for (const t of [ct, et, cs, es]) { t.userData.varlik = 1; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; t.encoding = THREE.sRGBEncoding; }
       A.facade.push({ map: ct, emi: et, shop: cs, shopEmi: es, wall: A.tex[w] });
     }
+    A.glass = [['#5a7e98', '#1c2c3c'], ['#6a8a80', '#1c2e2c'], ['#7a8090', '#262a34'], ['#4a6a8a', '#101a28']].map(t => {
+      const g = makeGlass(t), m = new THREE.CanvasTexture(g.c), e = new THREE.CanvasTexture(g.e);
+      for (const k of [m, e]) { k.userData.varlik = 1; k.wrapS = k.wrapT = THREE.RepeatWrapping; k.anisotropy = 4; k.encoding = THREE.sRGBEncoding; }
+      return { map: m, emi: e };
+    });
+    const lf = new THREE.CanvasTexture(makeLeaf()); lf.userData.varlik = 1; lf.wrapS = lf.wrapT = THREE.RepeatWrapping; lf.encoding = THREE.sRGBEncoding;
+    A.leaf = lf;
     A.ready = true;
     return A;
   }

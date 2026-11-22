@@ -45,6 +45,7 @@
     Q = q;
     if (renderer) renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 0 ? 0.8 : q === 1 ? 1.1 : 1.6));
     if (G.POST && G.POST.ok) G.POST.setQuality(q);
+    if (renderer) { renderer.shadowMap.enabled = q >= 1; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
     if (G.ARABA3D) A3().setQuality(q);
     resize();
   }
@@ -103,16 +104,47 @@
       SHOW = { sc, env, car: null, ang: 0.6, drag: 0, mode: 'menu', t: 0, plat, ring };
       bindShowDrag();
     }
+    if (!SHOW.real && G.VARLIK && G.VARLIK.ready) realShowroom();
+    A3().setEnv(SHOW.env);  // yarıştan dönünce yarışın (silinmiş) ortam haritası kalmasın
     SHOW.mode = mode || 'menu';
     if (vis) setShowCar(vis);
     root.classList.add('show');
     startLoop();
+  }
+  // gerçekçi stüdyo garaj: beton zemin, nötr ışık, kapalı hava yansımaları
+  function realShowroom() {
+    const S = SHOW, old = S.sc;
+    const sc = new THREE.Scene();
+    sc.background = new THREE.Color('#1a1b1e'); sc.fog = new THREE.Fog('#1a1b1e', 16, 42);
+    const env = G.DUNYA.envFromSky(renderer, { tema: 'liman' }, 'gunduz', 'yagmur') || S.env;
+    A3().setEnv(env);
+    sc.add(new THREE.HemisphereLight(0xdfe6ef, 0x2a2a2c, 0.75));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(5, 10, 6); sc.add(key);
+    key.castShadow = Q >= 1; key.shadow.mapSize.set(1024, 1024); const kc = key.shadow.camera; kc.left = kc.bottom = -6; kc.right = kc.top = 6; kc.near = 1; kc.far = 30; key.shadow.bias = -0.0005;
+    const fill = new THREE.DirectionalLight(0xc8d8ff, 0.6); fill.position.set(-7, 4, -3); sc.add(fill);
+    const rim = new THREE.DirectionalLight(0xffe8d0, 0.8); rim.position.set(0, 5, -9); sc.add(rim);
+    const ft = G.VARLIK.tex('beton_diff', 8, 8);
+    const fl = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshStandardMaterial({ map: ft, color: '#3e3e42', roughness: 0.5, metalness: 0.1, envMap: env, envMapIntensity: 0.5 }));
+    fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; sc.add(fl);
+    const plat = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.7, 0.12, 64), new THREE.MeshStandardMaterial({ color: '#2a2b2f', roughness: 0.35, metalness: 0.7, envMap: env }));
+    plat.position.y = 0.06; plat.receiveShadow = true; sc.add(plat);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.65, 0.03, 6, 96), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; sc.add(ring);
+    // tavanda şerit ışıklar (yansımalarda görünür)
+    for (let i = -2; i <= 2; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.05, 9), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 3, 3) })); l.position.set(i * 2.2, 7, 0); sc.add(l); }
+    // arka duvar
+    const wall = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 12, 48, 1, true), new THREE.MeshStandardMaterial({ map: G.VARLIK.tex('beton_diff', 10, 2), color: '#3a3a3e', side: THREE.BackSide, roughness: 0.9 }));
+    wall.position.y = 6; sc.add(wall);
+    S.sc = sc; S.env = env; S.plat = plat; S.ring = ring; S.real = true; S.key = key;
+    if (S.car) { old.remove(S.car); sc.add(S.car); }
+    old.traverse(o => { if (o.geometry) o.geometry.dispose(); });
   }
   function setShowCar(vis) {
     if (!SHOW) return;
     if (SHOW.car) { SHOW.sc.remove(SHOW.car); A3().dispose(SHOW.car); }
     SHOW.car = A3().make(vis);
     SHOW.car.position.y = 0.12;
+    if (SHOW.real && Q >= 1) SHOW.car.traverse(o => { if (o.isMesh && !(o.material && o.material.transparent)) o.castShadow = true; });
     SHOW.sc.add(SHOW.car);
   }
   function bindShowDrag() {
@@ -139,7 +171,7 @@
     camera.setViewOffset(w, hh, w * shift, hh * (m === 'garaj' ? -0.04 : 0), w, hh);
     camera.fov = 45; camera.updateProjectionMatrix();
     void off;
-    S.ring.material.color.setHSL((S.t * 0.05) % 1, 1, 0.55);
+    if (!S.real) S.ring.material.color.setHSL((S.t * 0.05) % 1, 1, 0.55);
     if (G.POST) { const P2 = G.POST.P; P2.speed = 0; P2.nitro = 0; P2.hit = 0; P2.odak = 0; P2.tint = [1, 1, 1]; P2.bloom = 0.8; P2.exposure = 1.05; }
     draw(S.sc);
   }
@@ -283,6 +315,7 @@
 
   function mkCar(kind, vis, st) {
     const m = A3().make(vis);
+    if (Q >= 1) m.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material) && !o.material.transparent) { o.castShadow = true; o.receiveShadow = !o.material.isMeshBasicMaterial; } else if (o.isMesh && Array.isArray(o.material)) { o.castShadow = true; } });
     scene.add(m);
     const c = { kind, s: 0, d: 0, v: 0, a: 0, lap: 0, model: m, L: m.userData.L, W: m.userData.W, st: st || null, mass: (st && st.kg) || 1400,
       nitro: kind === 'racer' ? 0.6 : 0, nitroOn: false, steer: 0, slip: 0, gear: 1, rpm: 0, done: false, finishT: 0, prog: 0, hp: 100, disabled: false, spin: 0, spike: 0, y: 0, wheelRot: 0, hitT: 0, pass: {} };

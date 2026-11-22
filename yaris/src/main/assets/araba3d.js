@@ -137,22 +137,22 @@
       const base = topAt(B.b, u) - 0.03;
       let roof = topAt(c, u); if (roof < base + 0.03) roof = base + 0.03;
       const hwB = halfW(B, u) * (van ? 0.99 : 0.86), hwT = hwB * (van ? 0.95 : 0.76);
-      const pts = [[hwB, base], [hwT, roof - 0.04], [hwT * 0.88, roof], [0, roof + 0.015], [-hwT * 0.88, roof], [-hwT, roof - 0.04], [-hwB, base]];
+      const pts = [[hwB, base], [hwB * 0.985, base + 0.055], [hwT, roof - 0.04], [hwT * 0.88, roof], [0, roof + 0.015], [-hwT * 0.88, roof], [-hwT, roof - 0.04], [-hwB * 0.985, base + 0.055], [-hwB, base]];
       for (const [x, y] of pts) { pos.push(x, y, u); uv.push(0, 0); }
     }
-    const ring = 7;
+    const ring = 9, ti = [];
     for (let i = 0; i < M - 1; i++) {
       const u = uS + (uE - uS) * ((i + 0.5) / (M - 1)), roofZone = u > roofA && u < roofB;
       for (let j = 0; j < ring - 1; j++) {
         const A = i * ring + j, Bv = i * ring + j + 1, C = (i + 1) * ring + j, D = (i + 1) * ring + j + 1;
-        // kesit arkadan öne gidiyor: yüz yönü gövdenin tersi
-        (roofZone && j >= 1 && j <= 4 ? ri : gi).push(A, Bv, C, Bv, D, C);
+        const tgt = (j === 0 || j === ring - 2) ? ti : (roofZone && j >= 2 && j <= 5 ? ri : gi);
+        tgt.push(A, Bv, C, Bv, D, C);
       }
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    g.setIndex(gi.concat(ri)); g.addGroup(0, gi.length, 0); g.addGroup(gi.length, ri.length, 1);
+    g.setIndex(gi.concat(ri, ti)); g.addGroup(0, gi.length, 0); g.addGroup(gi.length, ri.length, 1); g.addGroup(gi.length + ri.length, ti.length, 2);
     g.computeVertexNormals();
     return g;
   }
@@ -274,7 +274,8 @@
     const glassM = mat('glass' + tint + (simple ? 's' : ''), () => simple ? new THREE.MeshLambertMaterial({ color: [0x223040, 0x141a22, 0x08080a][tint] })
       : new THREE.MeshStandardMaterial({ color: [0x2a3a4c, 0x161c26, 0x07070a][tint], roughness: 0.04, metalness: 0.95, envMap: ENV, envMapIntensity: 1.6 }));
     const cw = B.W * (B.cw || 0.86);
-    const cab = new THREE.Mesh(loftCabin(B, type === 'van'), [glassM, wallM]);
+    const trimM = mat('trim', () => new THREE.MeshStandardMaterial({ color: 0x0a0a0c, roughness: 0.35, metalness: 0.4 }));
+    const cab = new THREE.Mesh(loftCabin(B, type === 'van'), [glassM, wallM, trimM]);
     grp.add(cab);
     // farlar (HDR: ekran efektleriyle parlar) & LED stop şeridi
     const headM = mat('head', () => { const m = new THREE.MeshBasicMaterial({ color: 0xfff6d8 }); m.color.multiplyScalar(4); return m; });
@@ -293,9 +294,19 @@
       }
     }
     const ru = -B.L / 2 + 0.06, ry = topAt(B.b, ru + 0.06) - 0.12, rhw = halfW(B, ru + 0.05);
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(rhw * 1.7, 0.06, 0.06), brakeM); bar.position.set(0, ry, ru - 0.02); grp.add(bar);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(rhw * 1.7, 0.05, 0.06), brakeM); bar.position.set(0, ry, ru - 0.02); grp.add(bar);
+    const lensM = mat('lens', () => new THREE.MeshStandardMaterial({ color: 0x3a0408, roughness: 0.1, metalness: 0.5, envMap: ENV }));
+    const bu = -B.L / 2 + 0.05, bb = botAt(B, bu);
+    const bump = new THREE.Mesh(new THREE.BoxGeometry(halfW(B, bu + 0.1) * 1.9, 0.2, 0.14), trimM); bump.position.set(0, bb + 0.12, bu + 0.04); grp.add(bump);
+    const fu2 = B.L / 2 - 0.05, fb = botAt(B, fu2);
+    const intake = new THREE.Mesh(new THREE.BoxGeometry(halfW(B, fu2 - 0.1) * 1.4, 0.13, 0.12), trimM); intake.position.set(0, fb + 0.12, fu2 - 0.04); grp.add(intake);
+    if (!opt.basit) {
+      const c3 = B.c, rz = c3[2][0] - 0.02, rh = topAt(c3, rz);
+      const third = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.035, 0.04), brakeM); third.position.set(0, rh - 0.03, rz - 0.05); grp.add(third);
+    }
     for (const sx of [-1, 1]) {
-      const t = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.08), brakeM); t.position.set(sx * rhw * 0.72, ry - 0.02, ru); grp.add(t);
+      const t = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.15, 0.08), brakeM); t.position.set(sx * rhw * 0.68, ry - 0.03, ru); grp.add(t);
+      const lc = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.19, 0.06), lensM); lc.position.set(sx * rhw * 0.68, ry - 0.03, ru + 0.03); grp.add(lc);
       // egzoz ucu
       const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.16, 10), mat('chrome', () => new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.2, metalness: 1, envMap: ENV })));
       ex.rotation.x = Math.PI / 2; ex.position.set(sx * 0.38, 0.3, -B.L / 2 + 0.02); grp.add(ex);

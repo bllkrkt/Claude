@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '3.0';
+  const VER = '4.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -895,7 +895,7 @@
     Y.showroom(visOf(S.sec), 'menu');
     let ready = false;
     $('tapStart').textContent = 'YÜKLENİYOR… %0';
-    const done = () => { ready = true; $('tapStart').textContent = S.ilk ? 'YENİ OYUN — DOKUN' : 'DEVAM ET — DOKUN'; };
+    const done = () => { ready = true; Y.showroom(visOf(S.sec), 'menu'); $('tapStart').textContent = S.ilk ? 'YENİ OYUN — DOKUN' : 'DEVAM ET — DOKUN'; };
     if (window.VARLIK) window.VARLIK.load(f => { $('tapStart').textContent = 'YÜKLENİYOR… %' + Math.round(f * 100); }).then(done, e => { console.warn('gerçek varlıklar yüklenemedi', e); done(); });
     else done();
     $('title').addEventListener('click', () => {

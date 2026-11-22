@@ -81,6 +81,9 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 
 - v3: gerçek fotoğraf dokuları, gökyüzü fotoğrafları, gerçek cepheli caddeler, şerit çizgileri, yakın kamera, sinematik filtre, çizim yükü düşürüldü (parça birleştirme, bölgesel ayıklama).
 
+- v4: gerçek zamanlı gölgeler (güneş, kamerayı izleyen 90 m kutu; Orta 1024 / Yüksek 2048), Merkez/Otoyol cam kuleler (`VA.glass`, yansımalı), çatı korkuluğu ve çatı yapıları, yaprak dokulu ağaç tacı (`crownGeo`), arabalarda cam çıtası, büyük stop grupları, tampon bandı, üçüncü stop; garaj gerçekçi stüdyo (`realShowroom`); yarıştan dönünce garajın silinmiş ortam haritası kullanması düzeltildi; `inst` bölme sonsuz döngüsü düzeltildi.
+- Gerçek araba modeli araştırıldı: Khronos CarConcept (CC-BY, 213 bin üçgen, 12 MB, logolu) telefona fazla ağır → kullanılmadı.
+
 ## Fikirler (sıradaki)
 - Gizli koleksiyon parçaları (serbest sürüşte), kırılabilir engeller (kasalar, çitler).
 - Rakip arabalarına özel görünüm ve "pembe kâğıt" yerine özgün bir ödül sistemi; hasar görseli.
