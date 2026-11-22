@@ -44,7 +44,7 @@
   }
   function setQuality(q) {
     Q = q;
-    if (renderer) renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 0 ? 0.8 : q === 1 ? 1.1 : 1.6));
+    if (renderer) renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, q === 0 ? 0.8 : q === 1 ? 1.1 : q === 2 ? 1.6 : 2.2));
     if (G.POST && G.POST.ok) G.POST.setQuality(q);
     if (renderer) { renderer.shadowMap.enabled = q >= 1; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
     if (G.ARABA3D) A3().setQuality(q);
@@ -64,7 +64,7 @@
     // kare hızı bekçisi: yüksek grafikte telefon yetişemiyorsa bir kademe düşür
     if (R && R.phase === 'yaris' && Q >= 2) {
       fpsW.t += dt; fpsW.n++;
-      if (fpsW.t > 6) { const f = fpsW.n / fpsW.t; fpsW.t = 0; fpsW.n = 0; if (f < 27 && G.onLowFps) G.onLowFps(f); }
+      if (fpsW.t > 6) { const f = fpsW.n / fpsW.t; fpsW.t = 0; fpsW.n = 0; if (f < (Q >= 3 ? 40 : 27) && G.onLowFps) G.onLowFps(f); }
     }
     if (R) stepRace(dt);
     else if (SHOW) stepShow(dt);
@@ -316,6 +316,7 @@
     else popup('SERBEST SÜRÜŞ', 'Polis devriyelerinin yanından hızlı geçersen peşine düşerler', 2.5);
     R.wake = true;
     if (G.EKSTRA) G.EKSTRA.start(R, exApi());
+    if (G.ULTRA) try { G.ULTRA.start(R, Object.assign(exApi(), { Q: () => Q, camera: () => camera, ds, input })); } catch (e) { console.warn('ultra', e); }
     startLoop();
   }
   // v7 ekleri (ekstra.js) için motor yardımcıları
@@ -401,7 +402,8 @@
   function stepRace(dtReal) {
     const r = R;
     // odak modu (ağır çekim)
-    const slowTarget = r.odakT > 0 ? 0.45 : 1;
+    if (r.slowHit > 0) r.slowHit -= dtReal;
+    const slowTarget = r.slowHit > 0 ? 0.3 : r.odakT > 0 ? 0.45 : 1;
     r.slow = lerp(r.slow, slowTarget, Math.min(1, dtReal * 6));
     const dt = dtReal * r.slow;
     r.t += dt;
@@ -412,8 +414,18 @@
       const el = $('hud-count');
       if (now !== prev || r.wake) { r.wake = false; el.textContent = now > 0 ? now : 'GAZ!'; el.className = 'cnt pulse'; void el.offsetWidth; el.className = 'cnt'; SES().sfx(now > 0 ? 'count' : 'go'); }
       // geri sayımda gaz: motor bağırsın
-      r.player.rpm = lerp(r.player.rpm, input.gas || opt.autoGas ? 0.85 : 0.2, dtReal * 4);
+      // v11: mükemmel kalkış — geri sayımda gazla devri yeşil bölgede tut
+      const pl0 = r.player, lb = $('hud-launch');
+      if (!opt.autoGas && r.cfg.tip !== 'serbest') {
+        pl0.rpm = clamp(pl0.rpm + (input.gas || input.nitro ? 0.8 : -1.1) * dtReal, 0.15, 1);
+        if (lb) { lb.style.display = ''; $('h-lrpm').style.left = (pl0.rpm * 100) + '%'; lb.classList.toggle('ok', pl0.rpm >= 0.6 && pl0.rpm <= 0.82); }
+      } else pl0.rpm = lerp(pl0.rpm, input.gas || opt.autoGas ? 0.85 : 0.2, dtReal * 4);
       SES().engine(r.player.rpm, input.gas ? 1 : 0, 0, 1);
+      if (r.count <= 0 && !opt.autoGas) {
+        const pl0 = r.player, lb = $('hud-launch'); if (lb) lb.style.display = 'none';
+        if (pl0.rpm >= 0.6 && pl0.rpm <= 0.82) { pl0.launch = 1.8; popup('MÜKEMMEL KALKIŞ', '+itiş', 1.2, 'iyi'); SES().sfx('odak'); r.stats.kalkis = 1; }
+        else if (pl0.rpm > 0.92) { pl0.launchSpin = 0.9; popup('PATİNAJ', 'devir çok yüksekti', 1, 'kotu'); }
+      }
       if (r.count <= 0) { r.phase = 'yaris'; r.count = 0; setTimeout(() => { if ($('hud-count')) $('hud-count').style.display = 'none'; }, 700); radio('basla'); }
     }
     const steps = Math.max(1, Math.ceil(dt / 0.017));
@@ -423,6 +435,7 @@
     for (const c of r.cars()) syncModel(c, dtReal);
     if (G.EKSTRA) G.EKSTRA.frame(dtReal);
     updateCamera(dtReal);
+    if (G.ULTRA) G.ULTRA.frame(dtReal);
     r.world.update(dtReal, camera);
     updateHud(dtReal);
     G.__camQ = camera.quaternion;
@@ -576,6 +589,17 @@
     c.nitroOn = !!input.nitro && c.nitro > 0.01 && r.phase === 'yaris';
     if (c.nitroOn) { c.nitro = Math.max(0, c.nitro - dt / (3.5 + 1.5 * st.nitro)); vmax *= 1.2 + 0.06 * st.nitro; }
     c.nitroK = lerp(c.nitroK || 0, c.nitroOn ? 1 : 0, Math.min(1, dt * (c.nitroOn ? 6 : 2)));
+    // v11: süzülme (rüzgâr tüneli) — öndeki aracın hemen arkasında hava direnci azalır, nitro dolar
+    let dr = 0;
+    if (!isDrag && r.phase === 'yaris' && c.v > 20) for (const o of r.racers.concat(r.traffic)) {
+      if (o === c || o.out || o.gone || (o.dir || 1) < 0 || (o.sc || null) !== (c.sc || null) || Math.abs(o.v) < 12) continue;
+      const x = ds(c, o);
+      if (x > 4 && x < 32 && Math.abs(o.d - c.d) < 1.7) dr = Math.max(dr, 1 - (x - 4) / 28);
+    }
+    c.draft = lerp(c.draft || 0, dr, Math.min(1, dt * 3));
+    if (c.draft > 0.05) { vmax *= 1 + 0.05 * c.draft; c.nitro = Math.min(1, c.nitro + dt * 0.06 * c.draft); }
+    if (c.draft > 0.6 && !c.draftMsg) { c.draftMsg = true; popup('SÜZÜLME', 'rüzgâr tünelindesin', 0.9, 'orta'); }
+    else if (c.draft < 0.2) c.draftMsg = false;
     // vites ve devir
     let accMul = 1;
     if (isDrag) accMul = dragGear(c, dt, vmax);
@@ -587,6 +611,9 @@
     if (gas && c.v < vmax) acc = st.acc * (1.15 - Math.pow(vr, 1.7) * 1.15 + 0.05) * accMul * (vr < 0.12 ? 1.25 : 1);
     // nitro: hız ne olursa olsun belirgin itiş (en yüksek hızdayken de)
     if (c.nitroOn) acc = Math.max(acc, 0) + st.acc * (0.95 + 0.3 * st.nitro) * (1.1 - 0.5 * clamp(vr, 0, 1));
+    if (c.draft > 0.05 && gas) acc += st.acc * 0.4 * c.draft;
+    if (c.launch > 0) { c.launch -= dt; if (gas) acc += st.acc * 0.75; }              // mükemmel kalkış itişi
+    if (c.launchSpin > 0) { c.launchSpin -= dt; acc *= 0.45; if (Math.random() < 0.5) smokeAt(c, false, 0); } // patinaj
     if (c.v > vmax) acc = Math.min(acc, -(c.v - vmax) * (c.nitroK > 0.05 ? 0.25 : 0.8)); // nitro bitince hız yavaşça düşsün
     if (input.brake) {
       if (c.v > 0.5) acc = -15 * (r.wet ? 0.8 : 1);
@@ -768,6 +795,12 @@
       else if (gap < -100) band = 1 - Math.min(0.08, (-gap - 100) / 2000) * bandK;
     }
     if (r.cfg.tip === 'drag') return aiDrag(c, dt, skill * band);
+    if (c.spinOut > 0) { // savrulmuş: döner, yavaşlar, sonra toparlanır
+      c.spinOut -= dt; c.v *= 1 - dt * 1.3; c.spin = (c.spin || 0) + c.spinV * dt; c.spinV *= 1 - dt * 1.2;
+      c.a *= 1 - dt * 2; advance(c, dt);
+      if (c.spinOut <= 0) { c.spin = 0; c.spinV = 0; }
+      return;
+    }
     const vmax = st.vmax * skill * band * (c.spike > 0 ? 0.55 : 1);
     const look = 25 + c.v * 1.6;
     const Tl = trk(c), sl = loc(c);
@@ -996,6 +1029,17 @@
       a.v *= 0.995; b.v *= 0.995;
     }
     if (G.EKSTRA && imp > 3) { G.EKSTRA.dmg(a, imp * (b.mass / a.mass)); G.EKSTRA.dmg(b, imp * (a.mass / b.mass)); }
+    // v11: rakibi savurma — oyuncu sert vurursa rakip döner, yavaşlar; oyuncu nitro kazanır, kısa ağır çekim
+    {
+      const pl0 = R.player, ot = a === pl0 ? b : b === pl0 ? a : null;
+      if (ot && ot.kind === 'racer' && !ot.out && !(ot.spinOut > 0) && imp > 8 && pl0.v >= ot.v - 2 && R.phase === 'yaris') {
+        ot.spinOut = 2.4; ot.spinV = (Math.random() < 0.5 ? -1 : 1) * (4 + Math.random() * 2.5);
+        R.stats.savurma = (R.stats.savurma || 0) + 1;
+        pl0.nitro = Math.min(1, pl0.nitro + 0.25);
+        popup('SAVURDUN!', (ot.ad || 'Rakip') + ' döndü · +NİTRO', 1.3, 'iyi');
+        R.slowHit = 0.55; R.shake = Math.min(1, R.shake + 0.5); SES().sfx('crash', 1); vib(90);
+      }
+    }
     const pl = R.player;
     const involvesPl = a === pl || b === pl;
     const other = a === pl ? b : a;
@@ -1474,6 +1518,7 @@
     if (!R) return;
     const r = R;
     if (G.EKSTRA) try { G.EKSTRA.stop(); } catch (e) { }
+    if (G.ULTRA) try { G.ULTRA.stop(); } catch (e) { }
     R = null;
     try { r.world.dispose(); } catch (e) { }
     for (const c of r.racers.concat(r.cops, r.traffic)) { r.scene.remove(c.model); A3().dispose(c.model); }
@@ -1507,6 +1552,12 @@
     if (c.air > 0) m.rotateX(-Math.atan2(c.vy, Math.max(8, c.v)) * 0.75);
     else if (c.wy != null && rampH(c) > 0) m.rotateX(-0.17);
     else m.rotateX(-Math.atan(tmp.p) * (dir ? -1 : 1) + (c.bounce || 0) * 0.3);
+    // v11: gaz/frende gövde eğilmesi (gazda burun kalkar, frende eğilir)
+    if (c.kind !== 'traffic' && dt > 0) {
+      const ac = c.lastV2 != null ? (c.v - c.lastV2) / dt : 0; c.lastV2 = c.v;
+      c.pitch = lerp(c.pitch || 0, clamp(-ac * 0.0045, -0.045, 0.06), Math.min(1, dt * 5));
+      m.rotateX(c.pitch);
+    }
     // gövde yatışı: dönüş hızı × hız (virajda dışa yatar)
     if (c.isPlayer || c.kind === 'racer' || c.kind === 'cop') {
       c.roll = lerp(c.roll || 0, clamp((c.yr || 0) * c.v * 0.0045 - (c.slip || 0) * 0.05, -0.075, 0.075), Math.min(1, dt * 6));
@@ -1743,6 +1794,7 @@
       <div id="hud-radio"></div>
       <div id="hud-pops"></div>
       <div id="hud-count" class="cnt" style="display:none">3</div>
+      <div id="hud-launch" style="display:none"><div class="lz"></div><i id="h-lrpm"></i><span>GAZLA DEVRİ YEŞİLDE TUT</span></div>
       <div id="hud-drift" style="display:none"><b id="h-dpts">0</b><small id="h-dmul">x1</small></div>
       <div id="hud-speedo">
         <svg viewBox="0 0 120 120" id="h-rpm"><circle cx="60" cy="60" r="52" class="rbg"/><circle cx="60" cy="60" r="52" class="rfg" id="h-rpmarc"/></svg>
@@ -1778,6 +1830,7 @@
   function setH(el, html) { if (el._h === html) return; el._h = html; el.innerHTML = G.IKON ? G.IKON.h(html) : html; }
   function fmtT(t) { t = Math.max(0, t); const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }
   function updateHud(dt) {
+    if (R.phase !== 'geri' && R.hudEl && !R.hudEl.lHid) { const lb = $('hud-launch'); if (lb) lb.style.display = 'none'; R.hudEl.lHid = 1; }
     const r = R, e = r.hudEl, pl = r.player, tip = r.cfg.tip;
     r.hudT -= dt;
     const kmh = Math.round(Math.abs(pl.v) * KMH);

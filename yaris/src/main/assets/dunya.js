@@ -299,7 +299,7 @@
     let fogCol = col(wet ? mix(sky.fog, '#3a4048', 0.5).getStyle() : sky.fog);
     if (SKP) { fogCol = new THREE.Color().setRGB(SKP.hz[0], SKP.hz[1], SKP.hz[2]).convertSRGBToLinear(); if (skyDark) fogCol.multiplyScalar(0.12); else if (night) fogCol.multiplyScalar(0.5); }
     const fogNear = opts.hava === 'sis' ? 20 : wet ? 60 : SKP ? 180 : 120, fogFar = opts.hava === 'sis' ? 260 : wet ? 520 : SKP ? 1300 : 900;
-    scene.fog = new THREE.Fog(fogCol, fogNear, fogFar);
+    scene.fog = new THREE.Fog(fogCol, fogNear * (q >= 3 ? 1.3 : 1), fogFar * (q >= 3 && opts.hava !== 'sis' ? 1.35 : 1)); // v11: Ultra'da daha uzağı gör
     scene.background = col(sky.hor);
     const skyG = new THREE.SphereGeometry(1600, 24, 12);
     const cTop = col(sky.top), cHor = col(sky.hor), sc = [];
@@ -361,7 +361,7 @@
     const sun = new THREE.DirectionalLight(sunC, sunI);
     if (SH && sunI > 0.3) {
       sun.castShadow = true;
-      const ms = q >= 2 ? 2048 : 1024;
+      const ms = q >= 3 ? 4096 : q >= 2 ? 2048 : 1024;
       sun.shadow.mapSize.set(ms, ms);
       const sc = sun.shadow.camera; sc.left = -45; sc.right = 45; sc.top = 45; sc.bottom = -45; sc.near = 1; sc.far = 320;
       sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
@@ -993,9 +993,9 @@
     if (city && q >= 1) {
       const PC = ['#c0392b', '#2c3e50', '#bdc3c7', '#7f8c8d', '#ecf0f1', '#2980b9', '#16a085', '#8e44ad', '#d35400', '#111111', '#f1c40f'];
       const parked = [], pcol = [];
-      for (let s0 = 40; s0 < T.L - 40; s0 += 9 + r() * 22) {
+      for (let s0 = 40; s0 < T.L - 40; s0 += q >= 3 ? 7 + r() * 15 : 9 + r() * 22) {
         const sg = r() < 0.5 ? -1 : 1;
-        if (gapAt(s0, sg) || r() < 0.35) continue;
+        if (gapAt(s0, sg) || r() < (q >= 3 ? 0.2 : 0.35)) continue;
         if (RAMPS.some(rp => !rp.sc && Math.abs(rp.s0 - s0) < 20)) continue;
         G.PIST.sample(T, s0, sg * (W / 2 + 1.6), o);
         if (rd(o.x, o.z) < W / 2 + 1) continue;

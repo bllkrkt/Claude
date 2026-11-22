@@ -290,3 +290,10 @@ h3.grp:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
 .rset .sw .o { padding: 7px 10px; font-size: 12px; }
 #modal .mbox:has(.rset) { width: min(860px, 95vw); padding: 14px 16px; }
 #modal .mbox:has(.rset) h2 { margin-bottom: 2px; }
+
+/* v11: kalkış devri */
+#hud-launch { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); width: 260px; height: 16px; border-radius: 9px; background: rgba(5, 5, 12, 0.6); border: 1px solid rgba(255, 255, 255, 0.2); }
+#hud-launch .lz { position: absolute; left: 60%; width: 22%; top: 0; bottom: 0; background: rgba(0, 230, 118, 0.45); }
+#hud-launch i { position: absolute; top: -4px; width: 4px; height: 24px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 8px #fff; }
+#hud-launch span { position: absolute; top: 20px; left: 0; right: 0; text-align: center; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.8); }
+#hud-launch.ok { border-color: #00e676; box-shadow: 0 0 14px rgba(0, 230, 118, 0.6); }

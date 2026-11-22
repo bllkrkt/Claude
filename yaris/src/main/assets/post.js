@@ -16,6 +16,8 @@
       gl_FragColor = vec4(s, 1.0); }`;
   const FS_COMP = `uniform sampler2D tScene; uniform sampler2D tBloom1; uniform sampler2D tBloom2;
     uniform float speed, nitro, exposure, bloom, sat, vign, grain, time, odak, hit, hdr; uniform vec3 tint; varying vec2 vUv;
+    uniform sampler2D tDepth; uniform float ao, cn, cf; uniform vec2 px;
+    float lin(float d){ float z = d * 2.0 - 1.0; return (2.0 * cn * cf) / (cf + cn - z * (cf - cn)); }
     vec3 aces(vec3 x){ const float a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14; return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0); }
     float rnd(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233)) + time) * 43758.5453); }
     void main(){
@@ -29,6 +31,19 @@
       // nitro / çarpma: renk kayması
       float ca = (nitro * 0.006 + hit * 0.01) * r;
       if (ca > 0.0001) { col.r = mix(col.r, texture2D(tScene, uv + dc * ca).r, 0.9); col.b = mix(col.b, texture2D(tScene, uv - dc * ca).b, 0.9); }
+      // v11 (Ultra): ekran uzayı ortam gölgelemesi — köşeler, araba altı, bina dipleri koyulaşır
+      if (ao > 0.0) {
+        float d0 = lin(texture2D(tDepth, uv).r);
+        if (d0 < 260.0) {
+          float rad = clamp(42.0 / d0, 2.0, 22.0), occ = 0.0, j = rnd(uv * 517.0) * 6.283;
+          for (int i = 0; i < 8; i++) {
+            float fi = float(i), a2 = fi * 0.7854 + j, rr = rad * (0.45 + 0.55 * mod(fi, 2.0));
+            float dn = lin(texture2D(tDepth, uv + vec2(cos(a2), sin(a2)) * rr * px).r), df = d0 - dn;
+            occ += smoothstep(0.04 + d0 * 0.002, 0.5 + d0 * 0.01, df) * (1.0 - smoothstep(1.5 + d0 * 0.03, 4.0 + d0 * 0.06, df));
+          }
+          col *= 1.0 - ao * occ / 8.0 * (1.0 - smoothstep(120.0, 260.0, d0));
+        }
+      }
       col += texture2D(tBloom1, uv).rgb * bloom * 0.8 + texture2D(tBloom2, uv).rgb * bloom * 0.3;
       col *= tint;
       col = aces(col * exposure);
@@ -61,6 +76,7 @@
     mats.bright = mk(FS_BRIGHT, { tDiffuse: { value: null }, thr: { value: hdr ? 1.3 : 0.92 } });
     mats.blur = mk(FS_BLUR, { tDiffuse: { value: null }, dir: { value: new THREE.Vector2() } });
     mats.comp = mk(FS_COMP, {
+      tDepth: { value: null }, ao: { value: 0 }, cn: { value: 0.5 }, cf: { value: 2000 }, px: { value: new THREE.Vector2(1, 1) },
       tScene: { value: null }, tBloom1: { value: null }, tBloom2: { value: null }, speed: { value: 0 }, nitro: { value: 0 }, exposure: { value: 1 }, bloom: { value: 1 },
       sat: { value: 1 }, vign: { value: 0.3 }, grain: { value: 0.03 }, time: { value: 0 }, odak: { value: 0 }, hit: { value: 0 }, hdr: { value: hdr ? 1 : 0 }, tint: { value: new THREE.Vector3(1, 1, 1) },
     });
@@ -68,10 +84,11 @@
     setQuality(quality);
     return ok;
   }
-  let samples = 0;
+  let samples = 0, aoK = 0;
   function setQuality(q) {
     samples = q >= 2 && ren.capabilities.isWebGL2 ? 4 : 0;
     scaleBloom = q >= 2 ? 0.5 : 0.25;
+    aoK = q >= 3 ? 0.6 : 0;
     W = 0; // yeniden boyutlandır
   }
   function ensure() {
@@ -107,6 +124,8 @@
     bl.tDiffuse.value = rtD.texture; bl.dir.value.set(3 / rtA.width, 0); pass(mats.blur, rtC);
     bl.tDiffuse.value = rtC.texture; bl.dir.value.set(0, 3 / rtA.height); pass(mats.blur, rtD);
     const u = mats.comp.uniforms;
+    u.ao.value = aoK && rtScene.depthTexture ? aoK : 0; u.tDepth.value = rtScene.depthTexture || null;
+    u.cn.value = camera.near; u.cf.value = camera.far; u.px.value.set(1 / W, 1 / H);
     u.tScene.value = rtScene.texture; u.tBloom1.value = rtA.texture; u.tBloom2.value = rtD.texture;
     u.speed.value = P.speed; u.nitro.value = P.nitro; u.exposure.value = P.exposure; u.bloom.value = P.bloom; u.sat.value = P.sat; u.vign.value = P.vign;
     u.grain.value = P.grain; u.time.value = (t0 += 0.016) % 100; u.odak.value = P.odak; u.hit.value = P.hit; u.tint.value.set(P.tint[0], P.tint[1], P.tint[2]);

@@ -16,6 +16,7 @@ adı, karakterleri, "Blacklist" gibi isimleri, gerçek araba markaları kullanı
 | `dunya.js` | `DUNYA.build(scene,T,zone,opts)`: yol, kaldırım, binalar (instanced), bölge süsleri, gökyüzü, sis, yağmur, lambalar; kapı/radar/kontrol noktası/takip engeli/barikat üreticileri |
 | `post.js` | `POST`: ekran efektleri — sahne HDR doku hedefine çizilir; parlama (bloom, 2 seviye), hız bulanıklığı, nitro renk kayması, vinyet, ACES + sRGB. Grafik Düşük'te kapalı (`draw()` doğrudan çizer) |
 | `ikon.js` | `IKON` (v8): oyunun kendi SVG simge seti (~80 simge, 24×24 çizgi). Kaynakta emoji yazılır; MutationObserver ekrana giren her metindeki emojiyi simgeye çevirir (`IKON.h(metin)` → HTML). YENİ EMOJİ KULLANIRSAN `E` eşlemesine ekle, yoksa `yaris-e2e` testi `emoji:` hatası verir. Her karede değişen göstergelerde `setH(el, html)` kullan (sadece değişince yazar) |
+| `ultra.js` | `ULTRA` (v11): oyuncu far spot ışığı (Yüksek+; gece 24, akşam 10), far huzmesi konileri (gece, tüm yarışçılar), polis çakar nokta ışığı (en yakın aktif polis), lastik izleri (InstancedMesh halka tampon), hız rüzgârı çizgileri. Kancalar: `start` sonunda, `stepRace` (kameradan sonra) `frame`, `stopRace` |
 | `ekstra.js` | `EKSTRA` (v7): hasar görseli, kırılabilir engeller, serbest sürüş gizli parçaları, hayalet kaydı/oynatma. `yaris.js` kancaları: `start` sonunda `EKSTRA.start(R, exApi())`, `simulate`→`step`, `stepRace`→`frame`, `onLap`→`lap`, `finish`→`finish(res)`, `stopRace`→`stop`, duvar/çarpışma→`dmg(c, imp)` |
 | `yaris.js` | `YARIS`: yarış motoru — fizik, yapay zekâ, trafik, polis, yarış türleri, kamera, efektler, HUD, kontroller, vitrin (garaj sahnesi) |
 | `oyun.js` | `A`: kayıt, kariyer, garaj, menüler, hikâye diyalogu, ödüller, günlük, başarımlar, ayarlar |
@@ -133,3 +134,11 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - Yeni ayarlar (`S.set`): `trafik` (0/0.5/1/1.6/2.4, yarışta canlı: `YARIS.setTraffic`), `vites` oto/manuel, `dirTip` kaydir/tus, `dirHassas`, `tusBoyut` (CSS `--ctl`), `tusSaydam` (`--ctlop`), `harita`, `sarsinti`, `hizBirim` kmh/mph. `ayarHTML(race)` menüde ve duraklat → AYARLAR penceresinde ortak; kontrol değişince `YARIS.refreshHud()`.
 - `#modal` artık `position: fixed` (duraklatma ekranının arkasında kalıyordu).
 - Denge (0.9): 30–32/50 (önceki 32–33). Sanal sürücü (`botDrive`) yeni direksiyona uyarlandı; duvar sürtmesi sanal sürücüde 336 → 432 arttı (insan oyuncuda değil, PD denetleyicisinin ataletle salınımı).
+
+## v11 — Ultra grafik ve yeni mekanikler
+- Kalite 3 = Ultra: piksel oranı 2,2'ye kadar, 4096 gölge haritası, ekran uzayı ortam gölgelemesi (post.js `ao`, derinlik dokusundan 8 örnek), sis/görüş ×1,35, daha çok park etmiş araba. Otomatik seçim: ≥6 GB ve ≥8 çekirdek → Ultra; eski kayıtta Yüksek olan bir kez Ultra'ya geçer (`S.u11`). Kare hızı Ultra'da <40 ise bir kademe düşer (`onLowFps`).
+- Gövde eğilmesi: gazda burun kalkar, frende iner (`c.pitch`, syncModel).
+- Süzülme: öndeki aracın 4–32 m arkasında, yanal fark <1,7 m → `c.draft`; +ivme, en yüksek hız +%5, nitro dolar, "SÜZÜLME" yazısı, rüzgâr çizgileri.
+- Mükemmel kalkış: geri sayımda (oto gaz kapalıyken) gazla devir 0,60–0,82'de tutulursa 1,8 sn itiş (`c.launch`); >0,92 ise patinaj (`c.launchSpin`). Gösterge `#hud-launch`.
+- Savurma: oyuncu bir rakibe sert (imp>8) vurursa rakip 2,4 sn döner (`spinOut`), oyuncu +0,25 nitro, kısa ağır çekim (`R.slowHit`), sonuçta "Savurduğun rakip".
+- Denge (0.9): 30/50.

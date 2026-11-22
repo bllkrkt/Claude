@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '10.0';
+  const VER = '11.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -44,6 +44,7 @@
         if (!S.arabalar || !Object.keys(S.arabalar).length) S.arabalar = { serce: newCar('serce') };
         for (const id in S.arabalar) { const d = newCar(CAR(id) ? id : 'serce'); S.arabalar[id] = Object.assign(d, S.arabalar[id]); S.arabalar[id].gor = Object.assign(d.gor, S.arabalar[id].gor); }
         if (!S.arabalar[S.sec]) S.sec = Object.keys(S.arabalar)[0] || 'serce';
+        if (!S.u11) { S.u11 = 1; if (S.set.q === 2) S.set.q = 3; } // v11: Yüksek'teki oyuncu Ultra'ya geçer (yavaşlarsa oyun kendisi düşürür)
         if (!S.arabalar.serce && !Object.keys(S.arabalar).length) S.arabalar.serce = newCar('serce');
       }
     } catch (e) { console.warn('kayıt okunamadı', e); }
@@ -364,6 +365,8 @@
     if (st.etkisiz) L.push(['🚓 Devre dışı polis', st.etkisiz]);
     if (st.engel) L.push(['🏗️ Yıkılan engel', st.engel]);
     if (st.barikat) L.push(['🚧 Geçilen barikat', st.barikat]);
+    if (st.savurma) L.push(['💥 Savurduğun rakip', st.savurma]);
+    if (st.kalkis) L.push(['🚦 Mükemmel kalkış', '✓']);
     if (res.kirik) L.push(['📦 Kırılan kasa/koni', res.kirik + ' (+' + fmt(res.kirik * 10) + ' 💰)']);
     if (res.hasar) L.push(['🔧 Araç hasarı', '%' + res.hasar]);
     if (res.turlar && res.turlar.length > 1) L.push(['🔁 En iyi tur', fmtTime(Math.min(...res.turlar))]);
@@ -870,7 +873,7 @@
     h += sw('Hız birimi', o('hizBirim', 'kmh', 'km/s') + o('hizBirim', 'mph', 'mil/s'));
     h += sw('Mini harita', o('harita', true, 'Açık') + o('harita', false, 'Kapalı'));
     h += sw('Ekran sarsıntısı', o('sarsinti', 0, 'Kapalı') + o('sarsinti', 0.5, 'Az') + o('sarsinti', 1, 'Normal'));
-    if (!race) h += sw('Grafik', o('q', 0, 'Düşük') + o('q', 1, 'Orta') + o('q', 2, 'Yüksek'));
+    if (!race) h += sw('Grafik', o('q', 0, 'Düşük') + o('q', 1, 'Orta') + o('q', 2, 'Yüksek') + o('q', 3, 'Ultra'), s.q === 3 ? 'En keskin görüntü, 4K gölgeler, ortam gölgelemesi, gerçek far ışıkları. Güçlü telefonlar için.' : '');
     h += sw('Efektler', o('efekt', 0, 'Az') + o('efekt', 1, 'Orta') + o('efekt', 2, 'Çok'));
     h += '<h3 class="grp">🎬 Ses</h3>';
     h += sw('Ses efektleri', [0, 0.4, 0.8, 1].map(v => o('ses', v, v ? Math.round(v * 100) + '%' : 'Kapalı')).join(''));
@@ -912,8 +915,8 @@
   window.onCam = m => { S.set.kamera = m; save(); };
   window.onLowFps = f => {
     if (S.set.q < 2) return;
-    S.set.q = 1; save(); Y.setQuality(1);
-    toast('⚙️ Telefon zorlandı (' + Math.round(f) + ' kare/sn): grafik Orta\'ya alındı. Ayarlar\'dan değiştirebilirsin.');
+    const nq = S.set.q - 1; S.set.q = nq; save(); Y.setQuality(nq);
+    toast('⚙️ Telefon zorlandı (' + Math.round(f) + ' kare/sn): grafik bir kademe düşürüldü (' + ['Düşük', 'Orta', 'Yüksek', 'Ultra'][S.set.q] + '). Ayarlar\'dan değiştirebilirsin.');
   };
   function askName() {
     modal(`<h2>Sürücü adın</h2><p class="mut">Hikâyede ve yarışlarda görünür.</p><input id="nmIn" maxlength="14" value="${(S.isim || '').replace(/"/g, '')}" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:#1a1830;color:#fff;font:inherit;font-size:18px;user-select:text;-webkit-user-select:text"><div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn" id="nmOk">Tamam</button></div>`);
@@ -973,7 +976,7 @@
   function pickQuality() {
     if (S.set.q >= 0) return S.set.q;
     const mem = navigator.deviceMemory || 4, cores = navigator.hardwareConcurrency || 4;
-    const q = mem <= 3 || cores <= 4 ? 0 : mem < 6 || cores < 8 ? 1 : 2;
+    const q = mem <= 3 || cores <= 4 ? 0 : mem < 6 || cores < 8 ? 1 : 3; // v11: güçlü telefon → Ultra
     S.set.q = q; save();
     return q;
   }
