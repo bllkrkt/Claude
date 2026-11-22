@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '12.0';
+  const VER = '13.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -25,7 +25,8 @@
       kar: { bitti: {}, rakip: 10, rk: {}, sahne: {}, final: false, son: false },
       ar: { sure: 0, etkisiz: 0, engel: 0, barikat: 0, kac: 0 },
       ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0, kestirme: 0, ucus: 0, kirik: 0 },
-      kol: {}, rek: {}, // v7: serbest sürüş gizli parçaları (bölge → bulunanlar), pist rekorları (pist → {tur, sure})
+      kol: {}, rek: {}, imza: {}, gan: 0, // v13: imza boyaları (rakip no → 1), toplanan ganimet kartı
+      // v7: serbest sürüş gizli parçaları (bölge → bulunanlar), pist rekorları (pist → {tur, sure})
       bas: {}, mo: {}, gun: { tarih: '', seri: 0, alindi: '', gorev: [], gtarih: '' },
       set: { ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2,
         trafik: 1, vites: 'oto', dirTip: 'kaydir', dirHassas: 1, tusBoyut: 1, tusSaydam: 1, harita: true, sarsinti: 1, hizBirim: 'kmh' }, // v10
@@ -40,7 +41,7 @@
         const o = JSON.parse(raw), d = fresh();
         // eksik alanları varsayılanlarla tamamla (eski kayıtlar bozulmasın)
         S = Object.assign(fresh(), o);
-        for (const k of ['kar', 'ar', 'ist', 'gun', 'set', 'kol', 'rek']) S[k] = Object.assign(d[k], o[k] || {});
+        for (const k of ['kar', 'ar', 'ist', 'gun', 'set', 'kol', 'rek', 'imza']) S[k] = Object.assign(d[k], o[k] || {});
         if (!S.arabalar || !Object.keys(S.arabalar).length) S.arabalar = { serce: newCar('serce') };
         for (const id in S.arabalar) { const d = newCar(CAR(id) ? id : 'serce'); S.arabalar[id] = Object.assign(d, S.arabalar[id]); S.arabalar[id].gor = Object.assign(d.gor, S.arabalar[id].gor); }
         if (!S.arabalar[S.sec]) S.sec = Object.keys(S.arabalar)[0] || 'serce';
@@ -410,6 +411,7 @@
     const lines = [['rakip', r.soz[1]]].concat(V.STORY.rakipSonra[no] || []);
     story(lines, () => {
       goMenu('kariyer');
+      ganimet(no);
       toast(`👑 #${no} ${r.lakap} yenildi! ${gift}`, 'ach');
       const nz = no - 1 > 0 ? RIV(no - 1) : null;
       if (nz && nz.bolge !== r.bolge) setTimeout(() => toast(`🗺️ Yeni bölge açıldı: ${V.ZONES[nz.bolge].ad}`, 'ach'), 900);
@@ -418,6 +420,47 @@
     }, r);
   }
   function G_ach() { return true; }
+
+  // ───────── v13 GANİMET KARTLARI: Liste rakibini yenince 3 kapalı karttan birini seç ─────────
+  function ganimetKart(tur, no) {
+    const r = RIV(no), t = 11 - no, c = CAR(r.araba);
+    if (tur === 'para') return { tur, ik: '💰', ad: 'Çanta Dolusu', yazi: fmt(3000 * t + 2000) + ' 💰', al: () => { S.para += 3000 * t + 2000; S.ist.kazanc += 3000 * t + 2000; } };
+    if (tur === 'un') return { tur, ik: '🔥', ad: 'Şehir Konuşuyor', yazi: fmt(900 * t) + ' Ün', al: () => { S.un += 900 * t; } };
+    if (tur === 'parca') {
+      const my = S.arabalar[S.sec], p = V.PARTS.slice().sort((a, b) => (my.parca[a.id] || 0) - (my.parca[b.id] || 0))[0], lv = my.parca[p.id] || 0;
+      if (lv >= 4) return ganimetKart('para', no);
+      return { tur, ik: '🔧', ad: 'Usta Eli', yazi: `${CAR(S.sec).ad}: ${p.ad} +1 seviye (bedava)`, al: () => { my.parca[p.id] = lv + 1; } };
+    }
+    if (tur === 'imza') return { tur, ik: '🎨', ad: r.lakap + ' İmzası', yazi: 'Rakibin boyası ve neonu, bedava', renk: r.renk,
+      al: () => { S.imza[no] = 1; const my = S.arabalar[S.sec], ni = 1 + (no % 7); my.gor.renk = r.renk; my.gor.neon = ni; my.sahip['neon' + ni] = true; } };
+    if (tur === 'anahtar') {
+      if (S.arabalar[c.id]) return ganimetKart('para', no);
+      return { tur, ik: '🔑', ad: 'Kontak Anahtarı', yazi: c.ad + ' garajına gelir', al: () => { S.arabalar[c.id] = newCar(c.id); S.arabalar[c.id].gor.renk = r.renk; } };
+    }
+  }
+  const imzaRenk = c => Object.keys(S.imza || {}).some(n => RIV(+n) && RIV(+n).renk === c);
+  let ganimetK = null;
+  function ganimet(no) {
+    const havuz = ['para', 'un', 'parca', 'imza', 'anahtar'];
+    if (no === 1) havuz.pop(); // Kobra'nın arabası zaten hediye
+    for (let i = havuz.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [havuz[i], havuz[j]] = [havuz[j], havuz[i]]; }
+    const kartlar = havuz.slice(0, 3).map(t => ganimetKart(t, no)), r = RIV(no);
+    ganimetK = { kartlar, no, secildi: -1 };
+    modal(`<h2>🎴 Ganimet Kartları</h2><p class="mut">${r.lakap} yenildi. Kartlardan birini seç, ne çıkarsa senin.</p>
+      <div class="gk-row">${kartlar.map((k, i) => `<div class="gk" id="gk${i}" onclick="A.gkSec(${i})"><div class="gk-in"><div class="gk-a">?</div>
+        <div class="gk-b"${k.renk ? ` style="border-color:${k.renk};box-shadow:0 0 18px ${k.renk}"` : ''}><div class="gk-ik">${k.ik}</div><b>${k.ad}</b><small>${k.yazi}</small></div></div></div>`).join('')}</div>
+      <div class="btns" id="gkBtns" style="visibility:hidden"><button class="btn big" onclick="A.closeModal()">AL</button></div>`);
+  }
+  function gkSec(i) {
+    const g = ganimetK; if (!g || g.secildi >= 0) return;
+    g.secildi = i; SES.sfx('kart');
+    const k = g.kartlar[i]; k.al();
+    S.gan = (S.gan || 0) + 1; if (S.gan >= 5) unlock('ganimet');
+    saveNow();
+    $('gk' + i).classList.add('ac', 'sec');
+    setTimeout(() => { g.kartlar.forEach((_, j) => { if (j !== i) $('gk' + j) && $('gk' + j).classList.add('ac', 'sonuk'); }); $('gkBtns').style.visibility = 'visible'; renderTop(); if (cur === 'garaj') renderPanel(); }, 700);
+    if (k.tur === 'imza' || k.tur === 'anahtar') try { if (!Y.active) Y.showroom(visOf(S.sec), 'menu'); } catch (e) {}
+  }
   function finale() {
     S.kar.son = true;
     if (!S.arabalar.kuzgun) S.arabalar.kuzgun = newCar('kuzgun');
@@ -726,6 +769,7 @@
     const pr = (k, p) => p && !own(k) ? `<small>${fmt(p)} 💰</small>` : '<small style="color:var(--grn)">✓</small>';
     if (gSub === 'boya') {
       h += `<h3>Renk <span class="price">${fmt(V.PAINT_PRICE)} 💰</span></h3><div class="sw">${V.PAINTS.map(([c, n]) => `<div class="c ${draft.renk === c ? 'on' : ''}" style="background:${c}" title="${n}" onclick="A.dr('renk','${c}')"></div>`).join('')}</div>
+${Object.keys(S.imza).length ? `<h3>İmza boyaları <span class="price">bedava</span></h3><div class="sw">${Object.keys(S.imza).map(n => RIV(+n)).map(r => `<div class="c ${draft.renk === r.renk ? 'on' : ''}" style="background:${r.renk};box-shadow:0 0 10px ${r.renk}" title="${r.lakap}" onclick="A.dr('renk','${r.renk}')"></div>`).join('')}</div>` : ''}
         <h3>Kaplama</h3><div class="sw">${V.FINISH.map(f => `<div class="o ${draft.kaplama === f.id ? 'on' : ''}" onclick="A.dr('kaplama','${f.id}')">${f.ad}${pr('kap' + f.id, f.fiyat)}</div>`).join('')}</div>`;
     } else if (gSub === 'jant') {
       h += `<h3>Model</h3><div class="sw">${V.RIMS.map(r => `<div class="o ${draft.jant === r.id ? 'on' : ''}" onclick="A.dr('jant',${r.id})">${r.ad}${pr('jant' + r.id, r.fiyat)}</div>`).join('')}</div>
@@ -746,7 +790,7 @@
   function draftCost() {
     const my = S.arabalar[S.sec], g = my.gor, d = draft; let c = 0;
     const own = k => my.sahip[k];
-    if (d.renk !== g.renk) c += V.PAINT_PRICE;
+    if (d.renk !== g.renk && !imzaRenk(d.renk)) c += V.PAINT_PRICE;
     if (d.kaplama !== g.kaplama && !own('kap' + d.kaplama)) c += V.FINISH.find(f => f.id === d.kaplama).fiyat;
     if (d.jant !== g.jant && !own('jant' + d.jant)) c += V.RIMS[d.jant].fiyat;
     if (d.jantRenk !== g.jantRenk) c += V.RIMCOL_PRICE;
@@ -952,8 +996,63 @@
     if (lastRun && lastRun.meta.kind === 'serbest' && q) { S.ist.km += q.stats.mesafe / 1000; dailyProg('km', q.stats.mesafe / 1000); S.ist.enHiz = Math.max(S.ist.enHiz, q.stats.enHiz); checkAch(); saveNow(); }
     Y.stopRace(); goMenu();
   };
+  // ───────── v13 FOTOĞRAF MODU ─────────
+  const PH_FIL = [['Normal', 'none'], ['Sinema', 'contrast(1.15) saturate(1.2)'], ['Sıcak', 'sepia(0.35) saturate(1.25) contrast(1.05)'], ['Soğuk', 'hue-rotate(-12deg) saturate(0.9) brightness(1.05)'], ['Neon', 'saturate(1.7) contrast(1.12)'], ['Siyah Beyaz', 'grayscale(1) contrast(1.2)'], ['Eski', 'sepia(0.8) contrast(0.95) brightness(0.95)']];
+  const PHS = { fil: 0, cer: false };
+  function photoOpen() {
+    const ph = Y.photo(true); if (!ph) return;
+    document.body.classList.add('photo');
+    $('phDist').value = ph.dist; $('phFov').value = ph.fov; $('phRoll').value = 0;
+    phFilUI(); $('phCer').classList.toggle('on', PHS.cer); $('phGiz').classList.remove('on');
+  }
+  function photoClose() { Y.photo(false); document.body.classList.remove('photo'); $('gl').style.filter = ''; }
+  function phFilUI() {
+    $('phFil').innerHTML = PH_FIL.map((f, i) => `<button class="btn alt sm${i === PHS.fil ? ' on' : ''}" data-i="${i}">${f[0]}</button>`).join('');
+    $('gl').style.filter = PH_FIL[PHS.fil][1] === 'none' ? '' : PH_FIL[PHS.fil][1];
+  }
+  $('pFoto').onclick = () => { click(); photoOpen(); };
+  $('phBack').onclick = () => { click(); photoClose(); };
+  $('phFil').onclick = e => { const b = e.target.closest('button'); if (!b) return; click(); PHS.fil = +b.dataset.i; phFilUI(); };
+  $('phCer').onclick = () => { click(); PHS.cer = !PHS.cer; $('phCer').classList.toggle('on', PHS.cer); };
+  $('phGiz').onclick = () => { click(); const ph = Y.PH; if (!ph) return; ph.gizle = !ph.gizle; $('phGiz').classList.toggle('on', ph.gizle); };
+  $('phDist').oninput = e => { if (Y.PH) Y.PH.dist = +e.target.value; };
+  $('phFov').oninput = e => { if (Y.PH) Y.PH.fov = +e.target.value; };
+  $('phRoll').oninput = e => { if (Y.PH) Y.PH.roll = +e.target.value; };
+  (() => { // sürükle = döndür, iki parmak = yakınlaş
+    const el = $('phDrag'), pts = new Map(); let pinch = 0;
+    el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinch = 0; });
+    el.addEventListener('pointermove', e => {
+      const ph = Y.PH, o = pts.get(e.pointerId); if (!ph || !o) return;
+      if (pts.size >= 2) {
+        o.x = e.clientX; o.y = e.clientY;
+        const [a, b] = [...pts.values()], dd = Math.hypot(a.x - b.x, a.y - b.y);
+        if (pinch) { ph.dist = Math.max(2.6, Math.min(30, ph.dist * pinch / dd)); $('phDist').value = ph.dist; }
+        pinch = dd; return;
+      }
+      ph.yaw -= (e.clientX - o.x) * 0.008; ph.pitch += (e.clientY - o.y) * 0.006;
+      o.x = e.clientX; o.y = e.clientY;
+    });
+    const up = e => { pts.delete(e.pointerId); pinch = 0; };
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+    el.addEventListener('wheel', e => { const ph = Y.PH; if (!ph) return; ph.dist = Math.max(2.6, Math.min(30, ph.dist * (e.deltaY > 0 ? 1.1 : 0.9))); $('phDist').value = ph.dist; }, { passive: true });
+  })();
+  $('phShot').onclick = () => {
+    const url = Y.photoShot(PH_FIL[PHS.fil][1], PHS.cer); if (!url) return;
+    SES.sfx('foto');
+    const fl = document.createElement('div'); fl.className = 'ph-flash'; $('photo').appendChild(fl);
+    requestAnimationFrame(() => { fl.style.opacity = 0.85; setTimeout(() => { fl.style.opacity = 0; setTimeout(() => fl.remove(), 400); }, 60); });
+    const d = new Date(), z = n => String(n).padStart(2, '0');
+    const ad = `GeceKacagi_${d.getFullYear()}${z(d.getMonth() + 1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.jpg`;
+    let yer = '';
+    try { if (window.AndroidBridge && AndroidBridge.saveImage) yer = AndroidBridge.saveImage(ad, url.split(',')[1]); } catch (e) { yer = ''; }
+    if (!window.AndroidBridge) { const a = document.createElement('a'); a.href = url; a.download = ad; document.body.appendChild(a); a.click(); a.remove(); yer = 'İndirilenler'; }
+    if (yer) { toast('📸 Kaydedildi: ' + yer); S.ist.foto = (S.ist.foto || 0) + 1; unlock('foto'); save(); }
+    else toast('Fotoğraf kaydedilemedi');
+  };
+
   window.__onBack = () => {
-    if ($('modal').classList.contains('on')) { closeModal(); return true; }
+    if (document.body.classList.contains('photo')) { photoClose(); return true; }
+    if ($('modal').classList.contains('on')) { if (!(ganimetK && ganimetK.secildi < 0 && $('mbox').querySelector('.gk'))) closeModal(); return true; }
     if (Y.active) { if (!(Y.R && Y.R.finished)) paused(!isPaused); return true; }
     if ($('dlg').classList.contains('on')) { $('dlgSkip').click(); return true; }
     if ($('menu').classList.contains('on') && cur !== 'kariyer') { tab('kariyer'); return true; }
@@ -1012,7 +1111,7 @@
     document.addEventListener('pointerdown', () => SES.unlock(), { once: true });
   }
 
-  window.A = { tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
+  window.A = { gkSec, _ganimet: no => ganimet(no), tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
     claimDaily, claimTask, set, askName, backup, resetAll, replayStory, get S() { return S; }, goMenu, _events: EVENTS };
   boot();
 })();

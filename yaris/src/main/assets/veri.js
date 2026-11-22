@@ -257,7 +257,9 @@
           id: 'k' + r.no + '_' + i, rakipNo: r.no, tip, pist, tur: tur || (tip === 'devre' ? 2 : tip === 'eleme' ? 4 : 1), hedef,
           zor: (r.no === 10 && i === 0 ? 0.6 : 0.66 + tier * 0.028 + i * 0.006), rakipSay: tip === 'duello' ? 1 : tip === 'drag' ? 3 : tip === 'eleme' ? 5 : 4,
           para: Math.round((1400 + tier * 1600) * (1 + i * 0.08) / 100) * 100, un: 250 + tier * 180 + i * 30,
-          polis: (tip === 'sprint' || tip === 'hiz' || tip === 'gise') && tier >= 2 ? Math.min(3, 1 + Math.floor(tier / 4)) : 0,
+          // v13: polis ilk bölgeden itibaren gelir (eskiden 3. rakibe kadar hiç yoktu); ilk eğitim yarışı hariç
+          polis: r.no === 10 && i === 0 ? 0 : (tip === 'sprint' || tip === 'hiz' || tip === 'gise') ? Math.min(4, 1 + Math.floor(tier / 3))
+            : (tip === 'devre' || tip === 'eleme') && (i + r.no) % 2 === 1 ? Math.min(3, 1 + Math.floor(tier / 4)) : 0,
           hava: (i + r.no) % 4 === 0 ? 'yagmur' : (i + r.no) % 5 === 0 ? 'sis' : 'acik',
           saat: r.bolge === 3 ? 'aksam' : (i % 4 === 3 ? 'gece' : i % 3 === 1 ? 'aksam' : 'gunduz'),
         });
@@ -307,6 +309,8 @@
     { id: 'kestirme', ad: 'Ara Sokak Bilgini', yazi: 'Toplam 20 kestirme kullan', ik: '🔀' },
     { id: 'parca1', ad: 'Hazine Avcısı', yazi: 'Serbest sürüşte bir bölgenin bütün gizli parçalarını bul', ik: '🧩' },
     { id: 'hayalet', ad: 'Kendinle Yarış', yazi: 'Hayaletle Yarış\'ta kendi rekorunu kır', ik: '👻' },
+    { id: 'foto', ad: 'Objektif', yazi: 'Fotoğraf modunda bir kare kaydet', ik: '📸' },
+    { id: 'ganimet', ad: 'Ganimet Avcısı', yazi: 'Gece Listesi\'nden 5 Ganimet Kartı topla', ik: '🎴' },
     { id: 'kirici', ad: 'Fil Dükkânda', yazi: 'Toplam 100 kasa, koni ya da bariyer kır', ik: '📦' },
     { id: 'ucus', ad: 'Kanatlı', yazi: 'Tek atlayışta 60 m uç', ik: '🛫' },
   ];

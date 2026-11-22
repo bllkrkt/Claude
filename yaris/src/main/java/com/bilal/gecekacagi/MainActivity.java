@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.WindowInsets;
@@ -259,6 +260,35 @@ public class MainActivity extends Activity {
                     return "İndirilenler/" + name;
                 } else {
                     File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                    if (dir == null) return "";
+                    File f = new File(dir, name);
+                    try (FileOutputStream os = new FileOutputStream(f)) { os.write(bytes); }
+                    return f.getAbsolutePath();
+                }
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        /** v13: fotoğraf modundaki kareyi Galeri'ye (Resimler/GeceKacagi) yazar; yeri döndürür, olmazsa boş metin. */
+        @JavascriptInterface
+        public String saveImage(String name, String b64) {
+            try {
+                byte[] bytes = Base64.decode(b64, Base64.DEFAULT);
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues v = new ContentValues();
+                    v.put(MediaStore.Images.Media.DISPLAY_NAME, name);
+                    v.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+                    v.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/GeceKacagi");
+                    Uri uri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                    if (uri == null) return "";
+                    try (OutputStream os = getContentResolver().openOutputStream(uri)) {
+                        if (os == null) return "";
+                        os.write(bytes);
+                    }
+                    return "Galeri › GeceKacagi";
+                } else {
+                    File dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
                     if (dir == null) return "";
                     File f = new File(dir, name);
                     try (FileOutputStream os = new FileOutputStream(f)) { os.write(bytes); }

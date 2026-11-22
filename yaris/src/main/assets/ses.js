@@ -131,6 +131,8 @@
       case 'scrape': burst(0.2, 3500, 'bandpass', 0.15 * k, t, 3); break;
       case 'whoosh': { const f = burst(0.35, 600, 'bandpass', 0.18, t, 1.2); f.frequency.exponentialRampToValueAtTime(2600, t + 0.3); break; }
       case 'cam': tone(2400, 0.06, 'square', 0.08); burst(0.08, 6000, 'highpass', 0.12, t + 0.02); tone(1800, 0.15, 'sine', 0.1, t + 0.08); break;
+      case 'foto': burst(0.05, 5000, 'highpass', 0.2); burst(0.09, 2200, 'bandpass', 0.16, t + 0.07); break;
+      case 'kart': tone(520, 0.08, 'triangle', 0.1); tone(780, 0.1, 'triangle', 0.1, t + 0.06); burst(0.12, 3000, 'highpass', 0.06, t); break;
       case 'cp': tone(988, 0.12, 'triangle', 0.15); tone(1319, 0.25, 'triangle', 0.15, t + 0.1); break;
       case 'boom': burst(0.9, 400, 'lowpass', 0.55); tone(55, 0.7, 'sine', 0.45, t, 28); break;
       case 'breaker': burst(1.2, 700, 'lowpass', 0.5); for (let i = 0; i < 5; i++) tone(300 + Math.random() * 600, 0.15, 'square', 0.05, t + 0.15 + i * 0.12, 80); break;

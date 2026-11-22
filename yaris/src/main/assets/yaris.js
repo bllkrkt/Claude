@@ -60,6 +60,7 @@
   function loop(t) {
     raf = requestAnimationFrame(loop);
     let dt = Math.min(0.1, (t - lastT) / 1000 || 0.016); lastT = t;
+    if (PH && R) { photoFrame(dt); return; }
     if (paused) return;
     // kare hızı bekçisi: yüksek grafikte telefon yetişemiyorsa bir kademe düşür
     if (R && R.phase === 'yaris' && Q >= 2) {
@@ -578,7 +579,9 @@
     steerIn = Math.sign(steerIn) * Math.pow(Math.abs(steerIn), 1.35);
     const vr0 = clamp(Math.abs(c.v) / st.vmax, 0, 1);
     const back = Math.abs(steerIn) < Math.abs(c.steer) || steerIn * c.steer < 0;
-    const sRate = opt.tilt ? 12 : (back ? 9 : (opt.steerMode === 'tus' ? 4.2 : 7) - 2.5 * vr0);
+    // v13: tuşa basınca direksiyon anında %40'tan başlar (eskiden sıfırdan yavaşça dönüyordu → geç tepki, sonra fazla dönme)
+    if (opt.steerMode === 'tus' && !opt.tilt && steerIn && Math.abs(c.steer) < 0.4 && steerIn * c.steer >= 0) c.steer = Math.sign(steerIn) * 0.4;
+    const sRate = opt.tilt ? 12 : (back ? 12 : (opt.steerMode === 'tus' ? 5.5 : 8) - 2.5 * vr0);
     c.steer += clamp(steerIn - c.steer, -sRate * dt, sRate * dt);
     // v7: nitro ve drift tuşu gazı da verir (sağ başparmak tek tuşta kalabilsin)
     const gas = (opt.autoGas && !input.brake) || input.gas || input.nitro || (input.hb && !isDrag) ? 1 : 0;
@@ -647,7 +650,7 @@
       const asst = opt.assist;
       yaw += -k * c.v * asst * 0.9;
       // bırakınca yola yumuşakça hizalan (eskiden bir anda düzleşiyordu)
-      yaw += -c.a * asst * (Math.abs(c.steer) < 0.1 ? 1.3 : 0.35);
+      yaw += -c.a * asst * (Math.abs(c.steer) < 0.1 ? 1.3 : 0.12);
     }
     // dönüş ataleti: gerçek dönüş hızı hedefe ~0,1 sn'de ulaşır (ani savrulma yok, ağırlık hissi)
     if (!isDrag) {
@@ -766,8 +769,8 @@
       if (into > 0) {
         const imp = Math.abs(c.v) * into;
         if (G.EKSTRA) G.EKSTRA.dmg(c, imp);
-        c.a = -c.a * 0.25;
-        c.v *= 1 - Math.min(0.45, into * 0.9) - 0.01;
+        c.a = -c.a * (c.isPlayer ? 0.1 : 0.25);   // v13: oyuncu duvardan sekmez, duvara paralel kayar
+        c.v *= 1 - Math.min(c.isPlayer ? 0.3 : 0.45, into * (c.isPlayer ? 0.7 : 0.9)) - 0.01;
         if (c.isPlayer && imp > 3) {
           R.stats.duvar++;
           R.shake = Math.min(1, R.shake + imp / 25);
@@ -776,7 +779,7 @@
           vib(imp > 10 ? 60 : 25);
           if (R.drift.on) endDrift(false);
         }
-      } else c.v *= 1 - dt * 0.5;
+      } else c.v *= 1 - dt * (c.isPlayer ? 0.22 : 0.5); // v13: duvar sürtmesi eskiden saniyede hızın yarısını alıyordu
       if (c.isPlayer && Math.abs(c.v) > 8) { c.scrapeT = 0.1; }
     }
   }
@@ -1514,7 +1517,7 @@
     return res;
   }
 
-  function stopRace(silent) {
+  function stopRace(silent) { PH = null;
     if (!R) return;
     const r = R;
     if (G.EKSTRA) try { G.EKSTRA.stop(); } catch (e) { }
@@ -1595,8 +1598,10 @@
     const pl = R.player, T = trk(pl);
     P().sample(T, loc(pl), pl.d, tmp);
     const cy = pl.wy != null ? pl.wy : tmp.y;
-    const head = tmp.h - pl.a - pl.slip * 0.55;
-    const mode = R.camMode;
+    const head0 = tmp.h - pl.a - pl.slip * 0.55, mode = R.camMode;
+    // v13: kamera arabanın dönüşünü hafif geriden izler; anlık yön değişimi ekranda görünür, direksiyon hissi artar
+    if (R.camH == null || mode === 2 || Math.abs(R.camH - head0) > 1) R.camH = head0;
+    const head = R.camH;
     const dist = mode === 1 ? 7.6 : mode === 2 ? -0.6 : 5.2, hgt = mode === 1 ? 2.5 : mode === 2 ? 1.05 : 1.55;
     const back = R.cfg.tip === 'serbest' && pl.v < 0 ? -1 : 1;
     out.x = tmp.x - Math.sin(head) * dist * back; out.z = tmp.z - Math.cos(head) * dist * back; out.y = cy + hgt * (pl.air ? 0.8 : 1);
@@ -1606,7 +1611,7 @@
     const la = mode === 2 ? 12 : 7;
     look.x = tmp.x + Math.sin(head) * la; look.z = tmp.z + Math.cos(head) * la; look.y = cy + (mode === 2 ? 0.9 : 0.85);
   }
-  function snapCam() {
+  function snapCam() { if (R) R.camH = null;
     camTarget(camPos, camLook);
     camera.position.set(camPos.x, camPos.y, camPos.z);
     camera.lookAt(camLook.x, camLook.y, camLook.z);
@@ -1614,6 +1619,7 @@
   const _t = { x: 0, y: 0, z: 0 }, _l = { x: 0, y: 0, z: 0 };
   function updateCamera(dt) {
     const r = R, pl = r.player;
+    if (r.camH != null && r.camMode !== 2) { P().sample(trk(pl), loc(pl), pl.d, tmp); const h0 = tmp.h - pl.a - pl.slip * 0.55; r.camH += (h0 - r.camH) * Math.min(1, dt * 7); }
     camTarget(_t, _l);
     const k = r.camMode === 2 ? 1 : 1 - Math.pow(0.0008, dt);
     camPos.x = lerp(camPos.x, _t.x, k); camPos.y = lerp(camPos.y, _t.y, k * 0.9); camPos.z = lerp(camPos.z, _t.z, k);
@@ -2027,6 +2033,46 @@
   function cycleCam() { if (!R) return; R.camMode = (R.camMode + 1) % 3; opt.cam = R.camMode; if (G.onCam) G.onCam(R.camMode); snapCam(); }
   function resetInput() { for (const k in input) input[k] = 0; }
 
+  // ───────── v13 FOTOĞRAF MODU: yarış donar, kamera oyuncunun etrafında serbestçe döner ─────────
+  let PH = null;
+  function photo(on) {
+    if (!R) return null;
+    if (!on) { PH = null; if (R.player.model) R.player.model.visible = true; camera.fov = camFov; camera.updateProjectionMatrix(); return null; }
+    const pm = R.player.model, c = pm.position, dx = camera.position.x - c.x, dz = camera.position.z - c.z;
+    PH = { yaw: Math.atan2(dx, dz), pitch: 0.18, dist: Math.max(4, Math.min(14, Math.hypot(dx, dz))), fov: 50, roll: 0, gizle: false };
+    return PH;
+  }
+  function photoFrame(dt) {
+    const r = R, pm = r.player.model, c = pm.position;
+    pm.visible = !PH.gizle;
+    PH.pitch = clamp(PH.pitch, -0.05, 1.35); PH.dist = clamp(PH.dist, 2.6, 30);
+    const cp = Math.cos(PH.pitch), y0 = c.y + 0.7;
+    camera.position.set(c.x + Math.sin(PH.yaw) * cp * PH.dist, y0 + Math.sin(PH.pitch) * PH.dist + 0.25, c.z + Math.cos(PH.yaw) * cp * PH.dist);
+    camera.up.set(Math.sin(PH.roll) * Math.cos(PH.yaw), Math.cos(PH.roll), -Math.sin(PH.roll) * Math.sin(PH.yaw));
+    camera.lookAt(c.x, y0, c.z);
+    camera.up.set(0, 1, 0);
+    if (Math.abs(camera.fov - PH.fov) > 0.05) { camera.fov = PH.fov; camera.updateProjectionMatrix(); }
+    if (G.POST) { const P2 = G.POST.P; P2.speed = 0; P2.hit = 0; P2.odak = 0; }
+    r.world.update(0, camera);
+    draw(r.scene);
+  }
+  // o anki kareyi çizip filtreli JPEG olarak döndürür
+  function photoShot(filter, cerceve) {
+    if (!R || !PH) return null;
+    photoFrame(0);
+    const w = canvas.width, h = canvas.height, o = document.createElement('canvas'); o.width = w; o.height = h;
+    const g = o.getContext('2d');
+    g.filter = filter || 'none'; g.drawImage(canvas, 0, 0); g.filter = 'none';
+    if (cerceve) {
+      const vg = g.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.85); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+      g.fillStyle = vg; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#000'; g.fillRect(0, 0, w, h * 0.07); g.fillRect(0, h * 0.93, w, h * 0.07);
+    }
+    g.font = `800 ${Math.round(h * 0.03)}px "Plus Jakarta Sans", sans-serif`; g.textAlign = 'right'; g.fillStyle = 'rgba(255,255,255,0.75)';
+    g.fillText('GECE KAÇAĞI', w - h * 0.03, h * (cerceve ? 0.905 : 0.965));
+    return o.toDataURL('image/jpeg', 0.92);
+  }
+
   function pause(v) { paused = v; if (v) { SES().stopEngine(); SES().siren(0); SES().skid(0); resetInput(); } else lastT = performance.now(); }
 
   // sanal sürücü: yarış çizgisi + viraj öncesi fren (test için)
@@ -2061,7 +2107,7 @@
 
   // dışa açık
   G.YARIS = { carReady,
-    init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, quit, statsOf, opt, input,
+    init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, photo, photoShot, get PH() { return PH; }, quit, statsOf, opt, input,
     setTraffic, refreshHud: () => { if (R) { buildHud(); R.wake = true; } },
     get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; }, get _show() { return SHOW; },
     // test kancası: ekransız hızlı simülasyon (sanal sürücü ile)

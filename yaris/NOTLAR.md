@@ -94,8 +94,8 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 
 ## Fikirler (sıradaki)
 - Gizli koleksiyon parçaları (serbest sürüşte), kırılabilir engeller (kasalar, çitler).
-- Rakip arabalarına özel görünüm ve "pembe kâğıt" yerine özgün bir ödül sistemi; hasar görseli.
-- Hayalet yarış (en iyi turunu kaydet), fotoğraf modu, sezonluk rekor tablosu.
+- Rakip arabalarına özel görünüm (gerçek modellerde vinil/kit görünmüyor).
+- Sezonluk rekor tablosu. Sürüş hissi: kullanıcı v12'de "çok kötü" dedi, v13'te düzeltildi; telefondan geri bildirim bekleniyor.
 - Telefonda performans ölçümü; release/R8 APK.
 
 ## v6 — Gerçek araba modelleri (Sketchfab, Daniel Zhabotinsky, CC BY 4.0)
@@ -147,3 +147,12 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - `buildCity` yola bakan cepheye `DET` listelerini doldurur (klima, Yüksek+'ta balkon + cam korkuluk, zemin katta renkli tenteler, merkez/liman/sahilde dikey neon tabelalar); örnekli çizim "v12 bina ayrıntıları" bloğunda (`inst` tanımından sonra, çünkü `buildCity` ondan önce çağrılır).
 - Yağmurda: yolda yansıtıcı su birikintileri (dunya.js), yola düşen damla halkaları (ultra.js `dropFrame`).
 - Bilinen: gece bazı bina yan yüzleri test makinesinde düz/bloklu görünüyor (telefonda doğrulanmadı).
+
+## v13 — fotoğraf modu, ganimet kartları, polis, sürüş hissi, ayar düzeni
+- Kullanıcı: "3 yarışta polis hiç kovalamadı, sürüş hissi çok kötü, ayarlar birbirine girmiş".
+- Polis: `careerEvents` artık ilk bölgeden polis koyar (sprint/hız/gişe hep, devre/eleme yarısı; ilk eğitim yarışı hariç). 50 etkinliğin 25'i polisli.
+- Sürüş (`playerPhysics`): tuşla direksiyonda basınca `c.steer` anında 0,4'ten başlar, dönüş hızı 5,5 (önce 4,2), bırakınca 12; yardımın hizalama terimi direksiyon çevrilirken 0,12 (önce 0,35, oyuncuyla kavga ediyordu). `walls`: oyuncu duvardan sekmez (`c.a*=-0.1`), çarpma kaybı en çok %30, sürtme kaybı 0,22/sn (önce 0,5). Kamera yönü `R.camH` ile gecikmeli izler (7/sn; `snapCam` sıfırlar).
+- Yarış içi ayarlar (`.rset`): CSS sütunları (column-span) telefonda başlıkları karıştırıyordu → grid (`auto-fill minmax(290px)`, `h3.grp` tüm satır).
+- Fotoğraf modu: duraklat → FOTOĞRAF. `YARIS.photo(on)`, `photoFrame` (döngüde `PH` varken yarış yerine çizilir), `photoShot(filtre, çerçeve)` → JPEG dataURL (2B kanvasta `ctx.filter`, sinema şeridi/vinyet, "GECE KAÇAĞI" yazısı). Sürükle=döndür, iki parmak=yakınlaş, kaydırıcılar uzaklık/açı/eğim, 7 filtre, arabayı gizle. Kayıt: Android `AndroidBridge.saveImage(ad, base64)` → Galeri/Resimler/GeceKacagi; tarayıcıda indirme. Başarım `foto`.
+- Ganimet Kartları: Liste rakibi yenilince `ganimet(no)`: 3 kapalı kart (havuz: para, Ün, bedava parça +1, rakibin imza boyası+neonu `S.imza[no]`, rakibin arabası). Seçilmeden geri tuşu kapatmaz. İmza boyaları garaj Boya'da bedava satır. `S.gan` sayacı, başarım `ganimet` (5). Test kancası `A._ganimet(no)`.
+- Denge (0.9): 32/50.

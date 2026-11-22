@@ -30,7 +30,16 @@
 
 <div id="dlg" class="scr"><button class="btn alt sm skip" id="dlgSkip">ATLA ⏭</button><div class="box"><div class="face" id="dlgFace"></div><div class="txt"><div class="who" id="dlgWho"></div><div class="say" id="dlgSay"></div><div class="nx">dokun ▶</div></div></div></div>
 <div id="res" class="scr"><div class="in"><div class="big" id="resBig"></div><div class="sub" id="resSub"></div><div class="lines" id="resLines"></div><div class="btns" id="resBtns"></div></div></div>
-<div id="pause" class="scr"><div class="in"><h1>DURAKLATILDI</h1><button class="btn big" id="pResume">DEVAM ▶</button><button class="btn alt" id="pRestart">YENİDEN BAŞLAT</button><button class="btn alt" id="pSet">⚙️ AYARLAR</button><button class="btn alt" id="pCam">KAMERA</button><button class="btn alt" id="pQuit">ÇIK</button></div></div>
+<div id="pause" class="scr"><div class="in"><h1>DURAKLATILDI</h1><button class="btn big" id="pResume">DEVAM ▶</button><button class="btn alt" id="pRestart">YENİDEN BAŞLAT</button><button class="btn alt" id="pSet">⚙️ AYARLAR</button><button class="btn alt" id="pCam">KAMERA</button><button class="btn alt" id="pFoto">📸 FOTOĞRAF</button><button class="btn alt" id="pQuit">ÇIK</button></div></div>
+<div id="photo"><div class="ph-drag" id="phDrag"></div>
+  <button class="btn alt sm ph-back" id="phBack">◀ GERİ</button>
+  <div class="ph-side">
+    <label>Uzaklık<input type="range" id="phDist" min="2.6" max="30" step="0.1"></label>
+    <label>Açı<input type="range" id="phFov" min="20" max="85" step="1"></label>
+    <label>Eğim<input type="range" id="phRoll" min="-0.5" max="0.5" step="0.01"></label>
+  </div>
+  <div class="ph-bar"><div class="sw" id="phFil"></div><button class="btn alt sm" id="phCer">Çerçeve</button><button class="btn alt sm" id="phGiz">Arabayı gizle</button></div><button class="btn big ph-shot" id="phShot">📸</button>
+</div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <div id="toast"></div>
 <div id="rotate"><div class="ph">📱</div><b>Telefonu yan çevir</b><span class="mut">Gece Kaçağı yatay ekranda oynanır</span></div>
