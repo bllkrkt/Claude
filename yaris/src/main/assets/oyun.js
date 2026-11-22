@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '5.0';
+  const VER = '6.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -73,7 +73,7 @@
   function visOf(id, gor) {
     const c = CAR(id), g = gor || S.arabalar[id].gor;
     return {
-      govde: c.govde, renk: g.renk, kaplama: V.FINISH.find(f => f.id === g.kaplama) || V.FINISH[0], jant: V.RIMS[g.jant] || V.RIMS[0],
+      model: id, govde: c.govde, renk: g.renk, kaplama: V.FINISH.find(f => f.id === g.kaplama) || V.FINISH[0], jant: V.RIMS[g.jant] || V.RIMS[0],
       jantRenk: (V.RIM_COLORS[g.jantRenk] || V.RIM_COLORS[0])[0], kit: g.kit, spoiler: g.spoiler, neon: (V.NEONS[g.neon] || V.NEONS[0])[0],
       vinyl: g.vinyl, aksan: g.aksan, cam: g.cam,
     };
@@ -209,7 +209,7 @@
       const parca = {}; for (const p of V.PARTS) parca[p.id] = lv;
       const pc = V.PAINTS[Math.floor(Math.random() * V.PAINTS.length)][0];
       out.push({ ad: names[i % names.length], stats: Y.statsOf(c, parca), renk: pc,
-        vis: { govde: c.govde, renk: pc, kaplama: V.FINISH[Math.floor(Math.random() * 3)], jant: V.RIMS[Math.floor(Math.random() * 6)], jantRenk: V.RIM_COLORS[Math.floor(Math.random() * 3)][0], kit: Math.floor(Math.random() * 3), spoiler: Math.floor(Math.random() * 5), neon: Math.random() < 0.4 ? V.NEONS[1 + Math.floor(Math.random() * 6)][0] : null, vinyl: Math.floor(Math.random() * 8), aksan: '#ffffff', cam: 1, basit: S.set.q === 0 } });
+        vis: { model: c.id, govde: c.govde, renk: pc, kaplama: V.FINISH[Math.floor(Math.random() * 3)], jant: V.RIMS[Math.floor(Math.random() * 6)], jantRenk: V.RIM_COLORS[Math.floor(Math.random() * 3)][0], kit: Math.floor(Math.random() * 3), spoiler: Math.floor(Math.random() * 5), neon: Math.random() < 0.4 ? V.NEONS[1 + Math.floor(Math.random() * 6)][0] : null, vinyl: Math.floor(Math.random() * 8), aksan: '#ffffff', cam: 1, basit: S.set.q === 0 } });
     }
     return out;
   }
@@ -262,7 +262,7 @@
     const c = CAR(r.araba), d = DIFF[S.set.zorluk] || DIFF[1];
     const parca = {}; for (const p of V.PARTS) parca[p.id] = Math.min(4, Math.floor((10 - no) / 2.2) + 1);
     const rival = { ad: r.lakap, rival: true, renk: r.renk, zor: r.zor * d.z, stats: Y.statsOf(c, parca),
-      vis: { govde: c.govde, renk: r.renk, kaplama: V.FINISH[1], jant: V.RIMS[(no % 5) + 1], jantRenk: V.RIM_COLORS[(no % 3)][0], kit: 1 + (no % 3), spoiler: 1 + (no % 4), neon: V.NEONS[1 + (no % 7)][0], vinyl: 1 + (no % 7), aksan: '#ffffff', cam: 2 } };
+      vis: { model: c.id, govde: c.govde, renk: r.renk, kaplama: V.FINISH[1], jant: V.RIMS[(no % 5) + 1], jantRenk: V.RIM_COLORS[(no % 3)][0], kit: 1 + (no % 3), spoiler: 1 + (no % 4), neon: V.NEONS[1 + (no % 7)][0], vinyl: 1 + (no % 7), aksan: '#ffffff', cam: 2 } };
     const lines = idx === 0 ? [['rakip', r.soz[0]]] : [['bora', 'Bir yarış kaldı kanka. ' + r.lakap + ' köpürmüş, dikkat!']];
     story(lines, () => {
       const cfg = baseCfg({ tip: idx === 0 ? 'sprint' : 'devre', pist: tr.id, tur: idx === 0 ? 1 : 2, rakipler: [rival], polis: no <= 6 && idx === 0 ? 1 : 0, saat: r.bolge === 3 ? 'aksam' : 'gece', zor: r.zor });
@@ -629,7 +629,7 @@
       return `<div class="card ${ok ? '' : 'lock'}" onclick="A.prevCar('${c.id}')"><div class="t">${c.ad} <span class="tag ${c.sinif}">${c.sinif}</span></div><div class="s">${c.yazi}</div>${statBars(st)}<div class="row" style="justify-content:space-between;margin-top:6px"><span class="price">${fmt(c.fiyat)} 💰</span>${ok ? `<button class="btn sm ${S.para < c.fiyat ? 'off' : ''}" onclick="event.stopPropagation();A.buyCar('${c.id}')">SATIN AL</button>` : `<span class="mut" style="font-size:12px">🔒 ${why}</span>`}</div></div>`;
     }).join('') + `</div>`;
   }
-  function prevCar(id) { const c = CAR(id); Y.setShowCar({ govde: c.govde, renk: c.renk, kaplama: V.FINISH[1], jant: V.RIMS[0], jantRenk: '#c8ccd4', cam: 1 }); click(); setTimeout(() => { if (cur === 'garaj' && gTab === 'galeri') { } }, 0); }
+  function prevCar(id) { const c = CAR(id); Y.setShowCar({ model: id, govde: c.govde, renk: c.renk, kaplama: V.FINISH[1], jant: V.RIMS[0], jantRenk: '#c8ccd4', cam: 1 }); click(); setTimeout(() => { if (cur === 'garaj' && gTab === 'galeri') { } }, 0); }
   function buyCar(id) {
     const c = CAR(id);
     if (!carBuyable(c) || S.para < c.fiyat) { SES.sfx('deny'); return; }
@@ -806,7 +806,7 @@
       <h3>Titreşim</h3><div class="sw">${o('titresim', true, 'Açık')}${o('titresim', false, 'Kapalı')}</div>
       <h3>Sürücü adı</h3><div class="row"><span>${S.isim || '(yok)'}</span><button class="btn alt sm" onclick="A.askName()">Değiştir</button></div>
       <h3>Kayıt</h3><div class="row"><button class="btn alt sm" onclick="A.backup()">Yedek dosyası kaydet</button><button class="btn alt sm" onclick="A.resetAll()" style="color:var(--red)">Kariyeri sıfırla</button></div>
-      <p class="mut" style="font-size:12px;margin-top:14px">Gece Kaçağı v${VER} · Tüm arabalar, karakterler ve şehir kurgusaldır. Three.js (MIT) kullanır. Dokular, gökyüzü fotoğrafları ve sokak modelleri: Poly Haven (CC0). Süper araba modeli: “Car Concept”, Eric Chadwick / Darmstadt Graphics Group, CC BY 4.0 (logolar çıkarıldı, sadeleştirildi, boyası değiştirildi). Reklam yok, internet gerekmez.</p></div>`;
+      <p class="mut" style="font-size:12px;margin-top:14px">Gece Kaçağı v${VER} · Tüm arabalar, karakterler ve şehir kurgusaldır. Three.js (MIT) kullanır. Dokular, gökyüzü fotoğrafları ve sokak modelleri: Poly Haven (CC0). Süper araba modeli: “Car Concept”, Eric Chadwick / Darmstadt Graphics Group, CC BY 4.0 (logolar çıkarıldı, sadeleştirildi, boyası değiştirildi). Diğer araba, polis ve trafik modelleri: Daniel Zhabotinsky (sketchfab.com/DanielZhabotinsky), CC BY 4.0 (rozetler ve plakalar çıkarıldı, polis kaplaması değiştirildi, boyalar oyunda yeniden renklendirildi). Reklam yok, internet gerekmez.</p></div>`;
   }
   function set(k, v) {
     S.set[k] = v; click(); save(); applyOpts();
@@ -896,7 +896,14 @@
     let ready = false;
     $('tapStart').textContent = 'YÜKLENİYOR… %0';
     const done = () => { ready = true; Y.showroom(visOf(S.sec), 'menu'); $('tapStart').textContent = S.ilk ? 'YENİ OYUN — DOKUN' : 'DEVAM ET — DOKUN'; };
-    if (window.VARLIK) window.VARLIK.load(f => { $('tapStart').textContent = 'YÜKLENİYOR… %' + Math.round(f * 100); }).then(done, e => { console.warn('gerçek varlıklar yüklenemedi', e); done(); });
+    // gerçek araba modelleri: önce seçili araba, sonra kalanlar arka planda; yüklenen araba vitrindeyse yenilenir
+    const VR = window.VARLIK;
+    const sonra = () => { if (VR.ARABALAR && VR.ARABALAR.includes(S.sec)) return VR.loadCar(S.sec); };
+    if (VR) {
+      VR.onCar = id => { if (Y.carReady) Y.carReady(id); };
+      VR.load(f => { $('tapStart').textContent = 'YÜKLENİYOR… %' + Math.round(f * 100); })
+        .then(sonra).then(() => { done(); VR.preloadCars && VR.preloadCars(); }, e => { console.warn('gerçek varlıklar yüklenemedi', e); done(); });
+    }
     else done();
     $('title').addEventListener('click', () => {
       if (!ready) return;

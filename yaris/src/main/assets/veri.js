@@ -310,20 +310,20 @@
 
   // Trafik araçları
   const TRAFFIC = [
-    { govde: 'sedan', renkler: ['#bdc3c7', '#7f8c8d', '#2c3e50', '#95a5a6', '#d35400'] },
-    { govde: 'hatch', renkler: ['#ecf0f1', '#e74c3c', '#3498db', '#16a085'] },
-    { govde: 'taksi', renkler: ['#f1c40f'] },
-    { govde: 'van', renkler: ['#ffffff', '#bdc3c7', '#34495e'] },
-    { govde: 'kamyon', renkler: ['#c0392b', '#2980b9', '#27ae60', '#f39c12'] },
+    { govde: 'sedan', modeller: ['t_sedan1', 't_sedan2', 'kumru'], renkler: ['#bdc3c7', '#7f8c8d', '#2c3e50', '#95a5a6', '#d35400'] },
+    { govde: 'hatch', modeller: ['t_hatch2', 'serce'], renkler: ['#ecf0f1', '#e74c3c', '#3498db', '#16a085'] },
+    { govde: 'taksi', modeller: ['taksi'], renkler: ['#f1c40f'] },
+    { govde: 'van', modeller: ['van'], renkler: ['#ffffff', '#bdc3c7', '#34495e'] },
+    { govde: 'kamyon', modeller: ['kamyon'], renkler: ['#c0392b', '#2980b9', '#27ae60', '#f39c12'] },
     { govde: 'otobus', renkler: ['#2d98da', '#eb3b5a'] },
   ];
 
   // Polis araçları (aranma seviyesine göre)
   const COPS = {
-    devriye: { ad: 'Devriye', govde: 'polis', hiz: 215, can: 60, kg: 1500 },
-    otoyol: { ad: 'Otoyol Birimi', govde: 'polisgt', hiz: 260, can: 70, kg: 1450 },
-    ozel: { ad: 'Özel Birim', govde: 'polissuv', hiz: 235, can: 140, kg: 2400 },
-    onleyici: { ad: 'Önleyici', govde: 'polissuper', hiz: 310, can: 80, kg: 1400 },
+    devriye: { ad: 'Devriye', govde: 'polis', model: 'polis', hiz: 215, can: 60, kg: 1500 },
+    otoyol: { ad: 'Otoyol Birimi', govde: 'polisgt', model: 'polisgt', hiz: 260, can: 70, kg: 1450 },
+    ozel: { ad: 'Özel Birim', govde: 'polissuv', model: 'polissuv', hiz: 235, can: 140, kg: 2400 },
+    onleyici: { ad: 'Önleyici', govde: 'polissuper', model: 'polissuper', hiz: 310, can: 80, kg: 1400 },
   };
   const HEAT = [
     null,

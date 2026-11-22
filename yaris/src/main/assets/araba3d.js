@@ -247,7 +247,7 @@
    */
   // gerçek araba modeli (süper ve kama gövdeler)
   function makeReal(opt, C) {
-    const THREE = T3(), B = BODY[opt.govde] || BODY.super, grp = new THREE.Group();
+    const THREE = T3(), B = BODY[opt.govde] || (C.yeni ? { L: C.L, W: C.W } : BODY.super), grp = new THREE.Group();
     const fin = opt.kaplama || { r: 0.3, m: 0.5 }, color = opt.renk || '#cccccc';
     const sc = B.L / C.L;
     const paint = Q >= 2 ? new THREE.MeshPhysicalMaterial({ color, roughness: fin.r, metalness: fin.m, envMap: ENV, envMapIntensity: 1.25, clearcoat: fin.id === 'mat' ? 0 : 1, clearcoatRoughness: 0.06 })
@@ -260,7 +260,19 @@
     const brakeM = new THREE.MeshBasicMaterial({ color: 0x8a0a12 });
     const rc = opt.jantRenk || '#c8ccd4';
     const rimM = mat('rrim' + rc, () => new THREE.MeshStandardMaterial({ color: rc, roughness: 0.22, metalness: 0.95, envMap: ENV }));
-    const pick = k => ({ boya: paint, boya2: paint2, cam: glassM, stop: brakeM, far: headM, sinyal: sigM, jant: rimM })[k];
+    if (C.ao) { paint.aoMap = C.ao; paint.aoMapIntensity = 1; }
+    if (C.yeni) { paint.side = THREE.DoubleSide; paint2.side = THREE.DoubleSide; }  // bazı modellerde yüz yönleri karışık
+    const plateM = mat('plaka', () => new THREE.MeshStandardMaterial({ color: 0xe9ecef, roughness: 0.35, metalness: 0.2 }));
+    const sr = C.yeni && C.parts.some(p => p.kind === 'sirenK') ? [new THREE.MeshBasicMaterial({ color: 0x200000 }), new THREE.MeshBasicMaterial({ color: 0x000020 })] : [];
+    const pick = k => ({ boya: paint, boya2: paint2, cam: glassM, stop: brakeM, far: headM, sinyal: sigM, jant: rimM, plaka: plateM, sirenK: sr[0], sirenM: sr[1] })[k];
+    // yeni modellerin kendi malzemeleri (ortak dokular, önbellekte)
+    const exMat = e => mat('gx' + e.base + e.orm + e.renk + e.metal + e.puruz + e.saydam, () => {
+      const m = new THREE.MeshStandardMaterial({ color: new THREE.Color(e.renk[0], e.renk[1], e.renk[2]), metalness: e.metal, roughness: e.puruz, envMap: ENV, side: THREE.DoubleSide });
+      if (e.base) m.map = C.dok(e.base, true);
+      if (e.orm) { const t = C.dok(e.orm, false); m.aoMap = t; m.roughnessMap = t; m.metalnessMap = t; }
+      if (e.saydam) { m.transparent = true; m.opacity = e.renk[3]; m.depthWrite = false; }
+      m.userData.varlik = 1; return m;
+    });
     const wheels = [], wg = {};
     for (const n of Object.keys(C.wheelPos)) {
       const g = new THREE.Group(), v = C.wheelPos[n];
@@ -269,7 +281,7 @@
     }
     const body = new THREE.Group(); body.scale.setScalar(sc); grp.add(body);
     for (const p of C.parts) {
-      const m = new THREE.Mesh(p.geo, p.kind === 'orj' ? p.mat : pick(p.kind));
+      const m = new THREE.Mesh(p.geo, p.kind === 'orj' ? (p.mat || exMat(p.ex)) : pick(p.kind));
       if (p.w) { m.scale.setScalar(sc); wg[p.w].add(m); } else body.add(m);
     }
     // neon ve gölge lekesi
@@ -280,15 +292,19 @@
     }
     const shM = mat('shadow', () => new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55, depthWrite: false, map: blobTex() }));
     const sh = new THREE.Mesh(new THREE.PlaneGeometry(B.W * 1.5, B.L * 1.25), shM); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.renderOrder = 1; grp.add(sh);
-    grp.userData = { wheels, brake: brakeM, siren: [], L: B.L, W: B.W, neon: neonM, body, gercek: true };
+    grp.userData = { wheels, brake: brakeM, siren: sr, L: B.L, W: B.W, neon: neonM, body, gercek: true };
     return grp;
   }
 
   function make(opt) {
     const THREE = T3();
     const type = opt.govde || 'coupe';
-    const C = G.VARLIK && G.VARLIK.A && G.VARLIK.A.car;
-    if (C && !opt.basit && Q >= 1 && (type === 'super' || type === 'wedge')) return makeReal(opt, C);
+    const VR = G.VARLIK;
+    if (VR && VR.A && Q >= 1 && !opt.kutu) {
+      let C = opt.model && VR.car ? VR.car(opt.model) : null;
+      if (!C && !opt.basit && (type === 'super' || type === 'wedge')) C = VR.A.car;
+      if (C) return makeReal(opt, C);
+    }
     if (type === 'kamyon') return makeTruck(opt);
     if (type === 'otobus') return makeBus(opt);
     const B = BODY[type] || BODY.coupe;

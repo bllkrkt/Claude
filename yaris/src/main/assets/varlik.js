@@ -194,6 +194,70 @@
     return { parts, wheelPos, L: size.z, W: 2.0, r: wheelPos.WheelFrontL ? wheelPos.WheelFrontL.y : 0.5 };
   }
 
+  // ── Gerçek araba modelleri (DanielZhabotinsky, CC BY 4.0; rozetler/plakalar çıkarıldı, polis kaplaması değiştirildi) ──
+  // varlik-indir/araba_cevir.py ile hazırlanır: her ağın extras'ında tür + doku adları; dokular model/araba/dok/ altında ortak.
+  const ARABALAR = ['serce', 'pusula', 'kumru', 'ruzgar', 'sahin', 'bozkurt', 'atmaca', 'volta', 'karakurt', 'yildirim', 'volkan', 'gecekusu',
+    'firtina', 'kuzgun', 'kobra', 'polis', 'polisgt', 'polissuv', 'polissuper', 't_sedan1', 't_sedan2', 't_hatch2', 'taksi', 'van', 'kamyon'];
+  const TAKMA = { ejder: 'konsept', hayalet: 'konsept' };
+  const CARS = {}, DOK = {};
+  let carCb = null, onceki = Promise.resolve();
+  function dok(n, srgb) {
+    if (!n) return null;
+    const k = n + (srgb ? '|s' : '');
+    if (DOK[k]) return DOK[k];
+    const THREE = G.THREE, t = new THREE.TextureLoader().load('model/araba/dok/' + n);
+    t.flipY = false; if (srgb) t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; t.userData.varlik = 1;
+    return (DOK[k] = t);
+  }
+  const TEKER = { FL: 'WheelFrontL', FR: 'WheelFrontR', RL: 'WheelRearL', RR: 'WheelRearR' };
+  function prepCar2(g) {
+    const THREE = G.THREE, ex = g.parser.json.extras || {};
+    const wheelPos = {};
+    for (const k in ex.teker || {}) { const v = ex.teker[k]; wheelPos[TEKER[k]] = new THREE.Vector3(v[0], v[1], v[2]); }
+    const parts = []; let ao = null;
+    g.scene.traverse(o => {
+      if (!o.isMesh) return;
+      const e = o.userData || {}, geo = o.geometry;
+      if (e.base) dok(e.base, true); if (e.orm) dok(e.orm, false);  // dokuları şimdiden indir
+      geo.userData.varlik = 1;
+      if (!geo.attributes.uv2 && geo.attributes.uv) geo.setAttribute('uv2', geo.attributes.uv);
+      if (o.material) o.material.dispose();
+      let kind = e.tur;
+      if (kind === 'boya' && e.base) kind = 'orj';            // kaplamalı gövde (polis, taksi): kendi dokusu
+      else if (kind === 'boya') { if (e.orm) ao = e.orm; }
+      else if (!['cam', 'far', 'sinyal', 'stop', 'sirenK', 'sirenM', 'plaka'].includes(kind)) kind = 'orj';
+      parts.push({ w: e.teker ? TEKER[e.teker] : null, kind, ex: e, geo });
+    });
+    const b = ex.boy || [2, 1.4, 4.5];
+    return { parts, wheelPos, L: b[2], W: b[0], ao: ao ? dok(ao, false) : null, dok, yeni: true };
+  }
+  // id'nin modeli hazırsa döndürür; değilse yüklemeyi başlatır ve null döner (o arada eski çizim kullanılır)
+  function car(id) {
+    id = TAKMA[id] || id;
+    if (id === 'konsept') return A.car || null;
+    if (!ARABALAR.includes(id) || !G.GLTFLoader) return null;
+    const c = CARS[id];
+    if (c && c.C) return c.C;
+    if (!c) loadCar(id);
+    return null;
+  }
+  function loadCar(id) {
+    if (CARS[id]) return CARS[id].p;
+    const c = CARS[id] = {};
+    // sırayla yükle: telefonu aynı anda onlarca dosyayla boğma
+    c.p = onceki = onceki.then(() => new Promise(res => {
+      new G.GLTFLoader().load('model/araba/' + id + '.glb', g => {
+        try { c.C = prepCar2(g); } catch (e) { console.warn('araba hazırlanamadı', id, e); }
+        res(); if (c.C && carCb) try { carCb(id); } catch (e) { }
+      }, undefined, e => { console.warn('araba yüklenemedi', id, e); res(); });
+    }));
+    return c.p;
+  }
+  function preloadCars(first) {
+    for (const id of first || []) car(id);
+    for (const id of ARABALAR) car(id);
+  }
+
   async function load(progress) {
     const THREE = G.THREE;
     const tl = new THREE.TextureLoader();
@@ -256,5 +320,5 @@
     const t0 = A.tex[name]; if (!t0) return null;
     const t = t0.clone(); t.userData = { varlik: 1 }; t.needsUpdate = true; t.repeat.set(rx || 1, ry || 1); return t;
   }
-  G.VARLIK = { load, tex, A, get ready() { return A.ready; } };
+  G.VARLIK = { load, tex, A, car, loadCar, preloadCars, ARABALAR, get ready() { return A.ready; }, set onCar(f) { carCb = f; } };
 })(window);

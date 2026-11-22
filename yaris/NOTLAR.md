@@ -94,3 +94,12 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - Rakip arabalarına özel görünüm ve "pembe kâğıt" yerine özgün bir ödül sistemi; hasar görseli.
 - Hayalet yarış (en iyi turunu kaydet), fotoğraf modu, sezonluk rekor tablosu.
 - Telefonda performans ölçümü; release/R8 APK.
+
+## v6 — Gerçek araba modelleri (Sketchfab, Daniel Zhabotinsky, CC BY 4.0)
+- 25 model: 15 oyuncu arabası (ejder/hayalet hâlâ `konsept.glb`), 4 polis, trafik (2 sedan + kumru, t_hatch2 + serce, taksi, van, kamyon). Liste: `model/araba/LISANS.txt`.
+- İndirme: Sketchfab API anahtarı ortamın ağ sırlarında (api.sketchfab.com); `GET /v3/models/{uid}/download` → glb adresi. Hızlı istekte 429 verir, 30 sn bekle.
+- Dönüştürme: `python3 -I varlik-indir/araba_cevir.py girdi.glb çıktı/ ad` → ağaç dönüşümleri pişirilir (normaller n·M⁻¹!), araba +Z'ye bakar, taban y=0, tekerlekler KONUMDAN etiketlenir (FL/FR/RL/RR; adlar modelde karışık), rozetler atılır, siren sol yarı `sirenK` sağ yarı `sirenM`. Her ağın extras'ı: `{tur, base, orm, ormuv, renk, metal, puruz, saydam, teker}`; kök extras `{boy, teker}`. Dokular özet adıyla `model/araba/dok/` (512 px, ortak).
+- Polis kaplaması: `varlik-indir/polis_kaplama.py` (yazı/bayrak silinir, beyaz-lacivert).
+- Çalışma: `VARLIK.car(id)` hazırsa C döner, değilse sırayla yükler (null → eski çizim); açılışta önce seçili araba, sonra hepsi arka planda (`preloadCars`); yüklenen araba vitrindeyse `YARIS.carReady` yeniler. `vis.model` = araba kimliği (oyuncu/rakip `c.id`, polis `COPS.*.model`, trafik `TRAFFIC.*.modeller`).
+- `makeReal`: tür `boya` → oyuncu boyası (+gövde AO), `boya`+base → kaplamalı (polis/taksi), `cam/far/sinyal/stop/plaka/sirenK/sirenM` → oyunun malzemeleri, gerisi `exMat` (ortak dokulu, MC önbelleğinde). Q=0'da eski çizim. Kit/spoiler/vinil/jant rengi gerçek modellerde görünmez.
+- Görsel kontrol betikleri (karalama): galeri = 25 modeli vitrinde sırayla çek; test makinesi zayıf telefon sayılır, `S.set.q=2; YARIS.setQuality(2)` yapmadan gerçek modeller çıkmaz.

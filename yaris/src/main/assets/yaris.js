@@ -139,8 +139,12 @@
     if (S.car) { old.remove(S.car); sc.add(S.car); }
     old.traverse(o => { if (o.geometry) o.geometry.dispose(); });
   }
+  function carReady(id) {
+    if (SHOW && SHOW.vis && SHOW.vis.model === id && !R) setShowCar(SHOW.vis);
+  }
   function setShowCar(vis) {
     if (!SHOW) return;
+    SHOW.vis = vis;
     if (SHOW.car) { SHOW.sc.remove(SHOW.car); A3().dispose(SHOW.car); }
     SHOW.car = A3().make(vis);
     SHOW.car.position.y = 0.12;
@@ -779,7 +783,7 @@
   function spawnTraffic(initial, idx) {
     const r = R, T = r.T, V0 = V();
     const ty = V0.TRAFFIC[Math.floor(Math.random() * (Math.random() < 0.85 ? 4 : V0.TRAFFIC.length))];
-    const c = mkCar('traffic', { govde: ty.govde, renk: ty.renkler[Math.floor(Math.random() * ty.renkler.length)], basit: true }, null);
+    const c = mkCar('traffic', { govde: ty.govde, model: ty.modeller ? ty.modeller[Math.floor(Math.random() * ty.modeller.length)] : null, renk: ty.renkler[Math.floor(Math.random() * ty.renkler.length)], basit: true }, null);
     c.mass = ty.govde === 'kamyon' || ty.govde === 'otobus' ? 6000 : ty.govde === 'van' ? 2200 : 1300;
     trafficReset(c, initial, idx);
     r.traffic.push(c);
@@ -1063,7 +1067,7 @@
     const ct = V().COPS[tn];
     // polis, oyuncunun arabasından (önleyici hariç) biraz yavaş: düzlükte kaçmak mümkün olsun
     const cap = pl.st.vmax * (tn === 'onleyici' ? 1.03 : 0.95);
-    const c = mkCar('cop', { govde: ct.govde, renk: tn === 'onleyici' ? '#14141c' : tn === 'ozel' ? '#1c2230' : '#f5f6fa', basit: Q === 0, desen: false, kaplama: { r: 0.3, m: 0.5 } }, { vmax: Math.min(ct.hiz / KMH, cap), acc: 9, grip: 1.1, nitro: 1, kg: ct.kg });
+    const c = mkCar('cop', { govde: ct.govde, model: ct.model, renk: tn === 'onleyici' ? '#14141c' : tn === 'ozel' ? '#1c2230' : '#f5f6fa', basit: Q === 0, desen: false, kaplama: { r: 0.3, m: 0.5 } }, { vmax: Math.min(ct.hiz / KMH, cap), acc: 9, grip: 1.1, nitro: 1, kg: ct.kg });
     c.copType = tn; c.hp = ct.can; c.maxHp = ct.can; c.mass = ct.kg;
     c.s = P().wrap(r.T, pl.s + offs); c.d = (Math.random() - 0.5) * r.T.W * 0.6;
     c.v = offs < 0 ? pl.v * 0.9 : 0;
@@ -1873,9 +1877,9 @@
   }
 
   // dışa açık
-  G.YARIS = {
+  G.YARIS = { carReady,
     init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, quit, statsOf, opt, input,
-    get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; },
+    get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; }, get _show() { return SHOW; },
     // test kancası: ekransız hızlı simülasyon (sanal sürücü ile)
     _fast: (sec, bot) => {
       const r = R; if (!r) return null;

@@ -80,7 +80,7 @@ Kararlar: **Google Play**'de yayın, **Türkçe + İngilizce**, **para kazanma y
 Aynı depoda, diğer ikisinden bağımsız Android uygulaması (`yaris/`, paket `com.bilal.gecekacagi`, **yatay ekran**). Kullanıcı "NFS Most Wanted'a benzeyen hikâyeli, çok çeşitli bir yarış oyunu" istedi; boyut/süre sınırı yok.
 - **Kural:** tür ve mekanikler benzer olabilir ama başka oyunun adı, karakterleri, "Blacklist" gibi adları, gerçek araba markaları kullanılmaz. Her şey kurgusal (şehir Karaliman, "Gece Listesi", Kobra, abla Defne, Bora, Komiser Sert).
 - AYRINTI: `yaris/NOTLAR.md` — bu oyunda çalışmadan önce oku (dosyalar, koordinatlar/fizik, polis, kayıt, testler, sürümler).
-- Derleme `./gradlew :yaris:assembleDebug` → kullanıcıya `GeceKacagi-vN.apk`. versionCode her sürümde +1 (şu an 5) + `oyun.js` `VER`.
+- Derleme `./gradlew :yaris:assembleDebug` → kullanıcıya `GeceKacagi-vN.apk`. versionCode her sürümde +1 (şu an 6) + `oyun.js` `VER`.
 - İmza `yaris/keystore/kacak.keystore` (SHA-256 `d9b78046…e49dbb`) ASLA değişmez.
 - Kayıt localStorage `gece-kacagi-v1`; geriye uyumluluk şart.
 - Test: `cd tests && HIZLI=1 node yaris-e2e.mjs ../yaris/src/main/assets/index.html /tmp/yt` (`errors []`); denge: `node yaris-denge.mjs 0.9`.
