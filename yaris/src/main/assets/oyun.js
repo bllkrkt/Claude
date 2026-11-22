@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '8.0';
+  const VER = '9.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);

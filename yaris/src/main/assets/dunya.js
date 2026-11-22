@@ -77,11 +77,37 @@
     for (let i = 0; i < 16; i++) for (let j = 0; j < 4; j++) { x.fillStyle = (i + j) % 2 ? '#111' : '#eee'; x.fillRect(i * 4, j * 4, 4, 4); }
     const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
   }
-  function textTex(txt, bg, fg, w, h) {
-    const THREE = T3(), c = cvs(w || 256, h || 64), x = c.getContext('2d');
-    x.fillStyle = bg; x.fillRect(0, 0, c.width, c.height);
-    x.fillStyle = fg; x.font = `bold ${Math.round(c.height * 0.6)}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.fillText(txt, c.width / 2, c.height / 2 + 2);
+  // v9: çizilmiş ok / yıldız (yazı karakteri değil). dir: 0 yukarı, 1 sağ, 2 aşağı, 3 sol; 'u' sağa-yukarı
+  function drawArrow(x, cx, cy, sz, dir) {
+    x.save(); x.translate(cx, cy); x.rotate(dir === 'u' ? Math.PI / 4 : dir * Math.PI / 2);
+    const hw = sz * 0.5, sw = sz * 0.15, hl = sz * 0.46;
+    x.beginPath(); x.moveTo(0, -sz / 2); x.lineTo(hw, -sz / 2 + hl); x.lineTo(sw, -sz / 2 + hl); x.lineTo(sw, sz / 2);
+    x.lineTo(-sw, sz / 2); x.lineTo(-sw, -sz / 2 + hl); x.lineTo(-hw, -sz / 2 + hl); x.closePath(); x.fill(); x.restore();
+  }
+  function drawStar(x, cx, cy, r) {
+    x.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.42 : r; x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } x.closePath(); x.fill();
+  }
+  // yazı + {<} {>} {^} {v} {/} (sağa-yukarı) {*} (yıldız) simgeleri; opt.frame: beyaz çerçeve
+  function textTex(txt, bg, fg, w, h, opt) {
+    const THREE = T3(), c = cvs(w || 256, h || 64), x = c.getContext('2d'), H = c.height;
+    x.fillStyle = bg; x.fillRect(0, 0, c.width, H);
+    const pad = opt && opt.frame ? H * 0.12 : 0;
+    if (pad) { x.strokeStyle = fg; x.lineWidth = Math.max(2, H * 0.05); x.strokeRect(pad * 0.6, pad * 0.6, c.width - pad * 1.2, H - pad * 1.2); }
+    const parts = String(txt).split(/(\{[<>^v\/*]\})/).filter(Boolean);
+    let fs = Math.round(H * (pad ? 0.5 : 0.6));
+    const tokW = () => fs * 1.05, gap = () => fs * 0.25;
+    const measure = () => { x.font = `bold ${fs}px sans-serif`; return parts.reduce((a, p) => a + (/^\{.\}$/.test(p) ? tokW() + gap() : x.measureText(p).width), 0); };
+    let tw = measure(); while (tw > c.width - pad * 3 - 8 && fs > 8) { fs -= 2; tw = measure(); }
+    x.fillStyle = fg; x.textAlign = 'left'; x.textBaseline = 'middle';
+    let cx = (c.width - tw) / 2; const cy = H / 2 + 2;
+    for (const p of parts) {
+      const m = /^\{(.)\}$/.exec(p);
+      if (!m) { x.fillText(p, cx, cy); cx += x.measureText(p).width; continue; }
+      const k = m[1], mid = cx + gap() / 2 + tokW() / 2;
+      if (k === '*') drawStar(x, mid, H / 2, fs * 0.48);
+      else drawArrow(x, mid, H / 2, fs * 0.92, { '^': 0, '>': 1, 'v': 2, '<': 3, '/': 'u' }[k]);
+      cx += tokW() + gap();
+    }
     return new THREE.CanvasTexture(c);
   }
   // Ufuk silüeti (bölgeye göre gökdelen ya da dağ)
@@ -811,7 +837,7 @@
         const gg = new THREE.Group(), pm = new THREE.MeshLambertMaterial({ color: '#555' });
         for (const sg of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.4, 7, 0.4), pm); p.position.set(sg * (W / 2 + 1), 3.5, 0); gg.add(p); }
         const beam = new THREE.Mesh(new THREE.BoxGeometry(W + 2, 0.4, 0.4), pm); beam.position.y = 7; gg.add(beam);
-        const tx = textTex(['KARALİMAN ↑', 'KÖPRÜ 2 KM', 'LİMAN ←', 'ÇIKIŞ 7'][Math.floor(s / 600) % 4], '#0b5e2a', '#ffffff', 256, 64); disposables.push(tx);
+        const tx = textTex(['KARALİMAN {^}', 'KÖPRÜ 2 KM {^}', '{<} LİMAN', 'ÇIKIŞ 7 {/}', 'MERKEZ {>}', '{<} SANAYİ', 'SAHİL {/}'][Math.floor(s / 600) % 7], '#0b5e2a', '#ffffff', 320, 80, { frame: 1 }); disposables.push(tx);
         const sgn = new THREE.Mesh(new THREE.PlaneGeometry(9, 2.3), new THREE.MeshBasicMaterial({ map: tx, side: THREE.DoubleSide })); sgn.position.y = 8.4; sgn.rotation.y = Math.PI; gg.add(sgn);
         gg.position.set(o.x, o.y, o.z); gg.rotation.y = o.h; add(gg);
       }
@@ -833,6 +859,136 @@
       });
       return add(im);
     };
+    // ── v9: yol tabelaları, viraj uyarıları, reklam panoları, şerit okları ──
+    {
+      const signY = s0 => { G.PIST.sample(T, s0, 0, o); return o.y; };
+      // viraj uyarı levhaları (sarı-siyah ok dizisi, keskin virajın dış kenarında)
+      const chevTex = dir => {
+        const c = cvs(64, 80), x = c.getContext('2d');
+        x.fillStyle = '#111'; x.fillRect(0, 0, 64, 80); x.fillStyle = '#ffd600'; x.fillRect(4, 4, 56, 72);
+        x.strokeStyle = '#111'; x.lineWidth = 11; x.lineJoin = 'miter'; x.beginPath();
+        if (dir < 0) { x.moveTo(42, 14); x.lineTo(20, 40); x.lineTo(42, 66); } else { x.moveTo(22, 14); x.lineTo(44, 40); x.lineTo(22, 66); }
+        x.stroke(); const t = new THREE.CanvasTexture(c); disposables.push(t); return t;
+      };
+      const chevL = [], chevR = [], poles = [];
+      for (let s0 = 60; s0 < T.L - 60; s0 += 4) {
+        const k = G.PIST.curvAt(T, s0);
+        if (Math.abs(k) < 0.011) continue;
+        const run = []; let e = s0; while (e < T.L - 60 && Math.abs(G.PIST.curvAt(T, e)) >= 0.009) { run.push(e); e += 4; }
+        if (run.length >= 6) {
+          const sg = k > 0 ? 1 : -1; // sola dönen virajın dışı = sağ
+          for (let x0 = run[0]; x0 <= run[run.length - 1]; x0 += 13) {
+            if (gapAt(x0, sg)) continue;
+            G.PIST.sample(T, x0, sg * (W / 2 + 1.4), o);
+            (k > 0 ? chevL : chevR).push([o.x, o.y + 1.55, o.z, o.h + Math.PI, 1, 1, 1]);
+            poles.push([o.x, o.y + 0.5, o.z, o.h, 1, 1, 1]);
+          }
+        }
+        s0 = e + 30;
+      }
+      const cg = new THREE.PlaneGeometry(0.9, 1.15);
+      inst(cg, new THREE.MeshBasicMaterial({ map: chevTex(-1), color: col(night ? '#e6e6e6' : '#ffffff') }), chevL);
+      inst(cg, new THREE.MeshBasicMaterial({ map: chevTex(1), color: col(night ? '#e6e6e6' : '#ffffff') }), chevR);
+      // hız sınırı levhaları
+      const lim = { merkez: 50, liman: 50, sanayi: 70, sahil: 70, dag: 60, otoyol: 120 }[tema] || 70;
+      const sc = cvs(128, 128), sx = sc.getContext('2d');
+      sx.fillStyle = '#d01818'; sx.beginPath(); sx.arc(64, 64, 62, 0, 7); sx.fill();
+      sx.fillStyle = '#fff'; sx.beginPath(); sx.arc(64, 64, 47, 0, 7); sx.fill();
+      sx.fillStyle = '#111'; sx.font = `bold ${lim >= 100 ? 44 : 56}px sans-serif`; sx.textAlign = 'center'; sx.textBaseline = 'middle'; sx.fillText(String(lim), 64, 68);
+      const st = new THREE.CanvasTexture(sc); disposables.push(st);
+      const lims = [];
+      for (let s0 = 220; s0 < T.L - 100; s0 += 520) {
+        const sg = 1; if (gapAt(s0, sg)) continue;
+        G.PIST.sample(T, s0, sg * (W / 2 + 1.6), o);
+        lims.push([o.x, o.y + 2.6, o.z, o.h + Math.PI, 1, 1, 1]); poles.push([o.x, o.y + 1.1, o.z, o.h, 1, 2.2, 1]);
+      }
+      inst(new THREE.CircleGeometry(0.55, 20), new THREE.MeshBasicMaterial({ map: st, transparent: true, color: col(night ? '#dddddd' : '#ffffff') }), lims);
+      const pg = new THREE.BoxGeometry(0.08, 1, 0.08); pg.translate(0, 0, 0);
+      inst(pg, new THREE.MeshLambertMaterial({ color: '#8a8f96' }), poles);
+      // rampa uyarısı
+      for (const rp of RAMPS) {
+        if (rp.sc) continue;
+        const sg = rp.d0 > 0 ? 1 : -1;
+        G.PIST.sample(T, rp.s0 - 45, sg * (W / 2 + 1.6), o);
+        const g = new THREE.Group();
+        const pl2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 3, 0.1), new THREE.MeshLambertMaterial({ color: '#8a8f96' })); pl2.position.y = 1.5; g.add(pl2);
+        const tx = textTex('RAMPA {^}', '#ffd600', '#111', 256, 80, { frame: 1 }); disposables.push(tx);
+        const bd = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.75), new THREE.MeshBasicMaterial({ map: tx })); bd.position.y = 3.1; bd.rotation.y = Math.PI; g.add(bd);
+        g.position.set(o.x, o.y, o.z); g.rotation.y = o.h; add(g);
+      }
+      // yol üstü şerit okları (beyaz)
+      const ac = cvs(64, 128), ax = ac.getContext('2d'); ax.fillStyle = 'rgba(240,240,240,0.85)'; drawArrow(ax, 32, 64, 120, 0);
+      const at = new THREE.CanvasTexture(ac); disposables.push(at);
+      const nl = Math.max(2, Math.round(W / 3.5)), lw = W / nl, arrs = [];
+      for (let s0 = 140; s0 < T.L - 80; s0 += 260) {
+        if (G.PIST.maxCurv(T, s0 - 10, 20) > 0.008) continue;
+        for (let i = 0; i < nl; i++) { G.PIST.sample(T, s0, -W / 2 + (i + 0.5) * lw, o); arrs.push([o.x, o.y + 0.035, o.z, o.h + Math.PI, 1, 1, 1]); }
+      }
+      const ag = new THREE.PlaneGeometry(1.1, 2.6); ag.rotateX(-Math.PI / 2);
+      inst(ag, new THREE.MeshBasicMaterial({ map: at, transparent: true, depthWrite: false, color: col(night ? '#bbbbbb' : '#ffffff') }), arrs);
+      // reklam panoları (kurgusal markalar). Şehirde kaldırımda ışıklı pano, açık arazide dev pano
+      const ADS = [['TURBO KOLA', 'Serinliği hisset', '#c62828', '#ffffff', 'daire'], ['KARALİMAN FM 98.4', 'Gecenin sesi', '#4a148c', '#00e5ff', 'dalga'],
+        ['ŞİMŞEK LASTİK', 'Virajda bile yapışır', '#212121', '#ffd600', 'simsek'], ['GECE BURGER', '24 saat açık', '#e65100', '#fff3e0', 'daire'],
+        ['KALKAN SİGORTA', 'Hasar mı? Biz varız', '#0d47a1', '#ffffff', 'kalkan'], ['NEON PİZZA', 'Kapına 20 dakikada', '#00695c', '#ff4081', 'dalga'],
+        ['BORA OTO SERVİS', 'Sanayi Sitesi No: 7', '#37474f', '#ffb300', 'anahtar'], ['KARALİMAN EMNİYETİ', 'Hız öldürür. Yavaşla.', '#1a237e', '#ffffff', 'yildiz']];
+      const adTex = ad => {
+        const c = cvs(512, 256), x = c.getContext('2d');
+        const gr = x.createLinearGradient(0, 0, 512, 256); gr.addColorStop(0, ad[2]); gr.addColorStop(1, '#000'); x.fillStyle = gr; x.fillRect(0, 0, 512, 256);
+        x.fillStyle = ad[3]; x.globalAlpha = 0.9;
+        if (ad[4] === 'daire') { x.beginPath(); x.arc(430, 128, 80, 0, 7); x.fill(); }
+        else if (ad[4] === 'dalga') { x.lineWidth = 10; x.strokeStyle = ad[3]; for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(440, 128, 30 + i * 28, -0.8, 0.8); x.stroke(); } }
+        else if (ad[4] === 'simsek') { x.beginPath(); x.moveTo(450, 30); x.lineTo(395, 140); x.lineTo(435, 140); x.lineTo(410, 230); x.lineTo(480, 110); x.lineTo(440, 110); x.closePath(); x.fill(); }
+        else if (ad[4] === 'kalkan') { x.beginPath(); x.moveTo(430, 40); x.lineTo(490, 65); x.quadraticCurveTo(485, 180, 430, 220); x.quadraticCurveTo(375, 180, 370, 65); x.closePath(); x.fill(); }
+        else if (ad[4] === 'anahtar') { x.lineWidth = 26; x.lineCap = 'round'; x.strokeStyle = ad[3]; x.beginPath(); x.moveTo(380, 200); x.lineTo(460, 80); x.stroke(); x.beginPath(); x.arc(462, 70, 30, 0, 7); x.fill(); }
+        else drawStar(x, 430, 128, 85);
+        x.globalAlpha = 1; x.fillStyle = '#ffffff'; x.textBaseline = 'middle';
+        let fs = 58; x.font = `900 ${fs}px sans-serif`; while (x.measureText(ad[0]).width > 340 && fs > 20) { fs -= 2; x.font = `900 ${fs}px sans-serif`; }
+        x.fillText(ad[0], 24, 100); x.font = '600 30px sans-serif'; x.fillStyle = ad[3]; x.fillText(ad[1], 26, 170);
+        x.fillStyle = 'rgba(255,255,255,0.25)'; x.fillRect(24, 132, 120, 5);
+        const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; disposables.push(t); return t;
+      };
+      const adMats = ADS.map(ad => { const t = adTex(ad); return new THREE.MeshLambertMaterial({ map: t, emissive: col('#ffffff'), emissiveMap: t, emissiveIntensity: night ? 0.95 : opts.saat === 'aksam' ? 0.45 : 0.12 }); });
+      const open = tema === 'otoyol' || tema === 'dag' || tema === 'sahil';
+      const frameM = new THREE.MeshLambertMaterial({ color: '#2a2d33' }), poleG = new THREE.BoxGeometry(0.25, 1, 0.25);
+      let ai = Math.floor(r() * ADS.length), placedAd = 0;
+      for (let s0 = 180; s0 < T.L - 120 && placedAd < 40; s0 += open ? 300 + r() * 200 : 110 + r() * 90) {
+        const sg = tema === 'sahil' ? 1 : (r() < 0.5 ? -1 : 1);
+        if (gapAt(s0, sg)) continue;
+        const big = open, back = big ? W / 2 + 11 : W / 2 + 2.3;
+        G.PIST.sample(T, s0, sg * back, o);
+        if (rd(o.x, o.z) < back - 0.5) continue; // virajın içinde yola taşmasın
+        const g = new THREE.Group(), m = adMats[ai++ % ADS.length];
+        const bw = big ? 11 : 2.6, bh = big ? 5.2 : 1.3, by = big ? 7 : 1.55;
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.3, bh + 0.3, 0.25), frameM); fr.position.set(0, by, 0.14); g.add(fr);
+        const pnl = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), m); pnl.position.set(0, by, 0); pnl.rotation.y = Math.PI; g.add(pnl);
+        for (const px of big ? [-bw * 0.3, bw * 0.3] : [-bw * 0.42, bw * 0.42]) { const pp = new THREE.Mesh(poleG, frameM); pp.scale.y = by - bh / 2; pp.position.set(px, (by - bh / 2) / 2, 0.14); g.add(pp); }
+        if (big && night) { const lt = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.15, 0.5), new THREE.MeshBasicMaterial({ color: col('#fff4d0').multiplyScalar(2) })); lt.position.set(0, by + bh / 2 + 0.25, -0.3); g.add(lt); }
+        g.position.set(o.x, o.y, o.z); g.rotation.y = o.h + sg * (big ? 0.45 : 0.25);
+        add(g); placedAd++;
+      }
+      // otobüs durakları (şehirde): çatı, arka cam, bank, yan reklam, DURAK levhası
+      if (!open) {
+        const roofM = new THREE.MeshLambertMaterial({ color: '#3a3f47' }), glassM = new THREE.MeshLambertMaterial({ color: '#9fc4d8', transparent: true, opacity: 0.35 });
+        const benchM = new THREE.MeshLambertMaterial({ color: '#7a5634' });
+        const dtx = textTex('DURAK', '#1565c0', '#ffffff', 128, 64, { frame: 1 }); disposables.push(dtx);
+        const dM = new THREE.MeshBasicMaterial({ map: dtx, side: THREE.DoubleSide });
+        for (let s0 = 350; s0 < T.L - 150; s0 += 650 + r() * 250) {
+          const sg = r() < 0.5 ? -1 : 1; if (gapAt(s0, sg)) continue;
+          G.PIST.sample(T, s0, sg * (W / 2 + 2.2), o);
+          if (rd(o.x, o.z) < W / 2 + 1.6) continue;
+          const g = new THREE.Group(), side = sg; // cam dış tarafta (z = -side), levha yol tarafında
+          const box = (w, h, d, x, y, z, m) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); g.add(b); return b; };
+          box(4.2, 0.12, 1.8, 0, 2.5, 0, roofM);
+          box(4.0, 2.2, 0.05, 0, 1.3, side * -0.85, glassM);
+          for (const x of [-2, 2]) box(0.08, 2.5, 0.08, x, 1.25, side * -0.85, roofM);
+          box(2.6, 0.08, 0.45, 0, 0.5, side * -0.55, benchM);
+          const ad = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.1), adMats[Math.floor(r() * adMats.length)]); ad.position.set(2.05, 1.3, 0); ad.rotation.y = Math.PI / 2; g.add(ad);
+          const sgn = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.45), dM); sgn.position.set(-2.1, 2.85, 0.6 * side); g.add(sgn);
+          g.position.set(o.x, o.y, o.z); g.rotation.y = o.h + Math.PI / 2; // yerel +x geriye, +z sürücünün soluna bakar
+          add(g);
+        }
+      }
+    }
     const city = tema !== 'dag' && tema !== 'otoyol';
     if (city && q >= 1) {
       const PC = ['#c0392b', '#2c3e50', '#bdc3c7', '#7f8c8d', '#ecf0f1', '#2980b9', '#16a085', '#8e44ad', '#d35400', '#111111', '#f1c40f'];
@@ -945,7 +1101,7 @@
       wx.fillStyle = tema === 'dag' ? '#5a4a3a' : '#5a5560'; wx.fillRect(0, 0, 256, 64);
       wx.strokeStyle = 'rgba(0,0,0,0.35)'; for (let i = 0; i < 256; i += 32) { wx.beginPath(); wx.moveTo(i, 0); wx.lineTo(i, 64); wx.stroke(); }
       const gcols = ['#ff2e63', '#00e5ff', '#ffd600', '#7c4dff', '#00e676'];
-      for (let i = 0; i < 6; i++) { wx.fillStyle = gcols[i % 5]; wx.globalAlpha = 0.7; wx.font = 'bold 22px sans-serif'; wx.fillText(['KAÇ', 'GECE', 'HIZ', '★', 'K.L', 'GAZ'][i], 10 + i * 42, 30 + (i % 2) * 18); }
+      for (let i = 0; i < 6; i++) { wx.fillStyle = gcols[i % 5]; wx.globalAlpha = 0.7; wx.font = 'bold 22px sans-serif'; if (i === 3) drawStar(wx, 22 + i * 42, 24 + (i % 2) * 18, 12); else wx.fillText(['KAÇ', 'GECE', 'HIZ', '', 'K.L', 'GAZ'][i], 10 + i * 42, 30 + (i % 2) * 18); }
       wx.globalAlpha = 1;
       const wt = new THREE.CanvasTexture(w2); wt.wrapS = wt.wrapT = THREE.RepeatWrapping; disposables.push(wt);
       const wM = new THREE.MeshLambertMaterial({ map: wt, side: THREE.DoubleSide });
@@ -972,7 +1128,7 @@
         G.PIST.sample(T, k.sA - 35, k.side * (W / 2 + 1.5), o);
         const sg = new THREE.Group();
         const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 0.2), new THREE.MeshLambertMaterial({ color: '#333' })); pole.position.y = 2; sg.add(pole);
-        const tx = textTex(k.side < 0 ? '◀ KESTİRME' : 'KESTİRME ▶', '#111', '#ffd600', 256, 64); disposables.push(tx);
+        const tx = textTex(k.side < 0 ? '{<} KESTİRME' : 'KESTİRME {>}', '#111', '#ffd600', 256, 64, { frame: 1 }); disposables.push(tx);
         const bd = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.9), new THREE.MeshBasicMaterial({ map: tx, side: THREE.DoubleSide })); bd.position.y = 4.2; bd.rotation.y = Math.PI; sg.add(bd);
         sg.position.set(o.x, o.y, o.z); sg.rotation.y = o.h; add(sg);
         // ağızda yere çizili sarı oklar

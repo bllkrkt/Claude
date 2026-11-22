@@ -121,3 +121,7 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 ## v8 — simgeler
 - Bütün emojiler `ikon.js` simgeleriyle değişti (menü, rozetler, karakter yüzleri, başarımlar, parçalar, gösterge, tuşlar). Kanvas dokularındaki ok/yıldız (dunya.js tabelalar) metin olarak kaldı.
 - Test: `IKON.find()` sayfada kalan emojiyi listeler; e2e menülerde, yarışlarda ve sonuç ekranında kontrol eder.
+
+## v9 — tabelalar ve şehir süsleri (dunya.js, "v9" bloğu `inst` tanımının hemen altında)
+- `textTex(metin, zemin, yazı, w, h, {frame})`: metinde `{<} {>} {^} {v} {/}` çizilmiş ok, `{*}` yıldız (yazı karakteri değil; `drawArrow`, `drawStar`).
+- Keskin virajların dış kenarında sarı-siyah viraj uyarı levhaları (|k|≥0,011, en az 24 m süren virajlar, 13 m arayla), bölgeye göre hız sınırı levhası (her 520 m), rampa öncesi "RAMPA ↑" levhası, düz kesimlerde şeritlere beyaz yol okları (260 m), kurgusal reklam panoları (8 marka; şehirde kaldırımda ışıklı pano, otoyol/dağ/sahilde dev pano, gece ışıklı), şehirde otobüs durakları (cam, bank, reklam, DURAK levhası). Otoyol köprü tabelaları 7 farklı yazı + ok.
