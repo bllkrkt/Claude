@@ -328,3 +328,43 @@ body.photo #hud, body.photo #pause { display: none !important; }
 .gk.sec .gk-b { box-shadow: 0 0 22px var(--yel); }
 .gk.sonuk { opacity: .45; }
 #gkBtns { display: flex; justify-content: center; }
+
+/* v15 sinematik hikâye */
+#dlg { --c: #ff2e63; }
+#dlg::before, #dlg::after { content: ''; position: absolute; left: 0; right: 0; height: 10vh; background: #000; z-index: 2; transition: transform .45s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+#dlg::before { top: 0; transform: translateY(-100%); } #dlg::after { bottom: 0; transform: translateY(100%); }
+#dlg.cine::before, #dlg.cine::after { transform: none; }
+#dlg.cikis::before { transform: translateY(-100%); } #dlg.cikis::after { transform: translateY(100%); }
+#dlg.cikis .box { opacity: 0; transform: translateY(20px); transition: opacity .3s, transform .3s; }
+#dlg .box { bottom: 12vh; z-index: 3; }
+#dlg .skip { z-index: 4; }
+#dlg.sag .box { flex-direction: row-reverse; }
+#dlg .face { box-shadow: 0 0 28px color-mix(in srgb, var(--c) 55%, transparent), inset 0 0 0 2px var(--c); background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 35%, #12101e), #0b0a14 70%); }
+#dlg .face.in { animation: yuzGir .5s cubic-bezier(.2,.9,.25,1.2) both; }
+#dlg.sag .face.in { animation-name: yuzGirSag; }
+#dlg .face.konus { animation: konus .28s ease-in-out infinite alternate; }
+#dlg .txt { border-left: 4px solid var(--c); }
+#dlg .txt.in { animation: metinGir .4s ease-out both; }
+#dlg.sag .txt { border-left: 1px solid var(--line); border-right: 4px solid var(--c); }
+@keyframes yuzGir { from { transform: translateX(-60px) scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes yuzGirSag { from { transform: translateX(60px) scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes konus { from { transform: translateY(0) rotate(-1deg); } to { transform: translateY(-4px) rotate(1deg); } }
+@keyframes metinGir { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+#dlg.nar .txt { animation: anlat .7s ease-out both; border: 0; font-size: 1.08em; letter-spacing: .02em; }
+@keyframes anlat { from { opacity: 0; filter: blur(6px); letter-spacing: .2em; } to { opacity: 1; filter: none; } }
+/* polis: kırmızı-mavi çakar ışığı */
+#dlg.polis { animation: none; }
+#dlg.polis .box::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: -1; background: linear-gradient(90deg, rgba(255,30,40,.28), transparent 35%, transparent 65%, rgba(30,80,255,.28)); animation: cakar .5s steps(2) infinite; }
+@keyframes cakar { 50% { background: linear-gradient(90deg, rgba(30,80,255,.28), transparent 35%, transparent 65%, rgba(255,30,40,.28)); } }
+/* rakip tanıtım kartı */
+#rcard { position: absolute; inset: 0; z-index: 5; display: none; align-items: center; justify-content: center; pointer-events: none; }
+#rcard.on { display: flex; pointer-events: auto; }
+#rcard .rc-in { text-align: center; position: relative; padding: 0 6vw; }
+#rcard .rc-no { font-weight: 800; letter-spacing: .5em; color: var(--c); font-size: 2.6vh; text-shadow: 0 0 16px var(--c); animation: rcNo .5s .1s both; }
+#rcard .rc-ad { font-size: 17vh; line-height: 1; font-weight: 900; font-style: italic; text-transform: uppercase; color: #fff; text-shadow: 0 0 30px var(--c), 4px 4px 0 var(--c); animation: rcAd .55s .6s cubic-bezier(.2,1.4,.3,1) both; }
+#rcard .rc-tam { font-size: 3vh; color: #ddd; font-weight: 700; margin-top: 1vh; animation: rcNo .4s 1s both; }
+#rcard .rc-oz { font-size: 2.3vh; color: var(--mut); max-width: 60vw; margin: 1vh auto 0; animation: rcNo .4s 1.2s both; }
+#rcard .rc-cizgi { position: absolute; left: 0; right: 0; top: 50%; height: 3px; background: linear-gradient(90deg, transparent, var(--c), transparent); animation: rcCiz .7s .55s ease-out both; z-index: -1; }
+@keyframes rcNo { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes rcAd { from { opacity: 0; transform: scale(2.6); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes rcCiz { from { transform: scaleX(0); } to { transform: scaleX(1); } }

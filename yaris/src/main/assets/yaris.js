@@ -159,8 +159,37 @@
     window.addEventListener('pointerup', () => { down = false; });
     window.addEventListener('pointermove', e => { if (!down || !SHOW || R) return; SHOW.ang += (e.clientX - lx) * 0.01; SHOW.drag = 1.5; lx = e.clientX; });
   }
+  // v15: hikâye sinematik çekimleri (u: 0→1 çekim ilerlemesi) → [kamera x,y,z, bakış x,y,z, fov]
+  const SHOTS = [
+    u => [Math.sin(0.65) * (7.8 - 2.2 * u), 0.55 + 0.2 * u, Math.cos(0.65) * (7.8 - 2.2 * u), 0, 0.75, 0, 38],          // alçak ön 3/4, yaklaşır
+    u => [-5.5 + 11 * u, 1.0, 4.6, 0, 0.8, 0, 34],                                                                       // yandan kayan takip
+    u => [Math.sin(Math.PI + 0.5 + 0.25 * u) * 6.2, 0.45, Math.cos(Math.PI + 0.5 + 0.25 * u) * 6.2, 0, 0.9, 0, 36],      // arkadan alçak (stoplar)
+    u => [Math.sin(0.3 + 0.6 * u) * 9.5, 5.5 - 1.2 * u, Math.cos(0.3 + 0.6 * u) * 9.5, 0, 0.4, 0, 44],                   // yukarıdan dönen
+    u => [Math.sin(0.15) * (4.2 - 0.6 * u), 0.7, Math.cos(0.15) * (4.2 - 0.6 * u), 0, 0.62, 0.9, 30],                   // far/ızgara yakın çekim
+    u => [Math.sin(-0.9 - 0.3 * u) * 5.2, 1.7, Math.cos(-0.9 - 0.3 * u) * 5.2, 0, 0.6, 0, 40],                          // sol omuz
+  ];
+  const _cp = { x: 0, y: 0, z: 0, lx: 0, ly: 0, lz: 0, f: 40, ok: false };
+  function cine(shot) { if (!SHOW) return; SHOW.shot = shot; SHOW.st = 0; }
   function stepShow(dt) {
     const S = SHOW; S.t += dt;
+    if (S.mode === 'sinema') {
+      S.st = (S.st || 0) + dt;
+      const u = 1 - Math.pow(1 - Math.min(1, S.st / 7), 2);
+      const v = SHOTS[(S.shot || 0) % SHOTS.length](u);
+      const k = _cp.ok ? Math.min(1, dt * (S.st < 0.6 ? 5 : 2.5)) : 1; _cp.ok = true;
+      _cp.x += (v[0] - _cp.x) * k; _cp.y += (v[1] - _cp.y) * k; _cp.z += (v[2] - _cp.z) * k;
+      _cp.lx += (v[3] - _cp.lx) * k; _cp.ly += (v[4] - _cp.ly) * k; _cp.lz += (v[5] - _cp.lz) * k; _cp.f += (v[6] - _cp.f) * k;
+      if (S.car) { S.car.rotation.y = 0; for (const w of S.car.userData.wheels) w.rotation.x = 0; }
+      S.plat.rotation.y = 0;
+      camera.clearViewOffset();
+      camera.position.set(_cp.x, _cp.y + Math.sin(S.t * 0.7) * 0.03, _cp.z); camera.lookAt(_cp.lx, _cp.ly, _cp.lz);
+      camera.fov = _cp.f; camera.updateProjectionMatrix();
+      if (G.POST) { const P2 = G.POST.P; P2.speed = 0; P2.nitro = 0; P2.hit = S.hit || 0; P2.odak = 0; P2.tint = S.tint || [1.02, 0.98, 1.06]; P2.bloom = 0.9; P2.exposure = 1.0; }
+      if (S.hit) S.hit = Math.max(0, S.hit - dt * 1.5);
+      draw(S.sc);
+      return;
+    }
+    _cp.ok = false;
     if (S.drag > 0) S.drag -= dt; else S.ang += dt * 0.25;
     if (S.car) {
       S.car.rotation.y = S.ang;
@@ -254,7 +283,8 @@
     const grid = [];
     for (let i = 0; i <= rk.length; i++) grid.push({ s: startS - Math.floor(i / 2) * 9, d: (i % 2 ? 1 : -1) * T.W * 0.2 });
     if (isDrag) for (let i = 0; i <= rk.length; i++) grid[i] = { s: startS, d: lane(i % nl) };
-    const pg = isDrag ? grid[1 % grid.length] : solo ? { s: startS, d: T.W * 0.22 } : grid[rk.length];
+    // v15: oyuncu iki sıranın ortasındaki boş koridorda başlar (önceden bir rakibin tam arkasındaydı → kalkışta arkadan çarpıyordu)
+    const pg = isDrag ? grid[1 % grid.length] : solo ? { s: startS, d: T.W * 0.22 } : { s: grid[rk.length].s, d: 0 };
     place(pl, pg.s, pg.d);
     R.racers.push(pl);
     rk.forEach((o, i) => {
@@ -301,7 +331,7 @@
     R.minimap = buildMinimap();
     // ── trafik ──
     const dens = cfg.trafik != null ? cfg.trafik : (isDrag ? 0.5 : cfg.tip === 'drift' || cfg.tip === 'eleme' || cfg.tip === 'devre' || cfg.tip === 'gise' ? 0.35 : 0.7);
-    R.trafficN = Math.round((Q === 0 ? 8 : 14) * dens * (T.W / 14) * (cfg.trafik === 0 ? 0 : opt.traffic));
+    R.trafficN = Math.round((Q === 0 ? 8 : 14) * dens * (T.W / 14) * (cfg.trafik === 0 || cfg.tip === 'drift' ? 0 : opt.traffic));
     for (let i = 0; i < R.trafficN; i++) spawnTraffic(true, i);
     // ── polis ──
     if (cfg.tip === 'kovala' || cfg.tip === 'kacis') startPursuit(cfg.tip === 'kacis' ? (cfg.hedef && cfg.hedef.n) || cfg.polis || 3 : Math.max(1, cfg.polis || (cfg.hedef && cfg.hedef.t === 'kac' ? cfg.hedef.n : 1)), true);
@@ -427,7 +457,7 @@
         if (pl0.rpm >= 0.6 && pl0.rpm <= 0.82) { pl0.launch = 1.8; popup('MÜKEMMEL KALKIŞ', '+itiş', 1.2, 'iyi'); SES().sfx('odak'); r.stats.kalkis = 1; }
         else if (pl0.rpm > 0.92) { pl0.launchSpin = 0.9; popup('PATİNAJ', 'devir çok yüksekti', 1, 'kotu'); }
       }
-      if (r.count <= 0) { r.phase = 'yaris'; r.count = 0; setTimeout(() => { if ($('hud-count')) $('hud-count').style.display = 'none'; }, 700); radio('basla'); }
+      if (r.count <= 0) { r.phase = 'yaris'; r.count = 0; r.goT = r.t; setTimeout(() => { if ($('hud-count')) $('hud-count').style.display = 'none'; }, 700); radio('basla'); }
     }
     const steps = Math.max(1, Math.ceil(dt / 0.017));
     const h = dt / steps;
@@ -697,10 +727,10 @@
   // ───────── v14 ARAÇ DİNAMİĞİ (Most Wanted tarzı arcade ayarlı bisiklet modeli) ─────────
   // Pist uzayında: c.ba = gövdenin yola göre açısı (sağ +), c.vy = gövdeye göre yanal hız (sağ +), c.yaw = dönüş hızı (rad/sn, sağ +),
   // c.v = gövde ileri hızı. Hareket yönü c.a = ba + β (β = atan2(vy, v)); c.slip = ba − a (gövde ile gidiş arasındaki açı, görsel ve drift puanı).
-  const DYN = { lf: 1.2, lr: 1.4, B: 8.5, C: 1.45 };
+  const DYN = { lf: 1.2, lr: 1.4, B: 10, C: 1.45, GX: 1.5 }; // GX: arcade yanal tutuş çarpanı (v15; gerçek araba ~0,9g, oyun ~1,35g)
   const tire = (al, D) => -D * Math.sin(DYN.C * Math.atan(DYN.B * al));
   function dynStep(c, dt, grip, k, acc, gas, hb) {
-    const L = DYN.lf + DYN.lr, Iz = DYN.lf * DYN.lr * 1.1, asst = opt.assist, mu = grip * GRAV;
+    const L = DYN.lf + DYN.lr, Iz = DYN.lf * DYN.lr * 1.1, asst = opt.assist, mu = grip * GRAV * DYN.GX;
     // dış etkiler (çarpışma, duvar, kestirme girişi) hareket açısını değiştirdiyse gövde de onunla döner
     if (c.ba == null || c._a == null) { c.ba = c.a + (c.slip || 0); c.vy = 0; c.yaw = 0; }
     else if (c.a !== c._a) { c.ba += c.a - c._a; c.vy *= 0.5; }
@@ -710,9 +740,11 @@
       const u = c.v, au = Math.abs(u), w = c.vy, rr = c.yaw, sg = u < 0 ? -1 : 1;
       const beta = Math.atan2(w, Math.max(au, 1));
       // direksiyon açısı: hız arttıkça küçülür (ağırlaşır)
-      let delta = c.steer * 0.5 / (1 + au / 12);
+      let delta = c.steer * 0.6 / (1 + au / 18);
+      // v15: kontra ve toparlama SADECE normal viraj kaymasını aşınca devreye girer (önce her virajda direksiyonu geri alıyordu → araba dönmüyordu)
+      const bx = Math.sign(beta) * Math.max(0, Math.abs(beta) - 0.14);
       // otomatik kontra: ön tekerlekler kayma yönüne döner (dokunmatikte savrulmayı yakalamak için)
-      delta += clamp(beta, -0.6, 0.6) * (0.3 + 0.5 * asst) * sg;
+      delta += clamp(bx, -0.6, 0.6) * (0.35 + 0.5 * asst) * sg;
       // sürüş yardımı: virajın gerektirdiği direksiyonu ekler; bırakınca yola hizalar
       if (!c.air && asst > 0) {
         delta += asst * -k * L * 0.9;
@@ -738,10 +770,12 @@
         du = rr * w;
         // kararlılık: dönmeye başlayan arabayı yardım oranında toparla (el freninde yok)
         // kararlılık (arcade): kayma açısını sınırlar, el freni bırakılınca araba toparlanır
-        dr += -rr * (hb ? 0.1 : 0.3) + beta * sg * (hb ? 0.5 : 1.6 + 3 * asst);
+        dr += -rr * (hb ? 0.05 : 0.12) + bx * sg * (hb ? 0.5 : 1.6 + 3 * asst);
         const bm = hb ? 0.85 : 0.55, ab = Math.abs(beta);
         if (ab > bm) dr += Math.sign(beta) * sg * (ab - bm) * 18;
       }
+      // v15 arcade: gidiş yönü gövdenin baktığı yöne oturur (el freninde ve havada yok) — "araba dönmüyor, kayıp gidiyor" hissini giderir
+      if (!hb && !c.air && au > 3) { const al = Math.min(1, h * (2.2 + 1.5 * asst)); const V2 = Math.hypot(c.v, c.vy); c.vy -= c.vy * al; c.v = Math.sign(c.v || 1) * Math.sqrt(Math.max(0, V2 * V2 - c.vy * c.vy)); }
       const V0 = Math.hypot(c.v, c.vy);
       c.v += du * h; c.vy += dw * h; c.yaw += dr * h;
       // kayarken hız korunur (lastik sürtmesinin yavaşlatmasının %65'i geri verilir; gazdaysan daha çok)
@@ -910,7 +944,9 @@
     else c.nitro = Math.min(1, c.nitro + dt * 0.03);
     c.nitroOn = nitro;
     if (nitro) vT = Math.min(vT * 1.15, vCorner * 1.05);
-    const acc = st.acc * (1.15 - Math.pow(clamp(c.v / vmax, 0, 1), 1.7) * 1.1) * (nitro ? 1.6 : 1);
+    let acc = st.acc * (1.15 - Math.pow(clamp(c.v / vmax, 0, 1), 1.7) * 1.1) * (nitro ? 1.6 : 1);
+    // v15: kalkışta rakipler en az oyuncu kadar hızlı çıkar (yavaş rakibin arkasına yığılma olmasın)
+    if (r.phase === 'yaris' && r.t - (r.goT || 0) < 4 && !autopilot) { acc = Math.max(acc, pl.st.acc * 1.25 * (pl.launch > 0 ? 1.7 : 1)); }
     if (c.v < vT) c.v = Math.min(vT, c.v + acc * dt);
     else c.v = Math.max(vT, c.v - 13 * dt);
     // çizgi: virajın içi
@@ -995,6 +1031,8 @@
   }
 
   // ───────── TRAFİK ─────────
+  // v15: araçlar görüş mesafesinin (sis) arkasında doğar → ekranda birden belirmez
+  function visD() { const f = scene && scene.fog ? scene.fog.far : 900; return Math.min(f + 40, 780); }
   function spawnTraffic(initial, idx) {
     const r = R, T = r.T, V0 = V();
     const ty = V0.TRAFFIC[Math.floor(Math.random() * (Math.random() < 0.85 ? 4 : V0.TRAFFIC.length))];
@@ -1013,10 +1051,11 @@
     c.d = -T.W / 2 + (lane + 0.5) * T.W / nl;
     c.vT = (r.cfg.tip === 'drag' ? 14 : 11) + Math.random() * 8;
     c.v = c.vT * c.dir;
-    let base = initial ? (r.cfg.tip === 'drag' ? 150 + idx * 70 : 120 + idx * (900 / Math.max(1, r.trafficN))) : 500 + Math.random() * 300;
+    let base = initial ? (r.cfg.tip === 'drag' ? 150 + idx * 70 : 120 + idx * (900 / Math.max(1, r.trafficN))) : visD() + Math.random() * 250;
     if (initial && onc) base += 350; // karşıdan gelenler başlangıç çizgisine çarpmasın
     c.s = P().wrap(T, pl.s + base + Math.random() * 40);
-    if (!T.loop && c.s > T.L - 80) c.s = P().wrap(T, pl.s + 200 + Math.random() * 100);
+    // sprint sonunda yer yoksa: oyuncunun arkasına (kamera görmez); önüne koyup göz önünde belirtme
+    if (!T.loop && c.s > T.L - 80) c.s = Math.max(2, pl.s - 300 - Math.random() * 200);
     c.a = 0; c.knock = 0; c.spin = 0; c.gone = false; c.passed = false; c.y = 0;
     c.model.visible = true;
   }
@@ -1045,7 +1084,8 @@
     if (Math.abs(c.d) > lim) c.d = Math.sign(c.d) * lim;
   }
   // v10: trafik yoğunluğu yarış içinde değişebilir (Ayarlar)
-  function trafficBase() { const cfg = R.cfg, isDrag = cfg.tip === 'drag'; const dens = cfg.trafik != null ? cfg.trafik : (isDrag ? 0.5 : cfg.tip === 'drift' || cfg.tip === 'eleme' || cfg.tip === 'devre' || cfg.tip === 'gise' ? 0.35 : 0.7); return (Q === 0 ? 8 : 14) * dens * (R.T.W / 14); }
+  function trafficBase() { const cfg = R.cfg, isDrag = cfg.tip === 'drag'; if (cfg.tip === 'drift') return 0; // v15: drift görevlerinde trafik yok
+    const dens = cfg.trafik != null ? cfg.trafik : (isDrag ? 0.5 : cfg.tip === 'drift' || cfg.tip === 'eleme' || cfg.tip === 'devre' || cfg.tip === 'gise' ? 0.35 : 0.7); return (Q === 0 ? 8 : 14) * dens * (R.T.W / 14); }
   function setTraffic() {
     if (!R) return;
     const want = R.cfg.trafik === 0 ? 0 : Math.round(trafficBase() * opt.traffic);
@@ -1057,7 +1097,7 @@
     const pl = R.player, T = R.T;
     for (const c of R.traffic) {
       const x = ds(pl, c);
-      if (x < -140 || x > 1100 || (!T.loop && (c.s >= T.L - 30 || c.s <= 2))) trafficReset(c, false);
+      if (x < -140 || x > visD() + 400 || (!T.loop && (c.s >= T.L - 30 || c.s <= 2))) trafficReset(c, false);
       // kıl payı
       if (!c.passed && x < 0 && x > -10) {
         c.passed = true;
@@ -1099,6 +1139,14 @@
     const ma = a.mass, mb = b.mass, ta = mb / (ma + mb), tb = ma / (ma + mb);
     let imp;
     const fixedB = b.block, fixedA = a.block;
+    // v15: kalkışın ilk 3 saniyesinde oyuncu-rakip teması yumuşak: sekme/hasar yok, arkadaki öndekinin hızına iner
+    const pl0 = R.player;
+    if (R.phase === 'yaris' && R.t - (R.goT || 0) < 3 && ((a === pl0 && b.kind === 'racer') || (b === pl0 && a.kind === 'racer')) && ox < oy * 1.4) {
+      const sg = Math.sign(x) || 1;
+      a.s -= sg * ox * ta; b.s += sg * ox * tb;
+      if (sg > 0 && a.v > b.v) a.v = b.v; else if (sg < 0 && b.v > a.v) b.v = a.v;
+      return;
+    }
     if (ox < oy * 1.4) { // önden/arkadan
       const sg = Math.sign(x) || 1; // b önde ise +
       const va = a.v, vb = b.v;
@@ -1293,7 +1341,7 @@
     if (!fromStart) { popup('POLİS!', 'Takip başladı', 1.6, 'kotu'); SES().music('kovala'); }
     r.purs.race = !['kovala', 'kacis', 'serbest'].includes(r.cfg.tip);
     for (let i = 0; i < Math.min(2, V().HEAT[heat].max); i++) spawnCop(fromStart ? (i === 0 ? -150 : -210) : (i === 0 ? -90 : -140));
-    if (fromStart) spawnCop(420);
+    if (fromStart) spawnCop(visD());
     r.purs.grace = fromStart ? 4 : 1;
     scanner(heat);
     $('hud-purs').style.display = 'block';
@@ -1303,7 +1351,7 @@
     const tn = (opts && opts.type) || H.birim[Math.floor(Math.random() * H.birim.length)];
     const ct = V().COPS[tn];
     // polis, oyuncunun arabasından (önleyici hariç) biraz yavaş: düzlükte kaçmak mümkün olsun
-    const cap = pl.st.vmax * (tn === 'onleyici' ? 1.03 : 0.95);
+    const cap = pl.st.vmax * (tn === 'onleyici' ? 1.03 : r.cfg.tip === 'kovala' ? 1.0 : 0.95);
     const c = mkCar('cop', { govde: ct.govde, model: ct.model, renk: tn === 'onleyici' ? '#14141c' : tn === 'ozel' ? '#1c2230' : '#f5f6fa', basit: Q === 0, desen: false, kaplama: { r: 0.3, m: 0.5 } }, { vmax: Math.min(ct.hiz / KMH, cap), acc: 9, grip: 1.1, nitro: 1, kg: ct.kg });
     c.copType = tn; c.hp = ct.can; c.maxHp = ct.can; c.mass = ct.kg;
     c.s = P().wrap(r.T, pl.s + offs); c.d = (Math.random() - 0.5) * r.T.W * 0.6;
@@ -1379,6 +1427,8 @@
 
   function pursuitLogic(dt) {
     const r = R, p = r.purs, pl = r.player, H = V().HEAT[p.heat];
+    // v15: en uzun kovalamaca süresi canlı kaydedilir (yarış/sürüş yarıda bırakılsa da sayılır)
+    if (G.onPursTime && Math.floor(p.time) !== Math.floor(p.time + dt)) G.onPursTime(p.time + dt);
     if (p.mode === 'takip') {
       p.time += dt;
       p.bounty += dt * H.un;
@@ -1389,7 +1439,7 @@
       // takviye birimler
       p.spawnT -= dt;
       const active = r.cops.filter(c => !c.disabled && !c.block && c.state === 'takip');
-      if (p.spawnT < 0 && p.evade < 0.25 && active.length < (p.race ? Math.min(2, H.max) : H.max)) { p.spawnT = 6 + Math.random() * 5; spawnCop(Math.random() < 0.65 ? -180 - Math.random() * 80 : 320 + Math.random() * 200); }
+      if (p.spawnT < 0 && p.evade < 0.25 && active.length < (p.race ? Math.min(2, H.max) : H.max)) { p.spawnT = 6 + Math.random() * 5; spawnCop(Math.random() < 0.65 ? -180 - Math.random() * 80 : visD() + Math.random() * 150); }
       // barikat
       p.blockT -= dt;
       if (H.barikat && p.blockT < 0) { p.blockT = 26 + Math.random() * 16; if (Math.random() < H.barikat * (p.race ? 0.4 : 1)) makeRoadblock(Math.random() < H.civi); }
@@ -1416,7 +1466,7 @@
       }
     } else if (p.mode === 'sogu') {
       const coolNeed = 8 + p.heat * 3;
-      p.cool += dt;
+      p.cool += dt; p.time += dt; // v15: gizlenirken de kovalamaca sürüyor sayılır
       // aramadaki birim yakınsa tekrar yakalar
       for (const c of r.cops) if (!c.disabled && (c.state === 'ara' || c.state === 'devriye') && Math.abs(ds(pl, c)) < 55) {
         p.mode = 'takip'; p.cool = 0; popup('SENİ GÖRDÜLER!', '', 1.4, 'kotu');
@@ -1449,7 +1499,7 @@
       const h = r.cfg.hedef || {};
       if (h.t === 'kac') { finish(true, { pos: 1 }); return; }
       // hedef tamamlanmadan kaçtı: yeni takip başlat (hedef sürsün)
-      r.purs.mode = 'takip'; r.purs.evade = 0; spawnCop(-160); spawnCop(300);
+      r.purs.mode = 'takip'; r.purs.evade = 0; spawnCop(-160); spawnCop(visD());
       popup('YENİ BİRİMLER!', goalText(h), 2, 'kotu');
       return;
     }
@@ -1478,7 +1528,7 @@
   function spawnPatrols() {
     const r = R;
     r.patrolT = 0;
-    for (let i = 0; i < 4; i++) spawnPatrolAhead(250 + i * 600);
+    for (let i = 0; i < 4; i++) spawnPatrolAhead(i === 0 ? 250 : visD() * 0.6 + i * 600); // ilki yarış başlamadan görünür
   }
   function spawnPatrolAhead(off) {
     const r = R, T = r.T;
@@ -1502,11 +1552,11 @@
         return;
       }
     }
-    if (n < 3 && r.patrolT > 4) { r.patrolT = 0; spawnPatrolAhead(500 + Math.random() * 400); }
+    if (n < 3 && r.patrolT > 4) { r.patrolT = 0; spawnPatrolAhead(visD() + Math.random() * 300); }
   }
   function makeRoadblock(spikes) {
     const r = R, T = r.T, pl = r.player;
-    const s = P().wrap(T, pl.s + 420);
+    const s = P().wrap(T, pl.s + Math.max(420, visD()));
     if (!T.loop && s > R.finishS - 100) return;
     const nl = r.nl, gap = Math.floor(Math.random() * nl);
     const laneW = T.W / nl;
@@ -2204,7 +2254,7 @@
 
   // dışa açık
   G.YARIS = { carReady,
-    init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, photo, photoShot, get PH() { return PH; }, quit, statsOf, opt, input,
+    init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, cine, cineFx: (hit, tint) => { if (SHOW) { if (hit != null) SHOW.hit = hit; if (tint) SHOW.tint = tint; } }, photo, photoShot, get PH() { return PH; }, quit, statsOf, opt, input,
     setTraffic, refreshHud: () => { if (R) { buildHud(); R.wake = true; } },
     get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; }, get _show() { return SHOW; },
     // test kancası: ekransız hızlı simülasyon (sanal sürücü ile)

@@ -255,6 +255,7 @@
     if ((e.tip === 'kovala' || e.tip === 'kacis' || e.polis) && !S.kar.sahne.ilkKovala) { S.kar.sahne.ilkKovala = 1; save(); story(V.STORY.ilkKovala, go); }
     else go();
   }
+  function rivalVis(no) { const r = RIV(no), c = CAR(r.araba); return { basit: S.set.q === 0, model: c.id, govde: c.govde, renk: r.renk, kaplama: V.FINISH[1], jant: V.RIMS[(no % 5) + 1], jantRenk: V.RIM_COLORS[(no % 3)][0], kit: 1 + (no % 3), spoiler: 1 + (no % 4), neon: V.NEONS[1 + (no % 7)][0], vinyl: 1 + (no % 7), aksan: '#ffffff', cam: 2 }; }
   function rivalRace() {
     click();
     const no = S.kar.rakip, r = RIV(no);
@@ -266,7 +267,7 @@
     const c = CAR(r.araba), d = DIFF[S.set.zorluk] || DIFF[1];
     const parca = {}; for (const p of V.PARTS) parca[p.id] = Math.min(4, Math.floor((10 - no) / 2.2) + 1);
     const rival = { ad: r.lakap, rival: true, renk: r.renk, zor: r.zor * d.z, stats: Y.statsOf(c, parca),
-      vis: { model: c.id, govde: c.govde, renk: r.renk, kaplama: V.FINISH[1], jant: V.RIMS[(no % 5) + 1], jantRenk: V.RIM_COLORS[(no % 3)][0], kit: 1 + (no % 3), spoiler: 1 + (no % 4), neon: V.NEONS[1 + (no % 7)][0], vinyl: 1 + (no % 7), aksan: '#ffffff', cam: 2 } };
+      vis: rivalVis(no) };
     const lines = idx === 0 ? [['rakip', r.soz[0]]] : [['bora', 'Bir yarış kaldı kanka. ' + r.lakap + ' köpürmüş, dikkat!']];
     story(lines, () => {
       const cfg = baseCfg({ tip: idx === 0 ? 'sprint' : 'devre', pist: tr.id, tur: idx === 0 ? 1 : 2, rakipler: [rival], polis: no <= 6 && idx === 0 ? 1 : 0, saat: r.bolge === 3 ? 'aksam' : 'gece', zor: r.zor });
@@ -417,7 +418,7 @@
       if (nz && nz.bolge !== r.bolge) setTimeout(() => toast(`🗺️ Yeni bölge açıldı: ${V.ZONES[nz.bolge].ad}`, 'ach'), 900);
       const cls = { 9: 'C', 7: 'B', 5: 'A', 3: 'S' }[no];
       if (cls) setTimeout(() => toast(`🚗 Galeride ${cls} sınıfı arabalar açıldı!`, 'ach'), 1800);
-    }, r);
+    }, r, { kart: false });
   }
   function G_ach() { return true; }
 
@@ -473,22 +474,61 @@
 
   // ───────── HİKÂYE DİYALOĞU ─────────
   let dl = null;
-  function story(lines, done, rival) {
+  // v15: sinematik hikâye: şeritler, kamera çekimleri, konuşmacı girişleri, rakip tanıtım kartı, polis ışıkları
+  function story(lines, done, rival, opt) {
     show('dlg');
-    if (!Y.active) Y.showroom(visOf(S.sec), 'menu');
-    SES.music('hikaye');
-    dl = { lines, i: 0, done, rival, typing: 0 };
-    stepDlg();
+    const box = $('dlg');
+    box.classList.remove('cikis', 'polis', 'sag'); void box.offsetWidth; box.classList.add('cine');
+    const bg = !Y.active;
+    if (bg) { Y.showroom(visOf(S.sec), 'sinema'); Y.cine(Math.floor(Math.random() * 6)); }
+    SES.music('hikaye'); SES.sfx('swoosh');
+    dl = { lines, i: 0, done, rival, typing: 0, last: null, shot: Math.floor(Math.random() * 6), bg, rivalCar: false };
+    $('dlgSay').textContent = ''; $('dlgWho').textContent = ''; $('dlgFace').textContent = '';
+    if (rival && !(opt && opt.kart === false) && lines[0] && lines[0][0] === 'rakip') rivalCard(rival, () => { if (dl) stepDlg(); });
+    else setTimeout(() => { if (dl && dl.i === 0 && !dl.typing && !$('dlgSay').textContent) stepDlg(); }, 380);
+  }
+  function rivalCard(r, cb) {
+    const el = $('rcard');
+    el.innerHTML = `<div class="rc-in" style="--c:${r.renk}"><div class="rc-no">GECE LİSTESİ #${r.no}</div><div class="rc-ad">${r.lakap}</div><div class="rc-tam">${r.ad}</div><div class="rc-oz">${r.ozet || ''}</div><div class="rc-cizgi"></div></div>`;
+    el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    if (dl && dl.bg) { Y.setShowCar(rivalVis(r.no)); dl.rivalCar = true; Y.cine(0); Y.cineFx(0.9); }
+    SES.sfx('riser'); setTimeout(() => SES.sfx('hit'), 650);
+    let bitti = false;
+    const fin = () => { if (bitti) return; bitti = true; el.classList.remove('on'); el.onclick = null; cb(); };
+    el.onclick = e => { e.stopPropagation(); fin(); };
+    setTimeout(fin, 2600);
   }
   function stepDlg() {
     if (!dl) return;
-    if (dl.i >= dl.lines.length) { const d = dl.done; dl = null; d && d(); return; }
+    const box = $('dlg');
+    if (dl.i >= dl.lines.length) {
+      const d = dl.done; dl = null;
+      box.classList.add('cikis'); SES.sfx('swoosh');
+      setTimeout(() => { box.classList.remove('cine', 'cikis', 'polis'); d && d(); }, 420);
+      return;
+    }
     const [who, text] = dl.lines[dl.i];
     let c = CH[who];
     if (who === 'rakip' && dl.rival) c = { ad: dl.rival.ad, renk: dl.rival.renk, bas: dl.rival.bas, unvan: 'Gece Listesi #' + dl.rival.no };
     if (!c) c = CH.anlatici;
-    const box = $('dlg');
     box.classList.toggle('nar', who === 'anlatici');
+    box.classList.toggle('polis', who === 'sert' || who === 'telsiz');
+    box.style.setProperty('--c', c.renk || '#ff2e63');
+    // konuşmacı değişince: yeni kamera çekimi, giriş animasyonu, geçiş sesi
+    if (who !== dl.last) {
+      box.classList.toggle('sag', who !== 'sen' && who !== 'anlatici');
+      const f = $('dlgFace'), tx = box.querySelector('.txt');
+      f.classList.remove('in'); tx.classList.remove('in'); void f.offsetWidth; f.classList.add('in'); tx.classList.add('in');
+      if (dl.last) SES.sfx('swoosh');
+      if (dl.bg) {
+        dl.shot++;
+        Y.cine(who === 'anlatici' ? 3 : dl.shot);
+        const wantRival = who === 'rakip' && !!dl.rival;
+        if (wantRival !== dl.rivalCar) { Y.setShowCar(wantRival ? rivalVis(dl.rival.no) : visOf(S.sec)); dl.rivalCar = wantRival; }
+        Y.cineFx(who === 'rakip' || who === 'kobra' ? 0.35 : 0, who === 'sert' || who === 'telsiz' ? [0.92, 0.96, 1.16] : who === 'defne' ? [1.08, 0.98, 0.98] : [1.02, 0.98, 1.06]);
+      }
+      dl.last = who;
+    }
     $('dlgFace').textContent = c.bas; $('dlgFace').style.color = c.renk;
     $('dlgWho').innerHTML = (c.ad === 'Sen' ? (S.isim || 'Sen') : c.ad) + (c.unvan ? `<small>${c.unvan}</small>` : '');
     $('dlgWho').style.color = c.renk;
@@ -497,18 +537,20 @@
     clearInterval(dl.typing);
     let k = 0;
     dl.full = text;
+    $('dlgFace').classList.add('konus');
     dl.typing = setInterval(() => {
       k += 2; say.textContent = text.slice(0, k);
       if (k % 6 === 0) SES.sfx('type');
-      if (k >= text.length) { clearInterval(dl.typing); dl.typing = 0; }
+      if (k >= text.length) { clearInterval(dl.typing); dl.typing = 0; $('dlgFace').classList.remove('konus'); }
     }, 22);
   }
   $('dlg').addEventListener('click', e => {
-    if (!dl || e.target.id === 'dlgSkip') return;
-    if (dl.typing) { clearInterval(dl.typing); dl.typing = 0; $('dlgSay').textContent = dl.full; return; }
+    if (!dl || e.target.id === 'dlgSkip' || $('rcard').classList.contains('on')) return;
+    if (dl.last === null) { stepDlg(); return; } // ilk satır daha açılmadan dokunulduysa onu göster
+    if (dl.typing) { clearInterval(dl.typing); dl.typing = 0; $('dlgSay').textContent = dl.full; $('dlgFace').classList.remove('konus'); return; }
     dl.i++; stepDlg();
   });
-  $('dlgSkip').onclick = e => { e.stopPropagation(); if (!dl) return; clearInterval(dl.typing); const d = dl.done; dl = null; d && d(); };
+  $('dlgSkip').onclick = e => { e.stopPropagation(); if (!dl) return; clearInterval(dl.typing); $('rcard').classList.remove('on'); dl.i = dl.lines.length; stepDlg(); };
 
   // ───────── HIZLI YARIŞ ─────────
   const QR = { tip: 'devre', bolge: 0, pist: 'l1', tur: 2, rakip: 4, zor: 1, hava: 'acik', saat: 'gunduz', polis: 0 };
@@ -522,7 +564,7 @@
     const types = ['devre', 'sprint', 'drag', 'hiz', 'eleme', 'gise', 'drift', 'duello', 'kovala', 'kacis'];
     const mz = maxZone();
     if (QR.bolge > mz) QR.bolge = 0;
-    const tracks = V.TRACKS.filter(t => t.bolge === QR.bolge && (QR.tip === 'kovala' || QR.tip === 'kacis' || QR.tip === 'duello' ? t.tip !== 'duz' : trackOk(t, QR.tip)));
+    const tracks = V.TRACKS.filter(t => t.bolge === QR.bolge && (QR.tip === 'kovala' || QR.tip === 'kacis' ? t.tip === 'dongu' : QR.tip === 'duello' ? t.tip !== 'duz' : trackOk(t, QR.tip)));
     if (!tracks.find(t => t.id === QR.pist)) QR.pist = tracks[0] ? tracks[0].id : null;
     const opt = (k, val, label, extra) => `<div class="o ${QR[k] === val ? 'on' : ''}" onclick="A.qr('${k}',${typeof val === 'string' ? `'${val}'` : val})">${label}${extra || ''}</div>`;
     const solo = ['gise', 'drift', 'kovala', 'kacis'].includes(QR.tip);
@@ -636,6 +678,13 @@
     }
     S.ar.sure = Math.max(S.ar.sure, res.time);
     checkAch(); save();
+  };
+  // v15: kovalamaca süresi her saniye kayda geçer; rakip şartı dolunca haber verir
+  window.onPursTime = t => {
+    const eski = S.ar.sure; S.ar.sure = Math.max(S.ar.sure, t); S.ist.sure = Math.max(S.ist.sure || 0, t);
+    const r = RIV(S.kar.rakip), k = r && r.kovala.find(x => x.t === 'sure');
+    if (k && eski < k.n && S.ar.sure >= k.n) toast(`🚨 Kovalamaca şartı tamam: ${k.n} sn!`, 'ach');
+    if (Math.floor(t) % 5 === 0) save();
   };
   window.onStat = (k, n) => {
     if (k === 'kilpayi') { S.ist.kilpayi += n; dailyProg('kilpayi', n); }
@@ -1112,7 +1161,7 @@ ${Object.keys(S.imza).length ? `<h3>İmza boyaları <span class="price">bedava</
     document.addEventListener('pointerdown', () => SES.unlock(), { once: true });
   }
 
-  window.A = { gkSec, _ganimet: no => ganimet(no), tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
+  window.A = { gkSec, _ganimet: no => ganimet(no), _hikaye: (no, lines) => story(lines, () => goMenu(), RIV(no)), tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
     claimDaily, claimTask, set, askName, backup, resetAll, replayStory, get S() { return S; }, goMenu, _events: EVENTS };
   boot();
 })();

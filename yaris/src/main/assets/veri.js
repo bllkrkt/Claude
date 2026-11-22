@@ -238,16 +238,16 @@
     const ev = [];
     const Z = { 0: ['l1', 'l2', 'l3', 'l4', 'l5'], 1: ['s1', 's2', 's3', 's4'], 2: ['m1', 'm2', 'm3', 'm4', 'm5'], 3: ['h1', 'h2', 'h3', 'h4'], 4: ['d1', 'd2', 'd3', 'd4'], 5: ['o1', 'o2', 'o3', 'o4'] };
     const plan = {
-      10: [['devre', 'l1', 2], ['sprint', 'l2'], ['drag', 'l4']],
-      9: [['hiz', 'l5'], ['eleme', 'l3', 4], ['kovala', 'l2', 0, { t: 'sure', n: 40 }], ['gise', 'l5']],
+      10: [['devre', 'l1', 2], ['sprint', 'l2'], ['drag', 'l4'], ['kovala', 'l3', 0, { t: 'sure', n: 35 }]], // v15: ilk rakibin 30 sn kovalamaca şartı için
+      9: [['hiz', 'l5'], ['eleme', 'l3', 4], ['kovala', 'l3', 0, { t: 'sure', n: 40 }], ['gise', 'l5']],
       8: [['devre', 's1', 2], ['drift', 's3'], ['sprint', 's2'], ['drag', 's4']],
-      7: [['eleme', 's3', 4], ['hiz', 's2'], ['kacis', 's2'], ['gise', 's2'], ['devre', 's3', 3]],
-      6: [['devre', 'm1', 2], ['sprint', 'm2'], ['drag', 'm4'], ['drift', 'm3'], ['kovala', 'm5', 0, { t: 'etkisiz', n: 3 }]],
+      7: [['eleme', 's3', 4], ['hiz', 's2'], ['kacis', 's1'], ['gise', 's2'], ['devre', 's3', 3]],
+      6: [['devre', 'm1', 2], ['sprint', 'm2'], ['drag', 'm4'], ['drift', 'm3'], ['kovala', 'm1', 0, { t: 'etkisiz', n: 3 }]],
       5: [['hiz', 'm5'], ['eleme', 'm3', 4], ['gise', 'm2'], ['devre', 'm3', 3], ['sprint', 'm5']],
-      4: [['devre', 'h1', 2], ['sprint', 'h2'], ['drag', 'h3'], ['drift', 'h4'], ['kacis', 'h2'], ['hiz', 'h2']],
-      3: [['sprint', 'd2'], ['drift', 'd1'], ['devre', 'd4', 3], ['gise', 'd3'], ['eleme', 'd1', 4], ['kovala', 'd3', 0, { t: 'engel', n: 2 }]],
-      2: [['sprint', 'o1'], ['devre', 'o2', 2], ['drag', 'o3'], ['hiz', 'o4'], ['kacis', 'o1'], ['gise', 'o4']],
-      1: [['sprint', 'o4'], ['devre', 'o2', 3], ['eleme', 'd4', 4], ['drift', 'm1'], ['kovala', 'o1', 0, { t: 'sure', n: 120 }], ['hiz', 'o1']],
+      4: [['devre', 'h1', 2], ['sprint', 'h2'], ['drag', 'h3'], ['drift', 'h4'], ['kacis', 'h4'], ['hiz', 'h2']],
+      3: [['sprint', 'd2'], ['drift', 'd1'], ['devre', 'd4', 3], ['gise', 'd3'], ['eleme', 'd1', 4], ['kovala', 'd4', 0, { t: 'engel', n: 2 }]],
+      2: [['sprint', 'o1'], ['devre', 'o2', 2], ['drag', 'o3'], ['hiz', 'o4'], ['kacis', 'o2'], ['gise', 'o4']],
+      1: [['sprint', 'o4'], ['devre', 'o2', 3], ['eleme', 'd4', 4], ['drift', 'm1'], ['kovala', 'o2', 0, { t: 'sure', n: 120 }], ['hiz', 'o1']],
     };
     for (const r of RIVALS) {
       const p = plan[r.no], tier = 10 - r.no; // 0..9
