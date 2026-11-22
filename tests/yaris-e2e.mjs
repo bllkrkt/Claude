@@ -47,6 +47,7 @@ await page.waitForFunction(() => document.getElementById('res').classList.contai
 await page.keyboard.up('ArrowUp');
 console.log('bitiş', JSON.stringify(await dbg()), JSON.stringify(errors.slice(0,3)));
 await shot('05-sonuc');
+{ const k = await page.evaluate(() => window.IKON ? window.IKON.find() : ['IKON yok']); if (k.length) errors.push('emoji: ' + k.slice(0, 5).join(' | ')); }
 console.log('sonuç ekranı', await page.evaluate(() => document.getElementById('res').classList.contains('on')), await page.evaluate(() => document.getElementById('resBig').textContent));
 await page.click('#rCont');
 await page.waitForTimeout(300);
@@ -57,6 +58,7 @@ for (const t of ['kariyer', 'hizli', 'serbest', 'meydan', 'rekor', 'garaj', 'gun
   await page.evaluate(t => window.A.tab(t), t);
   await page.waitForTimeout(250);
   await shot('06-menu-' + t);
+  { const k = await page.evaluate(() => window.IKON ? window.IKON.find() : ['IKON yok']); if (k.length) errors.push('emoji: ' + k.slice(0, 5).join(' | ')); }
 }
 await page.evaluate(() => { window.A.tab('garaj'); window.A.gt('gorunum'); });
 await page.evaluate(() => { window.A.dr('vinyl', 3); window.A.dr('neon', 2); window.A.dr('spoiler', 4); window.A.dr('kit', 2); });
@@ -82,6 +84,7 @@ for (const [tip, pist] of types) {
   if (tip === 'kovala' || tip === 'kacis') await page.evaluate(() => { const R = window.YARIS.R; R.purs.heat = 4; R.purs.blockT = 0; R.purs.heatT = 0; });
   await page.waitForTimeout(1500);
   await shot('08-' + tip);
+  { const k = await page.evaluate(() => window.IKON ? window.IKON.find() : ['IKON yok']); if (k.length) errors.push('emoji: ' + k.slice(0, 5).join(' | ')); }
   const d = await dbg();
   console.log(tip, JSON.stringify(d));
   await page.keyboard.up('ArrowUp');

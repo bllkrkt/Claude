@@ -15,6 +15,7 @@ adı, karakterleri, "Blacklist" gibi isimleri, gerçek araba markaları kullanı
 | `araba3d.js` | `ARABA3D.make(opt)`: profilden ekstrüzyonla araba modeli (8 gövde + kamyon/otobüs), jant, kit, rüzgârlık, neon, desen dokusu, polis ışığı |
 | `dunya.js` | `DUNYA.build(scene,T,zone,opts)`: yol, kaldırım, binalar (instanced), bölge süsleri, gökyüzü, sis, yağmur, lambalar; kapı/radar/kontrol noktası/takip engeli/barikat üreticileri |
 | `post.js` | `POST`: ekran efektleri — sahne HDR doku hedefine çizilir; parlama (bloom, 2 seviye), hız bulanıklığı, nitro renk kayması, vinyet, ACES + sRGB. Grafik Düşük'te kapalı (`draw()` doğrudan çizer) |
+| `ikon.js` | `IKON` (v8): oyunun kendi SVG simge seti (~80 simge, 24×24 çizgi). Kaynakta emoji yazılır; MutationObserver ekrana giren her metindeki emojiyi simgeye çevirir (`IKON.h(metin)` → HTML). YENİ EMOJİ KULLANIRSAN `E` eşlemesine ekle, yoksa `yaris-e2e` testi `emoji:` hatası verir. Her karede değişen göstergelerde `setH(el, html)` kullan (sadece değişince yazar) |
 | `ekstra.js` | `EKSTRA` (v7): hasar görseli, kırılabilir engeller, serbest sürüş gizli parçaları, hayalet kaydı/oynatma. `yaris.js` kancaları: `start` sonunda `EKSTRA.start(R, exApi())`, `simulate`→`step`, `stepRace`→`frame`, `onLap`→`lap`, `finish`→`finish(res)`, `stopRace`→`stop`, duvar/çarpışma→`dmg(c, imp)` |
 | `yaris.js` | `YARIS`: yarış motoru — fizik, yapay zekâ, trafik, polis, yarış türleri, kamera, efektler, HUD, kontroller, vitrin (garaj sahnesi) |
 | `oyun.js` | `A`: kayıt, kariyer, garaj, menüler, hikâye diyalogu, ödüller, günlük, başarımlar, ayarlar |
@@ -116,3 +117,7 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - Gizli parçalar: serbest sürüşte bölge başına 10 (`KOL_N`; kestirme ortası, rampa ardında havada, yol kenarı; tohum `4242+bölge*97`). Kayıt `S.kol[bölge]=[id]`, parça başına +500💰 +100🔥, hepsi +10.000💰 +2.500🔥, başarım `parca1`. Işık sütunu 260 m içinde görünür.
 - Rekorlar/hayalet: `cfg.pistId` her yarışta; döngüde tur süreleri, sprintte toplam süre → `S.rek[pist]={tur,sure}`. Hayalet kaydı ayrı anahtar `gece-kacagi-hayalet` (pist → {t, p:[x,y,z,yön,s ×10 tamsayı, 10 Hz], vis}). Menü "⏱ Rekorlar" → `A.ttStart(id)`: rakipsiz/trafiksiz, `cfg.hayalet=true`, üstte ± fark. Başarım `hayalet`.
 - Denge (0.9): eski 33/50, v7 32/50 (fark rastgelelik).
+
+## v8 — simgeler
+- Bütün emojiler `ikon.js` simgeleriyle değişti (menü, rozetler, karakter yüzleri, başarımlar, parçalar, gösterge, tuşlar). Kanvas dokularındaki ok/yıldız (dunya.js tabelalar) metin olarak kaldı.
+- Test: `IKON.find()` sayfada kalan emojiyi listeler; e2e menülerde, yarışlarda ve sonuç ekranında kontrol eder.

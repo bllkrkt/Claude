@@ -319,7 +319,7 @@
   }
   // v7 ekleri (ekstra.js) için motor yardımcıları
   function exApi() {
-    return { THREE, P, A3, SES, popup, vib, smokeFront,
+    return { THREE, P, A3, SES, popup, vib, smokeFront, setH,
       dsS: t => { // oyuncudan bu nesneye ana yol boyunca mesafe (kestirmedekiler için yaklaşık)
         const pl = R.player, T = R.T;
         let s = t.sc ? t.sc.sA + t.s * (t.sc.sB - t.sc.sA) / t.sc.T.L : t.s;
@@ -1731,6 +1731,8 @@
       rpm: $('h-rpmarc'), heat: $('h-heat'), bust: $('h-bust'), evade: $('h-evade'), evl: $('h-evl'), pinfo: $('h-purinfo'), dpts: $('h-dpts'), dmul: $('h-dmul'), drift: $('hud-drift'), vign: $('hud-vign'), map: $('hud-map').getContext('2d') };
     r.hudT = 0;
   }
+  // v8: emoji yerine simge (ikon.js); sadece değişince yaz (her karede DOM'u yormasın)
+  function setH(el, html) { if (el._h === html) return; el._h = html; el.innerHTML = G.IKON ? G.IKON.h(html) : html; }
   function fmtT(t) { t = Math.max(0, t); const m = Math.floor(t / 60), s = t - m * 60; return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1); }
   function updateHud(dt) {
     const r = R, e = r.hudEl, pl = r.player, tip = r.cfg.tip;
@@ -1766,12 +1768,12 @@
     }
     if (r.purs) {
       const p = r.purs;
-      e.heat.innerHTML = '★'.repeat(p.heat) + '<span>' + '★'.repeat(5 - p.heat) + '</span>';
+      setH(e.heat, '★'.repeat(p.heat) + '<span>' + '★'.repeat(5 - p.heat) + '</span>');
       e.bust.style.width = (p.bust * 100) + '%';
       e.evade.style.width = (p.mode === 'sogu' ? p.cool / (8 + p.heat * 3) * 100 : p.evade * 100) + '%';
       e.evl.textContent = p.mode === 'sogu' ? 'GİZLENİYOR' : 'KAÇIŞ';
       e.evade.parentNode.classList.toggle('cool', p.mode === 'sogu');
-      e.pinfo.textContent = `🚓 ${r.cops.filter(c => !c.disabled && !c.block).length}   ⏱ ${Math.floor(p.time)} sn   🔥 ${Math.round(p.bounty).toLocaleString('tr-TR')} ÜN`;
+      setH(e.pinfo, `🚓 ${r.cops.filter(c => !c.disabled && !c.block).length} &nbsp; ⏱ ${Math.floor(p.time)} sn &nbsp; 🔥 ${Math.round(p.bounty).toLocaleString('tr-TR')} ÜN`);
       e.vign.className = p.mode === 'takip' ? (Math.floor(r.t * 3) % 2 ? 'red' : 'blue') : '';
     } else e.vign.className = pl.nitroOn ? 'nit' : '';
   }

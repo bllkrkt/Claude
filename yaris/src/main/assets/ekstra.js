@@ -274,8 +274,7 @@
     }
     const el = r.hudEl && document.getElementById('hud-goal');
     if (el && r.cfg.koleksiyon) {
-      const txt = '🧩 Gizli parça ' + r.ex.kolHave + '/' + r.ex.kolN;
-      if (el.textContent !== txt) el.textContent = txt;
+      A.setH(el, '🧩 Gizli parça ' + r.ex.kolHave + '/' + r.ex.kolN);
     }
   }
 
@@ -354,7 +353,7 @@
       if (rc && rc.on && lo > 0 && lo < n - 1) {
         const dlt = (rc.t) - lo * 0.1;
         const txt = '👻 ' + (dlt >= 0 ? '+' : '−') + Math.abs(dlt).toFixed(1) + ' sn';
-        if (el.textContent !== txt) { el.textContent = txt; el.style.color = dlt > 0 ? '#ff6b81' : '#5dffa0'; }
+        A.setH(el, txt); el.style.color = dlt > 0 ? '#ff6b81' : '#5dffa0';
       }
     }
   }
