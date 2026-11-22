@@ -16,7 +16,7 @@
   const fpsW = { t: 0, n: 0 };
   const tmp = {}, tmp2 = {};
   const input = { steer: 0, gas: 0, brake: 0, nitro: 0, hb: 0, odak: 0, tilt: 0, laneL: 0, laneR: 0, shift: 0, gUp: 0, gDn: 0 };
-  const opt = { autoGas: false, assist: 0.5, tilt: false, cam: 0, vib: true, tiltSens: 1, fx: 2,
+  const opt = { klasik: false, autoGas: false, assist: 0.5, tilt: false, cam: 0, vib: true, tiltSens: 1, fx: 2,
     steerSens: 1, steerMode: 'kaydir', manual: false, traffic: 1, shake: 1 }; // v10: direksiyon hassasiyeti/tipi, elle vites, trafik çarpanı, sarsıntı
 
   // ───────── kurulum ─────────
@@ -627,6 +627,13 @@
     if (c.air) c.v -= acc * dt * 0.95; // havadayken gaz/fren etkisiz
     if (!gas && !input.brake && Math.abs(c.v) < 0.3) c.v = 0;
     // direksiyon
+    let sdot = 0;
+    if (!isDrag && !opt.klasik && !c.spinOut) {
+      // v14: gerçek araç dinamiği (ön/arka aks, lastik kayması, ağırlık aktarımı)
+      const grip = st.grip * r.gripMul * (c.spike > 0 ? 0.75 : 1);
+      sdot = dynStep(c, dt, grip, P().curvAt(T, loc(c)), acc, gas, input.hb && Math.abs(c.v) > 10);
+    } else {
+    // direksiyon
     const grip = st.grip * r.gripMul * (c.spike > 0 ? 0.75 : 1);
     const spd = Math.max(Math.abs(c.v), 4);
     // v10: dönüş gücü — eskiden orta hızda virajı ancak tam kilitle dönebiliyordu
@@ -672,16 +679,101 @@
       }
     } else if (D.on && Math.abs(c.slip) < 0.1) endDrift(true);
     // yola göre açı
-    const sdot = c.v * Math.cos(c.a) / Math.max(0.3, 1 + k * c.d);
+    sdot = c.v * Math.cos(c.a) / Math.max(0.3, 1 + k * c.d);
     c.a += (yaw + k * sdot) * dt;
     c.a = clamp(c.a, -1.1, 1.1);
     c.d += c.v * Math.sin(c.a) * dt;
     moveS(c, sdot * dt);
+    c.ba = null;
+    }
+    if (c.ba != null) c._a = c.a;
     walls(c, dt);
     // nitro dolumu: yüksek hız ve hava akımı
     if (!c.nitroOn && c.v > st.vmax * 0.8) c.nitro = Math.min(1, c.nitro + dt * 0.012);
     r.stats.mesafe += Math.abs(sdot) * dt;
     if (c.v * KMH > 300 && G.onAch) G.onAch('hiz300');
+  }
+
+  // ───────── v14 ARAÇ DİNAMİĞİ (Most Wanted tarzı arcade ayarlı bisiklet modeli) ─────────
+  // Pist uzayında: c.ba = gövdenin yola göre açısı (sağ +), c.vy = gövdeye göre yanal hız (sağ +), c.yaw = dönüş hızı (rad/sn, sağ +),
+  // c.v = gövde ileri hızı. Hareket yönü c.a = ba + β (β = atan2(vy, v)); c.slip = ba − a (gövde ile gidiş arasındaki açı, görsel ve drift puanı).
+  const DYN = { lf: 1.2, lr: 1.4, B: 8.5, C: 1.45 };
+  const tire = (al, D) => -D * Math.sin(DYN.C * Math.atan(DYN.B * al));
+  function dynStep(c, dt, grip, k, acc, gas, hb) {
+    const L = DYN.lf + DYN.lr, Iz = DYN.lf * DYN.lr * 1.1, asst = opt.assist, mu = grip * GRAV;
+    // dış etkiler (çarpışma, duvar, kestirme girişi) hareket açısını değiştirdiyse gövde de onunla döner
+    if (c.ba == null || c._a == null) { c.ba = c.a + (c.slip || 0); c.vy = 0; c.yaw = 0; }
+    else if (c.a !== c._a) { c.ba += c.a - c._a; c.vy *= 0.5; }
+    const n = 4, h = dt / n;
+    let sd = 0;
+    for (let i = 0; i < n; i++) {
+      const u = c.v, au = Math.abs(u), w = c.vy, rr = c.yaw, sg = u < 0 ? -1 : 1;
+      const beta = Math.atan2(w, Math.max(au, 1));
+      // direksiyon açısı: hız arttıkça küçülür (ağırlaşır)
+      let delta = c.steer * 0.5 / (1 + au / 12);
+      // otomatik kontra: ön tekerlekler kayma yönüne döner (dokunmatikte savrulmayı yakalamak için)
+      delta += clamp(beta, -0.6, 0.6) * (0.3 + 0.5 * asst) * sg;
+      // sürüş yardımı: virajın gerektirdiği direksiyonu ekler; bırakınca yola hizalar
+      if (!c.air && asst > 0) {
+        delta += asst * -k * L * 0.9;
+        if (Math.abs(c.steer) < 0.12) delta += asst * -c.a * 0.5 / (1 + au / 15);
+      }
+      let du = 0, dw, dr;
+      if (c.air) { dw = 0; dr = -rr * 0.5; }
+      else if (au < 3) { // düşük hız: lastikler kaymaz, araba geometrisiyle döner
+        const rk = u * Math.tan(delta) / L;
+        dr = (rk - rr) * 12; dw = -w * 8;
+      } else {
+        // ağırlık aktarımı: frende öne, gazda arkaya
+        const lt = clamp(-acc / GRAV * 0.2, -0.16, 0.16);
+        const Nf = DYN.lr / L + lt, Nr = DYN.lf / L - lt;
+        let Df = mu * Nf * 1.02, Dr = mu * Nr * 1.08;  // arka biraz daha tutar: kararlı, hafif önden kayan araba
+        if (hb) Dr *= 0.38;                               // el freni: arka kopar → drift
+        else if (gas && acc > 0) Dr *= 1 - clamp(acc / (mu * 2.2), 0, 0.18); // gazla arka biraz hafifler
+        const af = Math.atan2(w + DYN.lf * rr, au) - delta * sg;
+        const ar = Math.atan2(w - DYN.lr * rr, au);
+        const Fyf = tire(af, Df), Fyr = tire(ar, Dr), cd = Math.cos(delta);
+        dw = Fyf * cd + Fyr - rr * u;
+        dr = (DYN.lf * Fyf * cd - DYN.lr * Fyr) / Iz;
+        du = rr * w;
+        // kararlılık: dönmeye başlayan arabayı yardım oranında toparla (el freninde yok)
+        // kararlılık (arcade): kayma açısını sınırlar, el freni bırakılınca araba toparlanır
+        dr += -rr * (hb ? 0.1 : 0.3) + beta * sg * (hb ? 0.5 : 1.6 + 3 * asst);
+        const bm = hb ? 0.85 : 0.55, ab = Math.abs(beta);
+        if (ab > bm) dr += Math.sign(beta) * sg * (ab - bm) * 18;
+      }
+      const V0 = Math.hypot(c.v, c.vy);
+      c.v += du * h; c.vy += dw * h; c.yaw += dr * h;
+      // kayarken hız korunur (lastik sürtmesinin yavaşlatmasının %65'i geri verilir; gazdaysan daha çok)
+      if (!c.air && au > 6 && Math.abs(beta) > 0.08) {
+        const V1 = Math.hypot(c.v, c.vy), keep = gas ? 0.7 : 0.5;
+        if (V1 < V0 && V1 > 0.1) { const f = (V0 - (V0 - V1) * (1 - keep)) / V1; c.v *= f; c.vy *= f; }
+      }
+      c.yaw = clamp(c.yaw, -3.2, 3.2);
+      // yön ve konum
+      const V = Math.hypot(c.v, c.vy);
+      const b2 = Math.atan2(c.vy, Math.max(Math.abs(c.v), 0.5)) * sg;
+      const sdot0 = V * Math.cos(c.ba + b2) / Math.max(0.3, 1 + k * c.d);
+      c.ba += (c.yaw + k * sdot0) * h;
+      c.ba = clamp(c.ba, -1.45, 1.45);
+      c.a = clamp(c.ba + b2, -1.25, 1.25);
+      const sdot1 = (c.v < 0 ? -1 : 1) * V * Math.cos(c.a) / Math.max(0.3, 1 + k * c.d);
+      c.d += V * Math.sin(c.a) * (c.v < 0 ? -1 : 1) * h;
+      moveS(c, sdot1 * h); sd = sdot1;
+    }
+    if (hb) c.v *= 1 - dt * 0.12;                         // el freni hafif yavaşlatır
+    c.slip = c.ba - c.a;
+    c.w = c.yaw;
+    // drift puanı: el freni şart değil, her kayma sayılır
+    const D = R.drift;
+    if (Math.abs(c.slip) > 0.14 && c.v > 11 && !c.air) {
+      if (!D.on) { D.on = true; D.pts = 0; D.t = 0; }
+      D.t += dt;
+      D.pts += c.v * Math.abs(c.slip) * dt * 20 * D.mult;
+      c.nitro = Math.min(1, c.nitro + dt * 0.11);
+      if (D.t > 2.5 * D.mult && D.mult < 5) D.mult++;
+    } else if (D.on && Math.abs(c.slip) < 0.1) endDrift(true);
+    return sd;
   }
 
   function endDrift(bank) {
@@ -2091,6 +2183,11 @@
     // v10: direksiyon eğrisi ve daha güçlü dönüşe uyum (insan gibi: aynı dönüş için daha az, eğriyi telafi eden giriş)
     const st0 = clamp(((tgt - pl.d) * 0.12 - pl.a * 2.2 + (P().curvAt(TL, sl + 10) * -pl.v * 0.25) * (1 - opt.assist)) / 1.38, -1, 1);
     input.steer = Math.sign(st0) * Math.pow(Math.abs(st0), 1 / 1.35);
+    if (!opt.klasik && r.cfg.tip !== 'drag') { // v14: gerçek dinamik için: konum + açı + dönüş hızı sönümü (viraj ileri beslemesini yardım verir)
+      const k0 = P().curvAt(TL, sl + 6), L0 = 2.6;
+      const sd = clamp((tgt - pl.d) * 0.07 - pl.a * 1.5 - (pl.yaw || 0) * 0.25 + (-k0 * L0 * (1 - opt.assist * 0.9)) * (1 + Math.abs(pl.v) / 12) / 0.5, -1, 1);
+      input.steer = Math.sign(sd) * Math.pow(Math.abs(sd), 1 / 1.35);
+    }
     const kmax = P().maxCurv(TL, sl, 25 + pl.v * 1.5);
     const vC = Math.sqrt(pl.st.grip * r.gripMul * GRAV * 1.12 / Math.max(0.0008, kmax)) * skill;
     input.gas = pl.v < vC ? 1 : 0; input.brake = pl.v > vC + 4 ? 1 : 0;

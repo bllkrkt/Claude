@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '13.0';
+  const VER = '14.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -28,7 +28,7 @@
       kol: {}, rek: {}, imza: {}, gan: 0, // v13: imza boyaları (rakip no → 1), toplanan ganimet kartı
       // v7: serbest sürüş gizli parçaları (bölge → bulunanlar), pist rekorları (pist → {tur, sure})
       bas: {}, mo: {}, gun: { tarih: '', seri: 0, alindi: '', gorev: [], gtarih: '' },
-      set: { ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2,
+      set: { surus: 'gercek', ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2,
         trafik: 1, vites: 'oto', dirTip: 'kaydir', dirHassas: 1, tusBoyut: 1, tusSaydam: 1, harita: true, sarsinti: 1, hizBirim: 'kmh' }, // v10
       ilk: true,
     };
@@ -898,6 +898,7 @@ ${Object.keys(S.imza).length ? `<h3>İmza boyaları <span class="price">bedava</
     const o = (k, v, l) => `<div class="o ${s[k] === v ? 'on' : ''}" onclick="A.set('${k}',${typeof v === 'string' ? `'${v}'` : v})">${l}</div>`;
     const sw = (t, h, info) => `<div class="ayr"><h3>${t}</h3>${info ? `<p class="mut" style="font-size:12px;margin:-4px 0 6px">${info}</p>` : ''}<div class="sw">${h}</div></div>`;
     let h = '<h3 class="grp">🚗 Sürüş</h3>';
+    h += sw('Sürüş modeli', o('surus', 'gercek', 'Gerçekçi') + o('surus', 'klasik', 'Klasik (eski)'), s.surus === 'klasik' ? 'Araba yolu kendisi takip eder, kaymaz.' : 'Lastikler gerçekten tutunur ve kayar. Frende ağırlık öne biner, el freninde arka kayar.');
     h += sw('Kontrol', o('kontrol', 'dokun', '👆 Dokunmatik') + o('kontrol', 'egme', '📱 Telefonu eğ'));
     if (s.kontrol === 'egme') h += sw('Eğme hassasiyeti', o('hassas', 0.7, 'Düşük') + o('hassas', 1, 'Orta') + o('hassas', 1.4, 'Yüksek'));
     else {
@@ -951,7 +952,7 @@ ${Object.keys(S.imza).length ? `<h3>İmza boyaları <span class="price">bedava</
   function applyOpts() {
     const s = S.set, o = Y.opt;
     o.tilt = s.kontrol === 'egme'; o.tiltSens = s.hassas; o.autoGas = s.otoGaz; o.assist = [0, 0.3, 0.55, 0.8][s.yardim]; o.cam = s.kamera; o.vib = s.titresim; o.fx = s.efekt;
-    o.steerSens = s.dirHassas; o.steerMode = s.dirTip; o.manual = s.vites === 'manuel'; o.traffic = s.trafik; o.shake = s.sarsinti; o.mph = s.hizBirim === 'mph';
+    o.klasik = s.surus === 'klasik'; o.steerSens = s.dirHassas; o.steerMode = s.dirTip; o.manual = s.vites === 'manuel'; o.traffic = s.trafik; o.shake = s.sarsinti; o.mph = s.hizBirim === 'mph';
     const de = document.documentElement.style; de.setProperty('--ctl', s.tusBoyut); de.setProperty('--ctlop', s.tusSaydam);
     document.body.classList.toggle('nomap', !s.harita);
     SES.setVol(s.ses, s.muzik);

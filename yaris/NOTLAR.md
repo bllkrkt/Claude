@@ -156,3 +156,12 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - Fotoğraf modu: duraklat → FOTOĞRAF. `YARIS.photo(on)`, `photoFrame` (döngüde `PH` varken yarış yerine çizilir), `photoShot(filtre, çerçeve)` → JPEG dataURL (2B kanvasta `ctx.filter`, sinema şeridi/vinyet, "GECE KAÇAĞI" yazısı). Sürükle=döndür, iki parmak=yakınlaş, kaydırıcılar uzaklık/açı/eğim, 7 filtre, arabayı gizle. Kayıt: Android `AndroidBridge.saveImage(ad, base64)` → Galeri/Resimler/GeceKacagi; tarayıcıda indirme. Başarım `foto`.
 - Ganimet Kartları: Liste rakibi yenilince `ganimet(no)`: 3 kapalı kart (havuz: para, Ün, bedava parça +1, rakibin imza boyası+neonu `S.imza[no]`, rakibin arabası). Seçilmeden geri tuşu kapatmaz. İmza boyaları garaj Boya'da bedava satır. `S.gan` sayacı, başarım `ganimet` (5). Test kancası `A._ganimet(no)`.
 - Denge (0.9): 32/50.
+
+## v14 — gerçek araç dinamiği (kullanıcı: "Most Wanted gibi sürüş hissi/dinamikleri olsun")
+- `dynStep(c, dt, grip, k, acc, gas, hb)` (yaris.js, `endDrift` üstünde): bisiklet modeli, 4 alt adım. Durum: `c.ba` gövdenin yola göre açısı, `c.vy` gövdeye göre yanal hız, `c.yaw` dönüş hızı; `c.v` gövde ileri hızı; hareket yönü `c.a = ba + β`; `c.slip = ba − a`. Lastik: basit Pacejka `D·sin(1.45·atan(8.5·α))`, `lf 1.2 / lr 1.4`; ağırlık aktarımı (fren öne), el freni arka tutuşu ×0,38, gazla arka biraz hafifler; direksiyon açısı hızla küçülür (`0.5/(1+u/12)`).
+- Arcade yardımlar: otomatik kontra (β×(0,3+0,5·yardım)), yardım viraj ileri beslemesi (`−k·L·0,9`) + bırakınca hizalama, kayma açısı sınırı (el freninde 0,85, değilse 0,55 rad) ve toparlanma torku, kayarken hız kaybının %50–70'i geri verilir. Drift puanı artık her kaymada (el freni şart değil).
+- Dış etkiler (`walls`, çarpışma, kestirme ışınlaması) `c.a`'yı değiştirirse bir sonraki adımda `c._a` farkıyla gövde de döner.
+- Ayar `S.set.surus`: 'gercek' (varsayılan) / 'klasik' (`opt.klasik`, eski yol-takip modeli). Drag yarışı ve `spinOut` hep eski yol.
+- Sanal sürücü yeni modelde ayrı direksiyon (konum+açı+dönüş hızı sönümü). Denge (0.9): 30/50; duvar sürtmesi sanal sürücüde 453 → 1022 (sanal sürücünün hız tahmini).
+- Ölçüm betiği fikri: hızlı yarışta `YARIS._fast(1/60,0)` + `YARIS.input` ile senaryo (tam direksiyon / el freni / bırak) ve `pl.slip, pl.yaw` kaydı.
+- Sıradaki büyük adım (kullanıcıya önerildi): kavşaklı açık şehir (şu an pistler duvarlı koridor).
