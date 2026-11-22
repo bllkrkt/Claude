@@ -80,6 +80,11 @@
     W = s.x; H = s.y;
     for (const t of [rtScene, rtA, rtB, rtC, rtD]) if (t) t.dispose();
     rtScene = rt(W, H, { depthBuffer: true, samples });
+    // 24 bit derinlik (varsayılan 16 bit uzakta titreşim ve iç içe geçme yapıyor)
+    if (ren.capabilities.isWebGL2 || ren.extensions.has('WEBGL_depth_texture')) {
+      rtScene.depthTexture = new THREE.DepthTexture(W, H);
+      rtScene.depthTexture.type = THREE.UnsignedIntType;
+    }
     const bw = Math.round(W * scaleBloom), bh = Math.round(H * scaleBloom);
     rtA = rt(bw, bh); rtB = rt(bw, bh);
     rtC = rt(bw >> 1, bh >> 1); rtD = rt(bw >> 1, bh >> 1);

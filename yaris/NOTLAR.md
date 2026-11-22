@@ -37,6 +37,13 @@ adı, karakterleri, "Blacklist" gibi isimleri, gerçek araba markaları kullanı
 - Çevre: park etmiş arabalar (`ARABA3D.parkGeo`, örneklemeli), ağaç, musluk, çöp kutusu, bank, yaya geçidi, rögar, bulut katmanı, zemin kat vitrinleri.
 - Kalite otomatik: bellek ≥6 GB ve ≥8 çekirdek → Yüksek; yarışta 6 sn ortalama <27 kare/sn ise `onLowFps` Orta'ya düşürür.
 
+## Gerçek varlıklar (v3)
+- `varlik.js` (`VARLIK`): açılışta Poly Haven (CC0) fotoğraf dokuları (`tex/`), gökyüzü fotoğrafları (`sky/`, ton eşlenmiş JPG, 2048×1024) ve hafif sokak modelleri (`model/`, glTF; `lib/GLTFLoader.js` r149 ESM'den genel betiğe çevrildi) yüklenir. Gökyüzünden güneş yönü/ufuk rengi çıkarılır; gerçek duvar dokularından pencereli cephe + dükkân cephesi üretilir. Yüklenemezse (ör. file://) eski koddan üretilen görünüme düşer.
+- İndirme betiği: `yaris/varlik-indir/indir.py`. Ağır modeller (lamba, musluk, bariyer, bank: 25-86 bin üçgen) telefona fazla geldiği için çıkarıldı; gltfpack ile sadeleştirme izni yoktu.
+- ÖNEMLİ: VARLIK dokuları/modelleri `userData.varlik` ile işaretli; sahne temizliğinde silinmez (silinirse sonraki yarışta yol kaybolur). Yol/şerit malzemesi `DoubleSide` (şerit geometrisinin yüzü aşağı bakıyor).
+- `post.js` sahne hedefinde 24 bit derinlik dokusu kullanır (16 bit uzakta iç içe geçiyordu). Kamera: yakın/alçak (5.2 m geri, 1.55 m yukarı, FOV 55-72). Kariyer çoğunlukla gündüz/akşam; gündüz filtresi sıcak sarı.
+- Testler artık kendi yerel sunucusunu açar (`yaris-e2e.mjs`), `varlıklar true` yazmalı.
+
 ## Yarış türleri (`cfg.tip`)
 devre, sprint, drag (elle vites `input.shift`, şerit değiştirme, trafiğe sert çarpma = kaza), hiz (radar toplamı),
 eleme (tur sayısı = rakip sayısı, her turun sonuncusu elenir), gise (kontrol noktası süresi pistin viraj hızlarından hesaplanır),
@@ -71,6 +78,8 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
   polis sistemi, 10 meydan okuma, 20 başarım, günlük giriş + görevler, ayarlar (dokun/eğ, oto gaz, yardım, kamera, grafik).
 
 - v2: kestirmeler (AI da kullanır), rampalar ve tepelerden uçuş, kavisli yeni araba modelleri, ekran efektleri (bloom, hız bulanıklığı), sokak ayrıntıları, kayıt birleştirme hatası düzeltildi (iç içe varsayılanlar kayboluyordu). Denge: beceri 0.9 → 37/49 (kestirme kullanan sanal sürücü).
+
+- v3: gerçek fotoğraf dokuları, gökyüzü fotoğrafları, gerçek cepheli caddeler, şerit çizgileri, yakın kamera, sinematik filtre, çizim yükü düşürüldü (parça birleştirme, bölgesel ayıklama).
 
 ## Fikirler (sıradaki)
 - Gizli koleksiyon parçaları (serbest sürüşte), kırılabilir engeller (kasalar, çitler).

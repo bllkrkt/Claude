@@ -72,7 +72,7 @@
   // gok: [üst, ufuk] renkleri; isik: sokak lambası rengi; bina: bina renk aralığı
   const ZONES = [
     { id: 0, ad: 'Liman', yazi: 'Konteynerler, vinçler, sodyum lambalar. Her şey burada başlar.', gok: ['#0b0f2a', '#9a4a32'], sis: '#2a1a24', isik: '#ffb347', zemin: '#2b2b30', bina: ['#3b3f4a', '#5a4a42', '#2f3b4a'], yuk: [8, 22], tema: 'liman', stil: 'sehir', tepe: 1.5, zipla: 1 },
-    { id: 1, ad: 'Sanayi', yazi: 'Bacalar, depolar, kırık asfalt. Kurallar burada eğilir.', gok: ['#0d1a12', '#7a8a3a'], sis: '#1c2418', isik: '#d9ff66', zemin: '#2c2e26', bina: ['#4a4a3a', '#3a3f3a', '#5a5040'], yuk: [10, 26], tema: 'sanayi', stil: 'blok', tepe: 1, zipla: 1 },
+    { id: 1, ad: 'Sanayi', yazi: 'Bacalar, depolar, kırık asfalt. Kurallar burada eğilir.', gok: ['#0d1a12', '#7a8a3a'], sis: '#1c2418', isik: '#ffb347', zemin: '#2c2e26', bina: ['#4a4a3a', '#3a3f3a', '#5a5040'], yuk: [10, 26], tema: 'sanayi', stil: 'blok', tepe: 1, zipla: 1 },
     { id: 2, ad: 'Merkez', yazi: 'Gökdelenler ve neon tabelalar. Şehrin kalbi gece atar.', gok: ['#07071a', '#5a2a8a'], sis: '#140d26', isik: '#9fd8ff', zemin: '#26262e', bina: ['#232838', '#2c2244', '#1d3040'], yuk: [30, 110], tema: 'merkez', stil: 'blok', tepe: 2, zipla: 3 },
     { id: 3, ad: 'Sahil', yazi: 'Palmiyeler, deniz kokusu, sonsuz gün batımı.', gok: ['#2a1650', '#ff8c5a'], sis: '#4a2a4a', isik: '#ffd27f', zemin: '#3a3030', bina: ['#e8d8c0', '#d0b8a0', '#f0e0d0'], yuk: [6, 16], tema: 'sahil', stil: 'sehir', tepe: 4, zipla: 2 },
     { id: 4, ad: 'Dağ Yolu', yazi: 'Çam ormanı, uçurum, firketeler. Fren unutulmaz.', gok: ['#0a1428', '#3a5a7a'], sis: '#1a2430', isik: '#fff2cc', zemin: '#26302a', bina: ['#4a3a2a', '#3a2a20'], yuk: [5, 9], tema: 'dag', stil: 'dag', tepe: 14, zipla: 3 },
@@ -259,7 +259,7 @@
           para: Math.round((1400 + tier * 1600) * (1 + i * 0.08) / 100) * 100, un: 250 + tier * 180 + i * 30,
           polis: (tip === 'sprint' || tip === 'hiz' || tip === 'gise') && tier >= 2 ? Math.min(3, 1 + Math.floor(tier / 4)) : 0,
           hava: (i + r.no) % 4 === 0 ? 'yagmur' : (i + r.no) % 5 === 0 ? 'sis' : 'acik',
-          saat: r.bolge === 3 ? 'aksam' : (i % 3 === 2 ? 'aksam' : 'gece'),
+          saat: r.bolge === 3 ? 'aksam' : (i % 4 === 3 ? 'gece' : i % 3 === 1 ? 'aksam' : 'gunduz'),
         });
       });
     }

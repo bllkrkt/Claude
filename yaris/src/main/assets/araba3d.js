@@ -51,6 +51,45 @@
     return g;
   }
 
+  // ── geometri birleştirme (çizim çağrısını azaltır) ──
+  function mergeGeos(list) {
+    const THREE = T3(), pos = [], nor = [], uv = [], idx = [];
+    for (const { g, m } of list) {
+      const gg = g.index ? g : g; const P = gg.attributes.position, N = gg.attributes.normal, U = gg.attributes.uv;
+      const base = pos.length / 3, v = new THREE.Vector3(), nm = new THREE.Matrix3().getNormalMatrix(m);
+      for (let i = 0; i < P.count; i++) {
+        v.fromBufferAttribute(P, i).applyMatrix4(m); pos.push(v.x, v.y, v.z);
+        if (N) { v.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor.push(v.x, v.y, v.z); } else nor.push(0, 1, 0);
+        if (U) uv.push(U.getX(i), U.getY(i)); else uv.push(0, 0);
+      }
+      if (gg.index) for (let i = 0; i < gg.index.count; i++) idx.push(base + gg.index.getX(i));
+      else for (let i = 0; i < P.count; i++) idx.push(base + i);
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    out.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    out.setIndex(idx);
+    return out;
+  }
+  // grubun doğrudan çocuklarından aynı malzemeyi paylaşan sabit parçaları tek ağda birleştir
+  function compact(grp, keep) {
+    const THREE = T3(), by = new Map();
+    for (const c of grp.children.slice()) {
+      if (!c.isMesh || Array.isArray(c.material) || keep.has(c)) continue;
+      if (!by.has(c.material)) by.set(c.material, []);
+      by.get(c.material).push(c);
+    }
+    for (const [mtl, arr] of by) {
+      if (arr.length < 2) continue;
+      const list = arr.map(c => { c.updateMatrix(); return { g: c.geometry, m: c.matrix.clone() }; });
+      const mesh = new THREE.Mesh(mergeGeos(list), mtl);
+      mesh.renderOrder = Math.max(...arr.map(c => c.renderOrder));
+      for (const c of arr) { grp.remove(c); c.geometry.dispose(); }
+      grp.add(mesh);
+    }
+  }
+
   // ── kesit gövde ──
   function halfW(B, u) {
     const e = 0.62, L2 = B.L / 2, a = Math.abs(u);
@@ -183,14 +222,14 @@
     const disc = new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, w + 0.02, seg), rim && rim.kol === 0 ? rimM : mat('rimdark', () => new THREE.MeshStandardMaterial({ color: 0x222226, roughness: 0.6, metalness: 0.5 })));
     disc.rotation.z = Math.PI / 2; g.add(disc);
     const kol = rim ? rim.kol : 5;
-    if (kol > 0 && Q >= 1) {
+    if (kol > 0 && Q >= 1 && !(rim && rim.basit)) {
       const sw = rim.ince ? 0.035 : 0.07;
       for (let i = 0; i < kol; i++) {
         const sp = new THREE.Mesh(new THREE.BoxGeometry(w + 0.05, rr * 1.9, sw), rimM);
         sp.rotation.x = (i / kol) * Math.PI; g.add(sp);
       }
     }
-    if (Q >= 1) {
+    if (Q >= 1 && !(rim && rim.basit)) {
       const disc2 = new THREE.Mesh(new THREE.CylinderGeometry(rr * 0.78, rr * 0.78, 0.03, 14), mat('disc', () => new THREE.MeshStandardMaterial({ color: 0x8a8a90, roughness: 0.4, metalness: 0.9 })));
       disc2.rotation.z = Math.PI / 2; disc2.position.x = 0; g.add(disc2);
       const cal = new THREE.Mesh(new THREE.BoxGeometry(0.08, rr * 0.5, rr * 0.35), mat('caliper', () => new THREE.MeshStandardMaterial({ color: 0xd01830, roughness: 0.5 })));
@@ -198,6 +237,7 @@
     }
     const hub = new THREE.Mesh(new THREE.CylinderGeometry(rr * 0.25, rr * 0.25, w + 0.06, 8), rimM);
     hub.rotation.z = Math.PI / 2; g.add(hub);
+    compact(g, new Set());
     return g;
   }
 
@@ -270,7 +310,7 @@
     const wheels = [];
     const rimDef = opt.jant || { kol: 5 };
     for (const sz of [1, -1]) for (const sx of [-1, 1]) {
-      const w = wheel(B.r, 0.26, rimDef, opt.jantRenk || '#c8ccd4');
+      const w = wheel(B.r, 0.26, opt.basit ? { kol: 0, basit: 1 } : rimDef, opt.jantRenk || '#c8ccd4');
       w.position.set(sx * (halfW(B, B.wb) - 0.07), B.r, sz * B.wb);
       w.userData.front = sz > 0;
       grp.add(w); wheels.push(w);
@@ -370,6 +410,7 @@
       const tk = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.16, 0.24), mat('taxisign', () => new THREE.MeshBasicMaterial({ color: 0xfff3a0 })));
       tk.position.set(0, ht + 0.1, zc); grp.add(tk);
     }
+    compact(grp, new Set(wheels));
     grp.userData = { wheels, brake: brakeM, siren, L: B.L, W: B.W, neon: neonM, body };
     return grp;
   }

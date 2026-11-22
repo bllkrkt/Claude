@@ -33,7 +33,7 @@
     renderer.outputEncoding = THREE.sRGBEncoding;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
-    camera = new THREE.PerspectiveCamera(62, 16 / 9, 0.3, 2400);
+    camera = new THREE.PerspectiveCamera(56, 16 / 9, 0.5, 2000);
     try { if (G.POST) G.POST.init(renderer, Q); } catch (e) { console.warn('ekran efektleri kapalı', e); }
     setQuality(Q);
     window.addEventListener('resize', resize);
@@ -184,7 +184,7 @@
     }
     scene = new THREE.Scene();
     const sky = G.DUNYA.SKY[cfg.saat || 'gece'](Z);
-    const env = G.DUNYA.envMap(renderer, sky.top, sky.hor, Z.isik);
+    const env = G.DUNYA.envFromSky(renderer, Z, cfg.saat, cfg.hava) || G.DUNYA.envMap(renderer, sky.top, sky.hor, Z.isik);
     A3().setEnv(env);
     const world = G.DUNYA.build(scene, T, Z, { saat: cfg.saat, hava: cfg.hava, q: Q, env, renderer, shortcuts, ramps });
     const nl = Math.max(2, Math.round(T.W / 3.5));
@@ -271,7 +271,7 @@
     R.sprintCopsAt = cfg.polis > 0 && !copMode ? 0 : null;
     if (cfg.polis > 0 && cfg.tip !== 'kovala' && cfg.tip !== 'kacis' && cfg.tip !== 'serbest') R.sprintCopsAt = T.L * (0.25 + Math.random() * 0.2);
     camera.clearViewOffset();
-    camera.fov = 62; camera.updateProjectionMatrix();
+    camera.fov = 56; camera.updateProjectionMatrix();
     snapCam();
     SES().music(copMode && cfg.tip !== 'serbest' ? 'kovala' : 'yaris');
     root.classList.add('racing');
@@ -345,9 +345,11 @@
       P2.speed = opt.fx === 0 ? 0 : clamp((pl.v - 35) / 55, 0, 1) * 0.8 + (pl.nitroOn ? 0.5 : 0);
       P2.nitro = pl.nitroOn ? 1 : 0; P2.hit = r.shake; P2.odak = r.odakT > 0 ? 1 : 0;
       const sa = r.cfg.saat;
-      P2.tint = sa === 'aksam' ? [1.08, 1.0, 0.92] : sa === 'gunduz' ? [1.02, 1.0, 0.98] : [0.94, 1.0, 1.1];
-      P2.bloom = sa === 'gunduz' ? 0.3 : sa === 'aksam' ? 0.45 : 0.55;
-      P2.exposure = sa === 'gece' ? 1.05 : 1.0;
+      // sinematik filtre: gündüz sıcak sarı-yeşil, akşam turuncu, gece soğuk mavi
+      P2.tint = sa === 'aksam' ? [1.07, 1.0, 0.9] : sa === 'gunduz' ? [1.04, 1.03, 0.93] : [0.94, 1.0, 1.1];
+      P2.sat = sa === 'gece' ? 1.05 : 0.92;
+      P2.bloom = sa === 'gunduz' ? 0.4 : sa === 'aksam' ? 0.5 : 0.55;
+      P2.exposure = sa === 'gece' ? 1.1 : 0.95;
     }
     draw(r.scene);
   }
@@ -1390,21 +1392,21 @@
 
   // ───────── KAMERA ─────────
   const camPos = { x: 0, y: 0, z: 0 }, camLook = { x: 0, y: 0, z: 0 };
-  let camFov = 62;
+  let camFov = 56;
   function camTarget(out, look) {
     const pl = R.player, T = trk(pl);
     P().sample(T, loc(pl), pl.d, tmp);
     const cy = pl.wy != null ? pl.wy : tmp.y;
     const head = tmp.h - pl.a - pl.slip * 0.55;
     const mode = R.camMode;
-    const dist = mode === 1 ? 9.5 : mode === 2 ? -0.6 : 6.4, hgt = mode === 1 ? 3.6 : mode === 2 ? 1.05 : 2.35;
+    const dist = mode === 1 ? 7.6 : mode === 2 ? -0.6 : 5.2, hgt = mode === 1 ? 2.5 : mode === 2 ? 1.05 : 1.55;
     const back = R.cfg.tip === 'serbest' && pl.v < 0 ? -1 : 1;
     out.x = tmp.x - Math.sin(head) * dist * back; out.z = tmp.z - Math.cos(head) * dist * back; out.y = cy + hgt * (pl.air ? 0.8 : 1);
     // yol yükseltisine göre kamera zemin altına girmesin
     P().sample(T, loc(pl) - dist, pl.d, tmp2);
     out.y = Math.max(out.y, tmp2.y + hgt * 0.8);
-    const la = mode === 2 ? 12 : 4.5;
-    look.x = tmp.x + Math.sin(head) * la; look.z = tmp.z + Math.cos(head) * la; look.y = cy + (mode === 2 ? 0.9 : 1.05);
+    const la = mode === 2 ? 12 : 7;
+    look.x = tmp.x + Math.sin(head) * la; look.z = tmp.z + Math.cos(head) * la; look.y = cy + (mode === 2 ? 0.9 : 0.85);
   }
   function snapCam() {
     camTarget(camPos, camLook);
@@ -1424,7 +1426,7 @@
     camera.position.set(camPos.x + sx, camPos.y + sy, camPos.z);
     camera.lookAt(camLook.x, camLook.y, camLook.z);
     const vr = Math.max(0, pl.v) / 90;
-    const fovT = 60 + vr * 16 + (pl.nitroOn ? 8 : 0) - (r.odakT > 0 ? 6 : 0);
+    const fovT = 55 + vr * 11 + (pl.nitroOn ? 6 : 0) - (r.odakT > 0 ? 5 : 0);
     camFov = lerp(camFov, fovT, Math.min(1, dt * 3));
     if (Math.abs(camera.fov - camFov) > 0.05) { camera.fov = camFov; camera.updateProjectionMatrix(); }
   }
@@ -1840,7 +1842,7 @@
   // dışa açık
   G.YARIS = {
     init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, quit, statsOf, opt, input,
-    get active() { return !!R; }, get R() { return R; }, goalText,
+    get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; },
     // test kancası: ekransız hızlı simülasyon (sanal sürücü ile)
     _fast: (sec, bot) => {
       const r = R; if (!r) return null;

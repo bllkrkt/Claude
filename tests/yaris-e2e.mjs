@@ -12,7 +12,15 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 860, height: 400 } });
 page.on('pageerror', e => errors.push('pageerror: ' + e.message));
 page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-await page.goto('file://' + html);
+// gerçek dokular/modeller dosyadan (file://) yüklenemez: küçük bir yerel sunucu aç
+const http = require('http'), fs = require('fs');
+const root = path.dirname(html);
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.jpg': 'image/jpeg', '.png': 'image/png', '.gltf': 'model/gltf+json', '.bin': 'application/octet-stream', '.woff2': 'font/woff2' };
+const srv = http.createServer((q, r) => { const f = path.join(root, decodeURIComponent(q.url.split('?')[0])); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); r.end(d); }); }).listen(0);
+await new Promise(r => srv.on('listening', r));
+await page.goto('http://127.0.0.1:' + srv.address().port + '/' + path.basename(html));
+await page.waitForFunction(() => document.getElementById('tapStart').textContent.indexOf('DOKUN') >= 0, null, { timeout: 90000 });
+console.log('varlıklar', await page.evaluate(() => window.VARLIK && window.VARLIK.ready));
 await page.waitForTimeout(1500);
 const shot = async n => { if (!HIZLI) await page.screenshot({ path: `${out}/${n}.png` }); };
 await shot('01-acilis');
@@ -35,7 +43,7 @@ await page.keyboard.up('ArrowUp');
 // yarışı otomatik pilotla hızlıca bitir: oyuncuyu bitişe ışınla
 await page.evaluate(() => { const R = window.YARIS.R; R.player.lap = R.laps - 1; R.player.s = R.T.L - 30; });
 await page.keyboard.down('ArrowUp');
-await page.waitForTimeout(3500);
+await page.waitForFunction(() => document.getElementById('res').classList.contains('on'), null, { timeout: 30000 }).catch(() => {});
 await page.keyboard.up('ArrowUp');
 console.log('bitiş', JSON.stringify(await dbg()), JSON.stringify(errors.slice(0,3)));
 await shot('05-sonuc');
@@ -87,7 +95,7 @@ await shot('09-serbest');
 console.log('serbest', JSON.stringify(await dbg()));
 await page.evaluate(() => { window.YARIS.stopRace(); window.A.goMenu(); });
 // kayıt geri yükleme
-await page.reload(); await page.waitForTimeout(1200);
+await page.reload(); await page.waitForFunction(() => document.getElementById('tapStart').textContent.indexOf('DOKUN') >= 0, null, { timeout: 90000 });
 console.log('kayıt', await page.evaluate(() => JSON.stringify({ para: window.A.S.para, bitti: Object.keys(window.A.S.kar.bitti).length, ilk: window.A.S.ilk })));
 console.log('errors', JSON.stringify(errors.slice(0, 10)));
-await browser.close();
+await browser.close(); srv.close();

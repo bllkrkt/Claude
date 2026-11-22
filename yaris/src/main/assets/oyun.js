@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '2.0';
+  const VER = '3.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -223,7 +223,7 @@
     return {
       tip: o.tip, pist: pistDef(tr, o.tip), bolge: Z, tur: o.tur || 1,
       oyuncu: { ad: S.isim || 'Sen', vis: visOf(S.sec), stats: statsFor(S.sec) },
-      rakipler: o.rakipler || [], polis: o.polis || 0, hedef: o.hedef, hava: o.hava || 'acik', saat: o.saat || 'gece',
+      rakipler: o.rakipler || [], polis: o.polis || 0, hedef: o.hedef, hava: o.hava || 'acik', saat: o.saat || 'gunduz',
       zor: (o.zor || 0.85) * d.z, bant: d.bant, trafik: o.trafik,
       cb: { onFinish: res => onFinish(res) },
     };
@@ -451,7 +451,7 @@
   $('dlgSkip').onclick = e => { e.stopPropagation(); if (!dl) return; clearInterval(dl.typing); const d = dl.done; dl = null; d && d(); };
 
   // ───────── HIZLI YARIŞ ─────────
-  const QR = { tip: 'devre', bolge: 0, pist: 'l1', tur: 2, rakip: 4, zor: 1, hava: 'acik', saat: 'gece', polis: 0 };
+  const QR = { tip: 'devre', bolge: 0, pist: 'l1', tur: 2, rakip: 4, zor: 1, hava: 'acik', saat: 'gunduz', polis: 0 };
   function maxZone() { return S.kar.rakip > 0 ? RIV(S.kar.rakip).bolge : 5; }
   function trackOk(t, tip) {
     if (tip === 'drag') return t.tip === 'duz';
@@ -497,7 +497,7 @@
   }
 
   // ───────── SERBEST SÜRÜŞ ─────────
-  const FR = { bolge: 2, saat: 'gece', hava: 'acik' };
+  const FR = { bolge: 2, saat: 'gunduz', hava: 'acik' };
   function pSerbest() {
     const mz = maxZone();
     const o = (k, v, l) => `<div class="o ${FR[k] === v ? 'on' : ''}" onclick="A.fr('${k}',${typeof v === 'string' ? `'${v}'` : v})">${l}</div>`;
@@ -893,8 +893,13 @@
     if (!ok) { document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;color:#fff">Bu cihazda 3B grafik (WebGL) açılamadı. 😔</div>'; return; }
     applyOpts();
     Y.showroom(visOf(S.sec), 'menu');
-    $('tapStart').textContent = S.ilk ? 'YENİ OYUN — DOKUN' : 'DEVAM ET — DOKUN';
+    let ready = false;
+    $('tapStart').textContent = 'YÜKLENİYOR… %0';
+    const done = () => { ready = true; $('tapStart').textContent = S.ilk ? 'YENİ OYUN — DOKUN' : 'DEVAM ET — DOKUN'; };
+    if (window.VARLIK) window.VARLIK.load(f => { $('tapStart').textContent = 'YÜKLENİYOR… %' + Math.round(f * 100); }).then(done, e => { console.warn('gerçek varlıklar yüklenemedi', e); done(); });
+    else done();
     $('title').addEventListener('click', () => {
+      if (!ready) return;
       SES.unlock(); SES.sfx('go');
       if (S.ilk) {
         S.ilk = false; save();
