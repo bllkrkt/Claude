@@ -48,6 +48,15 @@
       const im = new THREE.InstancedMesh(sg, sm, N); im.frustumCulled = false; im.count = 0; im.renderOrder = 2;
       add(im); u.skid = { im, n: N, i: 0, last: [null, null], t: 0 };
     }
+    // ── v12: yağmurda yola düşen damla halkaları ──
+    if (r.wet && q >= 1) {
+      const rg = new THREE.RingGeometry(0.6, 0.85, 14); rg.rotateX(-Math.PI / 2); u.disp.push(rg);
+      u.drops = [];
+      for (let i = 0; i < (q >= 3 ? 70 : 40); i++) {
+        const mt = new THREE.MeshBasicMaterial({ color: 0xc8dcff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+        u.disp.push(mt); const m2 = new THREE.Mesh(rg, mt); m2.visible = false; add(m2); u.drops.push({ m: m2, life: Math.random() * 0.4 });
+      }
+    }
     // ── hız rüzgârı çizgileri (kameranın çevresinde, hızla geriye akar) ──
     if (q >= 1) {
       const M = q >= 3 ? 70 : 40, pos = new Float32Array(M * 6);
@@ -133,9 +142,23 @@
     s.intensity = (R.ux.night ? 9 : 3) * (ph % 2 ? 0.6 : 1);
     best.model.getWorldPosition(s.position); s.position.y += 2.2;
   }
+  const _o = {};
+  function dropFrame(dt) {
+    const ds = R.ux.drops; if (!ds) return;
+    const pl = R.player, T = pl.sc ? pl.sc.T : R.T, sl = pl.sc ? pl.ss : pl.s;
+    for (const d of ds) {
+      d.life -= dt;
+      if (d.life <= 0) {
+        A.P().sample(T, sl + 2 + Math.random() * 45, (Math.random() - 0.5) * (T.W - 0.6), _o);
+        d.m.position.set(_o.x, _o.y + 0.04, _o.z); d.life = d.max = 0.28 + Math.random() * 0.2; d.m.visible = true;
+      }
+      const k = 1 - d.life / d.max;
+      d.m.scale.setScalar(0.15 + k * 0.35); d.m.material.opacity = (1 - k) * 0.55;
+    }
+  }
   function frame(dt) {
     if (!R || !R.ux) return;
-    skidFrame(dt); windFrame(dt); sirenFrame();
+    skidFrame(dt); windFrame(dt); sirenFrame(); dropFrame(dt);
     if (R.ux.head) R.ux.head.visible = R.player.model.visible;
   }
   G.ULTRA = { start, stop, frame };

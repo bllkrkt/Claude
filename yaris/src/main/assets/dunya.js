@@ -540,6 +540,8 @@
     const bTone = zone.bina;
     const bins = [[0, 0.33], [0.33, 0.7], [0.7, 1.01]];
     const hMin = zone.yuk[0], hMax = zone.yuk[1];
+    // v12: bina ayrıntıları (buildCity doldurur, örnekli çizim aşağıda "v12 bina ayrıntıları" bloğunda)
+    const DET = { ac: [], bal: [], rail: [], awn: [], awnC: [], neon: [] };
     if (tema !== 'dag' && VA) buildCity();
     if (tema !== 'dag' && !VA) {
       const placed = [[], [], []];
@@ -696,6 +698,28 @@
               }
             }
             nb++;
+            // v12: yola bakan cephede klima, balkon, tente, dikey neon tabela
+            if (q >= 1) {
+              const ox0 = sg * Math.cos(h0), oz0 = -sg * Math.sin(h0), yawO = Math.atan2(ox0, oz0); // dışa (yola) bakan yön
+              const fcx = cx0 + ox0 * d / 2, fcz = cz0 + oz0 * d / 2;
+              const at = (along, out) => [fcx + fx * along + ox0 * out, fcz + fz * along + oz0 * out];
+              if (!tall) {
+                const floors = Math.floor((h - 6) / 3);
+                const nAc = Math.min(8, Math.floor(floors * w / 12 * 0.6 * (q >= 3 ? 1.5 : 1)));
+                for (let k = 0; k < nAc && DET.ac.length < 3500; k++) { const al = (r() - 0.5) * (w - 2), fl = 1 + Math.floor(r() * floors); const [x, z] = at(al, 0.28); DET.ac.push([x, by + 4.5 + fl * 3 + 0.4, z, yawO, 1, 1, 1]); }
+                if (q >= 2 && r() < 0.45 && floors >= 2) {
+                  const cols = Math.max(1, Math.floor(w / 6));
+                  for (let fl = 1; fl < floors; fl++) for (let ci = 0; ci < cols; ci++) {
+                    if (DET.bal.length > 2600) break;
+                    const al = -w / 2 + (ci + 0.5) * w / cols, [x, z] = at(al, 0.55), [x2, z2] = at(al, 1.08), yb = by + 4.5 + fl * 3;
+                    DET.bal.push([x, yb, z, yawO, 1, 1, 1]); DET.rail.push([x2, yb + 0.5, z2, yawO, 1, 1, 1]);
+                  }
+                }
+              }
+              const nAw = Math.floor(w / 6);
+              for (let k = 0; k < nAw && r() < 0.8; k++) { const al = -w / 2 + (k + 0.5) * w / nAw, [x, z] = at(al, 0); DET.awn.push([x, by + 3.6, z, yawO, 1, 1, 1]); DET.awnC.push(['#c0392b', '#1e7a4a', '#2c5aa0', '#d68a1a', '#7b2d8b', '#222'][Math.floor(r() * 6)]); }
+              if ((tema === 'merkez' || tema === 'liman' || tema === 'sahil') && r() < 0.22 && DET.neon.length < 34) { const sd = r() < 0.5 ? -1 : 1, [x, z] = at(sd * (w / 2 - 1.2), 0.9); DET.neon.push([x, by + 7 + r() * 4, z, h0]); }
+            }
             // merkezde arkada ikinci sıra yüksek bloklar
             if (tema === 'merkez' && r() < 0.7) {
               G.PIST.sample(T, sm, sg * (front + d + 6 + d / 2), o);
@@ -859,6 +883,43 @@
       });
       return add(im);
     };
+    // ── v12 bina ayrıntıları ──
+    if (DET.ac.length) {
+      const acG = new THREE.BoxGeometry(0.9, 0.62, 0.5);
+      inst(acG, new THREE.MeshLambertMaterial({ color: night ? '#6a6d72' : '#c9ccd0' }), DET.ac);
+    }
+    if (DET.bal.length) {
+      inst(new THREE.BoxGeometry(2.6, 0.16, 1.1), new THREE.MeshLambertMaterial({ color: night ? '#55565a' : '#bdbab2' }), DET.bal);
+      inst(new THREE.BoxGeometry(2.6, 0.95, 0.05), new THREE.MeshStandardMaterial({ color: '#2a3340', roughness: 0.3, metalness: 0.6, transparent: true, opacity: 0.75, envMap: opts.env }), DET.rail);
+    }
+    if (DET.awn.length) {
+      const ag2 = new THREE.PlaneGeometry(3.4, 1.4); ag2.rotateX(-Math.PI / 2); ag2.translate(0, 0, 0.7); ag2.rotateX(0.38);
+      inst(ag2, new THREE.MeshLambertMaterial({ color: '#ffffff', side: THREE.DoubleSide }), DET.awn, DET.awnC);
+    }
+    if (DET.neon.length) {
+      const NW = { merkez: ['OTEL', 'BAR', 'KULÜP', 'SİNEMA', 'DİSKO', 'NEON'], liman: ['BALIK', 'İSKELE', 'MEYHANE', 'OTEL'], sahil: ['PLAJ', 'OTEL', 'KAFE', 'DONDURMA'] }[tema] || ['OTEL'];
+      const NC = ['#ff2e63', '#00e5ff', '#ffea00', '#b46cff', '#00e676', '#ff6d00'];
+      DET.neon.forEach((n, i) => {
+        const word = NW[i % NW.length], c = NC[(i * 7) % NC.length];
+        const cv = cvs(64, 32 + word.length * 52), x = cv.getContext('2d');
+        x.fillStyle = '#0a0a10'; x.fillRect(0, 0, cv.width, cv.height); x.strokeStyle = c; x.lineWidth = 4; x.strokeRect(4, 4, 56, cv.height - 8);
+        x.fillStyle = c; x.font = 'bold 44px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+        [...word].forEach((ch, j) => x.fillText(ch, 32, 42 + j * 52));
+        const t = new THREE.CanvasTexture(cv); disposables.push(t);
+        const hgt = 1.15 * cv.height / 64;
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(1.15, hgt), new THREE.MeshBasicMaterial({ map: t, side: THREE.DoubleSide, color: col('#ffffff').multiplyScalar(night ? 2.4 : opts.saat === 'aksam' ? 1.4 : 0.85) }));
+        m.position.set(n[0], n[1] + hgt / 2, n[2]); m.rotation.y = n[3] + Math.PI; add(m);
+      });
+    }
+    // v12: yağmurda yolda su birikintileri (gökyüzünü ve ışıkları yansıtır)
+    if (wet && q >= 1) {
+      const pd = [], cg2 = new THREE.CircleGeometry(1, 18); cg2.rotateX(-Math.PI / 2);
+      for (let s0 = 30; s0 < T.L - 20; s0 += 6 + r() * 14) {
+        G.PIST.sample(T, s0, (r() - 0.5) * (W - 2), o);
+        pd.push([o.x, o.y + 0.025, o.z, o.h + r(), 0.8 + r() * 2.2, 1, 0.5 + r() * 1.3]);
+      }
+      inst(cg2, new THREE.MeshStandardMaterial({ color: '#1a1c20', roughness: 0.04, metalness: 0.95, envMap: opts.env, envMapIntensity: 1.6, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), pd);
+    }
     // ── v9: yol tabelaları, viraj uyarıları, reklam panoları, şerit okları ──
     {
       const signY = s0 => { G.PIST.sample(T, s0, 0, o); return o.y; };

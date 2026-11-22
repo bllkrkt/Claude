@@ -142,3 +142,8 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - Mükemmel kalkış: geri sayımda (oto gaz kapalıyken) gazla devir 0,60–0,82'de tutulursa 1,8 sn itiş (`c.launch`); >0,92 ise patinaj (`c.launchSpin`). Gösterge `#hud-launch`.
 - Savurma: oyuncu bir rakibe sert (imp>8) vurursa rakip 2,4 sn döner (`spinOut`), oyuncu +0,25 nitro, kısa ağır çekim (`R.slowHit`), sonuçta "Savurduğun rakip".
 - Denge (0.9): 30/50.
+
+## v12 — bina ayrıntıları ve yağmur
+- `buildCity` yola bakan cepheye `DET` listelerini doldurur (klima, Yüksek+'ta balkon + cam korkuluk, zemin katta renkli tenteler, merkez/liman/sahilde dikey neon tabelalar); örnekli çizim "v12 bina ayrıntıları" bloğunda (`inst` tanımından sonra, çünkü `buildCity` ondan önce çağrılır).
+- Yağmurda: yolda yansıtıcı su birikintileri (dunya.js), yola düşen damla halkaları (ultra.js `dropFrame`).
+- Bilinen: gece bazı bina yan yüzleri test makinesinde düz/bloklu görünüyor (telefonda doğrulanmadı).
