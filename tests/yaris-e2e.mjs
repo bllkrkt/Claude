@@ -53,7 +53,7 @@ await page.waitForTimeout(300);
 await page.click('#dlgSkip').catch(() => {});
 await page.waitForTimeout(600);
 await page.evaluate(() => window.A.closeModal());
-for (const t of ['kariyer', 'hizli', 'serbest', 'meydan', 'garaj', 'gunluk', 'basarim', 'ayar']) {
+for (const t of ['kariyer', 'hizli', 'serbest', 'meydan', 'rekor', 'garaj', 'gunluk', 'basarim', 'ayar']) {
   await page.evaluate(t => window.A.tab(t), t);
   await page.waitForTimeout(250);
   await shot('06-menu-' + t);
@@ -93,6 +93,38 @@ await page.waitForTimeout(2500);
 await page.keyboard.down('ArrowUp'); await page.waitForTimeout(3000); await page.keyboard.up('ArrowUp');
 await shot('09-serbest');
 console.log('serbest', JSON.stringify(await dbg()));
+// v7: gizli parça topla, engel kır, hasar
+const v7 = await page.evaluate(async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const R = window.YARIS.R, ex = R.ex, pl = R.player, o = { parca: ex.tokens.length, engel: ex.props.length };
+  const t = ex.tokens.find(t => !t.sc && !t.hava);
+  if (t) { pl.sc = null; pl.s = t.s - 1; pl.d = t.d; pl.v = 10; await wait(700); }
+  o.bulunan = ex.kolHave; o.kayit = (window.A.S.kol[R.cfg.koleksiyon.bolge] || []).length;
+  const p = ex.props.find(p => !p.sc && p.alive);
+  if (p) { pl.s = p.s - 5; pl.d = p.d; pl.v = 30; pl.a = 0; await wait(900); }
+  o.kirik = ex.kirik; o.hasar = +(pl.dmg || 0).toFixed(3);
+  return o;
+});
+console.log('v7 serbest', JSON.stringify(v7));
+await shot('10-kirik');
+await page.evaluate(() => { window.YARIS.stopRace(); window.A.goMenu(); });
+// v7: hayalet yarış (döngü pistinde turları ışınlayarak bitir)
+await page.evaluate(() => window.A.ttStart('l3'));
+await page.waitForTimeout(5200);
+await page.keyboard.down('ArrowUp');
+for (let lap = 0; lap < 3; lap++) {
+  await page.waitForTimeout(7000);
+  await page.evaluate(() => { const R = window.YARIS.R; if (R && !R.finished) { R.player.sc = null; R.player.s = R.T.L - 25; R.player.d = 0; R.player.v = 45; } });
+}
+await page.waitForFunction(() => document.getElementById('res').classList.contains('on'), null, { timeout: 30000 }).catch(() => {});
+await page.keyboard.up('ArrowUp');
+console.log('hayalet 1', await page.evaluate(() => JSON.stringify({ rek: window.A.S.rek.l3, gh: !!window.EKSTRA.ghostOf('l3'), t: document.getElementById('resBig').textContent })));
+await page.evaluate(() => { window.YARIS.stopRace(); window.A.ttStart('l3'); });
+await page.waitForTimeout(5200);
+await page.keyboard.down('ArrowUp'); await page.waitForTimeout(3000);
+await shot('11-hayalet');
+console.log('hayalet 2', await page.evaluate(() => JSON.stringify({ ghost: !!window.YARIS.R.ex.ghost, vis: window.YARIS.R.ex.ghost && window.YARIS.R.ex.ghost.m.visible, goal: document.getElementById('hud-goal').textContent })));
+await page.keyboard.up('ArrowUp');
 await page.evaluate(() => { window.YARIS.stopRace(); window.A.goMenu(); });
 // kayıt geri yükleme
 await page.reload(); await page.waitForFunction(() => document.getElementById('tapStart').textContent.indexOf('DOKUN') >= 0, null, { timeout: 90000 });

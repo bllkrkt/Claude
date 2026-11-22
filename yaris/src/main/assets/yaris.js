@@ -194,11 +194,11 @@
     const T = P().build(Object.assign({ stil: Z.stil, tepe: Z.tepe, W: Z.W || 14, zipla: noJump ? 0 : (Z.zipla != null ? Z.zipla : 2) }, cfg.pist));
     // kestirmeler (ara sokaklar) ve rampalar
     const rr = P().rng((cfg.pist.seed || 1) * 13 + 5);
-    const shortcuts = noJump || cfg.tip === 'drift' ? [] : P().shortcuts(T, 3, rr);
+    const shortcuts = noJump || cfg.tip === 'drift' ? [] : P().shortcuts(T, 3, rr).filter(k => !(Z.tema === 'dag' && k.side < 0)); // dağda sol yan kaya yamacı
     shortcuts.forEach((k, i) => {
       k.id = i;
-      const yA = k.yA, yB = k.yB;
-      k.T = P().build({ poly: k.poly, tip: 'acik', W: 10, stil: 'sehir', seed: 7 + i, yFn: (x, L) => yA + (yB - yA) * (x / L) });
+      const hs = scHeights(T, k, Z.tema);
+      k.T = P().build({ poly: k.poly, tip: 'acik', W: 10, stil: 'sehir', seed: 7 + i, yFn: (x, L) => { const f = clamp(x / L, 0, 1) * (hs.length - 1), j = Math.min(hs.length - 2, Math.floor(f)); return hs[j] + (hs[j + 1] - hs[j]) * (f - j); } });
     });
     const ramps = [];
     if (!noJump) {
@@ -314,9 +314,56 @@
     if (cfg.tip !== 'serbest') countdown();
     else popup('SERBEST SÜRÜŞ', 'Polis devriyelerinin yanından hızlı geçersen peşine düşerler', 2.5);
     R.wake = true;
+    if (G.EKSTRA) G.EKSTRA.start(R, exApi());
     startLoop();
   }
+  // v7 ekleri (ekstra.js) için motor yardımcıları
+  function exApi() {
+    return { THREE, P, A3, SES, popup, vib, smokeFront,
+      dsS: t => { // oyuncudan bu nesneye ana yol boyunca mesafe (kestirmedekiler için yaklaşık)
+        const pl = R.player, T = R.T;
+        let s = t.sc ? t.sc.sA + t.s * (t.sc.sB - t.sc.sA) / t.sc.T.L : t.s;
+        let x = s - pl.s; if (T.loop) { if (x > T.L / 2) x -= T.L; else if (x < -T.L / 2) x += T.L; } return x;
+      } };
+  }
+  function smokeFront(c, big) {
+    const r = R; const s = r.smoke && r.smoke.find(q => q.life <= 0); if (!s) return;
+    P().sample(trk(c), loc(c) + c.L * 0.32, c.d, tmp); if (c.wy != null) tmp.y = c.wy;
+    s.s.position.set(tmp.x, tmp.y + 1.0, tmp.z); s.s.visible = true;
+    s.life = s.max = big ? 1.6 : 1.1; s.grow = big ? 4 : 2.5;
+    s.vx = (Math.random() - 0.5) * 0.8; s.vy = 1.6; s.vz = (Math.random() - 0.5) * 0.8;
+    s.s.material.color.setHex(big ? 0x222222 : 0x777777);
+  }
 
+  // v7: kestirme yolunun yüksekliği — ana yolun kenar zemini (dunya.js'teki yan şeritler) kestirmenin üstünde kalmasın,
+  // yoksa araba yere gömülmüş gibi görünüyordu. Her noktada onu örten en yüksek zeminin biraz üstü alınır.
+  function scHeights(T, k, tema) {
+    const W = T.W, poly = k.poly, n = poly.length, out = new Float32Array(n), dag = tema === 'dag';
+    const prof = (sg, x) => { // yol kenarından x m uzaktaki zeminin yol yüksekliğine göre farkı (dunya.js ile aynı)
+      if (dag) { if (sg < 0) { if (x <= 11) return -0.02 + 0.42 * x / 11; return null; } return -0.02 - 11.98 * Math.min(1, x / 87); }
+      return -0.02 - 0.58 * Math.min(1, x / 87);
+    };
+    for (let i = 0; i < n; i++) {
+      const lin = k.yA + (k.yB - k.yA) * i / (n - 1);
+      let best = -1e9;
+      for (let j = 0; j < T.N; j += 2) {
+        const dx = poly[i][0] - T.px[j], dz = poly[i][1] - T.pz[j];
+        if (dx * dx + dz * dz > 110 * 110) continue;
+        const h = T.hd[j], t = dx * Math.sin(h) + dz * Math.cos(h);
+        if (Math.abs(t) > T.step * 1.6) continue;
+        const d = dx * -Math.cos(h) + dz * Math.sin(h), x = Math.abs(d) - (W / 2 + 3);
+        if (x < -3 || x > 87) continue;
+        const pf = prof(Math.sign(d), Math.max(0, x));
+        if (pf == null) continue;
+        best = Math.max(best, T.py[j] + pf);
+      }
+      out[i] = best > -1e8 ? Math.max(lin - 1.5, best + 0.08) : lin;
+    }
+    // ağızlarda ana yola tam otursun, arası yumuşak
+    out[0] = k.yA; out[n - 1] = k.yB;
+    for (let it = 0; it < 3; it++) { const c = out.slice(); for (let i = 1; i < n - 1; i++) out[i] = Math.max(c[i], (c[i - 1] + 2 * c[i] + c[i + 1]) / 4); }
+    return out;
+  }
   function mkCar(kind, vis, st) {
     const m = A3().make(vis);
     if (Q >= 1) m.traverse(o => { if (o.isMesh && o.material && !Array.isArray(o.material) && !o.material.transparent) { o.castShadow = true; o.receiveShadow = !o.material.isMeshBasicMaterial; } else if (o.isMesh && Array.isArray(o.material)) { o.castShadow = true; } });
@@ -325,7 +372,7 @@
       nitro: kind === 'racer' ? 0.6 : 0, nitroOn: false, steer: 0, slip: 0, gear: 1, rpm: 0, done: false, finishT: 0, prog: 0, hp: 100, disabled: false, spin: 0, spike: 0, y: 0, wheelRot: 0, hitT: 0, pass: {} };
     return c;
   }
-  function place(c, s, d) { c.lap = R.T.loop && s < 0 ? -1 : 0; c.s = P().wrap(R.T, s); c.d = d; c.prevS = c.s; syncModel(c, 0); }
+  function place(c, s, d) { c.dTs = null; c.lv = null; c.lap = R.T.loop && s < 0 ? -1 : 0; c.s = P().wrap(R.T, s); c.d = d; c.prevS = c.s; syncModel(c, 0); }
 
   // ── statlar: veri → fizik ──
   // st: {vmax (m/s), acc (m/s²), grip (g), nitro, kg}
@@ -373,6 +420,7 @@
     for (let i = 0; i < steps; i++) simulate(h);
     updateFx(dtReal);
     for (const c of r.cars()) syncModel(c, dtReal);
+    if (G.EKSTRA) G.EKSTRA.frame(dtReal);
     updateCamera(dtReal);
     r.world.update(dtReal, camera);
     updateHud(dtReal);
@@ -421,14 +469,14 @@
   }
   function enterShortcut(c, k) {
     const p = rebase(c, k.T, 6, 12);
-    c.sc = k; c.ss = p.s; c.d = clamp(p.d, -k.T.W / 2 + c.W / 2, k.T.W / 2 - c.W / 2); c.a = clamp(p.a, -0.9, 0.9);
+    c.sc = k; c.ss = p.s; c.d = clamp(p.d, -k.T.W / 2 + c.W / 2, k.T.W / 2 - c.W / 2); c.a = clamp(p.a, -0.9, 0.9); c.dTs = null; c.lv = null;
     if (c.isPlayer) { R.stats.kestirme++; popup('KESTİRME!', '+' + k.kaz + ' m', 1, 'orta'); SES().sfx('whoosh'); }
   }
   function exitShortcut(c) {
     const k = c.sc, p = rebase(c, R.T, k.sB, 25);
     c.sc = null; c.s = p.s;
     const lim = R.T.W / 2 + 0.2 - c.W / 2;
-    c.d = clamp(p.d, -lim, lim); c.a = clamp(p.a, -0.9, 0.9);
+    c.d = clamp(p.d, -lim, lim); c.a = clamp(p.a, -0.9, 0.9); c.dTs = null; c.lv = null;
   }
   // rampa yüksekliği (aracın bulunduğu yolda)
   function rampH(c) {
@@ -487,6 +535,7 @@
     for (const c of r.racers) if (!c.out) vert(c, dt);
     for (const c of r.cops) if (!c.block) vert(c, dt);
     collisions(dt);
+    if (G.EKSTRA && r.phase !== 'geri') G.EKSTRA.step(dt);
     for (const c of r.racers) progress(c, dt);
     if (r.phase === 'yaris') {
       modeLogic(dt);
@@ -513,13 +562,15 @@
     let steerIn = opt.tilt ? input.tilt : input.steer;
     const sRate = opt.tilt ? 12 : 7;
     c.steer += clamp(steerIn - c.steer, -sRate * dt, sRate * dt);
-    const gas = (opt.autoGas && !input.brake) || input.gas ? 1 : 0;
+    // v7: nitro ve drift tuşu gazı da verir (sağ başparmak tek tuşta kalabilsin)
+    const gas = (opt.autoGas && !input.brake) || input.gas || input.nitro || (input.hb && !isDrag) ? 1 : 0;
     const spikeMul = c.spike > 0 ? 0.5 : 1;
     if (c.spike > 0) c.spike -= dt;
     let vmax = st.vmax * spikeMul;
     // nitro
     c.nitroOn = !!input.nitro && c.nitro > 0.01 && r.phase === 'yaris';
-    if (c.nitroOn) { c.nitro = Math.max(0, c.nitro - dt / (3.5 + 1.5 * st.nitro)); vmax *= 1.13 + 0.05 * st.nitro; }
+    if (c.nitroOn) { c.nitro = Math.max(0, c.nitro - dt / (3.5 + 1.5 * st.nitro)); vmax *= 1.2 + 0.06 * st.nitro; }
+    c.nitroK = lerp(c.nitroK || 0, c.nitroOn ? 1 : 0, Math.min(1, dt * (c.nitroOn ? 6 : 2)));
     // vites ve devir
     let accMul = 1;
     if (isDrag) accMul = dragGear(c, dt, vmax);
@@ -528,8 +579,9 @@
     const vr = Math.max(0, c.v) / vmax;
     let acc = 0;
     if (gas && c.v < vmax) acc = st.acc * (1.15 - Math.pow(vr, 1.7) * 1.15 + 0.05) * accMul * (vr < 0.12 ? 1.25 : 1);
-    if (c.nitroOn) acc += st.acc * (0.55 + 0.25 * st.nitro);
-    if (c.v > vmax) acc = Math.min(acc, -(c.v - vmax) * 0.8);
+    // nitro: hız ne olursa olsun belirgin itiş (en yüksek hızdayken de)
+    if (c.nitroOn) acc = Math.max(acc, 0) + st.acc * (0.95 + 0.3 * st.nitro) * (1.1 - 0.5 * clamp(vr, 0, 1));
+    if (c.v > vmax) acc = Math.min(acc, -(c.v - vmax) * (c.nitroK > 0.05 ? 0.25 : 0.8)); // nitro bitince hız yavaşça düşsün
     if (input.brake) {
       if (c.v > 0.5) acc = -15 * (r.wet ? 0.8 : 1);
       else acc = -5; // geri vites
@@ -662,6 +714,7 @@
       const into = Math.sin(c.a) * sg; // duvara doğru bileşen
       if (into > 0) {
         const imp = Math.abs(c.v) * into;
+        if (G.EKSTRA) G.EKSTRA.dmg(c, imp);
         c.a = -c.a * 0.25;
         c.v *= 1 - Math.min(0.45, into * 0.9) - 0.01;
         if (c.isPlayer && imp > 3) {
@@ -726,7 +779,10 @@
     if (ahead) {
       const left = ahead.d - (ahead.W + c.W) / 2 - 0.8, right = ahead.d + (ahead.W + c.W) / 2 + 0.8;
       const lim = Tl.W / 2 - c.W / 2 - 0.3;
-      const goL = Math.abs(clamp(left, -lim, lim) - c.d) < Math.abs(clamp(right, -lim, lim) - c.d) ? left > -lim : !(right < lim);
+      let goL;
+      if (c.ai.avoid === ahead && c.ai.goL != null && (c.ai.goL ? left > -lim : right < lim)) goL = c.ai.goL; // karar verdiği yandan geç (titreme olmasın)
+      else goL = Math.abs(clamp(left, -lim, lim) - c.d) < Math.abs(clamp(right, -lim, lim) - c.d) ? left > -lim : !(right < lim);
+      c.ai.avoid = ahead; c.ai.goL = goL;
       dT = goL ? clamp(left, -lim, lim) : clamp(right, -lim, lim);
       if (Math.abs(ahead.d - c.d) < (ahead.W + c.W) / 2 && ahead.v < c.v) c.v = Math.max(ahead.v * 0.98, c.v - 9 * dt);
     }
@@ -748,9 +804,16 @@
     moveLateral(c, -T.W / 2 + (c.ai.lane + 0.5) * laneW, dt, 6);
     advance(c, dt);
   }
+  // v7: hedef çizgi yumuşatılır, yanal hız ivme sınırıyla değişir → rakip/polis bir anda sağa-sola fırlamaz
   function moveLateral(c, dT, dt, maxRate) {
-    const want = clamp((dT - c.d) * 1.2, -maxRate, maxRate);
-    c.a = Math.asin(clamp(want / Math.max(c.v, 3), -0.6, 0.6));
+    if (c.dTs == null) c.dTs = c.d;
+    c.dTs += (dT - c.dTs) * Math.min(1, dt * 3);
+    if (c.lv == null) c.lv = Math.sin(c.a) * Math.max(c.v, 3);
+    const want = clamp((c.dTs - c.d) * 1.0, -maxRate, maxRate);
+    const latAcc = 6 + Math.min(7, Math.abs(c.v) * 0.12); // m/s² (yaklaşık 0,6–1,3 g)
+    c.lv += clamp(want - c.lv, -latAcc * dt, latAcc * dt);
+    c.lv = clamp(c.lv, -maxRate, maxRate);
+    c.a = Math.asin(clamp(c.lv / Math.max(c.v, 3), -0.6, 0.6));
   }
   function advance(c, dt) {
     const T = trk(c), k = P().curvAt(T, loc(c));
@@ -899,6 +962,7 @@
       a.a -= sg * 0.08 * ta; b.a += sg * 0.08 * tb;
       a.v *= 0.995; b.v *= 0.995;
     }
+    if (G.EKSTRA && imp > 3) { G.EKSTRA.dmg(a, imp * (b.mass / a.mass)); G.EKSTRA.dmg(b, imp * (a.mass / b.mass)); }
     const pl = R.player;
     const involvesPl = a === pl || b === pl;
     const other = a === pl ? b : a;
@@ -953,6 +1017,7 @@
   }
   function onLap(c) {
     const r = R;
+    if (c.isPlayer && G.EKSTRA) G.EKSTRA.lap(c);
     if (c.lap < 1) return; // başlangıç çizgisini ilk geçiş tur sayılmaz
     if (c.isPlayer && r.T.loop && r.cfg.tip !== 'serbest' && r.cfg.tip !== 'kovala' && r.cfg.tip !== 'kacis') {
       if (c.lap < r.laps) { popup(c.lap === r.laps - 1 ? 'SON TUR' : 'TUR ' + (c.lap + 1) + '/' + r.laps, '', 1.3); if (c.lap === r.laps - 1) radio('son'); SES().sfx('cp'); }
@@ -1074,7 +1139,7 @@
     c.state = offs < 0 ? 'takip' : 'bekle';
     if (opts && opts.block) { c.block = true; c.v = 0; c.state = 'barikat'; c.mass = 9000; c.d = opts.d; }
     if (opts && opts.patrol) { c.state = 'devriye'; c.v = 0; c.d = opts.d; }
-    c.a = 0; c.id = Math.random();
+    c.a = 0; c.id = Math.random(); c.dTs = null; c.lv = null;
     if (r.purs && r.purs.race && !c.block) {
       // yarıştaki polis bazen rakip yarışçıların peşine düşer
       const others = r.racers.filter(x => !x.isPlayer && !x.out);
@@ -1359,6 +1424,7 @@
     endDrift(true);
     const res = Object.assign({ win, pos: position(r.player), time: r.t, pursTime: r.purs ? r.purs.time : 0, stats: r.stats, bounty: Math.round((r.purs ? r.purs.bounty : 0) + (r.freeBounty || 0)), driftTotal: Math.round(r.drift.total), laps: r.laps }, extra || {});
     res.order = (r.order || []).map(c => c.ad);
+    if (G.EKSTRA) G.EKSTRA.finish(res);
     r.result = res;
     SES().sfx(win ? 'win' : 'lose');
     r.player.done = true;
@@ -1374,6 +1440,7 @@
   function stopRace(silent) {
     if (!R) return;
     const r = R;
+    if (G.EKSTRA) try { G.EKSTRA.stop(); } catch (e) { }
     R = null;
     try { r.world.dispose(); } catch (e) { }
     for (const c of r.racers.concat(r.cops, r.traffic)) { r.scene.remove(c.model); A3().dispose(c.model); }
@@ -1604,7 +1671,7 @@
     for (const c of r.cops) if (!c.disabled && c.state !== 'devriye') near = Math.min(near, Math.abs(ds(pl, c)));
     SES().siren(r.purs && near < 400 ? clamp(1 - near / 400, 0.05, 1) : 0);
     // motor
-    if (r.phase !== 'geri') SES().engine(pl.rpm, (input.gas || opt.autoGas) && !input.brake ? 1 : 0, pl.nitroOn ? 1 : 0, clamp(pl.v / pl.st.vmax, 0, 1));
+    if (r.phase !== 'geri') SES().engine(pl.rpm, (input.gas || input.nitro || opt.autoGas) && !input.brake ? 1 : 0, pl.nitroOn ? 1 : 0, clamp(pl.v / pl.st.vmax, 0, 1));
     // neon titreşimi
     if (pl.model.userData.neon) pl.model.userData.neon.opacity = 0.6 + Math.sin(r.t * 6) * 0.1;
   }
@@ -1642,11 +1709,11 @@
       </div>
       <div id="hud-ctl">
         <div id="c-steer" class="${opt.tilt && !drag ? 'tilt' : ''}"><span class="l">◀</span><span class="r">▶</span><em>${opt.tilt && !drag ? 'EĞ' : 'KAYDIR'}</em></div>
+        <div class="cb" id="c-odak">⏱ ODAK</div>
         <div id="c-right">
-          <div class="cb" id="c-nitro">NİTRO</div>
-          <div class="cb" id="c-hb">${drag ? 'VİTES ▲' : 'EL FRENİ'}</div>
-          <div class="cb" id="c-odak">ODAK</div>
+          <div class="cb" id="c-nitro">🔥 NİTRO<small>gaz dahil</small></div>
           <div class="cb" id="c-brake">FREN</div>
+          <div class="cb" id="c-hb">${drag ? 'VİTES ▲' : 'DRİFT'}${drag ? '' : '<small>el freni</small>'}</div>
           <div class="cb big" id="c-gas">${opt.autoGas ? 'OTO' : 'GAZ'}</div>
         </div>
       </div>
@@ -1781,10 +1848,24 @@
       el.addEventListener('lostpointercapture', () => set(0));
     };
     const drag = R.cfg.tip === 'drag';
-    hold('c-gas', 'gas'); hold('c-brake', 'brake'); hold('c-nitro', 'nitro');
-    if (drag) hold('c-hb', null, () => { input.shift = 1; });
-    else hold('c-hb', 'hb');
     hold('c-odak', null, odak);
+    // v7: sağ tuş kümesi tek dokunma alanı — parmak kaldırmadan GAZ ↔ NİTRO ↔ DRİFT ↔ FREN arasında kaydırılabilir
+    const rb = $('c-right'), ptr = {};
+    const keys = { 'c-gas': 'gas', 'c-brake': 'brake', 'c-nitro': 'nitro', 'c-hb': drag ? null : 'hb' };
+    const refresh = () => {
+      const on = {}; for (const p in ptr) if (ptr[p]) on[ptr[p]] = 1;
+      for (const id in keys) { const el = $(id); if (!el) continue; el.classList.toggle('on', !!on[id]); if (keys[id]) input[keys[id]] = on[id] ? 1 : 0; }
+    };
+    const pick = e => {
+      let el = document.elementFromPoint(e.clientX, e.clientY);
+      while (el && el !== rb && !(el.id in keys)) el = el.parentElement;
+      return el && el !== rb ? el.id : null;
+    };
+    const setP = (e, id) => { if (!id || id === ptr[e.pointerId]) return; ptr[e.pointerId] = id; if (drag && id === 'c-hb') input.shift = 1; refresh(); };
+    rb.addEventListener('pointerdown', e => { e.preventDefault(); rb.setPointerCapture && rb.setPointerCapture(e.pointerId); ptr[e.pointerId] = null; setP(e, pick(e)); });
+    rb.addEventListener('pointermove', e => { if (e.pointerId in ptr) setP(e, pick(e)); });
+    const endP = e => { if (!(e.pointerId in ptr)) return; delete ptr[e.pointerId]; refresh(); };
+    rb.addEventListener('pointerup', endP); rb.addEventListener('pointercancel', endP); rb.addEventListener('lostpointercapture', endP);
     $('c-pause').onclick = () => G.onPauseReq && G.onPauseReq();
     $('c-cam').onclick = cycleCam;
     // direksiyon bölgesi: parmağın konumu = direksiyon açısı (sürükleyerek)

@@ -305,6 +305,9 @@
     { id: 'un', ad: 'Şehrin Dilinde', yazi: '50.000 Ün', ik: '🔥' },
     { id: 'serbest', ad: 'Gece Gezgini', yazi: 'Serbest sürüşte 20 km yol yap', ik: '🌃' },
     { id: 'kestirme', ad: 'Ara Sokak Bilgini', yazi: 'Toplam 20 kestirme kullan', ik: '🔀' },
+    { id: 'parca1', ad: 'Hazine Avcısı', yazi: 'Serbest sürüşte bir bölgenin bütün gizli parçalarını bul', ik: '🧩' },
+    { id: 'hayalet', ad: 'Kendinle Yarış', yazi: 'Hayaletle Yarış\'ta kendi rekorunu kır', ik: '👻' },
+    { id: 'kirici', ad: 'Fil Dükkânda', yazi: 'Toplam 100 kasa, koni ya da bariyer kır', ik: '📦' },
     { id: 'ucus', ad: 'Kanatlı', yazi: 'Tek atlayışta 60 m uç', ik: '🛫' },
   ];
 

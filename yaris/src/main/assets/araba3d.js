@@ -292,7 +292,7 @@
     }
     const shM = mat('shadow', () => new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55, depthWrite: false, map: blobTex() }));
     const sh = new THREE.Mesh(new THREE.PlaneGeometry(B.W * 1.5, B.L * 1.25), shM); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.02; sh.renderOrder = 1; grp.add(sh);
-    grp.userData = { wheels, brake: brakeM, siren: sr, L: B.L, W: B.W, neon: neonM, body, gercek: true };
+    grp.userData = { wheels, brake: brakeM, siren: sr, L: B.L, W: B.W, neon: neonM, body, gercek: true, paints: [paint, paint2] };
     return grp;
   }
 
@@ -479,7 +479,7 @@
       tk.position.set(0, ht + 0.1, zc); grp.add(tk);
     }
     compact(grp, new Set(wheels));
-    grp.userData = { wheels, brake: brakeM, siren, L: B.L, W: B.W, neon: neonM, body };
+    grp.userData = { wheels, brake: brakeM, siren, L: B.L, W: B.W, neon: neonM, body, paints: [wallM, sideM] };
     return grp;
   }
 

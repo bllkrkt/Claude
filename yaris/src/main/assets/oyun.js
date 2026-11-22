@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '6.0';
+  const VER = '7.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -24,7 +24,8 @@
       v: 1, para: 2500, un: 0, sec: 'serce', arabalar: { serce: newCar('serce') },
       kar: { bitti: {}, rakip: 10, rk: {}, sahne: {}, final: false, son: false },
       ar: { sure: 0, etkisiz: 0, engel: 0, barikat: 0, kac: 0 },
-      ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0, kestirme: 0, ucus: 0 },
+      ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0, kestirme: 0, ucus: 0, kirik: 0 },
+      kol: {}, rek: {}, // v7: serbest sürüş gizli parçaları (bölge → bulunanlar), pist rekorları (pist → {tur, sure})
       bas: {}, mo: {}, gun: { tarih: '', seri: 0, alindi: '', gorev: [], gtarih: '' },
       set: { ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2 },
       ilk: true,
@@ -38,7 +39,7 @@
         const o = JSON.parse(raw), d = fresh();
         // eksik alanları varsayılanlarla tamamla (eski kayıtlar bozulmasın)
         S = Object.assign(fresh(), o);
-        for (const k of ['kar', 'ar', 'ist', 'gun', 'set']) S[k] = Object.assign(d[k], o[k] || {});
+        for (const k of ['kar', 'ar', 'ist', 'gun', 'set', 'kol', 'rek']) S[k] = Object.assign(d[k], o[k] || {});
         if (!S.arabalar || !Object.keys(S.arabalar).length) S.arabalar = { serce: newCar('serce') };
         for (const id in S.arabalar) { const d = newCar(CAR(id) ? id : 'serce'); S.arabalar[id] = Object.assign(d, S.arabalar[id]); S.arabalar[id].gor = Object.assign(d.gor, S.arabalar[id].gor); }
         if (!S.arabalar[S.sec]) S.sec = Object.keys(S.arabalar)[0] || 'serce';
@@ -110,7 +111,7 @@
   }
   const NAV = [
     ['kariyer', '📜', 'Kariyer'], ['hizli', '🏁', 'Hızlı Yarış'], ['serbest', '🌃', 'Serbest Sürüş'], ['meydan', '🎯', 'Meydan Okuma'],
-    ['garaj', '🔧', 'Garaj'], ['gunluk', '📅', 'Günlük'], ['basarim', '🏆', 'Başarımlar'], ['ayar', '⚙️', 'Ayarlar'],
+    ['rekor', '⏱', 'Rekorlar'], ['garaj', '🔧', 'Garaj'], ['gunluk', '📅', 'Günlük'], ['basarim', '🏆', 'Başarımlar'], ['ayar', '⚙️', 'Ayarlar'],
   ];
   function renderNav() {
     const dotG = gunlukDot();
@@ -126,7 +127,7 @@
     const p = $('panel');
     p.classList.toggle('narrow', cur === 'garaj');
     $('menu').classList.toggle('compact', cur === 'garaj');
-    p.innerHTML = ({ kariyer: pKariyer, hizli: pHizli, serbest: pSerbest, meydan: pMeydan, garaj: pGaraj, gunluk: pGunluk, basarim: pBasarim, ayar: pAyar })[cur]();
+    p.innerHTML = ({ kariyer: pKariyer, hizli: pHizli, serbest: pSerbest, meydan: pMeydan, rekor: pRekor, garaj: pGaraj, gunluk: pGunluk, basarim: pBasarim, ayar: pAyar })[cur]();
     p.scrollTop = 0;
   }
 
@@ -221,7 +222,7 @@
     const d = DIFF[S.set.zorluk] || DIFF[1];
     const tr = TRK(o.pist), Z = tr.bolge >= 0 ? V.ZONES[tr.bolge] : V.ZONES[2];
     return {
-      tip: o.tip, pist: pistDef(tr, o.tip), bolge: Z, tur: o.tur || 1,
+      tip: o.tip, pist: pistDef(tr, o.tip), bolge: Z, tur: o.tur || 1, pistId: o.pist,
       oyuncu: { ad: S.isim || 'Sen', vis: visOf(S.sec), stats: statsFor(S.sec) },
       rakipler: o.rakipler || [], polis: o.polis || 0, hedef: o.hedef, hava: o.hava || 'acik', saat: o.saat || 'gunduz',
       zor: (o.zor || 0.85) * d.z, bant: d.bant, trafik: o.trafik,
@@ -322,6 +323,14 @@
       else lines.push(['🎯 Hedef tutmadı', '']);
       res.win = ok;
     }
+    // v7: pist rekorları, kırılan engeller
+    const pid = lastRun.cfg.pistId;
+    if (pid && !res.yakalandi && !res.kaza && (lastRun.cfg.tip !== 'kovala' && lastRun.cfg.tip !== 'kacis')) {
+      const rk = S.rek[pid] || (S.rek[pid] = {});
+      if (res.turlar && res.turlar.length) { const b = Math.min(...res.turlar); if (!rk.tur || b < rk.tur - 0.005) { const eski = rk.tur; rk.tur = Math.round(b * 100) / 100; lines.push(['⏱ YENİ TUR REKORU', fmtTime(b) + (eski ? ' (' + (b - eski).toFixed(2) + ' sn)' : '')]); if (eski && m.kind === 'zaman') unlock('hayalet'); } }
+      if (res.sprintT && (!rk.sure || res.sprintT < rk.sure - 0.005)) { const eski = rk.sure; rk.sure = Math.round(res.sprintT * 100) / 100; lines.push(['⏱ YENİ PİST REKORU', fmtTime(res.sprintT) + (eski ? ' (' + (res.sprintT - eski).toFixed(2) + ' sn)' : '')]); if (eski && m.kind === 'zaman') unlock('hayalet'); }
+    }
+    if (res.kirik) { para += res.kirik * 10; S.ist.kirik = (S.ist.kirik || 0) + res.kirik; if (S.ist.kirik >= 100) unlock('kirici'); }
     para = Math.round(para); un = Math.round(un);
     S.para += para; S.un += un; S.ist.kazanc += Math.max(0, para);
     if (res.win) dailyProg('kazan', 1);
@@ -340,6 +349,7 @@
     else if (tip === 'gise') { title = res.win ? 'BAŞARDIN' : 'SÜRE BİTTİ'; subt = res.win ? (res.kalan || 0).toFixed(1) + ' sn kala' : ''; }
     else { title = res.win ? '1. SIRA' : (res.pos ? res.pos + '. SIRA' : 'KAYBETTİN'); subt = V.TYPES[tip] ? V.TYPES[tip].ad + ' · ' + fmtTime(res.time) : ''; }
     if (m.kind === 'meydan') title = res.win ? 'BAŞARDIN' : 'OLMADI';
+    if (m.kind === 'zaman') { title = res.yeniHayalet ? 'YENİ REKOR!' : 'BİTTİ'; res.win = !!res.yeniHayalet; subt = res.turlar && res.turlar.length ? 'En iyi tur ' + fmtTime(Math.min(...res.turlar)) : fmtTime(res.sprintT || res.time); }
     big.textContent = title; big.className = 'big ' + (res.win ? 'w' : 'l'); sub.textContent = subt;
     const L = [];
     if (tip === 'hiz') L.push(['📸 Radar toplamı', fmt(res.toplam || st.hizToplam) + ' km/s']);
@@ -353,6 +363,9 @@
     if (st.etkisiz) L.push(['🚓 Devre dışı polis', st.etkisiz]);
     if (st.engel) L.push(['🏗️ Yıkılan engel', st.engel]);
     if (st.barikat) L.push(['🚧 Geçilen barikat', st.barikat]);
+    if (res.kirik) L.push(['📦 Kırılan kasa/koni', res.kirik + ' (+' + fmt(res.kirik * 10) + ' 💰)']);
+    if (res.hasar) L.push(['🔧 Araç hasarı', '%' + res.hasar]);
+    if (res.turlar && res.turlar.length > 1) L.push(['🔁 En iyi tur', fmtTime(Math.min(...res.turlar))]);
     $('resLines').innerHTML = L.concat(lines).map(([a, b]) => `<div class="ln"><span>${a}</span><b>${b}</b></div>`).join('') +
       `<div class="ln rw"><span>Kazanç</span><b>${para >= 0 ? '+' : ''}${fmt(para)} 💰 · +${fmt(un)} 🔥</b></div>`;
     const cont = () => {
@@ -496,6 +509,32 @@
     run({ kind: 'hizli', z: QR.bolge }, cfg);
   }
 
+  // ───────── REKORLAR + HAYALET YARIŞ (v7) ─────────
+  function pRekor() {
+    const mz = maxZone(), G2 = window.EKSTRA;
+    let h = `<div class="pane"><h2>⏱ Rekorlar <small>Hayaletle yarış</small></h2>
+      <p>Her pistte en iyi turun (döngüde) ya da en iyi sürenin (sprintte) kaydedilir. <b>Hayaletle Sür</b> dersen rakipsiz, trafiksiz pistte kendi en iyi sürüşünün yarı saydam hayaletine karşı yarışırsın; üstte farkı (+/− sn) görürsün. Rekoru her yarışta kırabilirsin.</p>`;
+    V.ZONES.forEach((z, zi) => {
+      if (zi > mz) return;
+      const ts = V.TRACKS.filter(t => t.bolge === zi && t.tip !== 'duz');
+      if (!ts.length) return;
+      h += `<h3>${z.ad}</h3><div class="rkl">` + ts.map(t => {
+        const r = S.rek[t.id] || {}, gh = G2 && G2.ghostOf(t.id);
+        const best = t.tip === 'dongu' ? r.tur : r.sure;
+        return `<div class="rk"><div><b>${t.ad}</b><small>${t.tip === 'dongu' ? 'Döngü · en iyi tur' : 'Sprint · en iyi süre'} · ${(t.uzun / 1000).toFixed(1)} km</small></div>
+          <div class="rkt">${best ? fmtTime(best) : '—'}${gh ? ' 👻' : ''}</div><button class="btn" onclick="A.ttStart('${t.id}')">${gh ? 'Hayaletle Sür' : 'Süre Koy'} ▶</button></div>`;
+      }).join('') + '</div>';
+    });
+    return h + '</div>';
+  }
+  function ttStart(id) {
+    click();
+    const tr = TRK(id);
+    const cfg = baseCfg({ tip: tr.tip === 'dongu' ? 'devre' : 'sprint', pist: id, tur: tr.tip === 'dongu' ? 3 : 1, rakipler: [], polis: 0, trafik: 0, saat: tr.bolge === 3 ? 'aksam' : 'gece', zor: 1 });
+    cfg.hayalet = true;
+    run({ kind: 'zaman', id }, cfg);
+  }
+
   // ───────── SERBEST SÜRÜŞ ─────────
   const FR = { bolge: 2, saat: 'gunduz', hava: 'acik' };
   function pSerbest() {
@@ -505,6 +544,7 @@
     return `<div class="pane"><h2>🌃 Serbest Sürüş <small>${S.ist.km.toFixed(1)} km yol yaptın</small></h2>
       <p>Karaliman'ın büyük çevre yolunda istediğin kadar dolaş. Trafik, devriye arabaları ve takip engelleri var. Bir polisin yanından <b>125 km/s</b> üstünde geçersen kovalamaca başlar; kaçarsan Ün ve para kazanırsın, kovalamaca hedeflerine de sayılır.</p>
       <h3>Bölge</h3><div class="sw">${V.ZONES.map((z, i) => i <= mz ? o('bolge', i, z.ad) : `<div class="o" style="opacity:.4">🔒 ${z.ad}</div>`).join('')}</div>
+      <p class="mut">🧩 Her bölgeye ${window.EKSTRA ? EKSTRA.KOL_N : 10} gizli parça saklandı: kestirmelerin içinde, rampaların ardında havada ve yol kenarlarında. Yakına gelince ışık sütunu görünür. Bulunan: ${V.ZONES.map((z, i) => i <= mz ? `<b>${z.ad} ${(S.kol[i] || []).length}/${window.EKSTRA ? EKSTRA.KOL_N : 10}</b>` : '').filter(Boolean).join(' · ')}</p>
       <h3>Saat · Hava</h3><div class="sw">${o('saat', 'gece', '🌙 Gece')}${o('saat', 'aksam', '🌇 Akşam')}${o('saat', 'gunduz', '🌞 Gündüz')} &nbsp; ${o('hava', 'acik', '☀️ Açık')}${o('hava', 'yagmur', '🌧 Yağmur')}${o('hava', 'sis', '🌫 Sis')}</div>
       <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn big" onclick="A.frStart()">SÜR ▶</button></div></div>`;
   }
@@ -516,9 +556,24 @@
     const cfg = {
       tip: 'serbest', pist: { seed: 99 + FR.bolge * 17, tip: 'dongu', uzun: 8000 }, bolge: Z, tur: 1,
       oyuncu: { ad: S.isim || 'Sen', vis: visOf(S.sec), stats: statsFor(S.sec) }, rakipler: [], polis: 0, hava: FR.hava, saat: FR.saat, zor: d.z, trafik: 0.8,
-      cb: { onFinish: () => { } },
+      koleksiyon: { bolge: FR.bolge, have: S.kol[FR.bolge] || (S.kol[FR.bolge] = []) },
+      cb: { onFinish: () => { }, onCollect: (id, n, N) => onCollect(FR.bolge, id, N) },
     };
     run({ kind: 'serbest' }, cfg);
+  }
+  // v7: gizli parça bulundu
+  function onCollect(b, id, N) {
+    const a = S.kol[b] || (S.kol[b] = []);
+    if (a.indexOf(id) >= 0) return;
+    a.push(id);
+    S.para += 500; S.un += 100; S.ist.kazanc += 500;
+    toast(`🧩 Gizli parça ${a.length}/${N} · +500 💰 · +100 🔥`, 'ach');
+    if (a.length >= N) {
+      S.para += 10000; S.un += 2500; S.ist.kazanc += 10000;
+      setTimeout(() => toast(`🏆 <b>${V.ZONES[b].ad}</b> bölgesinin bütün parçaları! +10.000 💰 · +2.500 🔥`, 'ach'), 900);
+      unlock('parca1');
+    }
+    save();
   }
   // serbest sürüşte biten kovalamaca
   window.onFreePursuit = res => {
@@ -917,7 +972,7 @@
     document.addEventListener('pointerdown', () => SES.unlock(), { once: true });
   }
 
-  window.A = { tab, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
+  window.A = { tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
     claimDaily, claimTask, set, askName, backup, resetAll, replayStory, get S() { return S; }, goMenu, _events: EVENTS };
   boot();
 })();

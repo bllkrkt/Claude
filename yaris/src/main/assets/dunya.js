@@ -655,8 +655,9 @@
             const fi = Math.floor(r() * NB), B = bk[fi];
             const tall = (tema === 'merkez' || tema === 'otoyol') && h > 28 && r() < 0.65;
             pushBox(B.sh, null, cx0, by + 2.25 - 0.4, cz0, h0, w, 4.5 + 0.8, d, 5.3, 0);
-            pushBox(tall ? gl[Math.floor(r() * gl.length)] : B.up, roof, cx0, by + 4.9 + (h - 4.5) / 2, cz0, h0, w, h - 4.5, d, 9, 0);
-            const top = by + 4.9 + h - 4.5;
+            // v7: üst katlar zemin katın tam üstünden başlar (eskiden aradan 40 cm'lik yarık görünüyordu)
+            pushBox(tall ? gl[Math.floor(r() * gl.length)] : B.up, roof, cx0, by + 4.45 + (h - 4.45) / 2, cz0, h0, w, h - 4.45, d, 9, 0);
+            const top = by + h;
             // çatı korkuluğu (dört kenar) ve çatı yapıları
             for (const [ox, oz, ww, dd] of [[0, d / 2 - 0.15, w, 0.3], [0, -d / 2 + 0.15, w, 0.3], [w / 2 - 0.15, 0, 0.3, d], [-w / 2 + 0.15, 0, 0.3, d]])
               pushBox(trim, trim, cx0 + fx * ox + rx * oz, top + 0.45, cz0 + fz * ox + rz * oz, h0, ww, 0.9, dd, 3, 0);

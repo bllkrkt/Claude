@@ -15,6 +15,7 @@ adı, karakterleri, "Blacklist" gibi isimleri, gerçek araba markaları kullanı
 | `araba3d.js` | `ARABA3D.make(opt)`: profilden ekstrüzyonla araba modeli (8 gövde + kamyon/otobüs), jant, kit, rüzgârlık, neon, desen dokusu, polis ışığı |
 | `dunya.js` | `DUNYA.build(scene,T,zone,opts)`: yol, kaldırım, binalar (instanced), bölge süsleri, gökyüzü, sis, yağmur, lambalar; kapı/radar/kontrol noktası/takip engeli/barikat üreticileri |
 | `post.js` | `POST`: ekran efektleri — sahne HDR doku hedefine çizilir; parlama (bloom, 2 seviye), hız bulanıklığı, nitro renk kayması, vinyet, ACES + sRGB. Grafik Düşük'te kapalı (`draw()` doğrudan çizer) |
+| `ekstra.js` | `EKSTRA` (v7): hasar görseli, kırılabilir engeller, serbest sürüş gizli parçaları, hayalet kaydı/oynatma. `yaris.js` kancaları: `start` sonunda `EKSTRA.start(R, exApi())`, `simulate`→`step`, `stepRace`→`frame`, `onLap`→`lap`, `finish`→`finish(res)`, `stopRace`→`stop`, duvar/çarpışma→`dmg(c, imp)` |
 | `yaris.js` | `YARIS`: yarış motoru — fizik, yapay zekâ, trafik, polis, yarış türleri, kamera, efektler, HUD, kontroller, vitrin (garaj sahnesi) |
 | `oyun.js` | `A`: kayıt, kariyer, garaj, menüler, hikâye diyalogu, ödüller, günlük, başarımlar, ayarlar |
 | `lib/three.min.js` | Three.js r149 (MIT). `fonts/` Plus Jakarta Sans (OFL) |
@@ -103,3 +104,15 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 - Çalışma: `VARLIK.car(id)` hazırsa C döner, değilse sırayla yükler (null → eski çizim); açılışta önce seçili araba, sonra hepsi arka planda (`preloadCars`); yüklenen araba vitrindeyse `YARIS.carReady` yeniler. `vis.model` = araba kimliği (oyuncu/rakip `c.id`, polis `COPS.*.model`, trafik `TRAFFIC.*.modeller`).
 - `makeReal`: tür `boya` → oyuncu boyası (+gövde AO), `boya`+base → kaplamalı (polis/taksi), `cam/far/sinyal/stop/plaka/sirenK/sirenM` → oyunun malzemeleri, gerisi `exMat` (ortak dokulu, MC önbelleğinde). Q=0'da eski çizim. Kit/spoiler/vinil/jant rengi gerçek modellerde görünmez.
 - Görsel kontrol betikleri (karalama): galeri = 25 modeli vitrinde sırayla çek; test makinesi zayıf telefon sayılır, `S.set.q=2; YARIS.setQuality(2)` yapmadan gerçek modeller çıkmaz.
+
+## v7 — fizik, tuşlar, hasar, engeller, gizli parçalar, hayalet
+- Rakip/polis yanal hareketi (`moveLateral`): hedef çizgi yumuşatılır (`c.dTs`), yanal hız ivme sınırlı (`c.lv`, 0,6–1,3 g). Önündekinden kaçarken seçtiği yanı korur (`c.ai.avoid/goL`). Konum ışınlanınca (`place`, kestirme giriş/çıkış, polis doğuşu) `c.dTs=c.lv=null`.
+- Nitro: NİTRO ve DRİFT tuşu gazı da verir; itiş en yüksek hızda da belirgin (`vmax×1.2+`, nitro bitince hız yavaş düşer, `c.nitroK`).
+- Tuşlar: sağda tek dokunma alanı `#c-right` (GAZ sağ alt, NİTRO üstünde, DRİFT solunda, FREN onun üstünde); parmak kaldırmadan tuşlar arası kayılır (`elementFromPoint`). ODAK sol tarafta direksiyonun üstünde.
+- Bina yarığı: zemin kat ile üst kat arasında 40 cm açık kalıyordu (`buildCity` pushBox y), kapatıldı.
+- Kestirme yüksekliği `scHeights()` (yaris.js): ana yolun kenar zemin şeritlerinin (dunya.js `ribbon` W/2+3..W/2+90) kestirmeyi örttüğü noktalarda yol onların 8 cm üstüne çıkar. Profil dunya.js ile aynı olmalı; dağda sol (kaya) taraftaki kestirmeler çıkarıldı.
+- Hasar: `c.dmg` 0–1; boya malzemeleri (`userData.paints`) kararır/pürüzlenir, %55+ kaputtan duman (`smokeFront`). Oyuna etkisi yok (görsel). Sonuçta "Araç hasarı %".
+- Kırılabilir engeller: koni dizileri, kasa yığınları, bariyer (her 120–280 m'de, kestirme ağzı/rampa yakını hariç) + kestirme içinde kasalar. Çarpan araç hafif yavaşlar, parçalar uçar (`flyFrame`). Oyuncuya kırık başına 10 💰, başarım `kirici` (100).
+- Gizli parçalar: serbest sürüşte bölge başına 10 (`KOL_N`; kestirme ortası, rampa ardında havada, yol kenarı; tohum `4242+bölge*97`). Kayıt `S.kol[bölge]=[id]`, parça başına +500💰 +100🔥, hepsi +10.000💰 +2.500🔥, başarım `parca1`. Işık sütunu 260 m içinde görünür.
+- Rekorlar/hayalet: `cfg.pistId` her yarışta; döngüde tur süreleri, sprintte toplam süre → `S.rek[pist]={tur,sure}`. Hayalet kaydı ayrı anahtar `gece-kacagi-hayalet` (pist → {t, p:[x,y,z,yön,s ×10 tamsayı, 10 Hz], vis}). Menü "⏱ Rekorlar" → `A.ttStart(id)`: rakipsiz/trafiksiz, `cfg.hayalet=true`, üstte ± fark. Başarım `hayalet`.
+- Denge (0.9): eski 33/50, v7 32/50 (fark rastgelelik).
