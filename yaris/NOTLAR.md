@@ -125,3 +125,11 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 ## v9 — tabelalar ve şehir süsleri (dunya.js, "v9" bloğu `inst` tanımının hemen altında)
 - `textTex(metin, zemin, yazı, w, h, {frame})`: metinde `{<} {>} {^} {v} {/}` çizilmiş ok, `{*}` yıldız (yazı karakteri değil; `drawArrow`, `drawStar`).
 - Keskin virajların dış kenarında sarı-siyah viraj uyarı levhaları (|k|≥0,011, en az 24 m süren virajlar, 13 m arayla), bölgeye göre hız sınırı levhası (her 520 m), rampa öncesi "RAMPA ↑" levhası, düz kesimlerde şeritlere beyaz yol okları (260 m), kurgusal reklam panoları (8 marka; şehirde kaldırımda ışıklı pano, otoyol/dağ/sahilde dev pano, gece ışıklı), şehirde otobüs durakları (cam, bank, reklam, DURAK levhası). Otoyol köprü tabelaları 7 farklı yazı + ok.
+
+## v10 — direksiyon ve yarış içi ayarlar
+- Oyuncu direksiyonu (`playerPhysics`): giriş eğrisi `|x|^1.35`, hıza göre direksiyon hızı (bırakınca 9/sn), dönüş gücü `yawMax = clamp(grip·g·1.55/v, 0.42, 1.9)` (eskiden 1.12 ve alt sınır yok: orta hızda viraj tam kilit istiyordu), dönüş ataleti `c.w` (~0,09 sn, driftte 0,16), yardımın düzleştirmesi yumuşatıldı.
+- Tüm araçlarda gövde yönü yumuşak izlenir (`c.hv`), gövde yatışı gerçek dönüş hızından (`c.yr`, `c.roll`).
+- Elle vites `manualGear` (`input.gUp/gDn`, sol tarafta −/+ tuşları), devir sınırında ivme kesilir, vites göstergesi kırmızı.
+- Yeni ayarlar (`S.set`): `trafik` (0/0.5/1/1.6/2.4, yarışta canlı: `YARIS.setTraffic`), `vites` oto/manuel, `dirTip` kaydir/tus, `dirHassas`, `tusBoyut` (CSS `--ctl`), `tusSaydam` (`--ctlop`), `harita`, `sarsinti`, `hizBirim` kmh/mph. `ayarHTML(race)` menüde ve duraklat → AYARLAR penceresinde ortak; kontrol değişince `YARIS.refreshHud()`.
+- `#modal` artık `position: fixed` (duraklatma ekranının arkasında kalıyordu).
+- Denge (0.9): 30–32/50 (önceki 32–33). Sanal sürücü (`botDrive`) yeni direksiyona uyarlandı; duvar sürtmesi sanal sürücüde 336 → 432 arttı (insan oyuncuda değil, PD denetleyicisinin ataletle salınımı).

@@ -146,7 +146,7 @@ button { font: inherit; color: inherit; }
 #dlg.nar .txt { text-align: center; font-style: italic; background: rgba(0, 0, 0, 0.75); }
 
 /* modal pencereler */
-#modal { z-index: 40; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; }
+#modal { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.6); display: none; align-items: center; justify-content: center; }
 #modal.on { display: flex; }
 #modal .mbox { background: #110f20; border: 1px solid var(--line); border-radius: 18px; padding: 18px; width: min(560px, 92vw); max-height: 90vh; overflow-y: auto; animation: popIn 0.18s ease-out; }
 @keyframes popIn { from { transform: scale(0.92); opacity: 0 } }
@@ -272,3 +272,21 @@ body.racing #menu, body.racing #title { display: none !important; }
 /* v8: simgeler (ikon.js) */
 .ik { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.22em; line-height: 0; flex: none; }
 .ik svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* v10: elle vites tuşları, kontrol boyutu/saydamlığı */
+.cb.gb { bottom: calc(44vh + 18px); width: 50px; height: 40px; font-size: 20px; line-height: 1; background: rgba(255, 255, 255, 0.1); }
+.cb.gb small { font-size: 7.5px; margin-top: 0; }
+#c-gdn { left: calc(108px + var(--safe-l)); } #c-gup { left: calc(164px + var(--safe-l)); }
+#c-right { transform: scale(var(--ctl, 1)); transform-origin: right bottom; }
+#c-steer { transform: scale(var(--ctl, 1)); transform-origin: left bottom; }
+#hud-ctl { opacity: var(--ctlop, 1); }
+body.nomap #hud-map { display: none; }
+#h-gear.lim { color: #ff3b3b; animation: none; text-shadow: 0 0 8px #ff3b3b; }
+h3.grp { margin-top: 18px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 15px; color: var(--pink, #ff2e63); }
+h3.grp:first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+.rset { max-height: 66vh; overflow-y: auto; padding-right: 6px; columns: 2 300px; column-gap: 22px; }
+.rset .ayr { break-inside: avoid; margin-bottom: 4px; }
+.rset h3 { font-size: 13px; margin: 8px 0 5px; } .rset h3.grp { column-span: all; font-size: 14px; margin-top: 10px; }
+.rset .sw .o { padding: 7px 10px; font-size: 12px; }
+#modal .mbox:has(.rset) { width: min(860px, 95vw); padding: 14px 16px; }
+#modal .mbox:has(.rset) h2 { margin-bottom: 2px; }

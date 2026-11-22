@@ -111,6 +111,23 @@ const v7 = await page.evaluate(async () => {
 console.log('v7 serbest', JSON.stringify(v7));
 await shot('10-kirik');
 await page.evaluate(() => { window.YARIS.stopRace(); window.A.goMenu(); });
+// v10: yarış içi ayarlar (duraklat → AYARLAR): trafik, elle vites
+await page.evaluate(() => { const A = window.A; A.tab('hizli'); A.qr('tip', 'sprint'); A.qr('pist', 'l2'); A.qrStart(); });
+await page.waitForTimeout(5000);
+const v10 = await page.evaluate(async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms)), A = window.A, R = window.YARIS.R, o = { t0: R.traffic.length };
+  window.onPauseReq(); await wait(200); document.getElementById('pSet').click(); await wait(200);
+  o.modal = document.getElementById('mbox').querySelectorAll('.o').length;
+  A.set('trafik', 2.4); A.set('vites', 'manuel'); await wait(200);
+  o.t1 = R.traffic.length; o.vitesTus = !!document.getElementById('c-gup'); o.modalHala = document.getElementById('modal').classList.contains('on');
+  A.closeModal(); window.onPauseReq(); await wait(300);
+  for (let i = 0; i < 3; i++) { window.YARIS.input.gUp = 1; await wait(150); }
+  o.vites = R.player.gear;
+  A.set('trafik', 1); A.set('vites', 'oto'); o.t2 = R.traffic.length;
+  return o;
+});
+console.log('v10 ayar', JSON.stringify(v10));
+await page.evaluate(() => { window.YARIS.stopRace(); window.A.goMenu(); });
 // v7: hayalet yarış (döngü pistinde turları ışınlayarak bitir)
 await page.evaluate(() => window.A.ttStart('l3'));
 await page.waitForTimeout(5200);

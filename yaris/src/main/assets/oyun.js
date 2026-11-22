@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '9.0';
+  const VER = '10.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -27,7 +27,8 @@
       ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0, kestirme: 0, ucus: 0, kirik: 0 },
       kol: {}, rek: {}, // v7: serbest sürüş gizli parçaları (bölge → bulunanlar), pist rekorları (pist → {tur, sure})
       bas: {}, mo: {}, gun: { tarih: '', seri: 0, alindi: '', gorev: [], gtarih: '' },
-      set: { ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2 },
+      set: { ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2,
+        trafik: 1, vites: 'oto', dirTip: 'kaydir', dirHassas: 1, tusBoyut: 1, tusSaydam: 1, harita: true, sarsinti: 1, hizBirim: 'kmh' }, // v10
       ilk: true,
     };
   }
@@ -62,7 +63,7 @@
     setTimeout(() => d.remove(), 2600);
   }
   function modal(html) { $('mbox').innerHTML = html; $('modal').classList.add('on'); }
-  function closeModal() { $('modal').classList.remove('on'); }
+  function closeModal() { $('modal').classList.remove('on'); ayarAcik = false; }
   $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
   function confirmBox(text, yes, cb) {
     modal(`<h2>Emin misin?</h2><p>${text}</p><div class="row" style="justify-content:flex-end"><button class="btn alt" onclick="A.closeModal()">Vazgeç</button><button class="btn" id="cfYes">${yes}</button></div>`);
@@ -844,33 +845,68 @@
   }
 
   // ───────── AYARLAR ─────────
-  function pAyar() {
+  // v10: ayarlar hem menüde hem yarış içinde (duraklat → AYARLAR) aynı listeden üretilir
+  function ayarHTML(race) {
     const s = S.set;
     const o = (k, v, l) => `<div class="o ${s[k] === v ? 'on' : ''}" onclick="A.set('${k}',${typeof v === 'string' ? `'${v}'` : v})">${l}</div>`;
-    return `<div class="pane"><h2>⚙️ Ayarlar</h2>
-      <h3>Kontrol</h3><div class="sw">${o('kontrol', 'dokun', '👆 Dokun-kaydır')}${o('kontrol', 'egme', '📱 Telefonu eğ')}</div>
-      ${s.kontrol === 'egme' ? `<h3>Eğme hassasiyeti</h3><div class="sw">${o('hassas', 0.7, 'Düşük')}${o('hassas', 1, 'Orta')}${o('hassas', 1.4, 'Yüksek')}</div>` : ''}
-      <h3>Otomatik gaz</h3><div class="sw">${o('otoGaz', false, 'Kapalı')}${o('otoGaz', true, 'Açık (fren basınca durur)')}</div>
-      <h3>Sürüş yardımı</h3><div class="sw">${o('yardim', 0, 'Kapalı')}${o('yardim', 1, 'Az')}${o('yardim', 2, 'Orta')}${o('yardim', 3, 'Çok')}</div>
-      <h3>Zorluk</h3><div class="sw">${DIFF.map((d, i) => o('zorluk', i, d.ad)).join('')}</div>
-      <h3>Kamera</h3><div class="sw">${o('kamera', 0, 'Yakın')}${o('kamera', 1, 'Uzak')}${o('kamera', 2, 'Tampon')}</div>
-      <h3>Grafik</h3><div class="sw">${o('q', 0, 'Düşük')}${o('q', 1, 'Orta')}${o('q', 2, 'Yüksek')}</div>
-      <h3>Efektler</h3><div class="sw">${o('efekt', 0, 'Az')}${o('efekt', 1, 'Orta')}${o('efekt', 2, 'Çok')}</div>
-      <h3>Ses efektleri</h3><div class="sw">${[0, 0.4, 0.8, 1].map(v => o('ses', v, v ? Math.round(v * 100) + '%' : 'Kapalı')).join('')}</div>
-      <h3>Müzik</h3><div class="sw">${[0, 0.3, 0.5, 0.8].map(v => o('muzik', v, v ? Math.round(v * 100) + '%' : 'Kapalı')).join('')}</div>
-      <h3>Titreşim</h3><div class="sw">${o('titresim', true, 'Açık')}${o('titresim', false, 'Kapalı')}</div>
+    const sw = (t, h, info) => `<div class="ayr"><h3>${t}</h3>${info ? `<p class="mut" style="font-size:12px;margin:-4px 0 6px">${info}</p>` : ''}<div class="sw">${h}</div></div>`;
+    let h = '<h3 class="grp">🚗 Sürüş</h3>';
+    h += sw('Kontrol', o('kontrol', 'dokun', '👆 Dokunmatik') + o('kontrol', 'egme', '📱 Telefonu eğ'));
+    if (s.kontrol === 'egme') h += sw('Eğme hassasiyeti', o('hassas', 0.7, 'Düşük') + o('hassas', 1, 'Orta') + o('hassas', 1.4, 'Yüksek'));
+    else {
+      h += sw('Direksiyon', o('dirTip', 'kaydir', 'Kaydır (parmak konumu)') + o('dirTip', 'tus', 'Sol / sağ tuşlar'), s.dirTip === 'tus' ? 'Basılı tuttukça direksiyon yavaşça tam kilide döner.' : 'Parmağını ortadan ne kadar uzağa kaydırırsan o kadar döner.');
+      if (s.dirTip !== 'tus') h += sw('Direksiyon hassasiyeti', o('dirHassas', 0.75, 'Düşük') + o('dirHassas', 1, 'Orta') + o('dirHassas', 1.35, 'Yüksek'));
+    }
+    h += sw('Vites', o('vites', 'oto', 'Otomatik') + o('vites', 'manuel', 'Manuel'), s.vites === 'manuel' ? 'Sol tarafta − / + vites tuşları çıkar. Doğru viteste biraz daha hızlı ivmelenirsin; devir sınırında araba çekmez.' : '');
+    h += sw('Otomatik gaz', o('otoGaz', false, 'Kapalı') + o('otoGaz', true, 'Açık (fren basınca durur)'));
+    h += sw('Sürüş yardımı', o('yardim', 0, 'Kapalı') + o('yardim', 1, 'Az') + o('yardim', 2, 'Orta') + o('yardim', 3, 'Çok'), 'Virajı araba kısmen kendi takip eder.');
+    h += '<h3 class="grp">🚦 Trafik</h3>';
+    h += sw('Trafik yoğunluğu', o('trafik', 0, 'Yok') + o('trafik', 0.5, 'Az') + o('trafik', 1, 'Normal') + o('trafik', 1.6, 'Çok') + o('trafik', 2.4, 'Kaos'));
+    if (!race) h += sw('Zorluk', DIFF.map((d, i) => o('zorluk', i, d.ad)).join(''));
+    h += '<h3 class="grp">📱 Ekran</h3>';
+    h += sw('Kamera', o('kamera', 0, 'Yakın') + o('kamera', 1, 'Uzak') + o('kamera', 2, 'Tampon'));
+    h += sw('Tuş boyutu', o('tusBoyut', 0.85, 'Küçük') + o('tusBoyut', 1, 'Normal') + o('tusBoyut', 1.15, 'Büyük'));
+    h += sw('Tuş görünürlüğü', o('tusSaydam', 0.45, 'Silik') + o('tusSaydam', 0.75, 'Yarı') + o('tusSaydam', 1, 'Tam'));
+    h += sw('Hız birimi', o('hizBirim', 'kmh', 'km/s') + o('hizBirim', 'mph', 'mil/s'));
+    h += sw('Mini harita', o('harita', true, 'Açık') + o('harita', false, 'Kapalı'));
+    h += sw('Ekran sarsıntısı', o('sarsinti', 0, 'Kapalı') + o('sarsinti', 0.5, 'Az') + o('sarsinti', 1, 'Normal'));
+    if (!race) h += sw('Grafik', o('q', 0, 'Düşük') + o('q', 1, 'Orta') + o('q', 2, 'Yüksek'));
+    h += sw('Efektler', o('efekt', 0, 'Az') + o('efekt', 1, 'Orta') + o('efekt', 2, 'Çok'));
+    h += '<h3 class="grp">🎬 Ses</h3>';
+    h += sw('Ses efektleri', [0, 0.4, 0.8, 1].map(v => o('ses', v, v ? Math.round(v * 100) + '%' : 'Kapalı')).join(''));
+    h += sw('Müzik', [0, 0.3, 0.5, 0.8].map(v => o('muzik', v, v ? Math.round(v * 100) + '%' : 'Kapalı')).join(''));
+    h += sw('Titreşim', o('titresim', true, 'Açık') + o('titresim', false, 'Kapalı'));
+    return h;
+  }
+  function pAyar() {
+    return `<div class="pane"><h2>⚙️ Ayarlar</h2>${ayarHTML(false)}
+      <h3 class="grp">💾 Diğer</h3>
       <h3>Sürücü adı</h3><div class="row"><span>${S.isim || '(yok)'}</span><button class="btn alt sm" onclick="A.askName()">Değiştir</button></div>
       <h3>Kayıt</h3><div class="row"><button class="btn alt sm" onclick="A.backup()">Yedek dosyası kaydet</button><button class="btn alt sm" onclick="A.resetAll()" style="color:var(--red)">Kariyeri sıfırla</button></div>
-      <p class="mut" style="font-size:12px;margin-top:14px">Gece Kaçağı v${VER} · Tüm arabalar, karakterler ve şehir kurgusaldır. Three.js (MIT) kullanır. Dokular, gökyüzü fotoğrafları ve sokak modelleri: Poly Haven (CC0). Süper araba modeli: “Car Concept”, Eric Chadwick / Darmstadt Graphics Group, CC BY 4.0 (logolar çıkarıldı, sadeleştirildi, boyası değiştirildi). Diğer araba, polis ve trafik modelleri: Daniel Zhabotinsky (sketchfab.com/DanielZhabotinsky), CC BY 4.0 (rozetler ve plakalar çıkarıldı, polis kaplaması değiştirildi, boyalar oyunda yeniden renklendirildi). Reklam yok, internet gerekmez.</p></div>`;
+      <p class="mut" style="font-size:12px;margin-top:14px">Gece Kaçağı v${VER} · Tüm arabalar, karakterler ve şehir kurgusaldır. Three.js (MIT) kullanır. Dokular, gökyüzü fotoğrafları ve sokak modelleri: Poly Haven (CC0). Araba modelleri: Daniel Zhabotinsky ve Khronos (CC BY 4.0).</p></div>`;
+  }
+  let ayarAcik = false;
+  function raceSettings() {
+    click(); ayarAcik = true;
+    modal(`<h2>⚙️ Ayarlar</h2><div class="rset">${ayarHTML(true)}</div><div class="row" style="justify-content:flex-end;margin-top:10px"><button class="btn" onclick="A.closeModal()">TAMAM</button></div>`);
   }
   function set(k, v) {
     S.set[k] = v; click(); save(); applyOpts();
     if (k === 'q') { Y.setQuality(v); Y.setShowCar(visOf(S.sec)); }
-    renderPanel();
+    if (Y.active) {
+      if (k === 'trafik') Y.setTraffic();
+      if (k === 'kamera' && Y.R) Y.R.camMode = v;
+      if (['vites', 'dirTip', 'kontrol', 'otoGaz'].includes(k)) Y.refreshHud();
+    }
+    if (ayarAcik && $('modal').classList.contains('on')) { const sc = $('mbox').scrollTop; raceSettings(); $('mbox').scrollTop = sc; }
+    else renderPanel();
   }
   function applyOpts() {
     const s = S.set, o = Y.opt;
     o.tilt = s.kontrol === 'egme'; o.tiltSens = s.hassas; o.autoGas = s.otoGaz; o.assist = [0, 0.3, 0.55, 0.8][s.yardim]; o.cam = s.kamera; o.vib = s.titresim; o.fx = s.efekt;
+    o.steerSens = s.dirHassas; o.steerMode = s.dirTip; o.manual = s.vites === 'manuel'; o.traffic = s.trafik; o.shake = s.sarsinti; o.mph = s.hizBirim === 'mph';
+    const de = document.documentElement.style; de.setProperty('--ctl', s.tusBoyut); de.setProperty('--ctlop', s.tusSaydam);
+    document.body.classList.toggle('nomap', !s.harita);
     SES.setVol(s.ses, s.muzik);
   }
   window.onCam = m => { S.set.kamera = m; save(); };
@@ -905,6 +941,7 @@
   window.onPauseReq = () => { if (!Y.active || (Y.R && Y.R.finished)) return; paused(!isPaused); };
   $('pResume').onclick = () => { click(); paused(false); };
   $('pRestart').onclick = () => { click(); paused(false); restart(); };
+  $('pSet').onclick = () => raceSettings();
   $('pCam').onclick = () => { click(); const r = Y.R; if (r) { r.camMode = (r.camMode + 1) % 3; S.set.kamera = r.camMode; save(); toast('🎥 ' + ['Yakın', 'Uzak', 'Tampon'][r.camMode]); } };
   $('pQuit').onclick = () => {
     click(); paused(false);

@@ -15,8 +15,9 @@
   let raf = 0, lastT = 0, running = false, paused = false;
   const fpsW = { t: 0, n: 0 };
   const tmp = {}, tmp2 = {};
-  const input = { steer: 0, gas: 0, brake: 0, nitro: 0, hb: 0, odak: 0, tilt: 0, laneL: 0, laneR: 0, shift: 0 };
-  const opt = { autoGas: false, assist: 0.5, tilt: false, cam: 0, vib: true, tiltSens: 1, fx: 2 };
+  const input = { steer: 0, gas: 0, brake: 0, nitro: 0, hb: 0, odak: 0, tilt: 0, laneL: 0, laneR: 0, shift: 0, gUp: 0, gDn: 0 };
+  const opt = { autoGas: false, assist: 0.5, tilt: false, cam: 0, vib: true, tiltSens: 1, fx: 2,
+    steerSens: 1, steerMode: 'kaydir', manual: false, traffic: 1, shake: 1 }; // v10: direksiyon hassasiyeti/tipi, elle vites, trafik çarpanı, sarsıntı
 
   // ───────── kurulum ─────────
   function init(cv, rootEl, quality) {
@@ -299,7 +300,7 @@
     R.minimap = buildMinimap();
     // ── trafik ──
     const dens = cfg.trafik != null ? cfg.trafik : (isDrag ? 0.5 : cfg.tip === 'drift' || cfg.tip === 'eleme' || cfg.tip === 'devre' || cfg.tip === 'gise' ? 0.35 : 0.7);
-    R.trafficN = Math.round((Q === 0 ? 8 : 14) * dens * (T.W / 14));
+    R.trafficN = Math.round((Q === 0 ? 8 : 14) * dens * (T.W / 14) * (cfg.trafik === 0 ? 0 : opt.traffic));
     for (let i = 0; i < R.trafficN; i++) spawnTraffic(true, i);
     // ── polis ──
     if (cfg.tip === 'kovala' || cfg.tip === 'kacis') startPursuit(cfg.tip === 'kacis' ? (cfg.hedef && cfg.hedef.n) || cfg.polis || 3 : Math.max(1, cfg.polis || (cfg.hedef && cfg.hedef.t === 'kac' ? cfg.hedef.n : 1)), true);
@@ -559,8 +560,12 @@
     const r = R, T = trk(c), st = c.st;
     const isDrag = r.cfg.tip === 'drag';
     // giriş
+    // v10: direksiyon — orta bölgede ince, uçta sert; hız arttıkça direksiyon daha yavaş döner, bırakınca hızlı toplanır
     let steerIn = opt.tilt ? input.tilt : input.steer;
-    const sRate = opt.tilt ? 12 : 7;
+    steerIn = Math.sign(steerIn) * Math.pow(Math.abs(steerIn), 1.35);
+    const vr0 = clamp(Math.abs(c.v) / st.vmax, 0, 1);
+    const back = Math.abs(steerIn) < Math.abs(c.steer) || steerIn * c.steer < 0;
+    const sRate = opt.tilt ? 12 : (back ? 9 : (opt.steerMode === 'tus' ? 4.2 : 7) - 2.5 * vr0);
     c.steer += clamp(steerIn - c.steer, -sRate * dt, sRate * dt);
     // v7: nitro ve drift tuşu gazı da verir (sağ başparmak tek tuşta kalabilsin)
     const gas = (opt.autoGas && !input.brake) || input.gas || input.nitro || (input.hb && !isDrag) ? 1 : 0;
@@ -574,6 +579,7 @@
     // vites ve devir
     let accMul = 1;
     if (isDrag) accMul = dragGear(c, dt, vmax);
+    else if (opt.manual) accMul = manualGear(c, dt, vmax);
     else autoGear(c, vmax);
     // ivme
     const vr = Math.max(0, c.v) / vmax;
@@ -593,7 +599,8 @@
     // direksiyon
     const grip = st.grip * r.gripMul * (c.spike > 0 ? 0.75 : 1);
     const spd = Math.max(Math.abs(c.v), 4);
-    let yawMax = Math.min(2.0, grip * GRAV * 1.12 / spd);
+    // v10: dönüş gücü — eskiden orta hızda virajı ancak tam kilitle dönebiliyordu
+    let yawMax = clamp(grip * GRAV * 1.55 / spd, 0.42, 1.9);
     const drifting = (input.hb && Math.abs(c.v) > 12 && !isDrag);
     if (drifting) yawMax *= 1.65;
     let yaw = c.steer * yawMax * (c.v < 0 ? -1 : 1);
@@ -611,9 +618,14 @@
     if (c.air) yaw = 0;
     if (!isDrag && !c.air) {
       const asst = opt.assist;
-      yaw += -k * c.v * asst * 0.85;
-      if (Math.abs(c.steer) < 0.1) yaw += -c.a * asst * 2.2;
-      else yaw += -c.a * asst * 0.5;
+      yaw += -k * c.v * asst * 0.9;
+      // bırakınca yola yumuşakça hizalan (eskiden bir anda düzleşiyordu)
+      yaw += -c.a * asst * (Math.abs(c.steer) < 0.1 ? 1.3 : 0.35);
+    }
+    // dönüş ataleti: gerçek dönüş hızı hedefe ~0,1 sn'de ulaşır (ani savrulma yok, ağırlık hissi)
+    if (!isDrag) {
+      c.w = c.w == null ? yaw : c.w + (yaw - c.w) * Math.min(1, dt / (drifting ? 0.16 : 0.09));
+      yaw = c.w;
     }
     // kayma (drift) — görsel gövde açısı ve puan
     const D = r.drift;
@@ -661,6 +673,18 @@
     if (g !== c.gear) { if (g > c.gear && R.phase === 'yaris') SES().sfx('shift'); c.gear = g; }
     const lo = tops[g - 1], hi = tops[g];
     c.rpm = clamp(0.28 + (v - lo) / (hi - lo) * 0.7, 0.2, 1);
+  }
+  // v10: yarışlarda elle vites (Ayarlar). Devir sınırında ivme kesilir, yüksek viteste düşük hızda güç azalır
+  function manualGear(c, dt, vmax) {
+    const tops = [0, 0.2, 0.36, 0.52, 0.68, 0.84, 1.02];
+    if (input.gUp) { input.gUp = 0; if (c.gear < 6) { c.gear++; SES().sfx('shift'); } }
+    if (input.gDn) { input.gDn = 0; if (c.gear > 1) { c.gear--; SES().sfx('shift'); } }
+    const v = Math.max(0, c.v) / vmax, g = c.gear, lo = tops[g - 1], hi = tops[g];
+    c.rpm = clamp(0.28 + (v - lo) / (hi - lo) * 0.7, 0.15, 1.05);
+    if (v > hi * 1.0 && g < 6) { c.limiter = (c.limiter || 0) + dt; return 0.04; } // kesici
+    c.limiter = 0;
+    if (v < lo * 0.7) return 0.45 + 0.4 * v / Math.max(0.01, lo * 0.7); // vites fazla yüksek: bayıyor
+    return 1.06; // doğru viteste küçük bir avantaj
   }
   // Drag: elle vites. Dönüş: ivme çarpanı
   function dragGear(c, dt, vmax) {
@@ -891,6 +915,15 @@
     if (T.loop) c.s = ((c.s % T.L) + T.L) % T.L;
     const lim = T.W / 2 + 0.2 - c.W / 2;
     if (Math.abs(c.d) > lim) c.d = Math.sign(c.d) * lim;
+  }
+  // v10: trafik yoğunluğu yarış içinde değişebilir (Ayarlar)
+  function trafficBase() { const cfg = R.cfg, isDrag = cfg.tip === 'drag'; const dens = cfg.trafik != null ? cfg.trafik : (isDrag ? 0.5 : cfg.tip === 'drift' || cfg.tip === 'eleme' || cfg.tip === 'devre' || cfg.tip === 'gise' ? 0.35 : 0.7); return (Q === 0 ? 8 : 14) * dens * (R.T.W / 14); }
+  function setTraffic() {
+    if (!R) return;
+    const want = R.cfg.trafik === 0 ? 0 : Math.round(trafficBase() * opt.traffic);
+    while (R.traffic.length > want) { const c = R.traffic.pop(); scene.remove(c.model); A3().dispose(c.model); }
+    for (let i = R.traffic.length; i < want; i++) spawnTraffic(false, i);
+    R.trafficN = want;
   }
   function trafficRecycle() {
     const pl = R.player, T = R.T;
@@ -1461,14 +1494,24 @@
     if (c.bounce) c.bounce = Math.max(0, c.bounce - dt * 0.8);
     m.position.set(tmp.x, baseY + 0.02 - (c.bounce || 0) * 0.5, tmp.z);
     const dir = c.kind === 'traffic' && c.dir < 0 ? Math.PI : 0;
-    const head = tmp.h - c.a - c.slip + dir + (c.spin || 0);
+    let head = tmp.h - c.a - c.slip + dir + (c.spin || 0);
+    // v10: gövde yönü yumuşak izlenir (çarpışma itmeleri ve şerit değişiminde ani dönüş görünmesin)
+    const hv0 = c.hv;
+    if (c.hv == null || dt === 0 || c.spin) c.hv = head;
+    else { let dh = head - c.hv; while (dh > Math.PI) dh -= 2 * Math.PI; while (dh < -Math.PI) dh += 2 * Math.PI; c.hv += dh * Math.min(1, dt * (c.isPlayer ? 16 : 9)); }
+    if (hv0 != null && dt > 0) { let d2 = c.hv - hv0; while (d2 > Math.PI) d2 -= 2 * Math.PI; while (d2 < -Math.PI) d2 += 2 * Math.PI; c.yr = lerp(c.yr || 0, clamp(d2 / dt, -3, 3), Math.min(1, dt * 8)); }
+    head = c.hv;
     m.rotation.set(0, 0, 0);
     m.rotation.y = head;
     // eğim + yuvarlanma
     if (c.air > 0) m.rotateX(-Math.atan2(c.vy, Math.max(8, c.v)) * 0.75);
     else if (c.wy != null && rampH(c) > 0) m.rotateX(-0.17);
     else m.rotateX(-Math.atan(tmp.p) * (dir ? -1 : 1) + (c.bounce || 0) * 0.3);
-    if (c.isPlayer || c.kind === 'racer') m.rotateZ(clamp(-c.steer * c.v * 0.0025 - (c.slip || 0) * 0.06, -0.06, 0.06));
+    // gövde yatışı: dönüş hızı × hız (virajda dışa yatar)
+    if (c.isPlayer || c.kind === 'racer' || c.kind === 'cop') {
+      c.roll = lerp(c.roll || 0, clamp((c.yr || 0) * c.v * 0.0045 - (c.slip || 0) * 0.05, -0.075, 0.075), Math.min(1, dt * 6));
+      m.rotateZ(c.roll);
+    }
     // tekerlekler
     c.wheelRot += c.v * dt / 0.34;
     const ws = m.userData.wheels;
@@ -1525,7 +1568,7 @@
     camPos.x = lerp(camPos.x, _t.x, k); camPos.y = lerp(camPos.y, _t.y, k * 0.9); camPos.z = lerp(camPos.z, _t.z, k);
     camLook.x = lerp(camLook.x, _l.x, Math.min(1, k * 1.6)); camLook.y = lerp(camLook.y, _l.y, Math.min(1, k * 1.6)); camLook.z = lerp(camLook.z, _l.z, Math.min(1, k * 1.6));
     let sx = 0, sy = 0;
-    if (r.shake > 0) { sx = (Math.random() - 0.5) * r.shake * 0.5; sy = (Math.random() - 0.5) * r.shake * 0.35; r.shake = Math.max(0, r.shake - dt * 2.2); }
+    if (r.shake > 0) { sx = (Math.random() - 0.5) * r.shake * 0.5 * opt.shake; sy = (Math.random() - 0.5) * r.shake * 0.35 * opt.shake; r.shake = Math.max(0, r.shake - dt * 2.2); }
     if (pl.nitroOn) { sx += (Math.random() - 0.5) * 0.05; sy += (Math.random() - 0.5) * 0.05; }
     camera.position.set(camPos.x + sx, camPos.y + sy, camPos.z);
     camera.lookAt(camLook.x, camLook.y, camLook.z);
@@ -1703,13 +1746,13 @@
       <div id="hud-drift" style="display:none"><b id="h-dpts">0</b><small id="h-dmul">x1</small></div>
       <div id="hud-speedo">
         <svg viewBox="0 0 120 120" id="h-rpm"><circle cx="60" cy="60" r="52" class="rbg"/><circle cx="60" cy="60" r="52" class="rfg" id="h-rpmarc"/></svg>
-        <div id="h-spd">0</div><small>km/s</small><div id="h-gear">1</div>
+        <div id="h-spd">0</div><small>${opt.mph ? 'mil/s' : 'km/s'}</small><div id="h-gear">1</div>
         <div class="bar nitro"><i id="h-nit"></i></div>
         <div class="bar odak"><i id="h-odak"></i></div>
       </div>
       <div id="hud-ctl">
-        <div id="c-steer" class="${opt.tilt && !drag ? 'tilt' : ''}"><span class="l">◀</span><span class="r">▶</span><em>${opt.tilt && !drag ? 'EĞ' : 'KAYDIR'}</em></div>
-        <div class="cb" id="c-odak">⏱ ODAK</div>
+        <div id="c-steer" class="${opt.tilt && !drag ? 'tilt' : ''}"><span class="l">◀</span><span class="r">▶</span><em>${opt.tilt && !drag ? 'EĞ' : opt.steerMode === 'tus' ? 'BAS' : 'KAYDIR'}</em></div>
+        <div class="cb" id="c-odak">⏱ ODAK</div>${opt.manual && !drag ? '<div class="cb gb" id="c-gdn">−<small>vites</small></div><div class="cb gb" id="c-gup">+<small>vites</small></div>' : ''}
         <div id="c-right">
           <div class="cb" id="c-nitro">🔥 NİTRO<small>gaz dahil</small></div>
           <div class="cb" id="c-brake">FREN</div>
@@ -1738,8 +1781,8 @@
     const r = R, e = r.hudEl, pl = r.player, tip = r.cfg.tip;
     r.hudT -= dt;
     const kmh = Math.round(Math.abs(pl.v) * KMH);
-    e.spd.textContent = kmh;
-    e.gear.textContent = pl.v < -0.5 ? 'G' : pl.gear;
+    e.spd.textContent = opt.mph ? Math.round(kmh * 0.6214) : kmh;
+    e.gear.textContent = pl.v < -0.5 ? 'G' : pl.gear; e.gear.classList.toggle('lim', !!(opt.manual && pl.limiter > 0));
     e.nit.style.width = (pl.nitro * 100) + '%';
     e.nit.parentNode.classList.toggle('on', pl.nitroOn);
     e.odak.style.width = (r.odak * 100) + '%';
@@ -1851,6 +1894,7 @@
     };
     const drag = R.cfg.tip === 'drag';
     hold('c-odak', null, odak);
+    hold('c-gup', null, () => { input.gUp = 1; }); hold('c-gdn', null, () => { input.gDn = 1; });
     // v7: sağ tuş kümesi tek dokunma alanı — parmak kaldırmadan GAZ ↔ NİTRO ↔ DRİFT ↔ FREN arasında kaydırılabilir
     const rb = $('c-right'), ptr = {};
     const keys = { 'c-gas': 'gas', 'c-brake': 'brake', 'c-nitro': 'nitro', 'c-hb': drag ? null : 'hb' };
@@ -1876,7 +1920,8 @@
     const calc = e => {
       const rc = st.getBoundingClientRect();
       const cx = rc.left + rc.width / 2;
-      let v = (e.clientX - cx) / (rc.width * 0.32);
+      if (opt.steerMode === 'tus') return e.clientX < cx ? -1 : 1; // tuş modu: yarıya basınca yavaşça tam kilide gider
+      let v = (e.clientX - cx) / (rc.width * 0.32 / (opt.steerSens || 1));
       if (Math.abs(v) < 0.12) v = 0;
       return clamp(v, -1, 1);
     };
@@ -1944,7 +1989,9 @@
     if (ahead) tgt = ahead.d > pl.d ? ahead.d - 3 : ahead.d + 3;
     for (const b of r.blocks) { const x = ds(pl, { s: b.s }); if (x > 0 && x < 160) tgt = b.gap + (b.spikes ? 0 : 0); }
     if (!pl.sc) for (const k of r.shortcuts) { const x = k.sA - pl.s; if (x > 0 && x < 60) tgt = k.side * T.W; }
-    input.steer = clamp((tgt - pl.d) * 0.12 - pl.a * 2.2 + (P().curvAt(TL, sl + 10) * -pl.v * 0.25) * (1 - opt.assist), -1, 1);
+    // v10: direksiyon eğrisi ve daha güçlü dönüşe uyum (insan gibi: aynı dönüş için daha az, eğriyi telafi eden giriş)
+    const st0 = clamp(((tgt - pl.d) * 0.12 - pl.a * 2.2 + (P().curvAt(TL, sl + 10) * -pl.v * 0.25) * (1 - opt.assist)) / 1.38, -1, 1);
+    input.steer = Math.sign(st0) * Math.pow(Math.abs(st0), 1 / 1.35);
     const kmax = P().maxCurv(TL, sl, 25 + pl.v * 1.5);
     const vC = Math.sqrt(pl.st.grip * r.gripMul * GRAV * 1.12 / Math.max(0.0008, kmax)) * skill;
     input.gas = pl.v < vC ? 1 : 0; input.brake = pl.v > vC + 4 ? 1 : 0;
@@ -1962,6 +2009,7 @@
   // dışa açık
   G.YARIS = { carReady,
     init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, quit, statsOf, opt, input,
+    setTraffic, refreshHud: () => { if (R) { buildHud(); R.wake = true; } },
     get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; }, get _show() { return SHOW; },
     // test kancası: ekransız hızlı simülasyon (sanal sürücü ile)
     _fast: (sec, bot) => {
