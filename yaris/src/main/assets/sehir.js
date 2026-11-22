@@ -334,7 +334,9 @@
     c.roll = lerp(c.roll, clamp(-(c.yaw || 0) * Math.abs(c.v) * 0.004, -0.07, 0.07), Math.min(1, dt * 6));
     m.rotation.z = c.roll;
     const ud = m.userData;
-    if (ud.wheels) for (const w of ud.wheels) { w.rotation.x += c.v * dt / 0.33; if (w.userData.front) w.rotation.y = c.steer * 0.45; }
+    // v16: önce direksiyon (y), sonra dönüş (x) — eskiden sıra ters olduğu için tekerlek yalpalıyordu
+    c.wheelRot = (c.wheelRot || 0) + c.v * dt / 0.34;
+    if (ud.wheels) for (const w of ud.wheels) { w.rotation.set(0, 0, 0); if (w.userData.front) w.rotation.y = -(c.steer || 0) * 0.45; w.rotateX(c.wheelRot); }
     if (ud.brake) ud.brake.color.setRGB(c.braking ? 3 : 0.55, c.braking ? 0.1 : 0.04, c.braking ? 0.15 : 0.07);
   }
   function removeCar(c) { c.gone = true; C.scene.remove(c.model); K.A3.dispose(c.model); }
@@ -375,42 +377,14 @@
     if (c.v < -9) c.v = -9;
     if (!gas && !I.brake && Math.abs(c.v) < 0.3) c.v = 0;
     // lastikler
+    // v16: yarışla aynı arcade çekirdek (dönüş direksiyondan; kayma = gövde − gidiş açısı)
     const hb = I.hb && Math.abs(c.v) > 10;
-    const L = D.lf + D.lr, Iz = D.lf * D.lr * 1.1, asst = opt.assist, mu = st.grip * (C.wet ? 0.86 : 1) * GRAV * D.GX;
-    const n = 4, h = dt / n;
-    for (let i = 0; i < n; i++) {
-      const u = c.v, au = Math.abs(u), w = c.vy, rr = c.yaw, sg = u < 0 ? -1 : 1;
-      const beta = Math.atan2(w, Math.max(au, 1));
-      let delta = c.steer * 0.6 / (1 + au / 18);
-      const bx = Math.sign(beta) * Math.max(0, Math.abs(beta) - 0.14);
-      delta += clamp(bx, -0.6, 0.6) * (0.35 + 0.5 * asst) * sg;
-      let du = 0, dw, dr;
-      if (au < 3) { const rk = u * Math.tan(delta) / L; dr = (rk - rr) * 12; dw = -w * 8; }
-      else {
-        const lt = clamp(-acc / GRAV * 0.2, -0.16, 0.16);
-        const Nf = D.lr / L + lt, Nr = D.lf / L - lt;
-        let Df = mu * Nf * 1.02, Dr = mu * Nr * 1.08;
-        if (hb) Dr *= 0.38; else if (gas && acc > 0) Dr *= 1 - clamp(acc / (mu * 2.2), 0, 0.18);
-        const af = Math.atan2(w + D.lf * rr, au) - delta * sg, ar = Math.atan2(w - D.lr * rr, au);
-        const Fyf = K.tire(af, Df), Fyr = K.tire(ar, Dr), cd = Math.cos(delta);
-        dw = Fyf * cd + Fyr - rr * u;
-        dr = (D.lf * Fyf * cd - D.lr * Fyr) / Iz;
-        du = rr * w;
-        dr += -rr * (hb ? 0.05 : 0.12) + bx * sg * (hb ? 0.5 : 1.6 + 3 * asst);
-        const bm = hb ? 0.85 : 0.55, ab = Math.abs(beta);
-        if (ab > bm) dr += Math.sign(beta) * sg * (ab - bm) * 18;
-      }
-      if (!hb && au > 3) { const al = Math.min(1, h * (2.2 + 1.5 * asst)); const V2 = Math.hypot(c.v, c.vy); c.vy -= c.vy * al; c.v = Math.sign(c.v || 1) * Math.sqrt(Math.max(0, V2 * V2 - c.vy * c.vy)); }
-      const V0 = Math.hypot(c.v, c.vy);
-      c.v += du * h; c.vy += dw * h; c.yaw += dr * h; c.yaw = clamp(c.yaw, -3.2, 3.2);
-      if (au > 6 && Math.abs(beta) > 0.08) { const V1 = Math.hypot(c.v, c.vy), keep = gas ? 0.7 : 0.5; if (V1 < V0 && V1 > 0.1) { const f = (V0 - (V0 - V1) * (1 - keep)) / V1; c.v *= f; c.vy *= f; } }
-      // dünya: sağa dönüş başlığı azaltır
-      c.h -= c.yaw * h;
-      const [fx, fz] = fwd(c.h), [rx, rz] = rgt(c.h);
-      c.x += (fx * c.v + rx * c.vy) * h; c.z += (fz * c.v + rz * c.vy) * h;
-    }
-    if (hb) c.v *= 1 - dt * 0.12;
-    c.slip = -Math.atan2(c.vy, Math.max(Math.abs(c.v), 0.5));
+    const r = K.arcadeCore(c, dt, st.grip * (C.wet ? 0.86 : 1), hb, 0);
+    c.h -= r * dt;                    // sağa dönüş başlığı azaltır
+    c.vh = c.h + c.slip;              // gidiş yönü (dünya)
+    c.vy = 0;
+    c.x += Math.sin(c.vh) * c.v * dt; c.z += Math.cos(c.vh) * c.v * dt;
+    if (hb) c.v *= 1 - dt * 0.05;
     // drift puanı → nitro
     if (Math.abs(c.slip) > 0.14 && c.v > 11) { c.nitro = Math.min(1, c.nitro + dt * 0.11); C.stats.drift += c.v * Math.abs(c.slip) * dt * 20; }
     if (!c.nitroOn && c.v > st.vmax * 0.8) c.nitro = Math.min(1, c.nitro + dt * 0.012);
@@ -447,16 +421,14 @@
   }
   // duvara çarpma: dünyadaki hızın duvara doğru bileşenini sil (oyuncuda kısmen sek), sürtünme
   function collideResponse(c, nx, nz, isPl) {
-    const [fx, fz] = fwd(c.h), [rx, rz] = rgt(c.h);
-    let vx = fx * c.v + rx * (c.vy || 0), vz = fz * c.v + rz * (c.vy || 0);
+    let [vx, vz] = worldV(c);
     const vn = vx * nx + vz * nz;
     if (vn >= 0) return 0;
     const imp = -vn;
-    vx -= vn * nx * (isPl ? 1.15 : 1.3); vz -= vn * nz * (isPl ? 1.15 : 1.3);
+    vx -= vn * nx * (isPl ? 1.1 : 1.3); vz -= vn * nz * (isPl ? 1.1 : 1.3);
     const fr = 1 - Math.min(0.35, imp * 0.02); vx *= fr; vz *= fr;
-    c.v = vx * fx + vz * fz; c.vy = vx * rx + vz * rz;
+    setWorldV(c, vx, vz);
     if (isPl) {
-      c.yaw *= 0.5;
       if (imp > 3) {
         C.stats.duvar++; C.shake = Math.min(1, C.shake + imp / 25); K.SES.sfx(imp > 10 ? 'crash' : 'scrape', Math.min(1, imp / 20)); vib(imp > 10 ? 60 : 25);
         if (G.EKSTRA && G.EKSTRA.dmg) try { G.EKSTRA.dmg(c, imp); } catch (e) { }
@@ -480,8 +452,27 @@
     }
     return { o: best, nx, nz };
   }
-  const worldV = c => { const [fx, fz] = fwd(c.h), [rx, rz] = rgt(c.h); return [fx * c.v + rx * (c.vy || 0), fz * c.v + rz * (c.vy || 0)]; };
-  const setWorldV = (c, vx, vz) => { const [fx, fz] = fwd(c.h), [rx, rz] = rgt(c.h); c.v = vx * fx + vz * fz; c.vy = vx * rx + vz * rz; };
+  // dünya hızı: oyuncu (arcade) için hız + gidiş yönü (vh); diğer araçlar için gövde ileri + yanal
+  function worldV(c) {
+    if (c.vh != null) return [Math.sin(c.vh) * c.v, Math.cos(c.vh) * c.v];
+    const [fx, fz] = fwd(c.h), [rx, rz] = rgt(c.h); return [fx * c.v + rx * (c.vy || 0), fz * c.v + rz * (c.vy || 0)];
+  }
+  function setWorldV(c, vx, vz) {
+    if (c.vh != null) {
+      const sp = Math.hypot(vx, vz);
+      if (sp < 0.05) { c.v = 0; c.slip = 0; c.vh = c.h; return; }
+      const phi = Math.atan2(vx, vz), fwdOk = Math.cos(phi - c.h) >= 0;
+      c.v = fwdOk ? sp : -sp;
+      const vh = fwdOk ? phi : phi + Math.PI, s = wrapA(vh - c.h);
+      // v16: çarpışmada GÖVDE gidiş yönüne döner (duvar boyunca hizalanır, araba kayıp kurtulur).
+      // Eskiden gidiş yönü gövdeye çevriliyordu → gövde duvara baktığı için araba tekrar duvara gidip yapışıyordu.
+      if (sp > 1) { c.h = wrapA(vh - s * 0.4); c.slip = clamp(s * 0.4, -0.95, 0.95); c.vh = c.h + c.slip; }
+      else { c.slip = 0; c.vh = c.h; }
+      c.yaw = (c.yaw || 0) * 0.3;
+      return;
+    }
+    const [fx, fz] = fwd(c.h), [rx, rz] = rgt(c.h); c.v = vx * fx + vz * fz; c.vy = vx * rx + vz * rz;
+  }
   function carCollisions() {
     const pl = C.player, all = [pl].concat(C.traffic, C.cops).filter(c => !c.gone);
     for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
@@ -504,7 +495,7 @@
       setWorldV(a, avx + r.nx * rel * (1 + e) * ia, avz + r.nz * rel * (1 + e) * ia);
       setWorldV(b, bvx - r.nx * rel * (1 + e) * ib, bvz - r.nz * rel * (1 + e) * ib);
       // dönme tekmesi
-      a.yaw = (a.yaw || 0) + (Math.random() - 0.5) * imp * 0.05 * ia; b.yaw = (b.yaw || 0) + (Math.random() - 0.5) * imp * 0.05 * ib;
+      if (a !== pl) a.yaw = (a.yaw || 0) + (Math.random() - 0.5) * imp * 0.05 * ia; if (b !== pl) b.yaw = (b.yaw || 0) + (Math.random() - 0.5) * imp * 0.05 * ib;
       const ot = a === pl ? b : b === pl ? a : null;
       if (ot) {
         if (imp > 3) { K.SES.sfx(imp > 9 ? 'crash' : 'bump', Math.min(1, imp / 18)); C.shake = Math.min(1, C.shake + imp / 30); vib(imp > 9 ? 50 : 20); }
@@ -899,7 +890,7 @@
   const cam = { x: 0, y: 0, z: 0, lx: 0, ly: 0, lz: 0, h: 0, fov: 56, mode: 0 };
   function camStep(dt, snap) {
     const pl = C.player, camera = K.camera;
-    const velH = Math.hypot(pl.v, pl.vy) > 3 ? pl.h - Math.atan2(pl.vy || 0, Math.max(Math.abs(pl.v), 0.5)) * 0.55 : pl.h; // gidiş yönüne doğru (driftte araba yan görünür)
+    const velH = Math.abs(pl.v) > 3 ? pl.h + (pl.slip || 0) * 0.55 : pl.h; // gidiş yönüne doğru (driftte araba yan görünür)
     const want = pl.v < -2 ? pl.h + Math.PI : velH;
     cam.h = snap ? want : cam.h + wrapA(want - cam.h) * Math.min(1, dt * 5);
     const dist = cam.mode === 1 ? 8 : 5.6, hgt = cam.mode === 1 ? 2.7 : 1.75;
@@ -1086,7 +1077,7 @@
     const pl = C.player = mkCar('player', cfg.oyuncu.vis, cfg.oyuncu.stats);
     // başlangıç: merkeze yakın bir yolun ortasında, kuzeye bakarak
     pl.x = rc(4) + LO[0]; pl.z = rc(5) + P / 2; pl.h = Math.PI; pl.mass = cfg.oyuncu.stats.kg || 1300; pl.isPlayer = true;
-    pl.gear = 1; pl.rpm = 0.2;
+    pl.gear = 1; pl.rpm = 0.2; pl.vh = pl.h; pl.slip = 0; pl.yaw = 0;
     for (let k = 0; k < 14; k++) spawnTraffic(true);
     spawnPatrols();
     buildHud();

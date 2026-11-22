@@ -228,6 +228,16 @@
       else if (!['cam', 'far', 'sinyal', 'stop', 'sirenK', 'sirenM', 'plaka'].includes(kind)) kind = 'orj';
       parts.push({ w: e.teker ? TEKER[e.teker] : null, kind, ex: e, geo });
     });
+    // v16: tekerlek aksı = o tekerleğe ait TÜM parçaların ortak kutusunun merkezi (dönüştürücü ilk parçayı — bazen
+    // fren kaliperini — merkez alıyordu; tekerlek yanlış eksende dönüp "8 çiziyordu")
+    const wb = {};
+    for (const p of parts) if (p.w) { p.geo.computeBoundingBox(); (wb[p.w] || (wb[p.w] = new THREE.Box3())).union(p.geo.boundingBox); }
+    for (const k in wb) {
+      const c = wb[k].getCenter(new THREE.Vector3());
+      if (c.length() < 0.002) continue;
+      for (const p of parts) if (p.w === k) { p.geo.translate(-c.x, -c.y, -c.z); p.geo.computeBoundingBox(); }
+      if (wheelPos[k]) wheelPos[k].add(c);
+    }
     const b = ex.boy || [2, 1.4, 4.5];
     return { parts, wheelPos, L: b[2], W: b[0], ao: ao ? dok(ao, false) : null, dok, yeni: true };
   }

@@ -374,3 +374,22 @@ body.photo #hud, body.photo #pause { display: none !important; }
   background: linear-gradient(120deg, rgba(0,229,255,.12), rgba(255,46,99,.10)), repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 24px); box-shadow: 0 0 24px rgba(0,229,255,.12); }
 .city-card h2 { margin: 0 0 4px; } .city-card p { margin: 4px 0; font-size: 13px; } .city-card .btn { flex: none; }
 @media (max-width: 700px) { .city-card { flex-direction: column; align-items: stretch; } }
+
+/* v16 sade tuş düzeni: sağda 2×2 (üst: DRİFT | NİTRO, alt: FREN | GAZ), solda iki büyük yön tuşu, gösterge alt ortada, ODAK üstte */
+#c-right { width: 208px !important; height: 206px !important; }
+#c-right .cb small { display: none; }
+#c-gas { right: 0 !important; bottom: 0 !important; width: 100px !important; height: 118px !important; font-size: 17px; }
+#c-brake { right: 108px !important; bottom: 0 !important; width: 100px !important; height: 118px !important; font-size: 15px; }
+#c-nitro { right: 0 !important; bottom: 126px !important; width: 100px !important; height: 80px !important; font-size: 14px; }
+#c-hb { right: 108px !important; bottom: 126px !important; width: 100px !important; height: 80px !important; font-size: 14px; }
+#c-steer span { width: 92px; height: 92px; font-size: 32px; }
+#c-steer em { display: none; }
+#c-odak { left: auto !important; right: calc(250px + var(--safe-r)) !important; top: 12px !important; bottom: auto !important; width: 74px !important; height: 44px !important; border-radius: 14px; }
+#hud-speedo { left: auto !important; right: calc(214px + var(--safe-r)) !important; bottom: 2px !important; transform: scale(0.8) !important; transform-origin: right bottom !important; }
+@media (max-height: 420px) {
+  #c-right { height: 176px !important; width: 190px !important; }
+  #c-gas, #c-brake { height: 100px !important; width: 91px !important; }
+  #c-brake, #c-hb { right: 99px !important; }
+  #c-nitro, #c-hb { bottom: 108px !important; height: 68px !important; width: 91px !important; }
+  #c-steer span { width: 80px; height: 80px; }
+}
