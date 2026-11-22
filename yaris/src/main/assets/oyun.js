@@ -1,7 +1,7 @@
 // Gece Kaçağı — oyun akışı: kayıt, kariyer, garaj, menüler, hikâye, ödüller
 (function () {
   'use strict';
-  const VER = '14.0';
+  const VER = '15.0';
   const KEY = 'gece-kacagi-v1';
   const V = window.VERI, Y = window.YARIS, SES = window.SES;
   const $ = id => document.getElementById(id);
@@ -25,7 +25,8 @@
       kar: { bitti: {}, rakip: 10, rk: {}, sahne: {}, final: false, son: false },
       ar: { sure: 0, etkisiz: 0, engel: 0, barikat: 0, kac: 0 },
       ist: { yaris: 0, gal: 0, polis: 0, engel: 0, barikat: 0, kilpayi: 0, enHiz: 0, km: 0, kazanc: 0, kacis: 0, yakalanma: 0, drift: 0, sure: 0, kestirme: 0, ucus: 0, kirik: 0 },
-      kol: {}, rek: {}, imza: {}, gan: 0, // v13: imza boyaları (rakip no → 1), toplanan ganimet kartı
+      kol: {}, rek: {}, imza: {}, gan: 0, sehir: { radar: {} }, // v15: açık şehir radar rekorları
+      // v13: imza boyaları (rakip no → 1), toplanan ganimet kartı
       // v7: serbest sürüş gizli parçaları (bölge → bulunanlar), pist rekorları (pist → {tur, sure})
       bas: {}, mo: {}, gun: { tarih: '', seri: 0, alindi: '', gorev: [], gtarih: '' },
       set: { surus: 'gercek', ses: 0.8, muzik: 0.5, q: -1, kontrol: 'dokun', hassas: 1, otoGaz: false, yardim: 2, kamera: 0, titresim: true, zorluk: 1, efekt: 2,
@@ -630,7 +631,12 @@
     const mz = maxZone();
     const o = (k, v, l) => `<div class="o ${FR[k] === v ? 'on' : ''}" onclick="A.fr('${k}',${typeof v === 'string' ? `'${v}'` : v})">${l}</div>`;
     if (FR.bolge > mz) FR.bolge = 0;
-    return `<div class="pane"><h2>🌃 Serbest Sürüş <small>${S.ist.km.toFixed(1)} km yol yaptın</small></h2>
+    const sr = S.sehir || {}, rk = Object.values((sr.radar) || {});
+    return `<div class="pane"><div class="city-card"><div><h2>🌃 AÇIK ŞEHİR <small>yeni</small></h2>
+        <p>Karaliman'ın sokaklarında istediğin yöne sür: kavşaklar, ara sokaklar, trafik ışıkları, parklar ve liman. Devriyenin önünden hızla geçersen kovalamaca başlar; polisi binaların arkasına saklanarak, ara sokaklara dalarak ve sarı halkalı <b>takip kırıcıları</b> devirerek atlatırsın. Mavi daireler <b>saklanma noktası</b>: izini kaybettirdikten sonra orada daha hızlı gizlenirsin.</p>
+        <p class="mut">📸 Radar rekorların: ${rk.length ? rk.map(v => v + ' km/s').join(' · ') : 'henüz yok'} · Saat ve hava aşağıdaki seçimden gelir.</p></div>
+        <button class="btn big" onclick="A.cityStart()">ŞEHRE ÇIK ▶</button></div>
+      <h2>🌃 Serbest Sürüş <small>${S.ist.km.toFixed(1)} km yol yaptın</small></h2>
       <p>Karaliman'ın büyük çevre yolunda istediğin kadar dolaş. Trafik, devriye arabaları ve takip engelleri var. Bir polisin yanından <b>125 km/s</b> üstünde geçersen kovalamaca başlar; kaçarsan Ün ve para kazanırsın, kovalamaca hedeflerine de sayılır.</p>
       <h3>Bölge</h3><div class="sw">${V.ZONES.map((z, i) => i <= mz ? o('bolge', i, z.ad) : `<div class="o" style="opacity:.4">🔒 ${z.ad}</div>`).join('')}</div>
       <p class="mut">🧩 Her bölgeye ${window.EKSTRA ? EKSTRA.KOL_N : 10} gizli parça saklandı: kestirmelerin içinde, rampaların ardında havada ve yol kenarlarında. Yakına gelince ışık sütunu görünür. Bulunan: ${V.ZONES.map((z, i) => i <= mz ? `<b>${z.ad} ${(S.kol[i] || []).length}/${window.EKSTRA ? EKSTRA.KOL_N : 10}</b>` : '').filter(Boolean).join(' · ')}</p>
@@ -638,6 +644,26 @@
       <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn big" onclick="A.frStart()">SÜR ▶</button></div></div>`;
   }
   function fr(k, v) { FR[k] = v; click(); renderPanel(); }
+  // v15: açık şehir
+  function cityStart() {
+    click();
+    if (!window.SEHIR) { toast('Şehir yüklenemedi'); return; }
+    lastRun = { meta: { kind: 'sehir' }, cfg: null };
+    SES.unlock(); applyOpts(); show('none');
+    try { SEHIR.start({ saat: FR.saat, hava: FR.hava, seed: 4242, oyuncu: { ad: S.isim || 'Sen', vis: visOf(S.sec), stats: statsFor(S.sec) }, rec: S.sehir || (S.sehir = { radar: {} }) }); }
+    catch (e) { console.error(e); toast('Şehir açılamadı'); goMenu(); }
+  }
+  function cityEnd() {
+    const q = SEHIR.stop();
+    if (q) {
+      S.ist.km += q.stats.mesafe / 1000; dailyProg('km', q.stats.mesafe / 1000);
+      S.ist.enHiz = Math.max(S.ist.enHiz, q.stats.enHiz);
+      if (q.stats.un > 0) { S.un += Math.round(q.stats.un); toast(`📸 Radar rekorları: +${fmt(q.stats.un)} Ün`, 'ach'); }
+      S.sehir = q.rec;
+      checkAch(); saveNow();
+    }
+    goMenu('serbest');
+  }
   function frStart() {
     click();
     const Z = V.ZONES[FR.bolge];
@@ -1037,11 +1063,12 @@ ${Object.keys(S.imza).length ? `<h3>İmza boyaları <span class="price">bedava</
   }
   window.onPauseReq = () => { if (!Y.active || (Y.R && Y.R.finished)) return; paused(!isPaused); };
   $('pResume').onclick = () => { click(); paused(false); };
-  $('pRestart').onclick = () => { click(); paused(false); restart(); };
+  $('pRestart').onclick = () => { click(); paused(false); if (Y.city) { cityEnd(); cityStart(); return; } restart(); };
   $('pSet').onclick = () => raceSettings();
-  $('pCam').onclick = () => { click(); const r = Y.R; if (r) { r.camMode = (r.camMode + 1) % 3; S.set.kamera = r.camMode; save(); toast('🎥 ' + ['Yakın', 'Uzak', 'Tampon'][r.camMode]); } };
+  $('pCam').onclick = () => { click(); if (Y.city) { Y.city.cam(); toast('🎥 Kamera değişti'); return; } const r = Y.R; if (r) { r.camMode = (r.camMode + 1) % 3; S.set.kamera = r.camMode; save(); toast('🎥 ' + ['Yakın', 'Uzak', 'Tampon'][r.camMode]); } };
   $('pQuit').onclick = () => {
     click(); paused(false);
+    if (Y.city) { cityEnd(); return; }
     const q = Y.quit();
     if (lastRun && lastRun.meta.kind === 'serbest' && q) { S.ist.km += q.stats.mesafe / 1000; dailyProg('km', q.stats.mesafe / 1000); S.ist.enHiz = Math.max(S.ist.enHiz, q.stats.enHiz); checkAch(); saveNow(); }
     Y.stopRace(); goMenu();
@@ -1161,7 +1188,7 @@ ${Object.keys(S.imza).length ? `<h3>İmza boyaları <span class="price">bedava</
     document.addEventListener('pointerdown', () => SES.unlock(), { once: true });
   }
 
-  window.A = { gkSec, _ganimet: no => ganimet(no), _hikaye: (no, lines) => story(lines, () => goMenu(), RIV(no)), tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
+  window.A = { cityStart, gkSec, _ganimet: no => ganimet(no), _hikaye: (no, lines) => story(lines, () => goMenu(), RIV(no)), tab, ttStart, startEv, rivalRace, finalEscape, rivInfo, closeModal, qr, qrStart, fr, frStart, chStart, gt, selCar, sellCar, prevCar, buyCar, buyPart, gs, dr, drApply, drUndo,
     claimDaily, claimTask, set, askName, backup, resetAll, replayStory, get S() { return S; }, goMenu, _events: EVENTS };
   boot();
 })();

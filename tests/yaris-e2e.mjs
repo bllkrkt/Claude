@@ -146,6 +146,23 @@ await shot('11-hayalet');
 console.log('hayalet 2', await page.evaluate(() => JSON.stringify({ ghost: !!window.YARIS.R.ex.ghost, vis: window.YARIS.R.ex.ghost && window.YARIS.R.ex.ghost.m.visible, goal: document.getElementById('hud-goal').textContent })));
 await page.keyboard.up('ArrowUp');
 await page.evaluate(() => { window.YARIS.stopRace(); window.A.goMenu(); });
+// v15: açık şehir — aç, sür, kovalamaca, takip kırıcı, duraklat → çık
+{
+  await page.evaluate(() => { window.A.goMenu(); window.A.tab('serbest'); window.A.cityStart(); });
+  await page.waitForTimeout(2500);
+  const r = await page.evaluate(() => {
+    const SH = window.SEHIR, I = window.YARIS.input, C = SH.C, D = SH._dbg; if (!C) return 'şehir açılmadı';
+    for (const k in I) I[k] = 0; I.gas = 1; I.steer = 0.3; SH._fast(4); I.steer = 0;
+    D.startPursuit(2, 'test'); C.purs.spawnT = 0; SH._fast(6);
+    const b = C.map.breakers[0], pl = C.player; pl.x = b.x - b.sx * 2; pl.z = b.z - b.sz * 2; pl.v = 25; SH._fast(0.5);
+    const ok = isFinite(pl.x) && isFinite(pl.z);
+    return { ok, trafik: C.traffic.length, polis: C.cops.length, takip: !!C.purs, kirici: !b.up, bina: C.map.boxes.length };
+  });
+  console.log('şehir', JSON.stringify(r));
+  await shot('30-sehir');
+  await page.evaluate(() => window.onPauseReq()); await page.waitForTimeout(200); await page.click('#pQuit'); await page.waitForTimeout(800);
+  console.log('şehirden çıkış', await page.evaluate(() => !window.YARIS.active && !window.SEHIR.C));
+}
 // kayıt geri yükleme
 await page.reload(); await page.waitForFunction(() => document.getElementById('tapStart').textContent.indexOf('DOKUN') >= 0, null, { timeout: 90000 });
 console.log('kayıt', await page.evaluate(() => JSON.stringify({ para: window.A.S.para, bitti: Object.keys(window.A.S.kar.bitti).length, ilk: window.A.S.ilk })));

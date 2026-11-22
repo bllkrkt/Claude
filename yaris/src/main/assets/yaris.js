@@ -13,6 +13,7 @@
   let R = null;             // etkin yarış durumu
   let SHOW = null;          // vitrin (garaj) durumu
   let raf = 0, lastT = 0, running = false, paused = false;
+  let CITY = null; // v15: açık şehir modu (sehir.js) — etkinken yarış yerine o çalışır
   const fpsW = { t: 0, n: 0 };
   const tmp = {}, tmp2 = {};
   const input = { steer: 0, gas: 0, brake: 0, nitro: 0, hb: 0, odak: 0, tilt: 0, laneL: 0, laneR: 0, shift: 0, gUp: 0, gDn: 0 };
@@ -62,6 +63,7 @@
     let dt = Math.min(0.1, (t - lastT) / 1000 || 0.016); lastT = t;
     if (PH && R) { photoFrame(dt); return; }
     if (paused) return;
+    if (CITY) { CITY.step(dt); return; }
     // kare hızı bekçisi: yüksek grafikte telefon yetişemiyorsa bir kademe düşür
     if (R && R.phase === 'yaris' && Q >= 2) {
       fpsW.t += dt; fpsW.n++;
@@ -2093,8 +2095,8 @@
       el.addEventListener('pointercancel', () => set(0));
       el.addEventListener('lostpointercapture', () => set(0));
     };
-    const drag = R.cfg.tip === 'drag';
-    hold('c-odak', null, odak);
+    const drag = !!R && R.cfg.tip === 'drag';
+    hold('c-odak', null, () => { if (CITY && CITY.odak) CITY.odak(); else odak(); });
     hold('c-gup', null, () => { input.gUp = 1; }); hold('c-gdn', null, () => { input.gDn = 1; });
     // v7: sağ tuş kümesi tek dokunma alanı — parmak kaldırmadan GAZ ↔ NİTRO ↔ DRİFT ↔ FREN arasında kaydırılabilir
     const rb = $('c-right'), ptr = {};
@@ -2140,12 +2142,13 @@
       const km = { ArrowUp: 'gas', KeyW: 'gas', ArrowDown: 'brake', KeyS: 'brake', Space: 'hb', ShiftLeft: 'nitro', ShiftRight: 'nitro', KeyN: 'nitro' };
       const kd = {};
       window.addEventListener('keydown', e => {
-        if (!R) return;
+        if (!R && !CITY) return;
+        const drg = !!R && R.cfg.tip === 'drag';
         if (km[e.code]) { input[km[e.code]] = 1; if (e.code === 'Space') e.preventDefault(); }
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { kd.l = 1; if (R.cfg.tip === 'drag' && !e.repeat) input.laneL = 1; }
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') { kd.r = 1; if (R.cfg.tip === 'drag' && !e.repeat) input.laneR = 1; }
-        if (R.cfg.tip === 'drag' && (e.code === 'KeyQ' || e.code === 'Space') && !e.repeat) input.shift = 1;
-        if (e.code === 'KeyE' && !e.repeat) odak();
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { kd.l = 1; if (drg && !e.repeat) input.laneL = 1; }
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') { kd.r = 1; if (drg && !e.repeat) input.laneR = 1; }
+        if (drg && (e.code === 'KeyQ' || e.code === 'Space') && !e.repeat) input.shift = 1;
+        if (e.code === 'KeyE' && !e.repeat) { if (CITY && CITY.odak) CITY.odak(); else odak(); }
         if (e.code === 'KeyC' && !e.repeat) cycleCam();
         if (e.code === 'Escape' && G.onPauseReq) G.onPauseReq();
         input.steer = (kd.r ? 1 : 0) - (kd.l ? 1 : 0);
@@ -2154,7 +2157,7 @@
         if (km[e.code]) input[km[e.code]] = 0;
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') kd.l = 0;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') kd.r = 0;
-        if (R) input.steer = (kd.r ? 1 : 0) - (kd.l ? 1 : 0);
+        if (R || CITY) input.steer = (kd.r ? 1 : 0) - (kd.l ? 1 : 0);
       });
       // eğerek sürüş
       window.addEventListener('deviceorientation', e => {
@@ -2172,7 +2175,7 @@
     if (R.odak < 0.25) { popup('ODAK DOLMADI', '', 0.7, 'kotu'); return; }
     R.odakT = 5; SES().sfx('odak');
   }
-  function cycleCam() { if (!R) return; R.camMode = (R.camMode + 1) % 3; opt.cam = R.camMode; if (G.onCam) G.onCam(R.camMode); snapCam(); }
+  function cycleCam() { if (CITY && CITY.cam) { CITY.cam(); return; } if (!R) return; R.camMode = (R.camMode + 1) % 3; opt.cam = R.camMode; if (G.onCam) G.onCam(R.camMode); snapCam(); }
   function resetInput() { for (const k in input) input[k] = 0; }
 
   // ───────── v13 FOTOĞRAF MODU: yarış donar, kamera oyuncunun etrafında serbestçe döner ─────────
@@ -2256,7 +2259,10 @@
   G.YARIS = { carReady,
     init, setQuality, start, stopRace, showroom, setShowCar, hideShow, pause, cine, cineFx: (hit, tint) => { if (SHOW) { if (hit != null) SHOW.hit = hit; if (tint) SHOW.tint = tint; } }, photo, photoShot, get PH() { return PH; }, quit, statsOf, opt, input,
     setTraffic, refreshHud: () => { if (R) { buildHud(); R.wake = true; } },
-    get active() { return !!R; }, get R() { return R; }, goalText, get _ren() { return renderer; }, get _show() { return SHOW; },
+    get active() { return !!R || !!CITY; }, get city() { return CITY; },
+    // v15: açık şehir için ortak parçalar
+    kit: () => ({ THREE, renderer, camera, canvas, opt, input, draw, A3: A3(), SES: SES(), startLoop, hideShow, root, Q: () => Q, setH, bindControls, resetInput, $, DYN, tire }),
+    setCity: c => { CITY = c; if (c) { hideShow(); startLoop(); } }, get R() { return R; }, goalText, get _ren() { return renderer; }, get _show() { return SHOW; },
     // test kancası: ekransız hızlı simülasyon (sanal sürücü ile)
     _fast: (sec, bot) => {
       const r = R; if (!r) return null;

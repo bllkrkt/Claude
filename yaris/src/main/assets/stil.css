@@ -368,3 +368,9 @@ body.photo #hud, body.photo #pause { display: none !important; }
 @keyframes rcNo { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes rcAd { from { opacity: 0; transform: scale(2.6); filter: blur(10px); } to { opacity: 1; transform: none; filter: none; } }
 @keyframes rcCiz { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* v15 açık şehir kartı */
+.city-card { display: flex; gap: 16px; align-items: center; padding: 14px 16px; margin-bottom: 14px; border-radius: 16px; border: 1px solid rgba(0,229,255,.35);
+  background: linear-gradient(120deg, rgba(0,229,255,.12), rgba(255,46,99,.10)), repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 2px, transparent 2px 24px); box-shadow: 0 0 24px rgba(0,229,255,.12); }
+.city-card h2 { margin: 0 0 4px; } .city-card p { margin: 4px 0; font-size: 13px; } .city-card .btn { flex: none; }
+@media (max-width: 700px) { .city-card { flex-direction: column; align-items: stretch; } }
