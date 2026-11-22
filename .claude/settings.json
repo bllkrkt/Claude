@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx gltfpack *)",
+      "Bash(npx gltfpack@0.21.0 *)",
+      "Bash(npx --yes gltfpack@0.21.0 *)"
+    ]
+  }
+}

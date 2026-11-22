@@ -86,6 +86,9 @@ localStorage `gece-kacagi-v1` (nesne `S`, `S.v=1`). Alan eklerken `fresh()` içi
 
 - v5: gltfpack (npm `gltfpack@0.21.0`, kullanıcı izin verdi; `-si <oran> -sa -noq -kn`) ile sadeleştirilmiş modeller geri geldi: cadde lambası (1,5 bin üçgen), yangın musluğu (3 bin), bank (1,4 bin). Gerçek süper araba: Khronos "CarConcept" (CC BY 4.0, Eric Chadwick / DGG) → plaka ve lastik yanağındaki logolar değiştirildi, direksiyon amblemi silindi, dokular ≤512, 15,9 bin üçgen, `model/araba/konsept.glb` (1,5 MB). `VARLIK.prepCar` tekerlekleri ayırır, gövdeyi malzemeye göre birleştirir; `ARABA3D.makeReal` sadece `super` ve `wedge` gövdelerde (Orta/Yüksek grafikte) kullanır, boya/cam/far/stop/jant oyunun malzemeleriyle değişir (kit, rüzgârlık, desen bu gövdede yok). Künye Ayarlar'da. Gece yansıma kaynağı karartıldı (`envFromSky`).
 
+- Kalıcı izin: `.claude/settings.json` → `Bash(npx gltfpack *)` (kullanıcı istedi). Aracı `npx gltfpack ...` biçiminde çalıştır; geçici klasör yolu her oturumda değişir.
+- Model araştırması (v5 sonrası): OpenGameArt'taki CC0/CC-BY araba paketleri ya çizgi film tarzı ya çok kaba (PSX Style Cars: 300-470 üçgen, 128 px doku) ya da gerçek araba taklidi ("Low Poly American Muscle" dosya adı 67camaro, "Muscle Car 3D Model" Mustang benzeri) → kullanılmadı. Poly Pizza/Free3D erişime kapalı, Sketchfab indirme hesap ister. Kullanıcı Sketchfab'dan serbest lisanslı bir model indirip gönderirse aynı yöntemle (logo temizleme + gltfpack + `prepCar`) eklenebilir.
+
 ## Fikirler (sıradaki)
 - Gizli koleksiyon parçaları (serbest sürüşte), kırılabilir engeller (kasalar, çitler).
 - Rakip arabalarına özel görünüm ve "pembe kâğıt" yerine özgün bir ödül sistemi; hasar görseli.
