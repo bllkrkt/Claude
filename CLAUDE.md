@@ -2,6 +2,16 @@
 
 Bu dosya claude.ai sohbetinden Claude Code'a aktarılan projenin tam bağlamıdır. Her oturumda önce bunu oku.
 
+## DAL HARİTASI — HER OTURUMDA İLK BUNA BAK (2026-11-26)
+Kullanıcı birçok ayrı oturumda çalıştı; her oturum kendi `ccr-…` dalına yazıyor ve yeni oturum GitHub'daki **varsayılan dal** `claude/android-sdk-apk-setup-eckfhk`'dan başlıyor. Bir proje bu dosyada yoksa ya da eski görünüyorsa iş başka dalda kalmıştır: `git fetch origin <dal>` ile getir. Kullanıcı "şu sohbete devam" deyip dal adı verirse o dalı getir, kendi dalına `git merge` et.
+- **Efsane Avcısı (rpg/, v32) + Efsane Yolu (yan/, v19, yandan görünümlü oyun) + beceriler (.claude/skills)** → bu dosyanın olduğu dal. 2026-11-26'da `ccr-cd5beef9-ukzve4`'ten varsayılan dala da taşındı.
+- **Araç Kutusu** (`arac-kutusu/`, v8.0, belge tarayıcı vb.) → `ccr-9c1a038f-edj934` (bu dala henüz birleştirilmedi).
+- **Gece Kaçağı** (`yaris/`, yarış oyunu, v16 ara kayıt) → `ccr-5bcb1917-vp0qbl` (bu dala henüz birleştirilmedi; v6/v12 dalları bunun içinde).
+- **Kamera+** (`kamera/`, v5) → `ccr-8e1f7b10-cbpyzi` (birleştirilmedi).
+- **Arşivim** (`arsiv/`, v1.0, Instagram ZIP görüntüleyici) → `ccr-a186df2d-81q5w5` (birleştirilmedi).
+- Birleştirmeyen dallarda `CLAUDE.md` ve `settings.gradle` çakışır: ikisinde de bölümleri/`include` satırlarını yan yana tut, hiçbirini silme. Diğer `ccr-…` dalları bu dalın gerisinde kalmış eski kopyalar.
+- İş bitince kendi dalına gönder ve kullanıcı isterse varsayılan dala da ileri sar (`git push origin HEAD:claude/android-sdk-apk-setup-eckfhk`, sadece ileri sarma; zorla gönderme yok) ki bir sonraki oturum bulabilsin.
+
 ## Beceriler (skills) — İŞE BAŞLAMADAN
 - **İşe başlamadan `.claude/skills` içindeki skilleri oku ve uygula.** Önce `.claude/skills/using-superpowers/SKILL.md`, sonra işe uyan becerinin `SKILL.md`'si (ör. hata ayıklamada `systematic-debugging`, plan için `writing-plans`, arayüz/tasarım işinde `ui-ux-pro-max`). Kaynaklar ve sürümler: `.claude/skills/KAYNAKLAR.md` (obra/superpowers + nextlevelbuilder/ui-ux-pro-max-skill, MIT).
 - Beceriler İngilizce yazılmış olsa da DİL KURALI geçerli: kullanıcıya görünen her şey Türkçe. Becerinin istediği bir adım bu dosyadaki kesin kurallarla (imza anahtarları, kayıt uyumluluğu, otomasyon yasağı, token tasarrufu) çelişirse bu dosya kazanır.
@@ -129,5 +139,5 @@ Kullanıcı "karakter sağa koşar, zıplar, düşmanla karşılaşır" türü i
 Kullanıcı "yandan görünümlü (karakter sağa koşar, zıplar, düşmanla karşılaşır) farklı bir oyuna çevirelim" dedi; ona bunun büyük iş olduğu, savaş/kontrolün baştan yazılacağı, mevcut dokun-vur/dalga/oto saldırı/sen yokken kazanç sisteminin bu türe uymadığı söylendi, kabul etti.
 - ÖNERİLEN YOL (ilk iş kullanıcıya bunu kısaca teyit ettir): mevcut oyunu ve telefondaki kaydı BOZMA. Yan görünüm oyunu aynı depoda AYRI bir modül olarak başla (ör. `yan/`, ayrı paket adı → telefonda ayrı uygulama), ya da Efsane Avcısı içinde ayrı bir "mod" olarak. Taşınabilecekler: eşya/nadirlik/set, yoldaş, ezeli düşman fikri, sınıflar, simge sistemi (`simgeler.js`, `ikonlar.js`), dil sistemi `T()`, tema.
 - Teknik öneri: tek `index.html` + Canvas 2D (ya da mevcut Three.js ile 2.5B yan kamera), sabit adımlı fizik (yerçekimi, zıplama, çarpışma), dokunmatik kontroller (sol: hareket, sağ: zıpla/vur/kaçış), bölüm bazlı haritalar (oda + kontrol noktası), boss odaları. Önce küçük oynanabilir bir dikey dilim (1 bölüm, 3 düşman türü, 1 boss) yap, APK ver, kullanıcının telefondaki hissine göre büyüt.
-- DİKKAT: GitHub'daki varsayılan dal `claude/android-sdk-apk-setup-eckfhk` ESKİ (v21). En güncel: Efsane Avcısı v32 + Efsane Yolu v17 → `ccr-cd5beef9-ukzve4` dalı. Yeni oturum bu daldan devam etmeli.
+- Dal durumu için en üstteki **DAL HARİTASI** bölümüne bak.
 - Efsane Yolu testleri yavaş (~5-8 dk): `yan-e2e.mjs` ve `yan-canta.mjs`'i arka planda paralel çalıştır, sadece `errors` satırına bak.
