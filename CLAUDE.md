@@ -2,6 +2,10 @@
 
 Bu dosya claude.ai sohbetinden Claude Code'a aktarılan projenin tam bağlamıdır. Her oturumda önce bunu oku.
 
+## Beceriler (skills) — İŞE BAŞLAMADAN
+- **İşe başlamadan `.claude/skills` içindeki skilleri oku ve uygula.** Önce `.claude/skills/using-superpowers/SKILL.md`, sonra işe uyan becerinin `SKILL.md`'si (ör. hata ayıklamada `systematic-debugging`, plan için `writing-plans`, arayüz/tasarım işinde `ui-ux-pro-max`). Kaynaklar ve sürümler: `.claude/skills/KAYNAKLAR.md` (obra/superpowers + nextlevelbuilder/ui-ux-pro-max-skill, MIT).
+- Beceriler İngilizce yazılmış olsa da DİL KURALI geçerli: kullanıcıya görünen her şey Türkçe. Becerinin istediği bir adım bu dosyadaki kesin kurallarla (imza anahtarları, kayıt uyumluluğu, otomasyon yasağı, token tasarrufu) çelişirse bu dosya kazanır.
+
 ## Kullanıcı ve iletişim
 - Kullanıcı **Türkçe** konuşur, samimi bir dil kullanır ("kanka"). Yanıtları Türkçe, kısa ve net ver.
 - **DİL KURALI (kullanıcının kesin isteği, her zaman geçerli):** Kullanıcının ekranında görünen HER ŞEY Türkçe olmalı: cevaplar, çalışırken yazılan ara durum notları ("şimdi şunu yapıyorum" gibi), araç çağrılarının açıklamaları, soru pencereleri, dosya başlıkları/açıklamaları. Tek bir İngilizce cümle bile yazma. Commit mesajları da Türkçe. Sadece kod, komut ve dosya adları olduğu gibi kalır.
