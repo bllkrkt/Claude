@@ -1,0 +1,15 @@
+Efsane Yolu - ses ve müzik kaynakları (hepsi CC0 / kamu malı, OpenGameArt.org)
+
+Müzik:
+- t.ogg  "Town Theme RPG" - cynicmusic (https://opengameart.org/content/town-theme-rpg) CC0
+- f.ogg  "Adventure Time" - scribe (https://opengameart.org/content/adventure-time) CC0
+- c.ogg  "The Field Of Dreams" - pauliuw (https://opengameart.org/content/the-field-of-dreams) CC0
+- m.ogg  "Lost in the meadows" - haeldb (https://opengameart.org/content/lost-in-the-meadows) CC0
+- d.ogg  "Cave Theme" - haeldb (https://opengameart.org/content/cave-theme) CC0 (ilk 160 sn)
+- l.ogg  "Prepare your swords" - bojidar-bg (https://opengameart.org/content/prepare-your-swords) CC0
+- b.ogg  "Battle Theme A" - cynicmusic (https://opengameart.org/content/battle-theme-a) CC0
+
+Efektler (kırpıldı, ses seviyesi eşitlendi):
+- "80 CC0 RPG SFX" - rubberduck (https://opengameart.org/content/80-cc0-rpg-sfx) CC0
+- "50 RPG sound effects" - Kenney (https://opengameart.org/content/50-rpg-sound-effects) CC0
+- "RPG Sound Pack" - artisticdude (https://opengameart.org/content/rpg-sound-pack) CC0

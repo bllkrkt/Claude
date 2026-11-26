@@ -1,0 +1,14 @@
+Efsane Yolu - dekor resimleri
+Sketchfab'daki 3B modellerden yandan çekilmiş 2B resimler (değiştirildi: 2B'ye çevrildi, küçültüldü, kristale renk çeşitleri eklendi).
+Lisans: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+agac*    "Low Poly Forest Tree Pack" - 99.Miles      https://sketchfab.com/3d-models/5ff5a51e74324845a4e4905f182dfb2b
+kar*     "Low Poly Winter Tree Pack" - 99.Miles      https://sketchfab.com/3d-models/824b124215fe4e459b895c9a5ff6f5a5
+kaya*    "Free Pack - Rocks Stylized" - polyone      https://sketchfab.com/3d-models/7c60b4d1b8ab4187965f30c5e0212fc0
+kaktus*  "Cactus | Pack" - yadrogames                https://sketchfab.com/3d-models/588596f1601d48e6ad4cb24b31c3f33c
+kristal* "Magic crystals" - enn_shtyka               https://sketchfab.com/3d-models/f20b3376ef9a4dff8ad27f1402087c52
+mantar*  "Low Poly Mushroom Assets" - drhope         https://sketchfab.com/3d-models/420d50a94d13420885587e2ff569d761
+mezar*   "Grave Stone Collection" - Kigha            https://sketchfab.com/3d-models/216711532d5a4078b9c0d5020af01eb1
+kuru*    "PSX Dead Tree Pack" - FlunkedPunk          https://sketchfab.com/3d-models/40510061c9814223b204f03941e4c589
+palmiye* "Palm Trees" - yadrogames                   https://sketchfab.com/3d-models/55690379305145488e20afb05fc687e6
+kemik*   "LOW POLY BONES ASSET PACK" - davidreal2003 https://sketchfab.com/3d-models/b08c4568b2c5464fb1ab40cd871e40dc
