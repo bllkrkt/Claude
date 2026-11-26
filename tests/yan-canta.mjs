@@ -107,12 +107,13 @@ const gd = await ev(() => __T.SV.gold); await pg.click('[data-a=login]'); await 
 check(await ev(() => __T.SV.dl.n === 1) && await ev(() => __T.SV.gold) > gd, 'günlük ödül'); await pg.click('[data-a=back]'); await wait(100);
 await ev(() => { for (const i of [0,1,2,4,5,6,7,8,9,10]) __T.SV.lvs[i].done = 1; }); await pg.click('[data-a=chap]'); await wait(200);
 await pg.screenshot({ path: out + '/7-harita.png' });
-for (const ch of [12, 13, 14, 15, 16, 17, 18, 19, 20]) {
+await ev(() => { for (const l of __T.SV.lvs) l.star = 7; for (const i of [18, 19, 20]) __T.SV.lvs[i].done = 1; }); // 16.2: bölüm açmak için yıldız gerekir
+for (const ch of [12, 13, 14, 15, 16, 17, 22, 23, 24]) {
   if (ch !== 12) { await pg.click('[data-a=chap]'); await wait(150); }
   await pg.click(`[data-a=msel2][data-v="${ch}"]`); await wait(100); await pg.click(`[data-a=go][data-v="${ch}"]`); await wait(400);
   if (await ev(() => __T.state) === 'story') { await pg.screenshot({ path: out + '/8-hikaye' + ch + '.png' }); await pg.click('#sskip'); await wait(300); }
   check(await ev(ch => __T.state === 'play' && __T.CH === ch, ch), 'bölüm başlamadı ' + ch);
-  check(await ev(ch => __T.ENS.some(e => ({12:'star',13:'crab',14:'cog',15:'scorp',16:'wisp',17:'shade',18:'storm',19:'skel',20:'star'})[ch] === e.t), ch), 'yeni düşman yok ' + ch);
+  check(await ev(ch => __T.ENS.some(e => ({12:'star',13:'crab',14:'cog',15:'scorp',16:'wisp',17:'shade',22:'storm',23:'skel',24:'star'})[ch] === e.t), ch), 'yeni düşman yok ' + ch);
   check(await ev(() => !!__T.L.secret), 'gizli oda yok ' + ch);
   if (ch === 12) {
     const c0 = await ev(() => __T.LV.chest.length);
@@ -135,11 +136,11 @@ for (const ch of [12, 13, 14, 15, 16, 17, 18, 19, 20]) {
     await ev(() => __T.tp(__T.L.secExit)); await wait(500); check(await ev(() => !__T.L.sec && !!__T.L.secret), 'gizli odadan çıkılmadı');
     await ev(() => clearInterval(window.__g0));
   }
-  await ev(ch => { const e = __T.ENS.find(e => e.t === ({12:'star',13:'jelly',14:'clock',15:'scorp',16:'wisp',17:'star',18:'storm',19:'skel',20:'storm'})[ch]) || __T.ENS[0]; window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(e.x / 32 - 3, Math.floor((e.y + e.h) / 32) + 1); }, ch); await wait(1500); await pg.screenshot({ path: out + '/8b-dusman' + ch + '.png' }); await ev(() => clearInterval(window.__g0));
+  await ev(ch => { const e = __T.ENS.find(e => e.t === ({12:'star',13:'jelly',14:'clock',15:'scorp',16:'wisp',17:'star',22:'storm',23:'skel',24:'storm'})[ch]) || __T.ENS[0]; window.__g0 = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(e.x / 32 - 3, Math.floor((e.y + e.h) / 32) + 1); }, ch); await wait(1500); await pg.screenshot({ path: out + '/8b-dusman' + ch + '.png' }); await ev(() => clearInterval(window.__g0));
   await ev(() => { window.__g = setInterval(() => { __T.P.inv = 5; __T.P.hp = __T.P.mhp; }, 50); __T.tp(__T.L.arena.gate - 2); }); await wait(300);
   await ev(() => { __T.I.r = 1; }); await wait(1200); await ev(() => { __T.I.r = 0; });
   check(await ev(() => !!__T.G.boss), 'boss başlamadı ' + ch); await wait(1500);
-  for (const a of {12:['sweep','ring'],13:['erupt','whirl'],14:['hands','ring'],15:['erupt','hands'],16:['ring','whirl'],17:['sweep','burst'],18:['rain','ring'],19:['erupt','pillars'],20:['hands','whirl']}[ch]) { await ev(a => { const B = __T.G.boss; B.st = a; B.n = 0; B.stT = 0; }, a); await wait(1300); }
+  for (const a of {12:['sweep','ring'],13:['erupt','whirl'],14:['hands','ring'],15:['erupt','hands'],16:['ring','whirl'],17:['sweep','burst'],22:['rain','ring'],23:['erupt','pillars'],24:['hands','whirl']}[ch]) { await ev(a => { const B = __T.G.boss; B.st = a; B.n = 0; B.stT = 0; }, a); await wait(1300); }
   await pg.screenshot({ path: out + '/9b-saldiri' + ch + '.png' }); await pg.screenshot({ path: out + '/9-boss' + ch + '.png' });
   await ev(() => { __T.hitBoss(1); window.__k = setInterval(() => { const B = __T.G.boss; if (B && !B.dead && B.st !== 'intro') { B.hp = Math.min(B.hp, 1); __T.P.x = B.x - 24; __T.P.y = B.y + B.h - 30; __T.P.face = 1; __T.P.ab = .15; } }, 60); });
   for (let i = 0; i < 40 && !(await ev(() => __T.G.won)); i++) await wait(250); await ev(() => clearInterval(window.__k)); check(await ev(() => __T.G.won), 'boss yenilmedi ' + ch);

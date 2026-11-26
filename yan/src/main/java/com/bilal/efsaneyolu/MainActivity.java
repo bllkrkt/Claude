@@ -245,6 +245,16 @@ public class MainActivity extends Activity {
     }
 
     private class Bridge {
+        /** Oyun oynanırken ekranı açık tutar, menüde/duraklatmada bırakır (16.2'de eklenmişti). */
+        @JavascriptInterface
+        public void keepOn(final boolean on) {
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (on) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            });
+        }
+
         /** Oyun ilk ekranını hazırladı: açılış ekranı kalkar. */
         @JavascriptInterface
         public void ready() {
