@@ -13,3 +13,4 @@ node_modules/
 app/keystore/
 rpg/build/
 EfsaneAvcisi*.html
+__pycache__/
