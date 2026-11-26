@@ -1,0 +1,20 @@
+// Efsane Yolu v19 testi: köy, mağaza, Altın Avı, Hayatta Kalma. node yan-mod.mjs <index.html> <çıktı klasörü> → son satır errors []
+import { createRequire } from 'module';const { chromium } = createRequire(import.meta.url)('playwright');
+const [h,out]=process.argv.slice(2);(await import('fs')).mkdirSync(out,{recursive:true});const b=await chromium.launch();const pg=await b.newPage({viewport:{width:844,height:390}});const errs=[];pg.on('pageerror',e=>errs.push(e.message));pg.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+const ev=(f,a)=>pg.evaluate(f,a),w=ms=>pg.waitForTimeout(ms),shot=n=>pg.screenshot({path:out+'/'+n+'.png'});
+await pg.goto('file://'+h);await w(800);
+await ev(()=>{const S=__T.SV;for(const i of [0,1,2,4,5,6])S.lvs[i].done=1;S.gold=20000;S.oz=300;S.town={d:5,a:3,t:1,h:4,m:0};save();__T.ACT.home()});await w(300);
+await shot('0-baslik');await ev(()=>__T.ACT.town());await w(500);await shot('1-koy');
+await ev(()=>__T.ACT.shop());await w(400);await shot('2-magaza');
+const g0=await ev(()=>__T.SV.gold);await pg.click('[data-a=sbuy][data-v="0"]');await w(200);await pg.click('[data-a=soff][data-v="oz"]');await w(200);
+const sh=await ev(()=>({g:__T.SV.gold,b:__T.SV.shp.b,inv:__T.SV.inv.length,oz:__T.SV.oz}));console.log('mağaza',g0,JSON.stringify(sh));
+await ev(()=>__T.ACT.modes());await w(300);await shot('3-modlar');
+await pg.click('[data-a=modgo][data-v="25"]');await w(500);await ev(()=>{__T.I.r=1;window.__g=setInterval(()=>{__T.P.inv=5;__T.P.hp=__T.P.mhp;if(__T.P.on&&Math.random()<.1)__T.P.jb=.12},60)});await w(4000);await shot('4-altinavi');
+const r1=await ev(()=>({st:__T.state,ch:__T.CH,mT:__T.G.mT,got:__T.SV.gold-__T.G.mG0,coins:__T.L.coins.length}));console.log('altın avı',JSON.stringify(r1));
+await ev(()=>{__T.G.mT=0});await w(700);await shot('5-sonuc');console.log('sonuç',await ev(()=>({menu:__T.menu,st:__T.state,md:__T.SV.md})));
+await pg.click('[data-a=home]');await w(300);await ev(()=>{clearInterval(window.__g);__T.I.r=0;__T.ACT.modes()});await w(200);await pg.click('[data-a=modgo][data-v="26"]');await w(500);
+await ev(()=>{window.__g=setInterval(()=>{__T.P.inv=5;__T.P.hp=__T.P.mhp;__T.P.ab=.15;const e=__T.ENS.find(e=>!e.dead);if(e){__T.P.face=e.x>__T.P.x?1:-1;if(Math.abs(e.x-__T.P.x)>40)__T.I.r=e.x>__T.P.x?1:0,__T.I.l=e.x<__T.P.x?1:0}},60)});await w(14000);await shot('6-hayatta');
+const r2=await ev(()=>({wv:__T.G.wv,en:__T.ENS.filter(e=>!e.dead).length,st:__T.state}));console.log('hayatta kalma',JSON.stringify(r2));
+await ev(()=>{clearInterval(window.__g);__T.I.r=__T.I.l=0;__T.P.inv=0;__T.P.dashT=0;__T.P.hp=1;hurtP(999,1)});await w(1400);await shot('7-sonuc2');console.log('sonuç2',await ev(()=>({menu:__T.menu,md:__T.SV.md,mtm:document.getElementById('mtm').style.display})));
+await pg.click('[data-a=home]');await w(400);console.log('menü',await ev(()=>({st:__T.state,mtm:document.getElementById('mtm').style.display})));
+console.log('errors',JSON.stringify(errs));await b.close();
