@@ -190,6 +190,90 @@ button{font-family:inherit;cursor:pointer}
 /* v12 */
 .szb{font-style:normal;font-size:9.5px;background:#5ad8a0;color:#08241a;border-radius:6px;padding:1px 5px;vertical-align:middle}
 .bkw{border:1px solid #f5c24266;border-radius:12px;padding:8px 10px;margin:6px 0;background:#f5c24214;font-size:13px}
+
+/* ===== v20 TEMA: açılış ekranı + menüler (fantastik altın çerçeve) ===== */
+:root{--g1:#ffe9a6;--g2:#f5c242;--g3:#b8781a;--line:#f5c24240;--ink:#1d1209}
+#scr{background:radial-gradient(ellipse at 50% 40%,#0d0a14aa,#05030acc 75%)}
+#scr.clear{background:linear-gradient(90deg,#05030ae6 0%,#05030ab0 34%,#05030a30 62%,#05030a00 80%),linear-gradient(0deg,#05030ac0,#05030a00 30%)}
+.pan{position:relative;border:1px solid #f5c24266;border-radius:16px;
+ background:
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M2 22V6a4 4 0 0 1 4-4h16' fill='none' stroke='%23f5c242' stroke-width='2'/%3E%3Cpath d='M7 16V9a2 2 0 0 1 2-2h7' fill='none' stroke='%23f5c24288' stroke-width='1.2'/%3E%3Ccircle cx='6' cy='6' r='2.2' fill='%23ffe9a6'/%3E%3C/svg%3E") left 4px top 4px/34px no-repeat,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M32 22V6a4 4 0 0 0-4-4H12' fill='none' stroke='%23f5c242' stroke-width='2'/%3E%3Cpath d='M27 16V9a2 2 0 0 0-2-2h-7' fill='none' stroke='%23f5c24288' stroke-width='1.2'/%3E%3Ccircle cx='28' cy='6' r='2.2' fill='%23ffe9a6'/%3E%3C/svg%3E") right 4px top 4px/34px no-repeat,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M2 12v16a4 4 0 0 0 4 4h16' fill='none' stroke='%23f5c242' stroke-width='2'/%3E%3Ccircle cx='6' cy='28' r='2.2' fill='%23ffe9a6'/%3E%3C/svg%3E") left 4px bottom 4px/34px no-repeat,
+  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34'%3E%3Cpath d='M32 12v16a4 4 0 0 1-4 4H12' fill='none' stroke='%23f5c242' stroke-width='2'/%3E%3Ccircle cx='28' cy='28' r='2.2' fill='%23ffe9a6'/%3E%3C/svg%3E") right 4px bottom 4px/34px no-repeat,
+  radial-gradient(120% 70% at 50% 0%,#33264a 0%,#1d1629 55%,#130e1b 100%);
+ box-shadow:0 0 0 1px #000,inset 0 0 0 3px #130e1b,inset 0 0 0 4px #f5c24224,inset 0 1px 0 #ffffff18,0 22px 60px #000d,0 0 40px #f5c24214}
+.pan h2{display:flex;align-items:center;justify-content:center;gap:12px;font-size:23px;letter-spacing:2px;text-shadow:0 2px 0 #5a3206,0 0 18px #f5c24240;background:linear-gradient(180deg,var(--g1),var(--g2) 55%,#d8952a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.pan h2::before,.pan h2::after{content:"";flex:1;max-width:90px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#f5c242cc)}
+.pan h2::after{background:linear-gradient(270deg,transparent,#f5c242cc)}
+.mh h2::before,.mh h2::after{max-width:60px}
+.sec{display:flex;align-items:center;gap:8px;letter-spacing:1px}.sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#f5c24266,transparent)}
+.btn{min-height:44px;border-radius:12px;border:1px solid #f5c24238;background:linear-gradient(#4a3a63,#2d2242 60%,#261c38);box-shadow:inset 0 1px 0 #ffffff26,inset 0 -3px 0 #00000055,0 3px 0 #000a;letter-spacing:.3px;transition:transform .12s,filter .12s,box-shadow .12s}
+.btn:active{transform:translateY(2px);box-shadow:inset 0 1px 0 #ffffff1a,0 1px 0 #000a;filter:brightness(1.1)}
+.btn.gold{background:linear-gradient(#fff0b0,#f5c242 38%,#d38f1f 85%,#b0701a);color:var(--ink);border-color:#fff0b8;text-shadow:0 1px 0 #fff6;box-shadow:inset 0 1px 0 #fff9,inset 0 -3px 0 #8a520d,0 3px 0 #000a,0 0 22px #f5c24255}
+.ch,.it,.sk,.pt,.skc{background:linear-gradient(100deg,#ffffff0e,#ffffff04 60%);border:1px solid #f5c24226;box-shadow:inset 0 1px 0 #ffffff0d}
+.ch{border-left:3px solid #f5c24288;border-radius:12px}
+.ch .bt button,.it .bt button,.tg button,.dbt button,.bft button,.pt .bt button,.skc button,.sk button{border:1px solid #f5c24233;background:linear-gradient(#4a3a63,#2a2040);box-shadow:inset 0 1px 0 #ffffff22,0 2px 0 #000a;transition:transform .1s}
+.ch .bt button,.it .bt button,.tg button,.dbt button,.pt .bt button{min-height:38px}
+.ch .bt button:active,.it .bt button:active,.tg button:active,.dbt button:active,.bft button:active,.pt .bt button:active,.skc button:active,.sk button:active{transform:translateY(1px)}
+.ch .bt button.g,.it .bt button.g,.dbt button.g,.pt .bt button.g,.skc button.g,.sk button.g,.bft button.g2{background:linear-gradient(#ffe48a,#e3a12c 70%,#b8781a);color:var(--ink);border-color:#ffe9a0;box-shadow:inset 0 1px 0 #fff8,0 2px 0 #000a,0 0 10px #f5c24240}
+.tabs button{border-color:#f5c24222;background:linear-gradient(#ffffff08,#0004)}
+.tabs button.on{background:linear-gradient(#4a3a63,#2a2040);color:var(--g2);border-color:#f5c24288;box-shadow:inset 0 -2px 0 var(--g2),0 0 12px #f5c24230}
+.mh .x,.tabs .x{border-color:#f5c24244!important;background:linear-gradient(#4a3a63,#2a2040)!important;color:var(--g1)!important}
+.wal b{background:linear-gradient(#1a1220,#0a070e);box-shadow:inset 0 1px 0 #ffffff14}
+/* Ayarlar: iki sütun, açık/kapalı rengi */
+.pan.setp{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;min-width:min(620px,92vw)}
+.pan.setp>*:not(.tg){grid-column:1/-1}
+.tg{padding:7px 4px;border-bottom:1px solid #f5c2421a}
+.tg button{min-width:92px}
+.tg button.on{background:linear-gradient(#5fe0a0,#2a9a6a);color:#06241a;border-color:#9ff0c8}
+.tg button.off{color:#b9aecb}
+@media (max-width:560px){.pan.setp{grid-template-columns:1fr}}
+/* AÇILIŞ EKRANI */
+#title.t20{position:absolute;inset:0;left:0;top:0;transform:none;width:auto;max-height:none;overflow:visible;pointer-events:none}
+#title.t20>*{pointer-events:auto}
+#title.t20 .tcol{position:absolute;left:max(16px,5vw);top:50%;transform:translateY(-50%);width:min(430px,52vw);display:flex;flex-direction:column;gap:clamp(5px,1.6vh,10px);animation:tin .5s ease-out both}
+@keyframes tin{from{opacity:0;translate:-18px 0}}
+#title.t20 .thd{display:flex;align-items:center;gap:clamp(8px,2vw,14px)}
+#title.t20 .crest{width:clamp(48px,17vh,86px);height:clamp(48px,17vh,86px);flex:none;filter:drop-shadow(0 4px 10px #000) drop-shadow(0 0 14px #f5c24240);animation:crb 4s ease-in-out infinite}
+@keyframes crb{50%{translate:0 -3px}}
+#title.t20 h1{font-size:clamp(28px,11vh,64px)!important;line-height:.95;letter-spacing:2px;background:linear-gradient(180deg,#fff6cc,#f5c242 50%,#c47e1c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 3px 0 #4a2806) drop-shadow(0 8px 16px #000)}
+#title.t20 .tsb{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:clamp(10px,3vh,13px);font-weight:700;color:#e9dff5;letter-spacing:2px;text-transform:uppercase;text-shadow:0 2px 4px #000}
+#title.t20 .tsb::before{content:"";width:26px;height:2px;background:linear-gradient(90deg,transparent,#f5c242)}
+#title.t20 .tst{display:flex;align-items:center;gap:8px;font-size:clamp(11px,3.1vh,13px);font-weight:800;color:var(--g1);text-shadow:0 1px 3px #000}
+#title.t20 .tst svg{width:18px;height:18px;flex:none}
+#title.t20 .tbar{flex:1;height:7px;border-radius:5px;background:#0009;border:1px solid #f5c24244;overflow:hidden;max-width:180px}
+#title.t20 .tbar i{display:block;height:100%;background:linear-gradient(90deg,#b8781a,#ffe48a);box-shadow:0 0 8px #f5c242}
+#title.t20 .wk{margin:0;align-self:flex-start;font-size:clamp(10px,2.8vh,12px);border-radius:20px;padding:3px 12px;background:linear-gradient(90deg,#0d3324dd,#0a1f1899);max-width:100%;box-sizing:border-box;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#title.t20 .tcta{display:flex;gap:8px}
+#title.t20 .tcta .btn{margin:0}
+#title.t20 .tcta .btn.gold{flex:2;min-height:clamp(44px,14vh,58px);font-family:C,serif;font-size:clamp(16px,5vh,22px);letter-spacing:2px;display:flex;align-items:center;justify-content:center;gap:10px;animation:ctag 2.4s ease-in-out infinite}
+#title.t20 .tcta .btn.gold small{display:block;font-family:J,sans-serif;font-size:clamp(9px,2.5vh,11px);letter-spacing:0;font-weight:700;opacity:.75}
+#title.t20 .tcta .btn.gold span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+#title.t20 .tcta .btn.gold svg{width:clamp(18px,5.5vh,26px);height:clamp(18px,5.5vh,26px);flex:none}
+@keyframes ctag{50%{box-shadow:inset 0 1px 0 #fff9,inset 0 -3px 0 #8a520d,0 3px 0 #000a,0 0 34px #f5c24299}}
+#title.t20 .tcta .btn:not(.gold){flex:1;min-height:clamp(44px,14vh,58px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:clamp(11px,3.1vh,13px)}
+#title.t20 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#title.t20 .tgrid .btn{margin:0;min-height:clamp(44px,12vh,50px);display:flex;align-items:center;gap:10px;padding:4px 12px;font-size:clamp(12px,3.4vh,14px);text-align:left;position:relative}
+#title.t20 .ti{width:clamp(22px,7vh,30px);height:clamp(22px,7vh,30px);flex:none;border-radius:9px;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#f5c24255,#0006);border:1px solid #f5c24255}
+#title.t20 .ti svg,#title.t20 .tcta .btn:not(.gold) svg{width:68%;height:68%}
+#title.t20 .tcta .btn:not(.gold) svg{width:clamp(16px,5vh,22px);height:clamp(16px,5vh,22px)}
+#title.t20 .cnt.d{position:absolute;top:6px;right:8px;width:10px;height:10px;box-shadow:0 0 0 2px #1d1629,0 0 8px #e8453c}
+#title.t20 .tdock{position:absolute;right:max(14px,3vw);bottom:max(10px,3vh);display:flex;gap:clamp(6px,1.4vw,12px);padding:8px 10px;border-radius:20px;background:linear-gradient(#1d1629e6,#0d0a14e6);border:1px solid #f5c24244;box-shadow:0 10px 30px #000b,inset 0 1px 0 #ffffff14;animation:tin2 .5s .1s ease-out both}
+@keyframes tin2{from{opacity:0;translate:0 14px}}
+#title.t20 .tdock button{position:relative;width:clamp(48px,15vh,60px);border:0;background:none;color:#e9dff5;font-weight:800;font-size:clamp(9px,2.6vh,11px);display:flex;flex-direction:column;align-items:center;gap:3px;padding:0}
+#title.t20 .tdock .dc{width:clamp(36px,11vh,46px);height:clamp(36px,11vh,46px);border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#5a4878,#2a2040 70%);border:2px solid #f5c24288;box-shadow:inset 0 2px 0 #ffffff22,0 3px 0 #000a;transition:transform .12s}
+#title.t20 .tdock button:active .dc{transform:translateY(2px) scale(.96)}
+#title.t20 .tdock .dc svg{width:58%;height:58%}
+#title.t20 .tdock .cnt.d{top:0;right:4px}
+#title.t20 .tgift{position:absolute;right:max(14px,3vw);bottom:calc(max(10px,3vh) + clamp(70px,22vh,90px));display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 16px 4px 8px;border-radius:24px;border:1px solid #9ff0c8;background:linear-gradient(#6fe8b0,#2a9a6a);color:#06241a;font-weight:900;font-size:13px;box-shadow:0 4px 0 #000a,0 0 22px #5ad8a088;animation:dlp 1.2s ease-in-out infinite}
+#title.t20 .tgift svg{width:30px;height:30px;animation:gfw 1.2s ease-in-out infinite}
+@keyframes gfw{25%{rotate:-10deg}75%{rotate:10deg}}
+#title.t20 .tver{position:absolute;left:max(16px,5vw);bottom:6px;font-size:10px;color:#ffffff55;font-weight:700;letter-spacing:1px}
+#title.t20 .walr{position:absolute;top:max(8px,2vh);right:max(14px,3vw);margin:0}
+#title.t20 h1{white-space:nowrap;font-size:clamp(26px,min(11vh,6.2vw),64px)!important}
+@media (min-height:560px) and (min-width:900px){#title.t20 .tcol,#title.t20 .tdock,#title.t20 .tgift,#title.t20 .walr{zoom:1.3}}
+@media (prefers-reduced-motion:reduce){#title.t20 *{animation:none!important}}
 </style>
 </head>
 <body>
@@ -225,7 +309,7 @@ button{font-family:inherit;cursor:pointer}
    Tek dosya: Canvas 2D çizim + sabit adımlı (60/sn) fizik + dokunmatik kontroller.
    Kayıt: localStorage 'efsane-yolu-v1'. Yeni alan eklerken fresh() içine varsayılan koy.
    ============================================================ */
-const VER='19.0';
+const VER='20.0';
 const BR=window.AndroidBridge||null;
 const SKEY='efsane-yolu-v1';
 function fresh(){return{v:1,lang:'tr',snd:1,mus:1,vib:1,gold:0,uid:2,
@@ -2508,8 +2592,8 @@ const SCR={
   pause:()=>'<div class="pan"><h2>'+T('Duraklatıldı')+'</h2><button class="btn gold" data-a="resume">'+T('Devam')+'</button><button class="btn" data-a="bag">'+T('Çanta')+bagDot()+'</button><button class="btn" data-a="dq">'+T('Görevler')+(dqReady()||achReady()?' <i class="cnt d"></i>':'')+'</button><button class="btn" data-a="set">'+T('Ayarlar')+'</button>'+
     '<div class="row"><button class="btn" data-a="restart">'+T('Bölümü baştan başlat')+'</button><button class="btn" data-a="home">'+T('Ana menü')+'</button></div></div>',
   confirm:()=>'<div class="pan"><h2>'+T('Bölümü baştan başlat')+'</h2><p class="mut" style="text-align:center">'+T('Bu bölümdeki ilerlemen silinsin mi?')+'</p><div class="row"><button class="btn" data-a="back">'+T('Vazgeç')+'</button><button class="btn gold" data-a="doRestart">'+T('Evet, baştan')+'</button></div></div>',
-  set:()=>{const tg=(k,n)=>'<div class="tg"><span>'+T(n)+'</span><button data-a="tog" data-v="'+k+'">'+T(SV[k]?'Açık':'Kapalı')+'</button></div>';
-    return'<div class="pan"><h2>'+T('Ayarlar')+'</h2>'+tg('snd','Ses')+tg('mus','Müzik')+'<div class="tg"><span>'+T('Müzik seviyesi')+'</span><button data-a="vol" data-v="mv">'+T(VOLN[SV.mv==null?1:SV.mv])+'</button></div><div class="tg"><span>'+T('Efekt seviyesi')+'</span><button data-a="vol" data-v="sv">'+T(VOLN[SV.sv==null?1:SV.sv])+'</button></div>'+tg('vib','Titreşim')+tg('gh','Rekor hayaleti')+'<div class="tg"><span>'+T('Düğme boyutu')+'</span><button data-a="ui" data-v="sz">%'+Math.round((SV.ui.sz||1)*100)+'</button></div><div class="tg"><span>'+T('Sol el modu')+'</span><button data-a="ui" data-v="lh">'+T(SV.ui.lh?'Açık':'Kapalı')+'</button></div>'+'<div class="tg"><span>'+T('Zorluk')+'</span><button data-a="difc" style="color:'+DIFC[DV()]+'">'+T(DIFN[DV()])+'</button></div>'+'<div class="tg"><span>'+T('Dil')+'</span><button data-a="lang">'+(LANG==='en'?'English':'Türkçe')+'</button></div>'+
+  set:()=>{const tg=(k,n)=>'<div class="tg"><span>'+T(n)+'</span><button class="'+(SV[k]?'on':'off')+'" data-a="tog" data-v="'+k+'">'+T(SV[k]?'Açık':'Kapalı')+'</button></div>';
+    return'<div class="pan setp"><h2>'+T('Ayarlar')+'</h2>'+tg('snd','Ses')+tg('mus','Müzik')+'<div class="tg"><span>'+T('Müzik seviyesi')+'</span><button data-a="vol" data-v="mv">'+T(VOLN[SV.mv==null?1:SV.mv])+'</button></div><div class="tg"><span>'+T('Efekt seviyesi')+'</span><button data-a="vol" data-v="sv">'+T(VOLN[SV.sv==null?1:SV.sv])+'</button></div>'+tg('vib','Titreşim')+tg('gh','Rekor hayaleti')+'<div class="tg"><span>'+T('Düğme boyutu')+'</span><button data-a="ui" data-v="sz">%'+Math.round((SV.ui.sz||1)*100)+'</button></div><div class="tg"><span>'+T('Sol el modu')+'</span><button data-a="ui" data-v="lh">'+T(SV.ui.lh?'Açık':'Kapalı')+'</button></div>'+'<div class="tg"><span>'+T('Zorluk')+'</span><button data-a="difc" style="color:'+DIFC[DV()]+'">'+T(DIFN[DV()])+'</button></div>'+'<div class="tg"><span>'+T('Dil')+'</span><button data-a="lang">'+(LANG==='en'?'English':'Türkçe')+'</button></div>'+
     (BKF?'<div class="bkw"><b>'+T('Yedek yüklensin mi? Şu anki ilerlemenin yerine geçer.')+'</b><div class="row"><button class="btn" data-a="bkno">'+T('Vazgeç')+'</button><button class="btn gold" data-a="bkok">'+T('Evet, yükle')+'</button></div></div>':'<div class="row"><button class="btn" data-a="bks">'+T('Yedeği kaydet')+'</button><button class="btn" data-a="bkl">'+T('Yedekten yükle')+'</button></div>')+'<p class="mut">'+T('Klavye: ← → koş, Boşluk zıpla, J vur, K kaç, L özel, Esc duraklat')+'</p><button class="btn" data-a="cred">'+T('Emeği geçenler')+'</button><button class="btn" data-a="back">'+T('Geri')+'</button></div>'},
   cred:()=>'<div class="pan"><h2>'+T('Emeği geçenler')+'</h2><div class="sec">'+T('Dekor resimleri: Sketchfab 3B modellerinden çekildi (CC BY 4.0)')+'</div>'+CRD.map(r=>'<div class="pg"><b>'+r[0]+'</b>'+r[1]+'</div>').join('')+
     '<div class="sec">'+T('Müzik ve ses efektleri: OpenGameArt.org (CC0)')+'</div>'+CRM.map(r=>'<div class="pg"><b>'+r[0]+'</b>'+r[1]+'</div>').join('')+'<p class="mut">'+T('Yazı tipleri: Plus Jakarta Sans, Cinzel (SIL OFL)')+'</p><button class="btn" data-a="credb">'+T('Geri')+'</button></div>',
@@ -2867,6 +2951,40 @@ Object.assign(ACT,{shop:()=>{if(menu!=='shop')backTo=menu;showScr('shop')},modes
 Object.assign(EN,{"Mağaza":"Shop","Günün eşyaları (her gün yenilenir)":"Today's items (refreshed daily)","Satıldı":"Sold","Teklifler":"Offers","Gizemli kese":"Mystery pouch","Rastgele bir eşya (en az Nadir)":"A random item (Rare or better)","Öz kesesi":"Essence pouch","+20 öz":"+20 essence","Efsane sandığı":"Legend chest","Efsanevi bir eşya · öz ile":"A Legendary item · paid with essence","Stoğu yenile":"Refresh stock","Günün eşyalarını değiştir":"Replace today's items","Çanta dolu!":"Bag full!","Satın alındı: {0}":"Bought: {0}",
  "Altın Avı":"Gold Rush","Hayatta Kalma":"Survival","Oyun Modları":"Game Modes","Modlar":"Modes","75 saniyede altınla dolu bir yolda topla topla! Topladığının yarısı bonus.":"Grab all the gold you can on a gold-filled road in 75 seconds! Half of it is paid again as a bonus.","Dalga dalga gelen düşmanlara dayan. Her dalga ödülü büyütür, 5. dalgadan sonra eşya.":"Hold out against wave after wave of enemies. Every wave grows the reward; items after wave 5.","En iyi: {0} altın":"Best: {0} gold","En iyi: {0}. dalga":"Best: wave {0}",
  "Dalga {0}":"Wave {0}","DALGA {0}":"WAVE {0}","En iyi {0}":"Best {0}","Güçlü bir elit geliyor!":"A strong elite is coming!","Toplanan altın":"Gold collected","Bonus":"Bonus","En iyi":"Best","Tamamlanan dalga":"Waves cleared","Ödül":"Reward","Eşya kazandın!":"You won an item!","Süre doldu!":"Time's up!","Bölümü bitirdin!":"You finished the stage!","Düştün!":"You fell!","Hayatta kalma bitti":"Survival over","Yeni rekor!":"New record!","Tekrar oyna":"Play again","Ana menü":"Main menu","{0} sn":"{0} s","Sandıktan öz çıktı: +2":"The chest had essence: +2"});
+
+/* ===== v20: yeni açılış ekranı (SCR.title) ===== */
+const TIC={
+ play:'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 4.5v15l12.5-7.5z" fill="#2a1606"/></svg>',
+ map:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+ town:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6" fill="#f5c24255"/></svg>',
+ daily:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linecap="round"><path d="M4 4l11 11M20 4L9 15"/><path d="M13 17l4 4M11 17l-4 4M15 13l3 3M9 13l-3 3"/></svg>',
+ shop:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round"><path d="M8 7V6a4 4 0 0 1 8 0v1"/><path d="M5 7h14l-1 13H6z" fill="#f5c24233"/><circle cx="12" cy="13" r="2.4" fill="#f5c242" stroke="none"/></svg>',
+ modes:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round"><path d="M6 21V3"/><path d="M6 4h12l-3 4 3 4H6" fill="#f5c24244"/></svg>',
+ bag:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round"><path d="M9 6V5a3 3 0 0 1 6 0v1"/><rect x="4" y="6" width="16" height="15" rx="4" fill="#f5c24233"/><path d="M8 12h8v4H8z"/></svg>',
+ dq:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z" fill="#f5c24222"/><path d="M9 8l1.5 1.5L13 7M9 14l1.5 1.5L13 13M15 8.5h1M15 14.5h1"/></svg>',
+ jour:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8" stroke-linejoin="round"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5c-3-.5-6 0-8 1.5z" fill="#f5c24222"/><path d="M12 6v14.5"/></svg>',
+ set:'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#ffe9a6" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.5"/></svg>',
+ gift:'<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="2" fill="#c8302a"/><rect x="2" y="7" width="20" height="4" rx="1.5" fill="#e8453c"/><path d="M11 7h2v14h-2z" fill="#ffe48a"/><path d="M12 7c-1-3-5-4-5-1.5S10 7 12 7c2 0 5-.5 5-1.5S13 4 12 7z" fill="none" stroke="#ffe48a" stroke-width="1.6"/></svg>',
+ star:'<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.2 1.3-6.6L2.5 9.3l6.6-.8z" fill="#f5c242" stroke="#7a4a08" stroke-width="1"/></svg>'};
+const CREST='<svg aria-hidden="true" class="crest" viewBox="0 0 100 100"><defs><linearGradient id="cg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b0"/><stop offset=".5" stop-color="#f5c242"/><stop offset="1" stop-color="#a8681a"/></linearGradient><linearGradient id="cg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a2e7a"/><stop offset="1" stop-color="#1a1030"/></linearGradient><linearGradient id="cg3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cfd6e6"/><stop offset=".5" stop-color="#fff"/><stop offset="1" stop-color="#9aa4ba"/></linearGradient></defs>'+
+ '<path d="M50 4 L58 14 L50 12 L42 14Z" fill="url(#cg1)"/><rect x="47" y="8" width="6" height="62" rx="1" fill="url(#cg3)"/><path d="M50 4l3 6h-6z" fill="#fff"/>'+
+ '<path d="M50 16 C64 22 76 20 84 18 C84 50 74 74 50 92 C26 74 16 50 16 18 C24 20 36 22 50 16Z" fill="url(#cg2)" stroke="url(#cg1)" stroke-width="4" stroke-linejoin="round"/>'+
+ '<path d="M50 26 C60 30 68 30 74 29 C73 52 66 68 50 81 C34 68 27 52 26 29 C32 30 40 30 50 26Z" fill="none" stroke="#f5c24266" stroke-width="1.5"/>'+
+ '<path d="M50 34 l5 10 11 1.5 -8 7.5 2 11 -10-5.5 -10 5.5 2-11 -8-7.5 11-1.5z" fill="url(#cg1)" stroke="#5a3206" stroke-width="1.2"/>'+
+ '<path d="M30 74 L18 86 M70 74 L82 86" stroke="url(#cg1)" stroke-width="5" stroke-linecap="round"/><rect x="40" y="70" width="20" height="5" rx="2" fill="url(#cg1)"/></svg>';
+function titleH20(){const tot=ORD.map(i=>SV.lvs[i]).reduce((a,l)=>a+((l.star&1)+(l.star>>1&1)+(l.star>>2&1)),0),mx=ORD.length*3,dot=f=>f?' <i class="cnt d"></i>':'';
+ const tile=(a,ic,n,d)=>'<button class="btn" data-a="'+a+'"><span class="ti">'+TIC[ic]+'</span>'+T(n)+dot(d)+'</button>';
+ const dk=(a,ic,n,extra)=>'<button data-a="'+a+'"><span class="dc">'+TIC[ic]+'</span>'+T(n)+(extra||'')+'</button>';
+ const cont=LV.cp>=0;
+ return'<div id="title" class="t20"><div class="tcol"><div class="thd">'+CREST+'<div><h1>'+T('Efsane Yolu')+'</h1><div class="tsb">'+T('Yandan macera')+'</div></div></div>'+
+  '<div class="tst">'+TIC.star+T('Toplam yıldız: {0}/{1}',tot,mx)+'<span class="tbar"><i style="width:'+Math.round(tot/mx*100)+'%"></i></span></div>'+
+  '<p class="wk"><b>'+T('Haftanın etkinliği')+':</b> '+T(WKE[wkI()].n)+' · '+T(WKE[wkI()].d)+'</p>'+
+  '<div class="tcta">'+(cont?'<button class="btn gold" data-a="goc" data-v="'+CH+'">'+TIC.play+'<span>'+T('Devam et')+'<small>'+T(CHN[CH])+(CH===11?' · '+T('Kat {0}',SV.endl.floor|0):'')+' · '+T('Kontrol noktası {0}',LV.cp+1)+'</small></span></button><button class="btn" data-a="chap">'+TIC.map+T('Bölümler')+'</button>':'<button class="btn gold" data-a="chap">'+TIC.play+'<span>'+T('Oyna')+'</span></button>')+'</div>'+
+  '<div class="tgrid">'+tile('town','town','Köy',twReady())+tile('daily','daily','Meydan Okuma',dcReady())+tile('shop','shop','Mağaza')+tile('modes','modes','Modlar')+'</div></div>'+
+  (dlReady()?'<button class="tgift" data-a="login">'+TIC.gift+T('Günlük ödül hazır!')+'</button>':'')+
+  '<div class="tdock">'+dk('bag','bag','Çanta',bagDot())+dk('dq','dq','Görevler',dot(dqReady()||achReady()))+dk('jour','jour','Günlük')+dk('set','set','Ayarlar')+'</div>'+
+  '<div class="tver">'+T('Sürüm {0}',VER)+'</div></div>'}
+SCR.title=titleH20;
 Object.assign(ACT,ACT13,ACT14);Object.assign(SCR,SCR14);loadScr();loadChapter(CH);resize();applyUI();goTitle();requestAnimationFrame(frame);
 </script>
 </body>
