@@ -44,7 +44,7 @@ await pg.click('[data-a=back]'); await wait(100); await pg.click('[data-a=set]')
 check(await ev(() => __T.menu) === 'pause', 'geri dönüş bozuk');
 await pg.click('[data-a=resume]'); await wait(100);
 // Boss: arenaya ışınla
-await ev(() => { clearInterval(window.__bot); __T.I.r = 0; __T.LV.cp = 2; __T.tp(150); }); await wait(1500);
+await ev(() => { clearInterval(window.__bot); __T.I.r = 0; __T.LV.cp = 2; __T.tp(150); __T.P.hp = __T.P.mhp; /* boss izlenirken şansa bağlı ölüm testi bozmasın */ }); await wait(1500);
 check(await ev(() => __T.LV.cp) === 2, 'kontrol noktası');
 await ev(() => { __T.I.r = 1; }); await wait(1400); await ev(() => { __T.I.r = 0; });
 check(await ev(() => !!__T.G.boss), 'boss başlamadı');
