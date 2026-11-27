@@ -317,7 +317,7 @@ button{font-family:inherit;cursor:pointer}
    Tek dosya: Canvas 2D çizim + sabit adımlı (60/sn) fizik + dokunmatik kontroller.
    Kayıt: localStorage 'efsane-yolu-v1'. Yeni alan eklerken fresh() içine varsayılan koy.
    ============================================================ */
-const VER='22.0';
+const VER='23.0';
 const BR=window.AndroidBridge||null;
 const SKEY='efsane-yolu-v1';
 function fresh(){return{v:1,lang:'tr',snd:1,mus:1,vib:1,gold:0,uid:2,
@@ -2413,6 +2413,9 @@ function drawHooks(){for(const h of L.hooks){const gl=.4+.25*Math.sin(G.t*4+h.x)
 const WXN={rain:'Yağmur',fog:'Sis',storm:'Fırtına',snow:'Kar',bliz:'Tipi',sand:'Kum fırtınası'};
 function setWX(n){L.wx=null;if(!L.gen||n===11||(TH0(n)&&(TH0(n).cave||TH0(n).lava))||L.dark)return;const r=Math.random();const th=TH0(n)||{},dk=DKC[n]||[];if(th.snow||dk.includes('kar'))L.wx=r<.5?'snow':r<.7?'bliz':null;else if(dk.includes('kaktus'))L.wx=r<.3?'sand':null;else L.wx=r<.2?'rain':r<.32?'fog':r<.4?'storm':null;G.ltT=4+Math.random()*5}
 const TH0=n=>THM[L.th!=null?L.th:n];
+/* v23: yağmur damlaları. Eski formül (x,y damla sırasının düz katı) bazı ekran boyutlarında damlaları yan yana çift dizip "//" gösteriyordu; artık her damla hash ile rastgele, 3 derinlik katmanı */
+function rainPts(n,t,W,H,cx){const a=[];for(let i=0;i<n;i++){const ly=hash(i,10)<.45?0:hash(i,10)<.8?1:2,sp=(620+ly*300)*(.85+hash(i,11)*.3),len=9+ly*9+hash(i,12)*7,par=.25+ly*.25,
+  x=((hash(i,13)*(W+80)-cx*par)%(W+80)+W+80)%(W+80)-40,y=((hash(i,14)*(H+60)+t*sp)%(H+60))-30;a.push([x,y,len,ly])}return a}
 function drawWX(){const w=L.wx;if(!w)return;
   if(w==='snow'||w==='bliz'){const bz=w==='bliz';if(bz){c.fillStyle='rgba(225,235,250,.14)';c.fillRect(0,0,W,H)}c.fillStyle='#fff';
     for(let ly=0;ly<3;ly++){const n=(bz?55:30)*FXQ,r=.9+ly*1.1,sp=(26+ly*22)*(bz?1.9:1),wd=bz?-(90+ly*70):-8-ly*6,par=.25+ly*.3;c.globalAlpha=.45+ly*.18;c.beginPath();
@@ -2420,8 +2423,9 @@ function drawWX(){const w=L.wx;if(!w)return;
     c.globalAlpha=1;return}
   if(w==='sand'){c.fillStyle='rgba(210,165,95,.13)';c.fillRect(0,0,W,H);c.strokeStyle='rgba(235,205,150,.45)';c.lineWidth=1.3;c.beginPath();
     for(let i=0;i<50*FXQ;i++){const y=hash(i,5)*H,x=((W-(hash(i,6)*(W+120)+G.t*(380+hash(i,7)*260))%(W+120))+W+120)%(W+120)-60;c.moveTo(x,y);c.lineTo(x+14+hash(i,8)*16,y-2)}c.stroke();return}
-  if(w==='rain'||w==='storm'){c.fillStyle='rgba(10,20,40,.16)';c.fillRect(0,0,W,H);c.strokeStyle='rgba(200,220,255,.45)';c.lineWidth=1.2;c.beginPath();const n=(w==='storm'?110:75)*FXQ;
-    for(let i=0;i<n;i++){const sp=900+(i%5)*120,x=((i*173.3-cam.x*cam.k*.6)%(W+60)+W+60)%(W+60)-30,y=((i*97.7+G.t*sp)%(H+40))-20;c.moveTo(x,y);c.lineTo(x-6,y+16)}c.stroke()}
+  if(w==='rain'||w==='storm'){const st=w==='storm';c.fillStyle=st?'rgba(8,14,30,.22)':'rgba(10,20,40,.14)';c.fillRect(0,0,W,H);const P=rainPts(Math.round((st?150:100)*FXQ),G.t*(st?1.15:1),W,H,cam.x*cam.k),sl=st?.42:.22;
+    for(let ly=0;ly<3;ly++){c.strokeStyle=['rgba(170,190,225,.18)','rgba(195,212,240,.3)','rgba(220,232,255,.46)'][ly];c.lineWidth=[.7,.95,1.25][ly];c.beginPath();for(const d of P)if(d[3]===ly){c.moveTo(d[0],d[1]);c.lineTo(d[0]-d[2]*sl,d[1]+d[2])}c.stroke()}
+}
   if(w==='fog'){for(let i=0;i<4;i++){const x=((i*W*.4-cam.x*cam.k*(.2+i*.1)+G.t*12*(i+1))%(W*1.6)+W*1.6)%(W*1.6)-W*.3,y=H*(.45+i*.12);const g=c.createRadialGradient(x,y,10,x,y,W*.45);g.addColorStop(0,'rgba(220,225,235,.22)');g.addColorStop(1,'rgba(220,225,235,0)');c.fillStyle=g;c.fillRect(0,0,W,H)}}
   if(w==='storm'&&state==='play'&&!paused){G.ltT-=1/60;if(G.ltT<=0){G.ltT=5+Math.random()*7;G.lt=.35;if(AC&&SV.snd){noise(1.2,.18,300,'lowpass',.15)}}if(G.lt>0){G.lt-=1/60;c.fillStyle='rgba(255,255,255,'+Math.max(0,G.lt*1.6)+')';c.fillRect(0,0,W,H)}}}
 MZM.b1={bpm:150,ld:'sawtooth',dr:2,pad:'square'};MZM.b2={bpm:128,ld:'triangle',dr:2,pad:'sawtooth'};MZM.b3={bpm:160,ld:'square',dr:2,pad:'triangle'};MZM.bf={bpm:118,ld:'sawtooth',dr:2,pad:'sawtooth'};
