@@ -36,11 +36,14 @@ const r = await ev(() => new Promise(res => { let gc = false, enUzak = 0, sonra 
   const iv = setInterval(() => { const B = __T.G.boss, P = __T.P; if (!B) return; P.inv = 5; P.hp = P.mhp;
     if (!gc) { P.x = (B.x + B.w / 2 < (L.arena.x0 + L.arena.wall) * 16) ? L.arena.wall * 32 - 40 : L.arena.x0 * 32 + 12; }
     const d = Math.abs(P.x + P.w / 2 - B.x - B.w / 2); if (!gc) enUzak = Math.max(enUzak, d);
-    if (B.st === 'gc') gc = true; if (gc) sonra = Math.min(sonra, d);
+    if (B.st === 'gc') { gc = true; if (BUB.some(q => q.e === B)) window.__gcSay = 1; } if (BUB.some(q => q.e === P) && gc) window.__gcRep = 1; if (gc) sonra = Math.min(sonra, d);
     if (performance.now() - t0 > 9000 || (gc && B.st !== 'gc')) { clearInterval(iv); res({ gc, enUzak: Math.round(enUzak), sonra: Math.round(sonra) }); } }, 50); }));
 console.log('boss:', JSON.stringify(r));
 check(r.enUzak > 200, 'test oyuncuyu uzakta tutamadı');
 check(r.gc, 'boss uzaktaki oyuncuya atılmadı');
+await wait(900);
+check(await ev(() => window.__gcSay === 1), 'boss atılırken laf atmadı');
+check(await ev(() => window.__gcRep === 1 || BUB.some(q => q.e === __T.P)), 'karakter boss\'a cevap vermedi');
 check(r.sonra < 140, 'boss atıldıktan sonra yeterince yaklaşmadı: ' + r.sonra);
 await pg.screenshot({ path: out + '/boss.png' });
 console.log('errors', JSON.stringify(errors));

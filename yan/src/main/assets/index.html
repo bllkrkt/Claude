@@ -317,7 +317,7 @@ button{font-family:inherit;cursor:pointer}
    Tek dosya: Canvas 2D çizim + sabit adımlı (60/sn) fizik + dokunmatik kontroller.
    Kayıt: localStorage 'efsane-yolu-v1'. Yeni alan eklerken fresh() içine varsayılan koy.
    ============================================================ */
-const VER='24.0';
+const VER='25.0';
 const BR=window.AndroidBridge||null;
 const SKEY='efsane-yolu-v1';
 function fresh(){return{v:1,lang:'tr',snd:1,mus:1,vib:1,gold:0,uid:2,
@@ -3096,6 +3096,15 @@ const SAYP={
  golgek:{pit:ZA(["Gölgen çukura düşmedi. Sadece sen.|Your shadow didn't fall in the pit. Only you did."]),hurt:ZA(["Acıyor mu? Gölgelerde acı yok, gel buraya.|Does it hurt? No pain in the shadows, come here."]),chest:ZA(["Sandığın gölgesi daha değerli bence.|The chest's shadow is more valuable, I think."]),boss:ZA(["Ben kaçış planını hazırladım. Yedeğini de.|I've prepared the escape plan. And a backup."]),idle:ZA(["Karanlıkta beklemek benim işim. Sen neden bekliyorsun?|Waiting in the dark is my job. Why are you waiting?"])},
  tilki:{pit:ZA(["Kurnaz olan çukuru atlar. Sen... dürüstsün.|The clever one jumps the pit. You're... honest."]),hurt:ZA(["Bunu ben görmedim, kimseye söylemem. Belki.|I didn't see that, won't tell anyone. Maybe."]),chest:ZA(["Ganimetin yarısı benim, anlaştık mı?|Half the loot is mine, deal?"]),boss:ZA(["Ben bir yere saklanıyorum, sen kahramanlığını yap.|I'll hide somewhere, you do your hero thing."]),idle:ZA(["Kuyruğumu kovalamaya başlayacağım, haberin olsun.|I'm about to start chasing my tail, just so you know."])},
  ejder:{pit:ZA(["Çukur mu? Ben olsam yakardım.|A pit? I'd have burned it."]),hurt:ZA(["Seni kim vurduysa kızartırım.|Whoever hit you, I'll roast them."]),chest:ZA(["Ejderler hazine biriktirir. Ver onu bana.|Dragons hoard treasure. Hand it over."]),boss:ZA(["Bu boss'u ben de yiyebilirim ama sen uğraş.|I could eat this boss too, but you handle it."]),idle:ZA(["Bekleyince ağzımdan duman çıkıyor. Sinirden.|Waiting makes smoke come out of my mouth. From anger."])}};
+/* v25: boss uzaktaki oyuncuya atılırken atışma [boss, karakter] */
+const SAYGC=[X("Uzaktan ok atmak cesaret değil, korkaklık!|Shooting from afar isn't bravery, it's cowardice!","Ben buna strateji diyorum.|I call it strategy."),
+ X("Kaçma! Yüz yüze konuşalım!|Don't run! Let's talk face to face!","Yüzün yüzünden kaçıyorum zaten.|Your face is exactly what I'm running from."),
+ X("Geliyorum! Saklanacak yer yok!|Here I come! Nowhere to hide!","Hayır, hayır, hayır, kişisel alanım!|No, no, no, personal space!"),
+ X("Bu arena benim, köşe bucak da benim!|This arena is mine, every corner too!","Kira sözleşmeni görebilir miyim?|Can I see your lease agreement?"),
+ X("Mesafe koyuyorsun ha? Ben de mesafeyi siliyorum!|Keeping your distance, huh? I'm erasing it!","Ayy! Bu kadar yakın olmamıza gerek yoktu!|Ow! We didn't need to get this close!"),
+ X("Sürpriz! Ben de koşabiliyorum!|Surprise! I can run too!","Bu bilgi broşürde yazmıyordu!|That wasn't in the brochure!"),
+ X("Uzaktan sevmek bitti, şimdi yakından döveceğim!|No more love from afar, now I beat you up close!","Biraz yavaş olalım bence.|Let's take it slow, I think."),
+ X("Okların gıdıklıyor! Gel de bir sarılayım!|Your arrows tickle! Come here for a hug!","Sarılma reddedildi!|Hug denied!")];
 /* --- motor --- */
 const TK=()=>SV.talk!==0;
 const _SL={};function pickN(a,key){const L=_SL[key]=_SL[key]||[];const fr=a.filter(x=>!L.includes(x));const x=(fr.length?fr:a)[Math.random()*(fr.length||a.length)|0];L.push(x);if(L.length>Math.min(3,a.length-1))L.shift();return x}
@@ -3124,12 +3133,12 @@ function rngMul(q){if(!q||q.x0==null)return 1;const d=Math.abs(q.x-q.x0);return 
 /* boss, oyuncu uzakta oyalanırsa uyarıp yanına atılır (her boss'ta ortak, kendi saldırı sırasını bozmaz) */
 function gcStep(B,pcx,bcx,sp){if(B.st==='intro'||B.st==='roar'||B.st==='die')return false;const far=Math.abs(pcx-bcx)>200;
   if(B.st!=='gc'){if(far)B.farT=(B.farT||0)+DT;else B.farT=Math.max(0,(B.farT||0)-DT*2);
-    if((B.farT||0)<(B.ph===2?2.2:3.2)||!(B.st==='idle'||B.st==='walk'||B.st==='rec'))return false;B.farT=0;B.st='gc';B.gs=0;B.stT=.55;B.face=pcx<bcx?-1:1;sfx('roar');ftxt(bcx,B.y-12,'!','#ff5a4a',true);return true}
+    if((B.farT||0)<(B.ph===2?2.2:3.2)||!(B.st==='idle'||B.st==='walk'||B.st==='rec'))return false;B.farT=0;B.st='gc';B.gs=0;B.stT=.55;B.face=pcx<bcx?-1:1;sfx('roar');ftxt(bcx,B.y-12,'!','#ff5a4a',true);if(TK()){const gp=pickN(SAYGC,'gc');say(B,gp[0],2.4);B.gcR=gp[1]}return true}
   const a0=L.arena.x0*TS+4,a1=L.arena.wall*TS-B.w-4;
   if(B.gs===0){B.hit=Math.sin(G.t*40)>0?.06:0;if(B.stT<=0){B.gs=1;B.face=pcx<bcx?-1:1;B.tx=clamp(pcx-B.face*60-B.w/2,a0,a1);B.stT=.7}return true}
   const dx=B.tx-B.x;B.x+=Math.sign(dx)*Math.min(Math.abs(dx),950*DT);if(Math.random()<.6)parts(B.x+B.w/2,B.y+B.h-4,2,'#d8c8a0',120,.3,200);
   if(ov(P,{x:B.x+8,y:B.y+10,w:B.w-16,h:B.h-10}))hurtP(B.dmg*1.1,pcx<bcx?-1:1);
-  if(Math.abs(dx)<4||B.stT<=0){B.st='idle';B.stT=.7/sp;shake(6);sfx('slam')}return true}
+  if(Math.abs(dx)<4||B.stT<=0){B.st='idle';B.stT=.7/sp;shake(6);sfx('slam');if(B.gcR){sayQ(P,B.gcR,.35,2.4);B.gcR=null}}return true}
 Object.assign(ACT,ACT13,ACT14);Object.assign(SCR,SCR14);loadScr();loadChapter(CH);resize();applyUI();goTitle();requestAnimationFrame(frame);
 </script>
 </body>

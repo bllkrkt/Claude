@@ -24,7 +24,8 @@ const r = await ev(() => {
   for (const p in PETS) for (const a of ['pit', 'hurt', 'chest', 'boss', 'idle']) if (!SAYP[p] || !(SAYP[p][a] || []).length) o.eksikPet.push(p + '.' + a);
   const all = [];
   const walk = v => { if (typeof v === 'string') all.push(v); else if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object') Object.values(v).forEach(walk); };
-  [SAYS, SAYC, SAYX, SAYR, SAYB4, SAYP].forEach(walk);
+  [SAYS, SAYC, SAYX, SAYR, SAYB4, SAYP, typeof SAYGC === 'undefined' ? [] : SAYGC].forEach(walk);
+  o.gc = typeof SAYGC !== 'undefined' && SAYGC.length >= 6 && SAYGC.every(p => p.length === 2);
   for (const s of all) if (!EN[s]) o.eksikEN.push(s);
   o.toplam = all.length; return o;
 });
@@ -35,6 +36,7 @@ if (!r.yok) {
   check(!r.eksikSinif.length, 'sınıf lafı eksik: ' + r.eksikSinif.join(','));
   check(!r.eksikPet.length, 'yoldaş lafı eksik: ' + r.eksikPet.join(','));
   check(!r.eksikEN.length, 'İngilizcesi eksik: ' + r.eksikEN.slice(0, 5).join(' | '));
+  check(r.gc, 'boss atılma atışmaları (SAYGC) eksik');
   console.log('toplam laf:', r.toplam);
 }
 
